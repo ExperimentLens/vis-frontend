@@ -220,7 +220,10 @@ const ComparisonMetricsCharts: React.FC = () => {
     });
   }
 
-  const renderCharts = Object.entries(groupedMetrics).map(([metricName, metricSeries]) => {
+  const metricNames = comparativeVisibleMetrics.filter((m) => groupedMetrics[m]);
+
+  const renderCharts = metricNames.map((metricName) => {
+    const metricSeries = groupedMetrics[metricName];
     if (isMetricPending(metricName)) {
       return (
         <Grid
