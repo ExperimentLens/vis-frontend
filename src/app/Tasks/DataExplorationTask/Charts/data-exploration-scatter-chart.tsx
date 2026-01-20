@@ -510,7 +510,7 @@ const ScatterChart = () => {
                     y,
                     colorBy: colorBy as VisualColumn,
                   })}
-                  title={y.name}
+                  title={"Scatter Chart"}
                   actions={false}
                   controlPanel={<ScatterChartControlPanel />}
                   loading={

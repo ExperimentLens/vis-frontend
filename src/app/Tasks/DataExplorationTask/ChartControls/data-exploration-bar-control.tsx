@@ -8,6 +8,8 @@ import {
   ThemeProvider,
   Chip,
   Typography,
+  Button,
+  ButtonGroup
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
@@ -23,6 +25,8 @@ const BarChartControlPanel = () => {
   const selectedColumn =
     tab?.workflowTasks.dataExploration?.controlPanel.selectedMeasureColumn ||
     null;
+  const viewMode =
+  tab?.workflowTasks.dataExploration?.controlPanel?.viewMode || 'overlay';
 
   // Handler for updating aggregation rules for a column
 
@@ -66,7 +70,7 @@ const BarChartControlPanel = () => {
   });
 
   return (
-    <ThemeProvider theme={theme}>
+    // <ThemeProvider theme={theme}>
       <Box
         sx={{
           display: 'flex',
@@ -181,6 +185,37 @@ const BarChartControlPanel = () => {
             ))}
           </Select>
         </FormControl>
+        <Box
+          sx={{
+            mt: 1,
+            display: 'flex',
+            gap: '1rem',
+            flexDirection: 'row',
+            width: '100%',
+          }}
+        >
+          <ButtonGroup
+            variant="contained"
+            aria-label="view mode"
+            sx={{ height: '36px' }}
+            fullWidth
+          >
+            <Button
+              color={viewMode === 'overlay' ? 'primary' : 'inherit'}
+              onClick={() => dispatch(setControls({ viewMode: 'overlay' }))}
+            >
+              Overlay
+            </Button>
+            <Button
+              color={viewMode === 'stacked' ? 'primary' : 'inherit'}
+              onClick={() => dispatch(setControls({ viewMode: 'stacked' }))}
+              //  disabled={yAxis.length < 2}
+            >
+              Stacked
+            </Button>
+          </ButtonGroup>
+        </Box>
+
         {(tab?.workflowTasks.dataExploration?.controlPanel.barAggregation || []).length > 0 && (
           <Box sx={{ mt: 1 }}>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
@@ -214,7 +249,7 @@ const BarChartControlPanel = () => {
           </Box>
         )}
       </Box>
-    </ThemeProvider>
+    // </ThemeProvider>
   );
 };
 

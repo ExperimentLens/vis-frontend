@@ -1,4 +1,4 @@
-import { Box, useTheme, useMediaQuery } from '@mui/material';
+import { Box, useTheme, useMediaQuery, Grid } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import BarChartControlPanel from '../ChartControls/data-exploration-bar-control';
 import InfoMessage from '../../../../shared/components/InfoMessage';
@@ -6,6 +6,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useEffect } from 'react';
 import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
+import { vegaScaleOrUndefined } from '../../../../shared/utils/chartColorScales';
 
 // Assuming dataExploration is passed as a prop or obtained from elsewhere
 const BarChart = () => {
@@ -14,6 +15,9 @@ const BarChart = () => {
   const experimentId = useAppSelector(state => state.progressPage?.experiment.data?.id || '');
   const meta = tab?.workflowTasks.dataExploration?.metaData;
   const theme = useTheme();
+  const viewMode =
+  tab?.workflowTasks.dataExploration?.controlPanel?.viewMode || 'overlay';
+
 
   const groupByCols = tab?.workflowTasks.dataExploration?.controlPanel.barGroupBy ?? [];
 
@@ -85,6 +89,9 @@ const BarChart = () => {
     ?.filter(col => ['DOUBLE', 'BIGINT', 'INTEGER', 'FLOAT'].includes(col.type))
     .map(col => col.name);
 
+    const colorScale = vegaScaleOrUndefined(yAxisColumns || [], theme);
+
+
   // Transform the data into a suitable format for grouped bar chart
   const transformedData =
   Array.isArray(tab?.workflowTasks.dataExploration?.barChart.data?.data) && Array.isArray(yAxisColumns)
@@ -140,8 +147,7 @@ const BarChart = () => {
         field: 'type',
         type: 'nominal',
         title: 'Metric',
-        // legend:
-        //   null
+        scale: colorScale,
       },
       xOffset: {
         field: 'type',
@@ -163,6 +169,44 @@ const BarChart = () => {
       },
     },
   };
+
+  const getSingleMetricBarSpec = (metric: string) => ({
+    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+    autosize: { type: 'fit', contains: 'padding', resize: true },
+    data: { values: limitedData.filter(d => d.type === metric) },
+    mark: 'bar',
+    encoding: {
+      y: {
+        field: xAxisColumn,
+        type: 'nominal',
+        axis: {
+          labelAngle: 0,
+          labelLimit: 100,
+          labelOverlap: 'parity',
+          tickCount: Math.floor(500 / 20),
+        },
+        sort: null,
+      },
+      x: { field: 'value', type: 'quantitative', title: 'Value' },
+      tooltip: [
+        { field: xAxisColumn, type: 'nominal', title: xAxisColumn },
+        ...(categoricalColumns || []).map(col => ({
+          field: col.name,
+          type: 'nominal',
+          title: col.name,
+        })),
+        { field: 'value', type: 'quantitative', title: 'Value' },
+        { field: 'type', type: 'nominal', title: 'Metric' },
+      ],
+      color: {
+        field: 'type',
+        type: 'nominal',
+        legend: null,
+        scale: colorScale,
+      },
+    },
+  });
+
 
   const hasData = limitedData.length > 0;
 
@@ -204,17 +248,44 @@ const BarChart = () => {
 
   return (
     <Box sx={{ height: '99%' }}>
-      <ResponsiveCardVegaLite
-        spec={specification}
-        actions={false}
-        title={'Bar Chart'}
-        maxHeight={500}
-        aspectRatio={isSmallScreen ? 2.8 : 1.8}
-        controlPanel={<BarChartControlPanel />}
-        infoMessage={info}
-        showInfoMessage={shouldShowInfoMessage && !(tab?.workflowTasks.dataExploration?.barChart?.loading || tab?.workflowTasks.dataExploration?.metaData?.loading)}
-        loading={tab?.workflowTasks.dataExploration?.barChart?.loading || tab?.workflowTasks.dataExploration?.metaData?.loading}
-      />
+      {viewMode === 'overlay' ? (
+        <ResponsiveCardVegaLite
+          spec={specification}
+          actions={false}
+          title={'Bar Chart'}
+          maxHeight={500}
+          aspectRatio={isSmallScreen ? 2.8 : 1.8}
+          controlPanel={<BarChartControlPanel />}
+          infoMessage={info}
+          showInfoMessage={
+            shouldShowInfoMessage &&
+            !(tab?.workflowTasks.dataExploration?.barChart?.loading ||
+              tab?.workflowTasks.dataExploration?.metaData?.loading)
+          }
+          loading={
+            tab?.workflowTasks.dataExploration?.barChart?.loading ||
+            tab?.workflowTasks.dataExploration?.metaData?.loading
+          }
+        />
+      ) : (
+        <Grid container spacing={2}>
+          {(yAxisColumns || []).map(column => (
+            <Grid key={`bar-${column}`} item xs={12}>
+              <ResponsiveCardVegaLite
+                spec={getSingleMetricBarSpec(column)}
+                actions={false}
+                title={"Bar Chart"}
+                controlPanel={<BarChartControlPanel />}
+                loading={
+                  tab?.workflowTasks.dataExploration?.barChart?.loading ||
+                  tab?.workflowTasks.dataExploration?.metaData?.loading
+                }
+                isStatic={false}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      )}
     </Box>
   );
 };

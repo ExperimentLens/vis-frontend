@@ -9,36 +9,9 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
 import type { VisualColumn } from '../../../../shared/models/dataexploration.model';
 import { Theme } from '@mui/material/styles';
+import { vegaScaleOrUndefined } from '../../../../shared/utils/chartColorScales';
 
 //TODO: stacked mode change to one box with name Line chart
-
-// Color scale suggested from chat, maybe switch to another. Also we can put it in a shared place to be resused by other charts if we want
-type ColorScale = { domain: string[]; range: string[] };
-
-const buildColorScale = (
-  metrics: VisualColumn[],
-  theme: Theme
-): ColorScale => {
-  const domain = metrics.map(m => m.name);
-
-  const base = [
-    theme.palette.primary.main,
-    theme.palette.secondary.main,
-    theme.palette.error.main,
-    theme.palette.warning.main,
-    theme.palette.info.main,
-    theme.palette.success.main,
-    theme.palette.text.secondary,
-    theme.palette.grey[600],
-    theme.palette.grey[800],
-    theme.palette.grey[400],
-  ];
-
-  const range = domain.map((_, i) => base[i % base.length]);
-
-  return { domain, range };
-};
-
 
 const getColumnType = (columnType: string, fieldName?: string) => {
   if (fieldName?.toLowerCase() === 'timestamp') return 'temporal';
@@ -159,9 +132,10 @@ const LineChart = () => {
 
   // build color scale
   const colorScale =
-  Array.isArray(yAxis) && yAxis.length
-    ? buildColorScale(yAxis as VisualColumn[], theme)
-    : { domain: [], range: [] };
+  vegaScaleOrUndefined(
+    yAxis?.map(y => y.name),
+    theme
+  );
 
 
   const getLineChartSpec = ({
@@ -230,9 +204,7 @@ const LineChart = () => {
           field: 'variable',
           type: 'nominal',
           title: 'Metric',
-          scale: colorScale.domain.length
-            ? { domain: colorScale.domain, range: colorScale.range }
-            : undefined,
+          scale: colorScale
         },
       },
     };
@@ -273,6 +245,10 @@ const LineChart = () => {
 
     //needed in order to have color encoding even for single line
     const valuesWithColumn = values.map(row => ({ ...row, column: yField }));
+    const colorScale = vegaScaleOrUndefined(
+      (tab?.workflowTasks.dataExploration?.controlPanel?.yAxis || []).map(c => c.name),
+      theme
+    );
 
     return {
       data: { values: valuesWithColumn },
@@ -310,9 +286,7 @@ const LineChart = () => {
           field: 'column',
           type: 'nominal',
           legend: null,
-          scale: colorScale.domain.length
-            ? { domain: colorScale.domain, range: colorScale.range }
-            : undefined,
+          scale: colorScale
         },
       },
     };
@@ -382,7 +356,7 @@ const LineChart = () => {
                     xAxis: xAxis as VisualColumn,
                     y,
                   })}
-                  title={y.name}
+                  title={"Line Chart"}
                   actions={false}
                   controlPanel={<LineChartControlPanel />}
                   loading={tab?.workflowTasks.dataExploration?.lineChart?.loading || tab?.workflowTasks.dataExploration?.metaData?.loading}
