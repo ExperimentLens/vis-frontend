@@ -57,7 +57,7 @@ const ComparativeAnalysis = () => {
           <Tab label="Metrics" />
 
           <Tab
-            label="Models Insights"
+            label="Models"
             disabled={groupBy.length > 0 || !hasExplainability}
           />
 
