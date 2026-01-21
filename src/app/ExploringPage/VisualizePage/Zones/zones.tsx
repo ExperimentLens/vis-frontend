@@ -59,7 +59,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
     intervals,
     predictionDisplay,
   } = useAppSelector((state: RootState) => state.prediction);
-  const { mapLayer, drawnRect } = useAppSelector(
+  const { mapLayer, drawnShape } = useAppSelector(
     (state: RootState) => state.map,
   );
   const dispatch = useAppDispatch();
@@ -144,7 +144,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
             width: 33,
             height: 33,
             backgroundColor: 'white',
-            top: predictionDisplay || drawnRect == null ? 220 : 300,
+            top: predictionDisplay || drawnShape == null ? 260 : 340,
             right: 10,
             border: '2px solid rgba(0,0,0,0.2)',
             borderRadius: 2,

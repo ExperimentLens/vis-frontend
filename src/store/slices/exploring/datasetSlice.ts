@@ -328,7 +328,7 @@ export const datasetUiListeners = (startAppListening: AppStartListening) => {
       if (datasetId) {
         try {
           await dispatch(updateClusters(datasetId));
-          if (dataset.dataset.timeColumn && state.map.drawnRect) {
+          if (dataset.dataset.timeColumn && state.map.drawnShape) {
             dispatch(updateTimeSeries());
           }
         } catch (error) {

@@ -13,14 +13,16 @@ import { updateAnalysisResults } from './statsSlice';
 import { updateTimeSeries } from './timeSeriesSlice';
 import ngeohash from 'ngeohash';
 import type { MapLayer } from '../../../shared/models/exploring/dataset.model';
+import type { IDrawnShape } from '../../../shared/models/exploring/drawn-shape.model';
+import { coordinatesToRectangle } from '../../../shared/utils/mapUtils';
 
-export type ActiveRect = 'viewRect' | 'drawnRect' | 'selectedGeohash';
+export type ActiveSelection = 'view' | 'drawn' | 'selectedGeohash';
 
 interface MapState {
   zoom: number;
   viewRect: IRectangle | null;
-  drawnRect: IRectangle | null;
-  activeRect: ActiveRect;
+  drawnShape: IDrawnShape | null;
+  activeSelection: ActiveSelection;
   clusters: ICluster[];
   clustersLoading: boolean;
   facets: IFacet;
@@ -35,8 +37,8 @@ interface MapState {
 const initialState: MapState = {
   zoom: 8,
   viewRect: null,
-  drawnRect: null,
-  activeRect: 'viewRect',
+  drawnShape: null,
+  activeSelection: 'view',
   clusters: [],
   clustersLoading: false,
   facets: {},
@@ -52,15 +54,21 @@ const handleRectUpdate = async (
   dispatch: ThunkDispatch<RootState, unknown, AnyAction>,
   state: RootState,
 ) => {
-  const { zoom, viewRect, selectedGeohash, activeRect, drawnRect } = state.map;
+  const { zoom, viewRect, selectedGeohash, activeSelection, drawnShape } = state.map;
   const { categoricalFilters, timeRange, dataset } = state.dataset;
   const { groupByCols, measureCol, aggType } = state.chart;
 
   let rectToUse: IRectangle | null;
 
-  if (activeRect === 'drawnRect') {
-    rectToUse = drawnRect;
-  } else if (activeRect === 'selectedGeohash') {
+  if (activeSelection === 'drawn') {
+    if (drawnShape?.kind === 'rectangle') {
+      rectToUse = drawnShape.rect ?? null;
+    } else if (drawnShape?.kind === 'polygon') {
+      rectToUse = coordinatesToRectangle(drawnShape.coordinates) ?? null;
+    } else {
+      rectToUse = null;
+    }
+  } else if (activeSelection === 'selectedGeohash') {
     rectToUse = selectedGeohash.rect;
   } else {
     rectToUse = viewRect;
@@ -103,7 +111,7 @@ export const updateClusters = createAsyncThunk(
   async (datasetId: string, thunkApi) => {
     const state = thunkApi.getState() as RootState;
 
-    const { zoom, viewRect, drawnRect, selectedGeohash } = state.map;
+    const { zoom, viewRect, drawnShape, selectedGeohash } = state.map;
     const { dataset, categoricalFilters, timeRange } = state.dataset;
     const { groupByCols, measureCol, aggType } = state.chart;
 
@@ -140,7 +148,7 @@ export const updateClusters = createAsyncThunk(
 
       thunkApi.dispatch(setQueryInfo(queryInfo));
       // if no rect is selected, update the analysis results
-      if (drawnRect == null && selectedGeohash.rect == null) {
+      if (drawnShape == null && selectedGeohash.rect == null) {
         thunkApi.dispatch(
           updateAnalysisResults({
             rectStats: result.rectStats,
@@ -178,32 +186,26 @@ export const mapSlice = createSlice({
     setViewRect: (state, action: PayloadAction<IRectangle | null>) => {
       state.viewRect = action.payload;
     },
-    setDrawnRect: (
-      state,
-      action: PayloadAction<{
-        id: string;
-        bounds: {
-          south: number;
-          west: number;
-          north: number;
-          east: number;
-        } | null;
-      }>,
-    ) => {
-      const { bounds } = action.payload;
-      const drawnRect =
-        bounds &&
-        ({
-          lat: [bounds.south, bounds.north],
-          lon: [bounds.west, bounds.east],
-        } as IRectangle);
+    setDrawnShape: (state, action: PayloadAction<IDrawnShape | null>) => {
+      const shape = action.payload;
 
-      state.drawnRect = drawnRect;
-      bounds
-        ? (state.activeRect = 'drawnRect')
-        : state.selectedGeohash.rect
-          ? (state.activeRect = 'selectedGeohash')
-          : (state.activeRect = 'viewRect');
+      if (shape) {
+        if (shape.kind === 'rectangle') {
+          state.drawnShape = {
+            kind: 'rectangle',
+            rect: shape.rect,
+          };
+        } else if (shape.kind === 'polygon') {
+          state.drawnShape = {
+            kind: 'polygon',
+            coordinates: shape.coordinates,
+          };
+        }
+        state.activeSelection = 'drawn';
+      } else {
+        state.activeSelection = 'view';
+        state.drawnShape = null;
+      }
     },
     setClusters: (state, action: PayloadAction<ICluster[]>) => {
       state.clusters = action.payload;
@@ -229,10 +231,10 @@ export const mapSlice = createSlice({
           : null,
       };
       bounds
-        ? (state.activeRect = 'selectedGeohash')
-        : state.drawnRect
-          ? (state.activeRect = 'drawnRect')
-          : (state.activeRect = 'viewRect');
+        ? (state.activeSelection = 'selectedGeohash')
+        : state.drawnShape
+          ? (state.activeSelection = 'drawn')
+          : (state.activeSelection = 'view');
     },
     updateMapBounds: (
       state,
@@ -253,8 +255,8 @@ export const mapSlice = createSlice({
     setMapLayer: (state, action: PayloadAction<MapLayer>) => {
       state.mapLayer = action.payload;
     },
-    setActiveRect: (state, action: PayloadAction<ActiveRect>) => {
-      state.activeRect = action.payload;
+    setActiveSelection: (state, action: PayloadAction<ActiveSelection>) => {
+      state.activeSelection = action.payload;
     },
   },
   extraReducers: builder => {
@@ -273,6 +275,23 @@ export const mapSlice = createSlice({
       state.clustersLoading = false;
     });
   },
+  selectors: {
+    getActiveRect: (state): IRectangle | null => {
+      if (state.activeSelection === 'drawn') {
+        if (state.drawnShape?.kind === 'rectangle') {
+          return state.drawnShape.rect ?? null;
+        } else if (state.drawnShape?.kind === 'polygon') {
+          return coordinatesToRectangle(state.drawnShape.coordinates) ?? null;
+        }
+
+        return null;
+      } else if (state.activeSelection === 'selectedGeohash') {
+        return state.selectedGeohash.rect ?? null;
+      } else {
+        return state.viewRect ?? null;
+      }
+    },
+  }
 });
 
 export const mapListeners = (startAppListening: AppStartListening) => {
@@ -287,9 +306,9 @@ export const mapListeners = (startAppListening: AppStartListening) => {
     },
   });
 
-  // setDrawnRectListener
+  // setDrawnShapeListener
   startAppListening({
-    actionCreator: setDrawnRect,
+    actionCreator: setDrawnShape,
     effect: async (_, { dispatch, getState }) => {
       const state = getState() as RootState;
 
@@ -305,7 +324,7 @@ export const mapListeners = (startAppListening: AppStartListening) => {
       const { zone } = state.zone;
 
       if (zone.id) {
-        dispatch(setActiveRect('drawnRect'));
+        dispatch(setActiveSelection('drawn'));
       } else {
         await handleRectUpdate(dispatch, state);
       }
@@ -317,12 +336,14 @@ export const {
   resetMapState,
   setZoom,
   setViewRect,
-  setDrawnRect,
+  setDrawnShape,
   setClusters,
   setFacets,
   setQueryInfo,
   setSelectedGeohash,
   updateMapBounds,
   setMapLayer,
-  setActiveRect,
+  setActiveSelection,
 } = mapSlice.actions;
+
+export const { getActiveRect } = mapSlice.selectors;

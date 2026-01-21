@@ -1,4 +1,4 @@
-import type { IRectangle } from './rectangle.model';
+import type { GeoJsonGeometry } from './geojson.model.ts';
 
 export interface IZone {
   id?: string;
@@ -10,7 +10,7 @@ export interface IZone {
   createdAt?: string;
   heights?: number[];
   geohashes?: string[];
-  rectangle?: IRectangle;
+  geometry?: GeoJsonGeometry;
 }
 
 export const defaultValue: Readonly<IZone> = {};

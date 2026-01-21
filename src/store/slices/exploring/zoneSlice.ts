@@ -1,18 +1,23 @@
-import type { PayloadAction, ThunkDispatch, UnknownAction } from '@reduxjs/toolkit';
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import {
+  geoJsonPolygonToGeoPoints,
+  geoJsonPolygonToRectangle,
+  geometryToIncludedGeohashes,
+  isAxisAlignedRectanglePolygon,
+} from '../../../shared/utils/mapUtils';
 import { api } from '../../../app/api/api';
+import { setDrawnShape } from './mapSlice';
+import { type RootState } from '../../store';
+import { fetchColumnsValues } from './datasetSlice';
 import {
   defaultValue as zoneDefaultValue,
   type IZone,
 } from '../../../shared/models/exploring/zone.model';
-import { showError, showInfo, showSuccess } from '../../../shared/utils/toast';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { AppStartListening } from '../../listenerMiddleware';
-import { setDrawnRect } from './mapSlice';
-import ngeohash from 'ngeohash';
-import { type RootState } from '../../store';
-import { fetchColumnsValues } from './datasetSlice';
+import { showError, showInfo, showSuccess } from '../../../shared/utils/toast';
 import type { IDataset } from '../../../shared/models/exploring/dataset.model';
 import type { IRectangle } from '../../../shared/models/exploring/rectangle.model';
+import type { PayloadAction, ThunkDispatch, UnknownAction } from '@reduxjs/toolkit';
 
 /**
  * Fetches height/altitude values for a dataset within a specified rectangle
@@ -142,21 +147,17 @@ export const postZone = createAsyncThunk<IZone, IZone, { rejectValue: string }>(
     const { dataset } = getState() as RootState;
 
     try {
-      const includedGeohashes = zone.rectangle
-        ? ngeohash.bboxes(
-          zone.rectangle.lat[0],
-          zone.rectangle.lon[0],
-          zone.rectangle.lat[1],
-          zone.rectangle.lon[1],
-          8,
-        )
-        : [];
+      const includedGeohashes = geometryToIncludedGeohashes(zone.geometry, 8);
 
-      const heights = await fetchHeightsForDataset(
-        dataset.dataset,
-        zone.rectangle!,
-        dispatch,
-      );
+      // Heights API is still rectangle-based; use polygon bbox for now
+      const rectangle =
+        zone.geometry?.type === 'Polygon'
+          ? geoJsonPolygonToRectangle(zone.geometry)
+          : null;
+
+      const heights = rectangle
+        ? await fetchHeightsForDataset(dataset.dataset, rectangle, dispatch)
+        : undefined;
 
       const response = await api.post<IZone>('/zones', {
         ...zone,
@@ -273,17 +274,27 @@ export const zoneListeners = (startAppListening: AppStartListening) => {
   startAppListening({
     actionCreator: setZone,
     effect: async (action, { dispatch }) => {
-      const { rectangle, fileName } = action.payload;
+      const { geometry } = action.payload;
 
-      if (rectangle && fileName) {
-        const bounds = {
-          south: rectangle.lat[0],
-          west: rectangle.lon[0],
-          north: rectangle.lat[1],
-          east: rectangle.lon[1],
-        };
+      if (geometry?.type === 'Polygon') {
+        // Treat axis-aligned 4-corner polygons as rectangles for nicer rendering,
+        // otherwise render as polygon.
+        if (isAxisAlignedRectanglePolygon(geometry)) {
+          const rect = geoJsonPolygonToRectangle(geometry);
 
-        dispatch(setDrawnRect({ id: fileName, bounds }));
+          if (rect) {
+            dispatch(setDrawnShape({ kind: 'rectangle', rect }));
+
+            return;
+          }
+        }
+
+        const coordinates = geoJsonPolygonToGeoPoints(geometry);
+
+        dispatch(setDrawnShape({ kind: 'polygon', coordinates }));
+      } else {
+        // Not supported yet (Point, etc.)
+        dispatch(setDrawnShape(null));
       }
     },
   });

@@ -1,3 +1,4 @@
+import type { LatLng } from 'leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
@@ -5,13 +6,15 @@ import 'leaflet-draw/dist/leaflet.draw.css';
 import { useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
 import {
-  setDrawnRect,
+  setDrawnShape,
   updateMapBounds,
 } from '../../../../store/slices/exploring/mapSlice';
 import { postZone, setZone } from '../../../../store/slices/exploring/zoneSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useMapDrawing } from './useMapDrawing';
 import { resetZoneState } from '../../../../store/slices/exploring/zoneSlice';
+import type { LatLon } from '../../../../shared/models/exploring/latlon.model';
+import { geoPointsToGeoJsonPolygon, rectangleToGeoJsonPolygon } from '../../../../shared/utils/mapUtils';
 
 export const MapControl = ({ id }: { id: string }) => {
   const map = useMap();
@@ -37,26 +40,30 @@ export const MapControl = ({ id }: { id: string }) => {
       // Use the hook's method to add the layer
       addDrawnLayer(layer);
 
-      if ('getBounds' in layer) {
+      dispatch(resetZoneState());
+
+      if (layer instanceof L.Rectangle && 'getBounds' in layer) {
         const bounds = layer.getBounds();
 
-        dispatch(resetZoneState());
         dispatch(
-          setDrawnRect({
-            id,
-            bounds: {
-              south: bounds.getSouth(),
-              west: bounds.getWest(),
-              north: bounds.getNorth(),
-              east: bounds.getEast(),
+          setDrawnShape({
+            kind: 'rectangle',
+            rect: {
+              lat: [bounds.getSouth(), bounds.getNorth()],
+              lon: [bounds.getWest(), bounds.getEast()],
             },
           }),
         );
+      } else if (layer instanceof L.Polygon && 'getLatLngs' in layer) {
+        const latLngs = layer.getLatLngs() as LatLng[][];
+        const coordinates: LatLon[] = latLngs[0].map(latLng => [latLng.lat, latLng.lng]);
+
+        dispatch(setDrawnShape({ kind: 'polygon', coordinates }));
       }
     }
 
     function onDeleted() {
-      dispatch(setDrawnRect({ id, bounds: null }));
+      dispatch(setDrawnShape(null));
     }
 
     function onMoveEnd() {
@@ -91,7 +98,7 @@ export const MapControl = ({ id }: { id: string }) => {
       draw: {
         rectangle: { showArea: false }, // disable showArea
         polyline: false,
-        polygon: false,
+        polygon: { showArea: false },
         circle: false,
         marker: false,
         circlemarker: false,
@@ -121,7 +128,7 @@ export const MapControl = ({ id }: { id: string }) => {
       const saveButton = L.DomUtil.create('a', 'leaflet-control-save', div);
 
       saveButton.innerHTML = '💾';
-      saveButton.title = 'Save drawn rectangle as zone';
+      saveButton.title = 'Save drawn shape as zone';
       saveButton.style.width = '30px';
       saveButton.style.height = '30px';
       saveButton.style.lineHeight = '30px';
@@ -148,7 +155,7 @@ export const MapControl = ({ id }: { id: string }) => {
       const clearButton = L.DomUtil.create('a', 'leaflet-control-clear', div);
 
       clearButton.innerHTML = '✖️';
-      clearButton.title = 'Clear drawn rectangle';
+      clearButton.title = 'Clear drawn shape';
       clearButton.style.width = '30px';
       clearButton.style.height = '30px';
       clearButton.style.lineHeight = '30px';
@@ -175,17 +182,17 @@ export const MapControl = ({ id }: { id: string }) => {
         if (layers.length > 0) {
           const layer = layers[0];
 
-          if ('getBounds' in layer && typeof layer.getBounds === 'function') {
+          if (layer instanceof L.Rectangle && 'getBounds' in layer && typeof layer.getBounds === 'function') {
             const bounds = layer.getBounds();
 
             // Create zone object from bounds
             const zone = {
               fileName: id, // Use dataset ID as filename
-              name: `Drawn Zone ${new Date().toLocaleString()}`,
-              rectangle: {
+              name: `Drawn Rectangle ${new Date().toLocaleString()}`,
+              geometry: rectangleToGeoJsonPolygon({
                 lat: [bounds.getSouth(), bounds.getNorth()],
                 lon: [bounds.getWest(), bounds.getEast()],
-              },
+              }),
               // Add other zone properties as needed
             };
 
@@ -193,6 +200,22 @@ export const MapControl = ({ id }: { id: string }) => {
             dispatch(postZone(zone));
 
             // Keep the drawn rectangle visible (don't clear it)
+            // Zone saved successfully
+          } else if (layer instanceof L.Polygon && 'getLatLngs' in layer && typeof layer.getLatLngs === 'function') {
+            const latLngs = layer.getLatLngs() as LatLng[][];
+            const coordinates: LatLon[] = latLngs[0].map(latLng => [latLng.lat, latLng.lng]);
+
+            // Create zone object from coordinates
+            const zone = {
+              fileName: id, // Use dataset ID as filename
+              name: `Drawn Polygon ${new Date().toLocaleString()}`,
+              geometry: geoPointsToGeoJsonPolygon(coordinates),
+            };
+
+            // Dispatch postZone action
+            dispatch(postZone(zone));
+
+            // Keep the drawn polygon visible (don't clear it)
             // Zone saved successfully
           }
         }
@@ -202,7 +225,7 @@ export const MapControl = ({ id }: { id: string }) => {
       clearButton.onclick = function () {
         // Use the hook's clear method
         clearDrawnItems();
-        dispatch(setDrawnRect({ id, bounds: null }));
+        dispatch(setDrawnShape(null));
         if (zone?.id) {
           dispatch(setZone({}));
         }

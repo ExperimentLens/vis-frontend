@@ -21,7 +21,7 @@ import { getDataSource } from '../../../store/slices/exploring/datasourceSlice';
 import { resetChartState } from '../../../store/slices/exploring/chartSlice';
 import {
   resetMapState,
-  setDrawnRect,
+  setDrawnShape,
 } from '../../../store/slices/exploring/mapSlice';
 import { resetStatsState } from '../../../store/slices/exploring/statsSlice';
 import { resetTimeSeriesState } from '../../../store/slices/exploring/timeSeriesSlice';
@@ -47,7 +47,7 @@ const VisualizePage = () => {
   const { dataset, loading } = useAppSelector(
     (state: RootState) => state.dataset,
   );
-  const { drawnRect, selectedGeohash } = useAppSelector(
+  const { drawnShape, selectedGeohash } = useAppSelector(
     (state: RootState) => state.map,
   );
   const {
@@ -69,7 +69,7 @@ const VisualizePage = () => {
   const handleClosePredictionDisplay = () => {
     dispatch(setPredictionDisplay(false));
     dispatch(setZone({}));
-    dispatch(setDrawnRect({ id: datasetId!, bounds: null }));
+    dispatch(setDrawnShape(null));
   };
 
   useEffect(() => {
@@ -182,7 +182,7 @@ const VisualizePage = () => {
                 isFullscreen={isChartFullscreen}
                 onToggleFullscreen={toggleChartFullscreen}
               />
-              {dataset.timeColumn && (drawnRect || selectedGeohash.rect) && (
+              {dataset.timeColumn && (drawnShape || selectedGeohash.rect) && (
                 <TimeSeriesChart
                   dataset={dataset}
                   isFullscreen={isTimeSeriesFullscreen}

@@ -1,13 +1,15 @@
+import L from 'leaflet';
 import ngeohash from 'ngeohash';
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../../store/store';
-import L from 'leaflet';
+import { coordinatesToRectangle } from '../../../../shared/utils/mapUtils';
+import type { LatLon } from '../../../../shared/models/exploring/latlon.model';
 
 export const useMapDrawing = (map: L.Map | null, id: string) => {
   const navigate = useNavigate();
   const drawnItemsRef = useRef<L.FeatureGroup>(new L.FeatureGroup());
-  const drawnRect = useAppSelector(state => state.map.drawnRect);
+  const drawnShape = useAppSelector(state => state.map.drawnShape);
   const { selectedGeohash } = useAppSelector(state => state.map);
   const lastDrawnBounds = useRef<{
     south: number;
@@ -78,6 +80,40 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
     }
   };
 
+  const drawPolygon = (coordinates: LatLon[]) => {
+    if (!coordinates || !map) return;
+
+    // Check if coordinates are the same as last drawn
+    const bounds = coordinatesToRectangle(coordinates);
+
+    if (bounds && lastDrawnBounds.current && lastDrawnBounds.current.south === bounds.lat[0] && lastDrawnBounds.current.west === bounds.lon[0] && lastDrawnBounds.current.north === bounds.lat[1] && lastDrawnBounds.current.east === bounds.lon[1]) {
+      return; // Already drawn, skip
+    }
+
+    const polygon = L.polygon(coordinates.map(([lat, lon]) => L.latLng(lat, lon)), {
+      color: '#3388ff',
+      weight: 2,
+      fillOpacity: 0.1,
+      interactive: false,
+    });
+
+    drawnItemsRef.current.clearLayers();
+    drawnItemsRef.current.addLayer(polygon);
+    lastDrawnBounds.current = bounds && {
+      south: bounds.lat[0],
+      west: bounds.lon[0],
+      north: bounds.lat[1],
+      east: bounds.lon[1],
+    };
+
+    map.fitBounds(polygon.getBounds(), { padding: [250, 250] });
+
+    // Notify parent component to update visibility
+    if (onVisibilityChangeRef.current) {
+      onVisibilityChangeRef.current();
+    }
+  };
+
   const clearDrawnItems = () => {
     drawnItemsRef.current.clearLayers();
     lastDrawnBounds.current = null;
@@ -115,18 +151,22 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
   };
 
   useEffect(() => {
-    if (drawnRect && map) {
-      drawRectangleFromBounds({
-        south: drawnRect.lat[0],
-        west: drawnRect.lon[0],
-        north: drawnRect.lat[1],
-        east: drawnRect.lon[1],
-      });
-    } else if (!drawnRect && map) {
-      // Clear drawn items when drawnRect becomes null
+    if (drawnShape && map) {
+      if (drawnShape.kind === 'rectangle') {
+        drawRectangleFromBounds({
+          south: drawnShape.rect?.lat[0] ?? 0,
+          west: drawnShape.rect?.lon[0] ?? 0,
+          north: drawnShape.rect?.lat[1] ?? 0,
+          east: drawnShape.rect?.lon[1] ?? 0,
+        });
+      } else if (drawnShape.kind === 'polygon') {
+        drawPolygon(drawnShape.coordinates ?? []);
+      }
+    } else if (!drawnShape && map) {
+      // Clear drawn items when drawnShape becomes null
       clearDrawnItems();
     }
-  }, [drawnRect, map, clearDrawnItems]);
+  }, [drawnShape, map, clearDrawnItems]);
 
   return {
     drawnItemsRef,
@@ -134,6 +174,6 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
     clearDrawnItems,
     addDrawnLayer,
     setVisibilityChangeCallback,
-    isDrawingFromState: !!drawnRect,
+    isDrawingFromState: !!drawnShape,
   };
 };

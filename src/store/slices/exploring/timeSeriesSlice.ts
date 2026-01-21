@@ -26,11 +26,14 @@ export const updateTimeSeries = createAsyncThunk(
   async (_, thunkApi) => {
     const state = thunkApi.getState() as RootState;
 
-    const { drawnRect, selectedGeohash } = state.map;
+    const { drawnShape, selectedGeohash } = state.map;
     const { frequency, measureCol } = state.timeSeries;
     const { timeRange, categoricalFilters } = state.dataset;
     // const datasetId = Object.keys(state.api.queries).find((key) => key.startsWith('getDataset('));
     const datasetId = state.dataset.dataset.id;
+
+    // TODO: Handle polygon drawing
+    const drawnRect = drawnShape?.kind === 'rectangle' ? drawnShape.rect : null;
 
     if (datasetId && (drawnRect || selectedGeohash.rect)) {
       if (!measureCol)

@@ -152,7 +152,7 @@ export const Map = (props: IMapProps) => {
   const geohash = searchParams.get('geohash');
   const dispatch = useAppDispatch();
   const mapLayer = useAppSelector((state: RootState) => state.map.mapLayer);
-  const { clusters, viewRect, zoom, selectedGeohash, drawnRect } =
+  const { clusters, viewRect, zoom, selectedGeohash, drawnShape } =
     useAppSelector((state: RootState) => state.map);
   const {
     results,
@@ -308,7 +308,7 @@ export const Map = (props: IMapProps) => {
             onChange={(_, value) => value && toggleMapLayer(value)}
             sx={{
               position: 'absolute',
-              top: drawnRect == null ? 120 : 200,
+              top: drawnShape == null ? 160 : 240,
               right: 10,
               zIndex: 1000,
               backgroundColor: 'white',
@@ -331,7 +331,7 @@ export const Map = (props: IMapProps) => {
                 <ToggleButton
                   value="geohash"
                   sx={{ width: 30, height: 30 }}
-                  disabled={drawnRect != null}
+                  disabled={drawnShape != null}
                 >
                   <GeohashIcon />
                 </ToggleButton>

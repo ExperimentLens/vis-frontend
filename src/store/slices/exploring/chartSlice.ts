@@ -69,7 +69,7 @@ export const chartListeners = (startApplistening: AppStartListening) => {
           groupByCols: state.chart.groupByCols,
           measureCol: state.chart.measureCol,
           rect:
-            state.map.drawnRect ||
+            state.map.drawnShape ||
             state.map.selectedGeohash.rect ||
             state.map.viewRect,
         };
