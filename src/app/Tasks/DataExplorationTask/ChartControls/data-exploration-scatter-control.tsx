@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import {
   Box,
   FormControl,
-  Button,
-  ButtonGroup,
   Switch,
   Typography,
   Tooltip,
@@ -35,20 +33,11 @@ const ScatterChartControlPanel = () => {
   const yAxisCount = yAxis.length;
 
   useEffect(() => {
-    if (yAxisCount >= 3 && viewMode !== 'stacked') {
-      dispatch(setControls({ viewMode: 'stacked' }));
+    const nextView = yAxisCount === 1 ? 'overlay' : 'stacked';
+    if (viewMode !== nextView) {
+      dispatch(setControls({ viewMode: nextView }));
     }
-  }, [yAxisCount, viewMode, dispatch]);
-
-  useEffect(() => {
-    const validYAxis = yAxis.filter(yCol =>
-      columns.find(col => col.name === yCol.name),
-    );
-
-    if (validYAxis.length !== yAxis.length) {
-      dispatch(setControls({ yAxis: validYAxis }));
-    }
-  }, [columns, yAxis, dispatch]);
+  }, [yAxisCount, viewMode]);
 
   const handleXAxisChange = (event: { target: { value: string } }) => {
     const selected = columns.find(col => col.name === event.target.value);
@@ -101,14 +90,13 @@ const ScatterChartControlPanel = () => {
 
       dispatch(setControls({ selectedColumns: cleanedSelected }));
     }
-  }, [columns, yAxis, xAxis, colorBy, controlPanel?.selectedColumns, dispatch]);
+  }, [columns, yAxis, xAxis, colorBy, controlPanel?.selectedColumns]);
 
   const isDisabled =
     Array.isArray(tab?.workflowTasks.dataExploration?.scatterChart.data?.data) &&
     !tab?.workflowTasks.dataExploration?.scatterChart.data?.data.length;
 
   const tooltipTitle = isDisabled ? 'Select columns and color' : '';
-  const overlayDisabledByCount = yAxisCount >= 3;
 
   return (
     columns.length > 0 && (
@@ -121,7 +109,7 @@ const ScatterChartControlPanel = () => {
           }}
         >
           {/* X-Axis Selector */}
-          <FormControl fullWidth disabled={tab?.workflowTasks.dataExploration?.controlPanel.umap}>
+          <FormControl fullWidth>
             <SearchableSelect
               labelId="x-axis-select-label"
               inputLabel={
@@ -136,11 +124,12 @@ const ScatterChartControlPanel = () => {
               onChange={(value) => handleXAxisChange({ target: { value } })}
               menuMaxHeight={224}
               menuWidth={250}
+              disabled={tab?.workflowTasks.dataExploration?.controlPanel.umap}
             />
           </FormControl>
 
           {/* Y-Axis Multi-Selector */}
-          <FormControl fullWidth disabled={tab?.workflowTasks.dataExploration?.controlPanel.umap}>
+          <FormControl fullWidth>
             <SearchableMultiSelect
               labelId="y-axis-multi-select-label"
               inputLabel={
@@ -159,6 +148,7 @@ const ScatterChartControlPanel = () => {
               }}
               menuMaxHeight={224}
               menuWidth={250}
+              disabled={tab?.workflowTasks.dataExploration?.controlPanel.umap}
             />
           </FormControl>
         </Box>
@@ -171,7 +161,7 @@ const ScatterChartControlPanel = () => {
             mt: 2,
           }}
         >
-          <FormControl fullWidth disabled={tab?.workflowTasks.dataExploration?.controlPanel.umap}>
+          <FormControl fullWidth sx={{ flex: 1 }} >
             <SearchableSelect
               labelId="color-by-select-label"
               inputLabel={
@@ -190,42 +180,10 @@ const ScatterChartControlPanel = () => {
               }
               menuMaxHeight={224}
               menuWidth={250}
+              disabled={tab?.workflowTasks.dataExploration?.controlPanel.umap}
             />
           </FormControl>
-        </Box>
-
-        <Box
-          sx={{
-            mt: 2,
-            display: 'flex',
-            gap: '1rem',
-            flexDirection: 'row',
-            width: '100%',
-          }}
-        >
-          <ButtonGroup
-            variant="contained"
-            aria-label="view mode"
-            sx={{ height: '36px' }}
-            fullWidth
-            disabled={tab?.workflowTasks.dataExploration?.controlPanel.umap}
-          >
-            <Button
-              color={viewMode === 'overlay' ? 'primary' : 'inherit'}
-              onClick={() => dispatch(setControls({ viewMode: 'overlay' }))}
-              disabled={overlayDisabledByCount}
-            >
-              Overlay
-            </Button>
-            <Button
-              color={viewMode === 'stacked' ? 'primary' : 'inherit'}
-              onClick={() => dispatch(setControls({ viewMode: 'stacked' }))}
-            >
-              Stacked
-            </Button>
-          </ButtonGroup>
-
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
             <Typography
               variant="caption"
               sx={{
