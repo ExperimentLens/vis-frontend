@@ -96,15 +96,20 @@ const ComparisonMetricsCharts: React.FC = () => {
     previousSelectedRef.current = currentSelected;
 
     added.forEach(workflowId => {
-      if (workflowId in selectedWorkflowsMetrics.data) return;
+      const availableMetricNames =
+        workflows.data.find(wf => wf.id === workflowId)?.metrics?.map(m => m.name) || [];
 
-      const workflowMetrics = workflows.data.find(wf => wf.id === workflowId)?.metrics?.map(m => m.name) || [];
-      const metricNames = workflowMetrics
+      const comparativeMetrics = comparativeVisibleMetrics
         .filter(m => m !== 'rating')
-        .filter(m => comparativeVisibleMetrics.includes(m));
+        .filter(m => availableMetricNames.includes(m));
 
-      if (metricNames?.length) {
-        dispatch(fetchWorkflowMetrics({ experimentId, workflowId, metricNames }));
+      const existingWorkflows = selectedWorkflowsMetrics.data?.[workflowId] || [];
+      const existingNames = new Set(existingWorkflows.map(m => m.name));
+
+      const missingMetrics = comparativeMetrics.filter(m => !existingNames.has(m));
+
+      if (missingMetrics.length) {
+        dispatch(fetchWorkflowMetrics({ experimentId, workflowId, metricNames: missingMetrics }));
       }
     });
   }, [workflowsTable.selectedWorkflows, workflowsTable.initialized]);
@@ -215,7 +220,10 @@ const ComparisonMetricsCharts: React.FC = () => {
     });
   }
 
-  const renderCharts = Object.entries(groupedMetrics).map(([metricName, metricSeries]) => {
+  const metricNames = comparativeVisibleMetrics.filter((m) => groupedMetrics[m]);
+
+  const renderCharts = metricNames.map((metricName) => {
+    const metricSeries = groupedMetrics[metricName];
     if (isMetricPending(metricName)) {
       return (
         <Grid

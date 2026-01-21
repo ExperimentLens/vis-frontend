@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   FormControl,
   InputLabel,
@@ -25,6 +25,8 @@ interface SearchableMultiSelectProps {
   menuWidth?: number;
   isOptionDisabled?: (option: string, selected: string[]) => boolean;
   disabled?: boolean;
+  getOptionLabel?: (option: string) => string;
+  renderValue?: (selected: string[]) => React.ReactNode;
 }
 
 const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
@@ -37,19 +39,28 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
   menuMaxHeight = 224,
   menuWidth = 250,
   isOptionDisabled,
-  disabled = false
+  disabled = false,
+  getOptionLabel,
+  renderValue,
 }) => {
   const [search, setSearch] = useState('');
 
-  const filteredOptions = options.filter(option =>
-    option.toLowerCase().includes(search.toLowerCase()),
-  );
+  const optionToLabel = (option: string) => (getOptionLabel ? getOptionLabel(option) : option);
+
+  const filteredOptions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return options;
+
+    return options.filter(option => optionToLabel(option).toLowerCase().includes(q));
+  }, [options, search, getOptionLabel]);
 
   const handleChange = (event: SelectChangeEvent<string[]>) => {
     const newValue = event.target.value as string[];
-
     onChange(newValue);
   };
+
+  const defaultRenderValue = (selected: string[]) =>
+    selected.map(optionToLabel).join(', ');
 
   return (
     <FormControl fullWidth>
@@ -61,7 +72,7 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
         disabled={disabled}
         onChange={handleChange}
         input={<OutlinedInput label={label} />}
-        renderValue={selected => (selected as string[]).join(', ')}
+        renderValue={renderValue ?? ((selected) => defaultRenderValue(selected as string[]))}
         MenuProps={{
           PaperProps: {
             style: { maxHeight: menuMaxHeight, width: menuWidth },
@@ -94,25 +105,23 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
                   <SearchIcon fontSize="small" sx={{ opacity: 0.6 }} />
                 </Box>
               ),
-              endAdornment: (
-                search ? (
-                  <Box
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSearch('');
-                    }}
-                    sx={{
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      opacity: 0.6,
-                      '&:hover': { opacity: 1 },
-                    }}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </Box>
-                ) : null
-              ),
+              endAdornment: search ? (
+                <Box
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSearch('');
+                  }}
+                  sx={{
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    opacity: 0.6,
+                    '&:hover': { opacity: 1 },
+                  }}
+                >
+                  <CloseIcon fontSize="small" />
+                </Box>
+              ) : null,
             }}
           />
         </ListSubheader>
@@ -126,7 +135,7 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
           return (
             <MenuItem key={option} value={option} disabled={disabled}>
               <Checkbox checked={checked} />
-              {option}
+              {optionToLabel(option)}
             </MenuItem>
           );
         })}

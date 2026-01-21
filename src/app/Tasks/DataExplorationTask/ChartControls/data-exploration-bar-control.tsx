@@ -1,220 +1,138 @@
-import {
-  Box,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
-  createTheme,
-  ThemeProvider,
-  Chip,
-  Typography,
-} from '@mui/material';
+import { Box, Button, ButtonGroup, FormControl } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
 import CategoryIcon from '@mui/icons-material/Category';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import FunctionsIcon from '@mui/icons-material/Functions';
 import { AggregationFunction } from '../../../../shared/models/dataexploration.model';
 import SearchableSelect from '../../../../shared/components/searchable-select';
+import SearchableMultiSelect from '../../../../shared/components/searchable-select-multiple';
+
+const SEP = '|||';
 
 const BarChartControlPanel = () => {
   const dispatch = useAppDispatch();
   const { tab } = useAppSelector(state => state.workflowPage);
-  const selectedColumn =
-    tab?.workflowTasks.dataExploration?.controlPanel.selectedMeasureColumn ||
-    null;
 
-  // Handler for updating aggregation rules for a column
+  const viewMode =
+    tab?.workflowTasks.dataExploration?.controlPanel?.viewMode || 'overlay';
 
-  const getAggregationOptions = () => {
-    if (!selectedColumn) return [];
-    const column =
-      tab?.workflowTasks.dataExploration?.metaData.data?.originalColumns.find(
-        col => col.name === selectedColumn,
-      );
+  const originalColumns =
+    tab?.workflowTasks.dataExploration?.metaData.data?.originalColumns || [];
 
-    return column?.type === 'DOUBLE' ||
-      column?.type === 'FLOAT' ||
-      column?.type === 'INTEGER' ||
-      column?.type === 'BIGINT'
+  const currentAgg =
+    tab?.workflowTasks.dataExploration?.controlPanel.barAggregation || [];
+
+  const isNumericType = (t?: string) =>
+    t === 'DOUBLE' || t === 'FLOAT' || t === 'INTEGER' || t === 'BIGINT';
+
+  const functionsForType = (t?: string): AggregationFunction[] =>
+    isNumericType(t)
       ? [
-        AggregationFunction.AVG,
-        AggregationFunction.MIN,
-        AggregationFunction.MAX,
-        AggregationFunction.COUNT,
-      ]
+          AggregationFunction.AVG,
+          AggregationFunction.MIN,
+          AggregationFunction.MAX,
+          AggregationFunction.COUNT,
+        ]
       : [AggregationFunction.COUNT];
+
+  // Encoded options stored in Select value: "<column>|||<FN>"
+  const measureAggOptions: string[] = originalColumns
+    .filter(col => col.type !== 'LOCAL_DATE_TIME')
+    .flatMap(col =>
+      functionsForType(col.type).map(fn => `${col.name}${SEP}${fn}`),
+    );
+
+  // Selected values from Redux -> encoded values
+  const selectedMeasureAggValues: string[] = currentAgg.map(
+    a => `${a.column}${SEP}${a.function}`,
+  );
+
+  const getOptionLabel = (encoded: string) => {
+    const [col, fn] = encoded.split(SEP);
+    return `${col} (${fn})`;
   };
 
-  const aggregationOptions = getAggregationOptions();
+  const parseEncoded = (encoded: string) => {
+    const [column, fnRaw] = encoded.split(SEP);
+    return { column, function: fnRaw as AggregationFunction };
+  };
 
-  // Custom theme
-  const theme = createTheme({
-    palette: {
-      primary: { main: '#1976d2' },
-      secondary: { main: '#dc004e' },
-    },
-    typography: {
-      fontFamily: 'Arial',
-      h6: { fontWeight: 600 },
-    },
-    components: {
-      MuiButton: {
-        styleOverrides: { root: { borderRadius: '20px' } },
-      },
-    },
-  });
+  const handleMeasureAggChange = (encodedValues: string[]) => {
+    const nextAgg = encodedValues
+      .map(parseEncoded)
+      .filter(a => a.column && a.function);
+
+    const last = encodedValues[encodedValues.length - 1];
+    // maybe I should remove this?
+    const lastColumn = last ? last.split(SEP)[0] : '';
+
+    dispatch(
+      setControls({
+        barAggregation: nextAgg,
+        selectedMeasureColumn: lastColumn,
+      }),
+    );
+  };
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box
-        sx={{
-          display: 'flex',
-          gap: '1rem',
-          flexDirection: 'column',
-        }}
-      >
-        {/* Group By Selection */}
-        <FormControl fullWidth>
-          <SearchableSelect
-            labelId="group-by-category-label"
-            inputLabel={
-              <Box display="flex" alignItems="center" gap={1}>
-                <CategoryIcon fontSize="small" />
-                Group By (Category)
-              </Box>
-            }
-            label="Group By (Category) ----"
-            value={
-              tab?.workflowTasks.dataExploration?.controlPanel.barGroupBy?.[0] || ''
-            }
-            options={
-              tab?.workflowTasks.dataExploration?.metaData.data?.originalColumns
-                .filter(col => col.type === 'STRING')
-                .map(col => col.name) || []
-            }
-            onChange={value =>
-              dispatch(setControls({ barGroupBy: [value] }))
-            }
-            menuMaxHeight={224}
-            menuWidth={250}
-          />
-        </FormControl>
-
-        {/* Value Selection */}
-        <FormControl fullWidth>
-          <SearchableSelect
-            labelId="measure-value-column-label"
-            inputLabel={
-              <Box display="flex" alignItems="center" gap={1}>
-                <BarChartIcon fontSize="small" />
-                Measure (Value Column)
-              </Box>
-            }
-            label="Measure (Value Column)-----"
-            value={selectedColumn || ''}
-            options={
-              tab?.workflowTasks.dataExploration?.metaData.data?.originalColumns
-                .filter(col => col.type !== 'LOCAL_DATE_TIME')
-                .map(col => col.name) || []
-            }
-            onChange={value =>
-              dispatch(setControls({ selectedMeasureColumn: value }))
-            }
-            menuMaxHeight={224}
-            menuWidth={250}
-          />
-        </FormControl>
-
-        {/* Aggregation Selection */}
-
-        <FormControl fullWidth>
-          <InputLabel>
+    <Box sx={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
+      {/* Group By */}
+      <FormControl fullWidth>
+        <SearchableSelect
+          labelId="group-by-category-label"
+          inputLabel={
             <Box display="flex" alignItems="center" gap={1}>
-              <FunctionsIcon fontSize="small" />
-              Apply Aggregation(s)
+              <CategoryIcon fontSize="small" />
+              Group By (Category)
             </Box>
-          </InputLabel>
-          <Select
-            label="Apply Aggregation(s)oook"
-            multiple
-            value={
-              selectedColumn && Array.isArray(tab?.workflowTasks.dataExploration?.controlPanel.barAggregation)
-                ? tab.workflowTasks.dataExploration.controlPanel.barAggregation
-                  .filter(aggr => aggr.column === selectedColumn)
-                  .map(aggr => aggr.function)
-                : []
-            }
-            onChange={event => {
-              const selectedFunctions = event.target.value as AggregationFunction[];
+          }
+          label="Group By (Category) ----"
+          value={
+            tab?.workflowTasks.dataExploration?.controlPanel.barGroupBy?.[0] || ''
+          }
+          options={originalColumns.filter(col => col.type === 'STRING').map(col => col.name)}
+          onChange={value => dispatch(setControls({ barGroupBy: [value] }))}
+          menuMaxHeight={224}
+          menuWidth={250}
+        />
+      </FormControl>
 
-              if (!selectedColumn) return;
-              const currentAgg =
-                tab?.workflowTasks.dataExploration?.controlPanel
-                  .barAggregation || [];
-
-              // Remove old aggregations for this column
-              const updatedAggs = currentAgg.filter(
-                aggr => aggr.column !== selectedColumn
-              );
-
-              // Add new ones
-              selectedFunctions.forEach(func => {
-                updatedAggs.push({
-                  column: selectedColumn,
-                  function: func,
-                });
-              });
-
-              dispatch(
-                setControls({
-                  barAggregation: updatedAggs,
-                }),
-              );
-            }}
-            renderValue={(selected: string[]) => selected.join(', ')}
-          >
-            {aggregationOptions.map(rule => (
-              <MenuItem key={rule} value={rule}>
-                {rule.charAt(0).toUpperCase() + rule.slice(1)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {(tab?.workflowTasks.dataExploration?.controlPanel.barAggregation || []).length > 0 && (
-          <Box sx={{ mt: 1 }}>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Active Aggregations
-            </Typography>
-
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {tab?.workflowTasks.dataExploration?.controlPanel.barAggregation.map(aggr => (
-                <Chip
-                  key={`${aggr.function}-${aggr.column}`}
-                  label={`${aggr.function.toLowerCase()}_${aggr.column}`}
-                  onDelete={() => {
-                    const updatedAggs =
-                  tab.workflowTasks.dataExploration?.controlPanel.barAggregation.filter(
-                    a => !(a.column === aggr.column && a.function === aggr.function)
-                  );
-
-                    dispatch(setControls({ barAggregation: updatedAggs }));
-
-                    const remainingForColumn = updatedAggs?.filter(a => a.column === aggr.column);
-
-                    if (selectedColumn === aggr.column && remainingForColumn?.length === 0) {
-                      dispatch(setControls({ selectedMeasureColumn: '' }));
-                    }
-                  }}
-                  color="default"
-                  size="small"
-                />
-              ))}
-            </Box>
+      {/* Measure + Aggregations (searchable multi select) */}
+      <SearchableMultiSelect
+        labelId="measure-agg-multi-select-label"
+        inputLabel={
+          <Box display="flex" alignItems="center" gap={1}>
+            <FunctionsIcon fontSize="small" />
+            Measure + Aggregations
           </Box>
-        )}
+        }
+        label="Measure + Aggregations ----"
+        value={selectedMeasureAggValues}
+        options={measureAggOptions}
+        getOptionLabel={getOptionLabel}
+        onChange={handleMeasureAggChange}
+        menuMaxHeight={240}
+        menuWidth={360}
+      />
+
+      {/* View mode */}
+      <Box sx={{ mt: 1, display: 'flex', gap: '1rem', flexDirection: 'row', width: '100%' }}>
+        <ButtonGroup variant="contained" aria-label="view mode" sx={{ height: '36px' }} fullWidth>
+          <Button
+            color={viewMode === 'overlay' ? 'primary' : 'inherit'}
+            onClick={() => dispatch(setControls({ viewMode: 'overlay' }))}
+          >
+            Overlay
+          </Button>
+          <Button
+            color={viewMode === 'stacked' ? 'primary' : 'inherit'}
+            onClick={() => dispatch(setControls({ viewMode: 'stacked' }))}
+          >
+            Stacked
+          </Button>
+        </ButtonGroup>
       </Box>
-    </ThemeProvider>
+    </Box>
   );
 };
 

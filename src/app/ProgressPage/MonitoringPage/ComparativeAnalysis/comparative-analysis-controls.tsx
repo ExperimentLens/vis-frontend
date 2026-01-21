@@ -133,7 +133,7 @@ const ComparativeAnalysisControls = ()=> {
                         onClick={() => {
                           const updated = comparativeVisibleMetrics.includes(metricName)
                             ? comparativeVisibleMetrics.filter(m => m !== metricName)
-                            : [...comparativeVisibleMetrics, metricName];
+                            : [metricName, ...comparativeVisibleMetrics];
 
                           dispatch(setComparativeVisibleMetrics(updated));
                         }}

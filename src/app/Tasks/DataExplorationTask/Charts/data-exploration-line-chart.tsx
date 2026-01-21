@@ -8,6 +8,10 @@ import InfoMessage from '../../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
 import type { VisualColumn } from '../../../../shared/models/dataexploration.model';
+import { Theme } from '@mui/material/styles';
+import { vegaScaleOrUndefined } from '../../../../shared/utils/chartColorScales';
+
+//TODO: stacked mode change to one box with name Line chart
 
 const getColumnType = (columnType: string, fieldName?: string) => {
   if (fieldName?.toLowerCase() === 'timestamp') return 'temporal';
@@ -126,6 +130,14 @@ const LineChart = () => {
   const yAxis = tab?.workflowTasks.dataExploration?.controlPanel?.yAxis;
   const displayMode = tab?.workflowTasks.dataExploration?.controlPanel?.viewMode || 'overlay';
 
+  // build color scale
+  const colorScale =
+  vegaScaleOrUndefined(
+    yAxis?.map(y => y.name),
+    theme
+  );
+
+
   const getLineChartSpec = ({
     data,
     xAxis,
@@ -188,7 +200,12 @@ const LineChart = () => {
           type: 'quantitative',
           title: 'Value',
         },
-        color: { field: 'variable', type: 'nominal', title: 'Metric' },
+        color: {
+          field: 'variable',
+          type: 'nominal',
+          title: 'Metric',
+          scale: colorScale
+        },
       },
     };
   };
@@ -226,8 +243,15 @@ const LineChart = () => {
       return copy;
     });
 
+    //needed in order to have color encoding even for single line
+    const valuesWithColumn = values.map(row => ({ ...row, column: yField }));
+    const colorScale = vegaScaleOrUndefined(
+      (tab?.workflowTasks.dataExploration?.controlPanel?.yAxis || []).map(c => c.name),
+      theme
+    );
+
     return {
-      data: { values },
+      data: { values: valuesWithColumn },
       params: [
         {
           name: 'panZoom',
@@ -257,6 +281,12 @@ const LineChart = () => {
             titleColor: '#444',
             labelOverlap: yTypeForEncoding === 'ordinal' ? 'greedy' : undefined,
           },
+        },
+        color: {
+          field: 'column',
+          type: 'nominal',
+          legend: null,
+          scale: colorScale
         },
       },
     };
@@ -326,7 +356,7 @@ const LineChart = () => {
                     xAxis: xAxis as VisualColumn,
                     y,
                   })}
-                  title={y.name}
+                  title={"Line Chart"}
                   actions={false}
                   controlPanel={<LineChartControlPanel />}
                   loading={tab?.workflowTasks.dataExploration?.lineChart?.loading || tab?.workflowTasks.dataExploration?.metaData?.loading}
