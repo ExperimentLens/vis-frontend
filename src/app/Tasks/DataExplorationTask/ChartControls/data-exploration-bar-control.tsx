@@ -122,13 +122,13 @@ const BarChartControlPanel = () => {
             color={viewMode === 'overlay' ? 'primary' : 'inherit'}
             onClick={() => dispatch(setControls({ viewMode: 'overlay' }))}
           >
-            Overlay
+            Stacked
           </Button>
           <Button
             color={viewMode === 'stacked' ? 'primary' : 'inherit'}
             onClick={() => dispatch(setControls({ viewMode: 'stacked' }))}
           >
-            Stacked
+            Separate
           </Button>
         </ButtonGroup>
       </Box>
