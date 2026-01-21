@@ -148,6 +148,10 @@ const BarChart = () => {
         type: 'nominal',
         title: 'Metric',
         scale: colorScale,
+        legend: {
+          orient: 'top',
+          direction: 'horizontal',
+        },
       },
       xOffset: {
         field: 'type',
