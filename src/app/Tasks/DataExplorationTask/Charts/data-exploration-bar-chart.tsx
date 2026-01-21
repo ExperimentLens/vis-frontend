@@ -170,7 +170,15 @@ const BarChart = () => {
     },
   };
 
-  const getSingleMetricBarSpec = (metric: string) => ({
+  const getSingleMetricBarSpec = (metric: string) => {
+    const aggregationForMetric = tab?.workflowTasks.dataExploration?.controlPanel.barAggregation?.find(
+      aggr => aggr.column === metric
+    );
+    const xAxisTitle = aggregationForMetric
+      ? `${metric} (${aggregationForMetric.function})`
+      : metric;
+    
+    return {
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
     autosize: { type: 'fit', contains: 'padding', resize: true },
     data: { values: limitedData.filter(d => d.type === metric) },
@@ -187,7 +195,7 @@ const BarChart = () => {
         },
         sort: null,
       },
-      x: { field: 'value', type: 'quantitative', title: 'Value' },
+      x: { field: 'value', type: 'quantitative', title: xAxisTitle },
       tooltip: [
         { field: xAxisColumn, type: 'nominal', title: xAxisColumn },
         ...(categoricalColumns || []).map(col => ({
@@ -205,7 +213,8 @@ const BarChart = () => {
         scale: colorScale,
       },
     },
-  });
+  };
+  };
 
 
   const hasData = limitedData.length > 0;
