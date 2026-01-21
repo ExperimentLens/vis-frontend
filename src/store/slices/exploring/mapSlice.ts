@@ -14,7 +14,7 @@ import { updateTimeSeries } from './timeSeriesSlice';
 import ngeohash from 'ngeohash';
 import type { MapLayer } from '../../../shared/models/exploring/dataset.model';
 import type { IDrawnShape } from '../../../shared/models/exploring/drawn-shape.model';
-import { coordinatesToRectangle } from '../../../shared/utils/mapUtils';
+import { circleToRectangle, coordinatesToRectangle } from '../../../shared/utils/mapUtils';
 
 export type ActiveSelection = 'view' | 'drawn' | 'selectedGeohash';
 
@@ -65,6 +65,8 @@ const handleRectUpdate = async (
       rectToUse = drawnShape.rect ?? null;
     } else if (drawnShape?.kind === 'polygon') {
       rectToUse = coordinatesToRectangle(drawnShape.coordinates) ?? null;
+    } else if (drawnShape?.kind === 'circle') {
+      rectToUse = drawnShape.coordinates ? circleToRectangle([drawnShape.coordinates[0]], drawnShape.radius) : null;
     } else {
       rectToUse = null;
     }
@@ -199,6 +201,12 @@ export const mapSlice = createSlice({
           state.drawnShape = {
             kind: 'polygon',
             coordinates: shape.coordinates,
+          };
+        } else if (shape.kind === 'circle') {
+          state.drawnShape = {
+            kind: 'circle',
+            coordinates: shape.coordinates,
+            radius: shape.radius,
           };
         }
         state.activeSelection = 'drawn';

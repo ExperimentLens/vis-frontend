@@ -114,6 +114,44 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
     }
   };
 
+  const drawCircle = (coordinates: LatLon[], radius: number) => {
+    if (!coordinates || !radius || !map) return;
+
+    const center = L.latLng(coordinates[0][0], coordinates[0][1]);
+    const circle = L.circle(center, {
+      radius,
+      color: '#3388ff',
+      weight: 2,
+      fillOpacity: 0.1,
+      interactive: false,
+    });
+
+    // IMPORTANT: `circle.getBounds()` requires the circle to be on a map (`circle._map`).
+    // This hook's effect can run before `drawnItemsRef` is added to the map, so compute bounds
+    // without relying on the circle being attached to a map.
+    const bounds = center.toBounds(radius * 2);
+
+    if (bounds && lastDrawnBounds.current && lastDrawnBounds.current.south === bounds.getSouth() && lastDrawnBounds.current.west === bounds.getWest() && lastDrawnBounds.current.north === bounds.getNorth() && lastDrawnBounds.current.east === bounds.getEast()) {
+      return; // Already drawn, skip
+    }
+
+    drawnItemsRef.current.clearLayers();
+    drawnItemsRef.current.addLayer(circle);
+    lastDrawnBounds.current = {
+      south: bounds.getSouth(),
+      west: bounds.getWest(),
+      north: bounds.getNorth(),
+      east: bounds.getEast(),
+    };
+
+    map.fitBounds(bounds, { padding: [250, 250] });
+
+    // Notify parent component to update visibility
+    if (onVisibilityChangeRef.current) {
+      onVisibilityChangeRef.current();
+    }
+  };
+
   const clearDrawnItems = () => {
     drawnItemsRef.current.clearLayers();
     lastDrawnBounds.current = null;
@@ -161,6 +199,8 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
         });
       } else if (drawnShape.kind === 'polygon') {
         drawPolygon(drawnShape.coordinates ?? []);
+      } else if (drawnShape.kind === 'circle') {
+        drawCircle(drawnShape.coordinates ?? [], drawnShape.radius ?? 0);
       }
     } else if (!drawnShape && map) {
       // Clear drawn items when drawnShape becomes null

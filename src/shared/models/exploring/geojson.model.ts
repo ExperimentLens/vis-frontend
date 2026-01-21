@@ -13,5 +13,10 @@ export type GeoJsonPolygon = {
   coordinates: Array<Array<[number, number]>>;
 };
 
-export type GeoJsonGeometry = GeoJsonPoint | GeoJsonPolygon;
+export type GeoJsonCircle = {
+  type: 'Circle';
+  coordinates: [number, number];
+  radius: number;
+};
 
+export type GeoJsonGeometry = GeoJsonPoint | GeoJsonPolygon | GeoJsonCircle;

@@ -2,7 +2,7 @@ import ngeohash from 'ngeohash';
 import { polygon as turfPolygon } from '@turf/helpers';
 import booleanIntersects from '@turf/boolean-intersects';
 import type { LatLon } from '../models/exploring/latlon.model';
-import type { GeoJsonGeometry, GeoJsonPolygon } from '../models/exploring/geojson.model';
+import type { GeoJsonCircle, GeoJsonGeometry, GeoJsonPolygon } from '../models/exploring/geojson.model';
 import type { IRectangle } from '../models/exploring/rectangle.model';
 
 export const getPolygonBBox = (
@@ -44,19 +44,99 @@ export const geohashCellPolygon = (hash: string) => {
   ]]);
 };
 
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(Math.max(value, min), max);
+
+/**
+ * Fast circle-vs-rectangle intersection test in meters using a local equirectangular
+ * approximation around the circle center (accurate for small regions like geohash cells).
+ */
+const circleIntersectsBboxMeters = (
+  center: LatLon, // [lat, lon]
+  radiusMeters: number,
+  bbox: { south: number; west: number; north: number; east: number },
+): boolean => {
+  const [lat0, lon0] = center;
+
+  if (!Number.isFinite(lat0) || !Number.isFinite(lon0) || !Number.isFinite(radiusMeters)) return false;
+
+  const deg2rad = Math.PI / 180;
+  const earthRadiusM = 6_371_000;
+  const metersPerDegLat = earthRadiusM * deg2rad;
+  const metersPerDegLon = earthRadiusM * Math.cos(lat0 * deg2rad) * deg2rad;
+
+  // Convert bbox corners to local meters relative to center.
+  const xWest = (bbox.west - lon0) * metersPerDegLon;
+  const xEast = (bbox.east - lon0) * metersPerDegLon;
+  const ySouth = (bbox.south - lat0) * metersPerDegLat;
+  const yNorth = (bbox.north - lat0) * metersPerDegLat;
+
+  const minX = Math.min(xWest, xEast);
+  const maxX = Math.max(xWest, xEast);
+  const minY = Math.min(ySouth, yNorth);
+  const maxY = Math.max(ySouth, yNorth);
+
+  // Circle center is at (0, 0) in this coordinate system.
+  const closestX = clamp(0, minX, maxX);
+  const closestY = clamp(0, minY, maxY);
+
+  const dx = closestX;
+  const dy = closestY;
+
+  return dx * dx + dy * dy <= radiusMeters * radiusMeters;
+};
+
+const circleIntersectsGeohashCell = (
+  center: LatLon, // [lat, lon]
+  radiusMeters: number,
+  hash: string,
+): boolean => {
+  const [minLat, minLon, maxLat, maxLon] = ngeohash.decode_bbox(hash);
+
+  return circleIntersectsBboxMeters(center, radiusMeters, {
+    south: minLat,
+    west: minLon,
+    north: maxLat,
+    east: maxLon,
+  });
+};
+
 export const geometryToIncludedGeohashes = (geometry?: GeoJsonGeometry, precision = 8): string[] => {
   if (!geometry) return [];
-  if (geometry.type !== 'Polygon') return [];
+  if (geometry.type !== 'Polygon' && geometry.type !== 'Circle') return [];
 
-  const bbox = getPolygonBBox(geometry);
+  if (geometry.type === 'Circle') {
+    // GeoJSON stores positions as [lon, lat]; our LatLon is [lat, lon]
+    const [lon, lat] = geometry.coordinates;
+    const center: LatLon = [lat, lon];
 
-  if (!bbox) return [];
+    const rectangle = circleToRectangle([center], geometry.radius);
+    const bbox = rectangle
+      ? {
+        south: rectangle.lat[0],
+        west: rectangle.lon[0],
+        north: rectangle.lat[1],
+        east: rectangle.lon[1],
+      }
+      : null;
 
-  const candidates = ngeohash.bboxes(bbox.south, bbox.west, bbox.north, bbox.east, precision);
-  const zonePoly = turfPolygon(geometry.coordinates);
+    if (!bbox) return [];
+    const candidates = ngeohash.bboxes(bbox.south, bbox.west, bbox.north, bbox.east, precision);
 
-  // Keep cells that intersect the polygon (boundaries included)
-  return candidates.filter(h => booleanIntersects(zonePoly, geohashCellPolygon(h)));
+    // Keep only cells whose bbox actually intersects the circle.
+    return candidates.filter(h => circleIntersectsGeohashCell(center, geometry.radius, h));
+  } else if (geometry.type === 'Polygon') {
+    const bbox = getPolygonBBox(geometry);
+
+    if (!bbox) return [];
+    const candidates = ngeohash.bboxes(bbox.south, bbox.west, bbox.north, bbox.east, precision);
+    const zonePoly = turfPolygon(geometry.coordinates);
+
+    // Keep cells that intersect the polygon (boundaries included)
+    return candidates.filter(h => booleanIntersects(zonePoly, geohashCellPolygon(h)));
+  }
+
+  return [];
 };
 
 export const coordinatesToRectangle = (coordinates?: LatLon[]): IRectangle | null => {
@@ -85,6 +165,27 @@ export const coordinatesToRectangle = (coordinates?: LatLon[]): IRectangle | nul
   return { lat: [south, north], lon: [west, east] };
 };
 
+export const circleToRectangle = (coordinates?: LatLon[], radius?: number): IRectangle | null => {
+  if (!coordinates || !radius) return null;
+
+  // `radius` is in meters; convert to degrees to approximate a bounding rectangle.
+  const [lat, lon] = coordinates[0];
+  const radiusMeters = radius;
+
+  // 1 degree latitude ~= 111_320 meters
+  const deltaLat = radiusMeters / 111_320;
+
+  // 1 degree longitude ~= 111_320 * cos(latitude) meters
+  const latRad = (lat * Math.PI) / 180;
+  const metersPerDegLon = 111_320 * Math.max(Math.cos(latRad), 1e-6);
+  const deltaLon = radiusMeters / metersPerDegLon;
+
+  return {
+    lat: [lat - deltaLat, lat + deltaLat],
+    lon: [lon - deltaLon, lon + deltaLon],
+  };
+};
+
 export const rectangleToGeoJsonPolygon = (rect: IRectangle): GeoJsonPolygon => {
   const south = rect.lat[0];
   const north = rect.lat[1];
@@ -101,6 +202,17 @@ export const rectangleToGeoJsonPolygon = (rect: IRectangle): GeoJsonPolygon => {
       [west, south], // SW
       [west, north], // close
     ]],
+  };
+};
+
+export const circleToGeoJsonCircle = (coordinates: LatLon[], radius: number): GeoJsonCircle => {
+  const [lat, lon] = coordinates[0];
+  const radiusMeters = radius;
+
+  return {
+    type: 'Circle',
+    coordinates: [lon, lat],
+    radius: radiusMeters,
   };
 };
 

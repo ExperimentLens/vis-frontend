@@ -18,6 +18,7 @@ import { showError, showInfo, showSuccess } from '../../../shared/utils/toast';
 import type { IDataset } from '../../../shared/models/exploring/dataset.model';
 import type { IRectangle } from '../../../shared/models/exploring/rectangle.model';
 import type { PayloadAction, ThunkDispatch, UnknownAction } from '@reduxjs/toolkit';
+import type { LatLon } from '../../../shared/models/exploring/latlon.model';
 
 /**
  * Fetches height/altitude values for a dataset within a specified rectangle
@@ -292,6 +293,10 @@ export const zoneListeners = (startAppListening: AppStartListening) => {
         const coordinates = geoJsonPolygonToGeoPoints(geometry);
 
         dispatch(setDrawnShape({ kind: 'polygon', coordinates }));
+      } else if (geometry?.type === 'Circle') {
+        const coordinates: LatLon[] = [[geometry.coordinates[1], geometry.coordinates[0]]];
+
+        dispatch(setDrawnShape({ kind: 'circle', coordinates, radius: geometry.radius }));
       } else {
         // Not supported yet (Point, etc.)
         dispatch(setDrawnShape(null));

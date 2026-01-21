@@ -144,7 +144,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
             width: 33,
             height: 33,
             backgroundColor: 'white',
-            top: predictionDisplay || drawnShape == null ? 260 : 340,
+            top: predictionDisplay || drawnShape == null ? 290 : 370,
             right: 10,
             border: '2px solid rgba(0,0,0,0.2)',
             borderRadius: 2,
@@ -303,7 +303,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
                               </Typography>
                               <Typography>
                                 <strong>Precision:</strong>{' '}
-                                {z.geohashes[0].length} <strong>Total:</strong>{' '}
+                                {z.geohashes[0] ? z.geohashes[0].length : '-'} <strong>Total:</strong>{' '}
                                 {z.geohashes.length}
                               </Typography>
                             </>

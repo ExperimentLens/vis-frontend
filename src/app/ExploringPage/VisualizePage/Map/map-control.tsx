@@ -14,7 +14,7 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useMapDrawing } from './useMapDrawing';
 import { resetZoneState } from '../../../../store/slices/exploring/zoneSlice';
 import type { LatLon } from '../../../../shared/models/exploring/latlon.model';
-import { geoPointsToGeoJsonPolygon, rectangleToGeoJsonPolygon } from '../../../../shared/utils/mapUtils';
+import { circleToGeoJsonCircle, geoPointsToGeoJsonPolygon, rectangleToGeoJsonPolygon } from '../../../../shared/utils/mapUtils';
 
 export const MapControl = ({ id }: { id: string }) => {
   const map = useMap();
@@ -59,6 +59,11 @@ export const MapControl = ({ id }: { id: string }) => {
         const coordinates: LatLon[] = latLngs[0].map(latLng => [latLng.lat, latLng.lng]);
 
         dispatch(setDrawnShape({ kind: 'polygon', coordinates }));
+      } else if (layer instanceof L.Circle && 'getRadius' in layer) {
+        const radius = layer.getRadius();
+        const bounds = layer.getBounds();
+
+        dispatch(setDrawnShape({ kind: 'circle', coordinates: [[bounds.getCenter().lat, bounds.getCenter().lng]], radius }));
       }
     }
 
@@ -99,7 +104,7 @@ export const MapControl = ({ id }: { id: string }) => {
         rectangle: { showArea: false }, // disable showArea
         polyline: false,
         polygon: { showArea: false },
-        circle: false,
+        circle: { showRadius: true },
         marker: false,
         circlemarker: false,
       },
@@ -216,6 +221,23 @@ export const MapControl = ({ id }: { id: string }) => {
             dispatch(postZone(zone));
 
             // Keep the drawn polygon visible (don't clear it)
+            // Zone saved successfully
+          } else if (layer instanceof L.Circle && 'getRadius' in layer && typeof layer.getRadius === 'function') {
+            const radius = layer.getRadius();
+            const bounds = layer.getBounds();
+            const coordinates: LatLon[] = [[bounds.getCenter().lat, bounds.getCenter().lng]];
+
+            // Create zone object from coordinates
+            const zone = {
+              fileName: id, // Use dataset ID as filename
+              name: `Drawn Circle ${new Date().toLocaleString()}`,
+              geometry: circleToGeoJsonCircle(coordinates, radius),
+            };
+
+            // Dispatch postZone action
+            dispatch(postZone(zone));
+
+            // Keep the drawn circle visible (don't clear it)
             // Zone saved successfully
           }
         }
