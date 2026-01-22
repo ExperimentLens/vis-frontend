@@ -42,17 +42,17 @@ const routes = createBrowserRouter([
     ),
     errorElement: <ErrorPage />
   },
-  {
-    path: '/:experimentId/gamification',
-    element: (
-      <ProtectedRoute>
-        <ProgressPage>
-          <GamificationPage />
-        </ProgressPage>
-      </ProtectedRoute>
-    ),
-    errorElement: <ErrorPage />
-  },
+  // {
+  //   path: '/:experimentId/gamification',
+  //   element: (
+  //     <ProtectedRoute>
+  //       <ProgressPage>
+  //         <GamificationPage />
+  //       </ProgressPage>
+  //     </ProtectedRoute>
+  //   ),
+  //   errorElement: <ErrorPage />
+  // },
   {
     path: '/:experimentId/workflow',
     element: (
