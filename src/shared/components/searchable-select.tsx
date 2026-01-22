@@ -22,6 +22,7 @@ interface SearchableSingleSelectProps {
   menuMaxHeight?: number;
   menuWidth?: number;
   disabled?: boolean;
+  getOptionLabel?: (option: string) => string;
 }
 
 const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
@@ -33,12 +34,16 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
   onChange,
   menuMaxHeight = 224,
   menuWidth = 250,
-  disabled = false
+  disabled = false,
+  getOptionLabel,
 }) => {
   const [search, setSearch] = useState('');
 
+  const optionToLabel = (option: string) =>
+    getOptionLabel ? getOptionLabel(option) : option;
+
   const filteredOptions = options.filter(option =>
-    option.toLowerCase().includes(search.toLowerCase()),
+    optionToLabel(option).toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleChange = (event: SelectChangeEvent<string>) => {
@@ -113,7 +118,7 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
         </ListSubheader>
         {filteredOptions.map(option => (
           <MenuItem key={option} value={option}>
-            {option}
+            {optionToLabel(option)}
           </MenuItem>
         ))}
         {filteredOptions.length === 0 && (
