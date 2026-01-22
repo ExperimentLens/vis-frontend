@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import type React from 'react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VegaLite } from 'react-vega';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { grey } from '@mui/material/colors';
@@ -103,6 +103,44 @@ const SectionHeader = ({
   </Box>
 );
 
+type VLSpec = Record<string, any>;
+
+const isObject = (v: any): v is Record<string, any> =>
+  v !== null && typeof v === 'object' && !Array.isArray(v);
+
+const applySizeToConcatChildren = (spec: VLSpec, w: number, h?: number): VLSpec => {
+  const s: VLSpec = JSON.parse(JSON.stringify(spec));
+
+  const visit = (node: any) => {
+    if (!isObject(node)) return;
+
+    // If this node is a unit spec (has mark/encoding) set width/height here
+    const isUnit =
+      ('mark' in node || 'encoding' in node) &&
+      !('vconcat' in node) &&
+      !('hconcat' in node) &&
+      !('concat' in node) &&
+      !('repeat' in node);
+
+    if (isUnit) {
+      node.width = w;
+      if (typeof h === 'number') node.height = h;
+    }
+
+    // Recurse into known containers
+    const keys = ['vconcat', 'hconcat', 'concat', 'layer'];
+    for (const k of keys) {
+      if (Array.isArray(node[k])) node[k].forEach(visit);
+    }
+
+    // Some specs nest unit specs under spec (facet/repeat sometimes)
+    if (isObject(node.spec)) visit(node.spec);
+  };
+
+  visit(s);
+  return s;
+};
+
 const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
   spec,
   title,
@@ -139,29 +177,6 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
   const [sortDirection, setSortDirection] = useState<'ascending' | 'descending' | 'none'>(
     initialSortDirection
   );
-
-  // Function to update the chart dimensions based on the container's size
-  const updateSize = useCallback(() => {
-    if (containerRef.current) {
-      const containerWidth =
-        containerRef.current.offsetWidth || window.innerWidth * 0.9;
-      const containerHeight = isStatic
-        ? containerRef.current.offsetHeight || window.innerHeight * 0.5
-        : 0;
-      // Adjust to fit exactly within the container with no overflow
-      const newWidth = Math.max(minWidth, Math.min(containerWidth, maxWidth));
-
-      const newHeight = isStatic
-        ? Math.max(
-          minHeight,
-          Math.min(newWidth / aspectRatio, maxHeight, containerHeight),
-        )
-        : Math.max(minHeight, Math.min(newWidth / aspectRatio, maxHeight));
-
-      setWidth(newWidth);
-      setHeight(newHeight);
-    }
-  }, [minWidth, maxWidth, minHeight, maxHeight, aspectRatio, isStatic]);
 
   // Function to get the sorted spec
   const getSortedSpec = useCallback(() => {
@@ -203,6 +218,35 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
   }, [spec, sortDirection, enableSorting]);
   // Get the display spec with sorting applied
   const displaySpec = getSortedSpec();
+
+  const isConcat =
+    Boolean((displaySpec as any)?.vconcat) ||
+    Boolean((displaySpec as any)?.hconcat) ||
+    Boolean((displaySpec as any)?.concat);
+
+  // Function to update the chart dimensions based on the container's size
+  const updateSize = useCallback(() => {
+    if (containerRef.current) {
+      const containerWidth =
+        (containerRef.current.offsetWidth || window.innerWidth * 0.9);
+      const containerHeight = isStatic
+        ? containerRef.current.offsetHeight || window.innerHeight * 0.5
+        : 0;
+      // Adjust to fit exactly within the container with no overflow
+      const newWidth = Math.max(minWidth, Math.min(containerWidth, maxWidth));
+
+      const newHeight = isStatic
+        ? Math.max(
+          minHeight,
+          Math.min(newWidth / aspectRatio, maxHeight, containerHeight),
+        )
+        : Math.max(minHeight, Math.min(newWidth / aspectRatio, maxHeight));
+
+      setWidth(newWidth);
+      setHeight(newHeight);
+    }
+  }, [minWidth, maxWidth, minHeight, maxHeight, aspectRatio, isStatic, isConcat]);
+
 
   // Function to handle sort change
   const handleSortChange = (direction: 'ascending' | 'descending' | 'none') => {
@@ -601,6 +645,25 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
     setFullscreenAnchorEl(null);
   };
 
+  const sizedSpec = useMemo(() => {
+  if (!isConcat) return displaySpec;
+
+  // For concat: give children the measured width so they don't default to 200px.
+  // If you *also* want consistent heights per child, pass a height too.
+  return applySizeToConcatChildren(displaySpec as any, width /*, height */);
+}, [displaySpec, isConcat, width /*, height */]);
+
+const fullscreenWidth = fullScreen ? Math.floor(window.innerWidth * 0.9) : Math.floor(window.innerWidth * 0.8);
+const fullscreenHeight = isConcat ? 200 : window.innerHeight * 0.7;
+
+const fullscreenSpec = useMemo(() => {
+  if (!isConcat) return displaySpec;
+
+  // For concat: size children explicitly so they don't default to 200px
+  return applySizeToConcatChildren(displaySpec as any, fullscreenWidth, fullscreenHeight);
+}, [displaySpec, isConcat, fullscreenWidth, fullscreenHeight]);
+
+
   return (
     <>
       <style>
@@ -837,18 +900,18 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             flexGrow: 1, // Allow content to grow
             overflow: 'auto', // Only make the content scrollable
             flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
+            alignItems: 'center', 
+            justifyContent: isConcat && !showInfoMessage && !loading ? 'flex-start' : 'center',          
           }}
         >
           <Box
             ref={containerRef}
             sx={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              width: '100%', 
+              height: isConcat && !showInfoMessage && !loading ? 'auto' : '100%', 
+              display: isConcat && !showInfoMessage && !loading ? 'block' : 'flex', 
+              alignItems: 'center', 
+              justifyContent: isStatic ? 'center' : 'flex-start',            
             }}
           >
             {showInfoMessage ? (
@@ -858,14 +921,11 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             ) : (
               <VegaLite
                 spec={{
-                  ...displaySpec,
-                  autosize: {
-                    type: 'fit',
-                    contains: 'padding',
-                    resize: true,
-                  },
-                  width: width,
-                  height: height, // Adjust height based on padding?!
+                  ...sizedSpec,
+                  autosize: isConcat
+                      ? { type: 'fit-x', contains: 'padding', resize: true }
+                      : { type: 'fit', contains: 'padding', resize: true },
+                    ...(isConcat ? {} : { width, height }),
                 }}
                 {...otherProps}
                 tooltip={tooltip}
@@ -1054,11 +1114,10 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
           dividers
           sx={{
             p: 4,
-            display: 'flex',
+            height: isConcat && !showInfoMessage && !loading ? 'auto' : '100%',
+            display: isConcat && !showInfoMessage && !loading ? 'block' : 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            overflow: 'hidden',
+            justifyContent: isConcat && !showInfoMessage && !loading ? 'flex-start' : 'center',
           }}
         >
           {!showInfoMessage ? (
@@ -1067,14 +1126,12 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             ) : (
               <VegaLite
                 spec={{
-                  ...displaySpec,
-                  autosize: { type: 'fit', contains: 'padding' },
-                  width: fullScreen
-                    ? window.innerWidth * 0.9
-                    : window.innerWidth * 0.8,
-                  height: fullScreen
-                    ? window.innerHeight * 0.7
-                    : window.innerHeight * 0.7,
+                  ...fullscreenSpec,
+                  autosize: isConcat
+                    ? { type: 'fit-x', contains: 'padding', resize: true }
+                    : { type: 'fit', contains: 'padding', resize: true },
+                
+                  ...(isConcat ? {} : { width: fullscreenWidth, height: fullscreenHeight }),
                 }}
                 {...otherProps}
                 tooltip={tooltip}
