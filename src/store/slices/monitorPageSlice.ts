@@ -158,6 +158,7 @@ interface IMonitoringPageSlice {
         dataAssetsControlPanel: DataAssetsControlPanel
         dataAssetsHistograms: DataAssetsHistograms
         selectedDataset: string | null
+        dataComparisonViewMode: 'overlay' | 'boxplot'
       }
       comparativeModelInstanceControlPanel: {
          xAxisOption: string
@@ -270,7 +271,8 @@ const initialState: IMonitoringPageSlice = {
     dataAssetsMetaData: {},
     dataAssetsControlPanel: {},
     dataAssetsHistograms: {},
-    selectedDataset: null
+    selectedDataset: null,
+    dataComparisonViewMode: 'overlay'
   },
   comparativeModelInstanceControlPanel: {
     xAxisOption: '',
@@ -535,6 +537,12 @@ export const monitoringPageSlice = createSlice({
     },
     setSelectedDataset: (state, action) => {
       state.comparativeDataExploration.selectedDataset = action.payload;
+    },
+    setDataComparisonViewMode: (
+      state,
+      action: { payload: 'overlay' | 'boxplot' }
+    ) => {
+      state.comparativeDataExploration.dataComparisonViewMode = action.payload;
     },
     setDataComparisonSelectedColumns: (
       state,
@@ -1023,5 +1031,5 @@ export const fetchComparativeUmap = createAsyncThunk(
 
 export const { setParallel, setWorkflowsTable, setScheduledTable, setVisibleTable, setSelectedTab, setSelectedComparisonTab, toggleWorkflowSelection, bulkToggleWorkflowSelection, setGroupBy,
   setHoveredWorkflow, updateWorkflowRatingLocally, setSelectedModelComparisonChart, setCommonDataAssets, setDataAssetsControlPanel, setIsMosaic, setShowMisclassifiedOnly, setComparativeModelInstanceControlPanel,
-  setExpandedGroup, setSelectedDataset, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces
+  setExpandedGroup, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces
 } = monitoringPageSlice.actions;

@@ -204,7 +204,11 @@ const LineChart = () => {
           field: 'variable',
           type: 'nominal',
           title: 'Metric',
-          scale: colorScale
+          scale: colorScale,
+          legend: {
+            orient: 'top',
+            direction: 'horizontal',
+          },
         },
       },
     };

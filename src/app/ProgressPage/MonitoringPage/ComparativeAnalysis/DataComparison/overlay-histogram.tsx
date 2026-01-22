@@ -432,39 +432,39 @@ const OverlayHistogram = ({
     const ids = workflowIds;
     const { domain, range } = colorScale(ids);
 
-    const layers = ids.map(wid => ({
-      mark: { type: 'bar', opacity: 0.45 },
-      transform: [{ filter: { field: 'workflowId', equal: wid } }],
-      encoding: {
-        color: {
-          field: 'workflowId',
-          type: 'nominal',
-          scale: { domain, range },
-          legend: null // Remove the legend
-        }
-      }
-    }));
-
     return {
       $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
       description: `Overlay distribution of ${columnName} across per-workflow datasets`,
       data: { values: rows },
+      mark: { type: 'bar', opacity: 0.65, blend: 'multiply' },
       encoding: {
         x: {
           field: 'binLabel',
           type: 'ordinal',
-          title: null,
+          title: columnName,
           sort: isNumeric ? { field: 'xStart', op: 'min' } : 'ascending',
-          axis: { labels: false, ticks: false, domain: false },
+          axis: {
+            labels: true,
+            ticks: true,
+            domain: true,
+            labelAngle: -45,
+            labelOverlap: 'greedy',
+            labelLimit: 140
+          },
           scale: { paddingInner: 0, paddingOuter: 0 }
         },
-        y: { field: 'count', type: 'quantitative', title: 'Count' },
+        y: { field: 'count', type: 'quantitative', title: 'Count', stack: null },
+        color: {
+          field: 'workflowId',
+          type: 'nominal',
+          scale: { domain, range },
+          legend: null
+        },
         tooltip: [
           { field: 'binLabel', type: 'nominal', title: columnName },
           { field: 'tooltipAll', type: 'nominal', title: 'Workflows' }
         ]
-      },
-      layer: layers
+      }
     };
   }, [rows, isNumeric, workflowIds, colorScale, columnName]);
 

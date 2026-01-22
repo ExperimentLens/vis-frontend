@@ -1,7 +1,7 @@
 import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Popover, Select, Switch, Tooltip, Typography } from '@mui/material';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly } from '../../../../store/slices/monitorPageSlice';
+import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly } from '../../../../store/slices/monitorPageSlice';
 import theme from '../../../../mui-theme';
 import WindowRoundedIcon from '@mui/icons-material/WindowRounded';
 import RoundedCornerRoundedIcon from '@mui/icons-material/RoundedCornerRounded';
@@ -37,6 +37,9 @@ const ComparativeAnalysisControls = ()=> {
   const isMetricsMenuOpen = Boolean(metricsAnchorEl);
   const comparativeModelInstanceControlPanel = useAppSelector((state: RootState) => state.monitorPage.comparativeModelInstanceControlPanel);
   const selectedDataset = useAppSelector((state: RootState) => state.monitorPage.comparativeDataExploration.selectedDataset);
+  const dataComparisonViewMode = useAppSelector((state: RootState) => state.monitorPage.comparativeDataExploration.dataComparisonViewMode);
+  const commonDataAssets = useAppSelector((state: RootState) => state.monitorPage.comparativeDataExploration.commonDataAssets);
+  const dataAssetsMetaData = useAppSelector((state: RootState) => state.monitorPage.comparativeDataExploration.dataAssetsMetaData);
   const dataAssetsControlPanel = useAppSelector(
     (state: RootState) =>
       selectedDataset
@@ -45,6 +48,24 @@ const ComparativeAnalysisControls = ()=> {
   );
   const commonColumns = dataAssetsControlPanel?.commonColumns ?? [];
   const selectedColumns = dataAssetsControlPanel?.selectedColumns ?? [];
+
+  const showDataComparisonViewModeToggle = (() => {
+    if (selectedComparisonTab !== 2) return false;
+    if (!selectedDataset) return true;
+
+    const assets = commonDataAssets[selectedDataset];
+
+    if (!Array.isArray(assets) || assets.length === 0) return true;
+
+    const allImages = assets.every(({ workflowId }) => {
+      const meta = dataAssetsMetaData?.[selectedDataset]?.[workflowId]?.meta;
+      const datasetType = meta?.data?.datasetType;
+
+      return typeof datasetType === 'string' && datasetType.match('IMAGE');
+    });
+
+    return !allImages;
+  })();
 
   const { workflowsTable } = useAppSelector(
     (state: RootState) => state.monitorPage
@@ -303,6 +324,27 @@ const ComparativeAnalysisControls = ()=> {
           gap={0.5}
           sx={{ ml: 'auto' }}
         >
+
+          {showDataComparisonViewModeToggle && selectedComparisonTab === 2 && (
+            <ButtonGroup variant="contained" aria-label="data comparison view mode" sx={{ height: '25px' }}>
+              <Button
+                variant={dataComparisonViewMode === 'overlay' ? 'contained' : 'outlined'}
+                color="primary"
+                onClick={() => dispatch(setDataComparisonViewMode('overlay'))}
+                disabled={!selectedDataset}
+              >
+                Distribution plots
+              </Button>
+              <Button
+                variant={dataComparisonViewMode === 'boxplot' ? 'contained' : 'outlined'}
+                color="primary"
+                onClick={() => dispatch(setDataComparisonViewMode('boxplot'))}
+                disabled={!selectedDataset}
+              >
+                Box plots
+              </Button>
+            </ButtonGroup>
+          )}
 
           {selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
             <FormControlLabel

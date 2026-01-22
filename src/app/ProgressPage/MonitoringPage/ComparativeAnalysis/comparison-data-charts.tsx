@@ -11,6 +11,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import { fetchMetaData, setCommonDataAssets, setDataAssetsControlPanel, setSelectedDataset, type CommonDataAssets } from '../../../../store/slices/monitorPageSlice';
 import type { VisualColumn } from '../../../../shared/models/dataexploration.model';
 import OverlayHistogram from './DataComparison/overlay-histogram';
+import BoxPlot from './DataComparison/box-plot';
 import Loader from '../../../../shared/components/loader';
 import PreviewImageCard from './DataComparison/preview-image-card';
 import { Link } from 'react-router-dom';
@@ -45,6 +46,10 @@ const ComparisonDataCharts = () => {
     (state: RootState) =>
       state.monitorPage.comparativeDataExploration
         .dataAssetsControlPanel[selectedDataset || '']?.selectedColumns ?? []
+  );
+
+  const dataComparisonViewMode = useAppSelector(
+    (state: RootState) => state.monitorPage.comparativeDataExploration.dataComparisonViewMode
   );
 
   const workflowColors = useAppSelector(
@@ -115,7 +120,20 @@ const ComparisonDataCharts = () => {
   }, [selectedWorkflowIds]);
 
   useEffect(() => {
-    const names = Object.keys(commonDataAssets);
+    const names = Object.entries(commonDataAssets)
+      .filter(([, entries]) =>
+        Array.isArray(entries) &&
+        entries.length > 0 &&
+        entries.every(({ dataAsset }) => {
+          const rawFormat = (dataAsset as { format?: unknown } | null | undefined)?.format;
+
+          if (typeof rawFormat !== 'string') return false;
+
+          const normalized = rawFormat.trim().toLowerCase().replace(/^\./, '');
+          return normalized === 'csv' || normalized === 'parquet';
+        })
+      )
+      .map(([name]) => name);
 
     if (selectedDataset && names.includes(selectedDataset)) return;
 
@@ -208,15 +226,27 @@ const ComparisonDataCharts = () => {
     selectedDataset && assetsForSelectedDataset.length && selectedColumns.length
       ? selectedColumns.map((col) => (
         <Grid item xs={6} key={col}>
-          <OverlayHistogram
-            assetName={selectedDataset!}
-            columnName={col}
-            assets={assetsForSelectedDataset}
-            colorScale={(ids: string[]) => ({
-              domain: ids,
-              range: ids.map(id => workflowColors[id] || '#3f51b5'),
-            })}
-          />
+          {dataComparisonViewMode === 'boxplot' ? (
+            <BoxPlot
+              assetName={selectedDataset!}
+              columnName={col}
+              assets={assetsForSelectedDataset}
+              colorScale={(ids: string[]) => ({
+                domain: ids,
+                range: ids.map(id => workflowColors[id] || '#3f51b5'),
+              })}
+            />
+          ) : (
+            <OverlayHistogram
+              assetName={selectedDataset!}
+              columnName={col}
+              assets={assetsForSelectedDataset}
+              colorScale={(ids: string[]) => ({
+                domain: ids,
+                range: ids.map(id => workflowColors[id] || '#3f51b5'),
+              })}
+            />
+          )}
         </Grid>
       ))
       : [];
