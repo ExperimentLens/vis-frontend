@@ -14,7 +14,8 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useMapDrawing } from './useMapDrawing';
 import { resetZoneState } from '../../../../store/slices/exploring/zoneSlice';
 import type { LatLon } from '../../../../shared/models/exploring/latlon.model';
-import { circleToGeoJsonCircle, geoPointsToGeoJsonPolygon, rectangleToGeoJsonPolygon } from '../../../../shared/utils/mapUtils';
+import { geoPointsToGeoJsonPolygon, rectangleToGeoJsonPolygon } from '../../../../shared/utils/mapUtils';
+import type { IZone } from '../../../../shared/models/exploring/zone.model';
 
 export const MapControl = ({ id }: { id: string }) => {
   const map = useMap();
@@ -187,59 +188,60 @@ export const MapControl = ({ id }: { id: string }) => {
         if (layers.length > 0) {
           const layer = layers[0];
 
+          let zone = {} as IZone;
+
           if (layer instanceof L.Rectangle && 'getBounds' in layer && typeof layer.getBounds === 'function') {
             const bounds = layer.getBounds();
 
             // Create zone object from bounds
-            const zone = {
+            zone = {
               fileName: id, // Use dataset ID as filename
               name: `Drawn Rectangle ${new Date().toLocaleString()}`,
-              geometry: rectangleToGeoJsonPolygon({
-                lat: [bounds.getSouth(), bounds.getNorth()],
-                lon: [bounds.getWest(), bounds.getEast()],
-              }),
-              // Add other zone properties as needed
+              feature: {
+                type: 'Feature' as const,
+                geometry: rectangleToGeoJsonPolygon({
+                  lat: [bounds.getSouth(), bounds.getNorth()],
+                  lon: [bounds.getWest(), bounds.getEast()],
+                }),
+              },
             };
-
-            // Dispatch postZone action
-            dispatch(postZone(zone));
-
-            // Keep the drawn rectangle visible (don't clear it)
-            // Zone saved successfully
           } else if (layer instanceof L.Polygon && 'getLatLngs' in layer && typeof layer.getLatLngs === 'function') {
             const latLngs = layer.getLatLngs() as LatLng[][];
             const coordinates: LatLon[] = latLngs[0].map(latLng => [latLng.lat, latLng.lng]);
 
             // Create zone object from coordinates
-            const zone = {
+            zone = {
               fileName: id, // Use dataset ID as filename
               name: `Drawn Polygon ${new Date().toLocaleString()}`,
-              geometry: geoPointsToGeoJsonPolygon(coordinates),
+              feature: {
+                type: 'Feature' as const,
+                geometry: geoPointsToGeoJsonPolygon(coordinates),
+              },
             };
-
-            // Dispatch postZone action
-            dispatch(postZone(zone));
-
-            // Keep the drawn polygon visible (don't clear it)
-            // Zone saved successfully
           } else if (layer instanceof L.Circle && 'getRadius' in layer && typeof layer.getRadius === 'function') {
             const radius = layer.getRadius();
             const bounds = layer.getBounds();
-            const coordinates: LatLon[] = [[bounds.getCenter().lat, bounds.getCenter().lng]];
 
             // Create zone object from coordinates
-            const zone = {
+            zone = {
               fileName: id, // Use dataset ID as filename
               name: `Drawn Circle ${new Date().toLocaleString()}`,
-              geometry: circleToGeoJsonCircle(coordinates, radius),
+              feature: {
+                type: 'Feature' as const,
+                geometry: {
+                  type: 'Circle' as const,
+                  coordinates: [bounds.getCenter().lng, bounds.getCenter().lat] as [number, number],
+                },
+                properties: {
+                  radius: radius,
+                }
+              },
             };
-
-            // Dispatch postZone action
-            dispatch(postZone(zone));
-
-            // Keep the drawn circle visible (don't clear it)
-            // Zone saved successfully
           }
+
+          dispatch(postZone(zone));
+
+          // Keep the drawn shape visible (don't clear it) if zone is saved successfully
         }
       };
 

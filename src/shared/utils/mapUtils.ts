@@ -2,7 +2,7 @@ import ngeohash from 'ngeohash';
 import { polygon as turfPolygon } from '@turf/helpers';
 import booleanIntersects from '@turf/boolean-intersects';
 import type { LatLon } from '../models/exploring/latlon.model';
-import type { GeoJsonCircle, GeoJsonGeometry, GeoJsonPolygon } from '../models/exploring/geojson.model';
+import type { GeoJsonGeometry, GeoJsonPolygon } from '../models/exploring/geojson.model';
 import type { IRectangle } from '../models/exploring/rectangle.model';
 
 export const getPolygonBBox = (
@@ -101,16 +101,16 @@ const circleIntersectsGeohashCell = (
   });
 };
 
-export const geometryToIncludedGeohashes = (geometry?: GeoJsonGeometry, precision = 8): string[] => {
+export const geometryToIncludedGeohashes = (geometry?: GeoJsonGeometry, precision = 8, radius?: number): string[] => {
   if (!geometry) return [];
   if (geometry.type !== 'Polygon' && geometry.type !== 'Circle') return [];
 
-  if (geometry.type === 'Circle') {
+  if (geometry.type === 'Circle' && radius) {
     // GeoJSON stores positions as [lon, lat]; our LatLon is [lat, lon]
     const [lon, lat] = geometry.coordinates;
     const center: LatLon = [lat, lon];
 
-    const rectangle = circleToRectangle([center], geometry.radius);
+    const rectangle = circleToRectangle([center], radius);
     const bbox = rectangle
       ? {
         south: rectangle.lat[0],
@@ -124,7 +124,7 @@ export const geometryToIncludedGeohashes = (geometry?: GeoJsonGeometry, precisio
     const candidates = ngeohash.bboxes(bbox.south, bbox.west, bbox.north, bbox.east, precision);
 
     // Keep only cells whose bbox actually intersects the circle.
-    return candidates.filter(h => circleIntersectsGeohashCell(center, geometry.radius, h));
+    return candidates.filter(h => circleIntersectsGeohashCell(center, radius, h));
   } else if (geometry.type === 'Polygon') {
     const bbox = getPolygonBBox(geometry);
 
@@ -202,17 +202,6 @@ export const rectangleToGeoJsonPolygon = (rect: IRectangle): GeoJsonPolygon => {
       [west, south], // SW
       [west, north], // close
     ]],
-  };
-};
-
-export const circleToGeoJsonCircle = (coordinates: LatLon[], radius: number): GeoJsonCircle => {
-  const [lat, lon] = coordinates[0];
-  const radiusMeters = radius;
-
-  return {
-    type: 'Circle',
-    coordinates: [lon, lat],
-    radius: radiusMeters,
   };
 };
 

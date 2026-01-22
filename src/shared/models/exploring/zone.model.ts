@@ -1,4 +1,4 @@
-import type { GeoJsonGeometry } from './geojson.model.ts';
+import type { GeoJsonFeature } from './geojson.model.ts';
 
 export interface IZone {
   id?: string;
@@ -10,7 +10,7 @@ export interface IZone {
   createdAt?: string;
   heights?: number[];
   geohashes?: string[];
-  geometry?: GeoJsonGeometry;
+  feature?: GeoJsonFeature;
 }
 
 export const defaultValue: Readonly<IZone> = {};

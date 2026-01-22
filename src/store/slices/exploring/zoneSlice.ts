@@ -148,12 +148,13 @@ export const postZone = createAsyncThunk<IZone, IZone, { rejectValue: string }>(
     const { dataset } = getState() as RootState;
 
     try {
-      const includedGeohashes = geometryToIncludedGeohashes(zone.geometry, 8);
+      const geometry = zone.feature?.geometry;
+      const includedGeohashes = geometryToIncludedGeohashes(geometry, 8, zone.feature?.properties?.radius as number);
 
       // Heights API is still rectangle-based; use polygon bbox for now
       const rectangle =
-        zone.geometry?.type === 'Polygon'
-          ? geoJsonPolygonToRectangle(zone.geometry)
+        geometry?.type === 'Polygon'
+          ? geoJsonPolygonToRectangle(geometry)
           : null;
 
       const heights = rectangle
@@ -275,7 +276,8 @@ export const zoneListeners = (startAppListening: AppStartListening) => {
   startAppListening({
     actionCreator: setZone,
     effect: async (action, { dispatch }) => {
-      const { geometry } = action.payload;
+      const { feature } = action.payload;
+      const geometry = feature?.geometry;
 
       if (geometry?.type === 'Polygon') {
         // Treat axis-aligned 4-corner polygons as rectangles for nicer rendering,
@@ -296,7 +298,7 @@ export const zoneListeners = (startAppListening: AppStartListening) => {
       } else if (geometry?.type === 'Circle') {
         const coordinates: LatLon[] = [[geometry.coordinates[1], geometry.coordinates[0]]];
 
-        dispatch(setDrawnShape({ kind: 'circle', coordinates, radius: geometry.radius }));
+        dispatch(setDrawnShape({ kind: 'circle', coordinates, radius: feature?.properties?.radius as number }));
       } else {
         // Not supported yet (Point, etc.)
         dispatch(setDrawnShape(null));

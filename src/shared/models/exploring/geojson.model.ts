@@ -15,8 +15,22 @@ export type GeoJsonPolygon = {
 
 export type GeoJsonCircle = {
   type: 'Circle';
+  /**
+   * [longitude, latitude]
+   * expect a radius property (in meters) in the properties object
+   */
   coordinates: [number, number];
-  radius: number;
 };
 
 export type GeoJsonGeometry = GeoJsonPoint | GeoJsonPolygon | GeoJsonCircle;
+
+export type GeoJsonFeature = {
+  type: 'Feature';
+  geometry?: GeoJsonGeometry;
+  properties?: Record<string, unknown>;
+};
+
+export type GeoJsonFeatureCollection = {
+  type: 'FeatureCollection';
+  features: GeoJsonFeature[];
+};
