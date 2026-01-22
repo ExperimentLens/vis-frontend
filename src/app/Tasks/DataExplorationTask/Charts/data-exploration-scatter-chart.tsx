@@ -260,6 +260,39 @@ const ScatterChart = () => {
     />
   );
 
+  const getStackedScatterSpec = ({
+    data,
+    xAxis,
+    yAxis,
+    colorBy,
+  }: {
+    data: ScatterChartDataRow[];
+    xAxis: VisualColumn;
+    yAxis: VisualColumn[];
+    colorBy?: VisualColumn;
+  }) => {
+    const charts = (yAxis ?? [])
+      .filter((y): y is VisualColumn => Boolean(y?.name))
+      .map(y => {
+        const single = getSingleScatterSpec({ data, xAxis, y, colorBy }) as any;
+      
+        return {
+          ...single,
+          height: 220,
+        };
+      });
+    
+    return {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      vconcat: charts,
+      spacing: 12,
+      resolve: {
+        // each Y metric likely has different ranges
+        scale: { y: 'independent' },
+      },
+    };
+  };
+
   const shouldShowInfoMessage =
     !hasValidXAxis || !hasValidYAxis || !hasValidColorBy || !hasData;
 
@@ -305,28 +338,23 @@ const ScatterChart = () => {
             minHeight={300}
           />
         ) : (
-          <Grid container spacing={2}>
-            {yAxis?.map(y => (
-              <Grid item xs={12} key={y.name}>
-                <ResponsiveCardVegaLite
-                  spec={getSingleScatterSpec({
-                    data: Array.isArray(chartData) ? chartData : [],
-                    xAxis: xAxis as VisualColumn,
-                    y,
-                    colorBy: colorBy as VisualColumn,
-                  })}
-                  title={"Scatter Chart"}
-                  actions={false}
-                  controlPanel={<ScatterChartControlPanel />}
-                  loading={
-                    tab?.workflowTasks.dataExploration?.scatterChart?.loading ||
-                    tab?.workflowTasks.dataExploration?.metaData?.loading
-                  }
-                  isStatic={false}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          <ResponsiveCardVegaLite
+            spec={getStackedScatterSpec({
+              data: Array.isArray(chartData) ? chartData : [],
+              xAxis: xAxis as VisualColumn,
+              yAxis: yAxis as VisualColumn[],
+              colorBy: colorBy as VisualColumn,
+            })}
+            title="Scatter Chart"
+            actions={false}
+            controlPanel={<ScatterChartControlPanel />}
+            maxHeight={5000}
+            loading={
+              tab?.workflowTasks.dataExploration?.scatterChart?.loading ||
+              tab?.workflowTasks.dataExploration?.metaData?.loading
+            }
+            isStatic={false}
+          />
         )}
     </Box>
   );

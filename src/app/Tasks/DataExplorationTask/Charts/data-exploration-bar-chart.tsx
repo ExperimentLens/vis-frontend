@@ -257,6 +257,29 @@ const BarChart = () => {
     />
   );
 
+  const getStackedBarSpec = (metrics: string[]) => {
+    const charts = (metrics ?? [])
+      .filter(Boolean)
+      .map(metric => {
+        const single = getSingleMetricBarSpec(metric) as any;
+
+        return {
+          ...single,
+          height: 200,
+        };
+      });
+
+    return {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      vconcat: charts,
+      spacing: 12,
+      resolve: {
+        // different metrics can have wildly different ranges
+        scale: { x: 'independent' },
+      },
+    };
+  };
+
   const shouldShowInfoMessage = !hasGroupBy || !hasValidAggregation || !hasData || tab?.workflowTasks.dataExploration?.barChart.error !== null;
 
   return (
@@ -281,23 +304,18 @@ const BarChart = () => {
           }
         />
       ) : (
-        <Grid container spacing={2}>
-          {(yAxisColumns || []).map(column => (
-            <Grid key={`bar-${column}`} item xs={12}>
-              <ResponsiveCardVegaLite
-                spec={getSingleMetricBarSpec(column)}
-                actions={false}
-                title={"Bar Chart"}
-                controlPanel={<BarChartControlPanel />}
-                loading={
-                  tab?.workflowTasks.dataExploration?.barChart?.loading ||
-                  tab?.workflowTasks.dataExploration?.metaData?.loading
-                }
-                isStatic={false}
-              />
-            </Grid>
-          ))}
-        </Grid>
+          <ResponsiveCardVegaLite
+            spec={getStackedBarSpec(yAxisColumns || [])}
+            title="Bar Chart"
+            actions={false}
+            controlPanel={<BarChartControlPanel />}
+            maxHeight={5000}
+            loading={
+              tab?.workflowTasks.dataExploration?.barChart?.loading ||
+              tab?.workflowTasks.dataExploration?.metaData?.loading
+            }
+            isStatic={false}
+          />
       )}
     </Box>
   );
