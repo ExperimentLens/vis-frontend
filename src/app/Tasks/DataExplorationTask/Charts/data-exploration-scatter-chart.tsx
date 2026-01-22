@@ -288,6 +288,7 @@ const ScatterChart = () => {
       spacing: 12,
       resolve: {
         // each Y metric likely has different ranges
+        legend: { color: 'independent' },
         scale: { y: 'independent' },
       },
     };
