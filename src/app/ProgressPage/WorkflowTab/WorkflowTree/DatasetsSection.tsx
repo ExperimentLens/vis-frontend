@@ -111,7 +111,6 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
                 py: 0.5,
                 borderRadius: 1,
                 cursor: clickable ? 'pointer' : 'default',
-                opacity: clickable ? 1 : 0.45,
               }}
             >
               {getDatasetIcon(ds.format, !clickable)}
@@ -150,7 +149,6 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
               py: 0.5,
               borderRadius: 1,
               cursor: clickable ? 'pointer' : 'default',
-              opacity: clickable ? 1 : 0.45,
             }}
           >
             {getDatasetIcon(ds.format, !clickable)}
