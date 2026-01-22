@@ -320,6 +320,36 @@ const LineChart = () => {
 
   const shouldShowInfoMessage = !hasValidXAxis || !hasValidYAxis || !hasData;
 
+  const getStackedLineSpec = ({
+    data,
+    xAxis,
+    yAxis,
+  }: {
+    data: LineChartDataRow[];
+    xAxis: VisualColumn;
+    yAxis: VisualColumn[];
+  }) => {
+    const charts = (yAxis ?? [])
+      .filter((y): y is VisualColumn => Boolean(y?.name))
+      .map((y) => {
+        const single = getSingleLineSpec({ data, xAxis, y }) as any;
+
+        return {
+          ...single,
+          height: 200
+        };
+      });
+
+    return {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      vconcat: charts,
+      spacing: 12,
+      resolve: {
+        scale: { y: 'independent' },
+      },
+    };
+  };
+
   return (
     <Box sx={{ height: '99%' }}>
       {shouldShowInfoMessage && !(
@@ -350,25 +380,22 @@ const LineChart = () => {
             loading={tab?.workflowTasks.dataExploration?.lineChart?.loading || tab?.workflowTasks.dataExploration?.metaData?.loading}
           />
         ) : (
-          <Grid container spacing={2}>
-            {yAxis?.map(y => (
-              <Grid key={`grid-${y.name}`} item xs={12} >
-                <ResponsiveCardVegaLite
-                  key={y.name}
-                  spec={getSingleLineSpec({
-                    data: Array.isArray(chartData) ? chartData : [],
-                    xAxis: xAxis as VisualColumn,
-                    y,
-                  })}
-                  title={"Line Chart"}
-                  actions={false}
-                  controlPanel={<LineChartControlPanel />}
-                  loading={tab?.workflowTasks.dataExploration?.lineChart?.loading || tab?.workflowTasks.dataExploration?.metaData?.loading}
-                  isStatic={false}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          <ResponsiveCardVegaLite
+            spec={getStackedLineSpec({
+              data: Array.isArray(chartData) ? chartData : [],
+              xAxis: xAxis as VisualColumn,
+              yAxis: yAxis as VisualColumn[],
+            })}
+            title="Line Chart"
+            actions={false}
+            controlPanel={<LineChartControlPanel />}
+            maxHeight={5000}
+            loading={
+              tab?.workflowTasks.dataExploration?.lineChart?.loading ||
+              tab?.workflowTasks.dataExploration?.metaData?.loading
+            }
+            isStatic={false}
+          />
         )}
     </Box>
   );
