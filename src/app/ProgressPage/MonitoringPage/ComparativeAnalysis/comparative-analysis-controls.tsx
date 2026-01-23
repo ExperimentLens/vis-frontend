@@ -1,7 +1,7 @@
 import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Popover, Select, Switch, Tooltip, Typography } from '@mui/material';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly } from '../../../../store/slices/monitorPageSlice';
+import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
 import theme from '../../../../mui-theme';
 import WindowRoundedIcon from '@mui/icons-material/WindowRounded';
 import RoundedCornerRoundedIcon from '@mui/icons-material/RoundedCornerRounded';
@@ -27,6 +27,8 @@ const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
   const selectedModelComparisonChart = useAppSelector((state: RootState) => state.monitorPage.selectedModelComparisonChart);
   const showMisclassifiedOnly = useAppSelector((state: RootState) => state.monitorPage.showMisclassifiedOnly);
+  const sortRocByAuc = useAppSelector((state: RootState) => state.monitorPage.sortRocByAuc);
+  const sortConfusionByF1 = useAppSelector((state: RootState) => state.monitorPage.sortConfusionByF1);
   const selectedComparisonTab = useAppSelector((state: RootState) => state.monitorPage.selectedComparisonTab);
   const comparativeVisibleMetrics = useAppSelector((state: RootState) => state.monitorPage.comparativeVisibleMetrics);
   const [anchorEl, setAnchorEl] = useState <null | HTMLElement>(null);
@@ -366,6 +368,34 @@ const ComparativeAnalysisControls = ()=> {
                 />
               }
               label="Misclassified"
+              sx={{ ml: 0.5 }}
+            />
+          )}
+
+          {selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={sortRocByAuc}
+                  size="small"
+                  onChange={(e) => dispatch(setSortRocByAuc(e.target.checked))}
+                />
+              }
+              label="Sort by AUC"
+              sx={{ ml: 0.5 }}
+            />
+          )}
+
+          {selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={sortConfusionByF1}
+                  size="small"
+                  onChange={(e) => dispatch(setSortConfusionByF1(e.target.checked))}
+                />
+              }
+              label="Sort by F1"
               sx={{ ml: 0.5 }}
             />
           )}

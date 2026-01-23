@@ -127,6 +127,8 @@ interface IMonitoringPageSlice {
       selectedComparisonTab: number
       isMosaic: boolean
       showMisclassifiedOnly: boolean
+      sortRocByAuc: boolean
+      sortConfusionByF1: boolean
       selectedWorkflowsMetrics: {
         data: {[key: string]: {name: string; seriesMetric: IMetric[]}[]}
         loading: boolean
@@ -255,6 +257,8 @@ const initialState: IMonitoringPageSlice = {
   selectedComparisonTab: 0,
   isMosaic: true,
   showMisclassifiedOnly: false,
+  sortRocByAuc: false,
+  sortConfusionByF1: false,
   selectedWorkflowsMetrics: {
     data: {},
     loading: false,
@@ -493,6 +497,12 @@ export const monitoringPageSlice = createSlice({
     },
     setSelectedModelComparisonChart: (state, action) => {
       state.selectedModelComparisonChart = action.payload;
+    },
+    setSortRocByAuc: (state, action: { payload: boolean }) => {
+      state.sortRocByAuc = action.payload;
+    },
+    setSortConfusionByF1: (state, action: { payload: boolean }) => {
+      state.sortConfusionByF1 = action.payload;
     },
     setComparativeModelInstanceControlPanel: (
       state,
@@ -1031,5 +1041,5 @@ export const fetchComparativeUmap = createAsyncThunk(
 
 export const { setParallel, setWorkflowsTable, setScheduledTable, setVisibleTable, setSelectedTab, setSelectedComparisonTab, toggleWorkflowSelection, bulkToggleWorkflowSelection, setGroupBy,
   setHoveredWorkflow, updateWorkflowRatingLocally, setSelectedModelComparisonChart, setCommonDataAssets, setDataAssetsControlPanel, setIsMosaic, setShowMisclassifiedOnly, setComparativeModelInstanceControlPanel,
-  setExpandedGroup, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces
+  setExpandedGroup, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces, setSortRocByAuc, setSortConfusionByF1
 } = monitoringPageSlice.actions;
