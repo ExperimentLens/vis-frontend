@@ -16,34 +16,68 @@ import { AggregationFunction } from '../../../../shared/models/dataexploration.m
 import SearchableMultiSelect from '../../../../shared/components/searchable-select-multiple';
 import SearchableSelect from '../../../../shared/components/searchable-select';
 
+const SEP = '|||';
+
 const HeatMapControlPanel = () => {
   const dispatch = useAppDispatch();
   const { tab } = useAppSelector(state => state.workflowPage);
-  const selectedColumn =
-    tab?.workflowTasks.dataExploration?.controlPanel
-      .selectedMeasureColumnHeat || null;
 
-  const getAggregationOptions = () => {
-    if (!selectedColumn) return [];
-    const column =
-      tab?.workflowTasks.dataExploration?.metaData.data?.originalColumns.find(
-        col => col.name === selectedColumn,
-      );
-
-    return column?.type === 'DOUBLE' ||
-      column?.type === 'FLOAT' ||
-      column?.type === 'INTEGER' ||
-      column?.type === 'BIGINT'
+  const isNumericType = (t?: string) =>
+    t === 'DOUBLE' || t === 'FLOAT' || t === 'INTEGER' || t === 'BIGINT';
+  
+  const functionsForType = (t?: string): AggregationFunction[] =>
+    isNumericType(t)
       ? [
-        AggregationFunction.AVG,
-        AggregationFunction.MIN,
-        AggregationFunction.MAX,
-        AggregationFunction.COUNT,
-      ]
+          AggregationFunction.AVG,
+          AggregationFunction.MIN,
+          AggregationFunction.MAX,
+          AggregationFunction.COUNT,
+        ]
       : [AggregationFunction.COUNT];
+      
+  const originalColumns =
+    tab?.workflowTasks.dataExploration?.metaData.data?.originalColumns || [];
+      
+  // encoded options: "<column>|||<FN>"
+  const measureAggOptions: string[] = originalColumns
+    .filter(col => col.type !== 'LOCAL_DATE_TIME')
+    .flatMap(col => functionsForType(col.type).map(fn => `${col.name}${SEP}${fn}`));
+      
+  const getOptionLabel = (encoded: string) => {
+    const [col, fn] = encoded.split(SEP);
+    return `${col} (${fn})`;
   };
+  
+  const parseEncoded = (encoded: string) => {
+    const [column, fnRaw] = encoded.split(SEP);
+    return { column, function: fnRaw as AggregationFunction };
+  };
+  
+  const selectedColumn =
+    tab?.workflowTasks.dataExploration?.controlPanel.selectedMeasureColumnHeat || '';
+  
+  const selectedFn =
+    tab?.workflowTasks.dataExploration?.controlPanel.barAggregationHeat?.[0]
+      ?.function || '';
+  
+  const selectedMeasureAggValue =
+    selectedColumn && selectedFn ? `${selectedColumn}${SEP}${selectedFn}` : '';
 
-  const aggregationOptions = getAggregationOptions();
+  const handleMeasureAggChange = (encoded: string) => {
+    if (!encoded) {
+      dispatch(setControls({ selectedMeasureColumnHeat: null, barAggregationHeat: [] }));
+      return;
+    }
+
+    const next = parseEncoded(encoded);
+
+    dispatch(
+      setControls({
+        selectedMeasureColumnHeat: next.column,
+        barAggregationHeat: [{ column: next.column, function: next.function }],
+      }),
+    );
+  };
 
   // Custom theme
   const theme = createTheme({
@@ -102,76 +136,24 @@ const HeatMapControlPanel = () => {
             menuWidth={250}
           />
         </FormControl>
-
-        {/* Value Selection */}
         <FormControl fullWidth>
           <SearchableSelect
-            labelId="measure-value-column-heat-label"
+            labelId="measure-agg-heat-label"
             inputLabel={
               <Box display="flex" alignItems="center" gap={1}>
-                <BarChartIcon fontSize="small" />
-                Measure (Value Column)
+                <FunctionsIcon fontSize="small" />
+                Measure + Aggregation
               </Box>
             }
-            label="Measure (Value Column)-----"
-            value={selectedColumn || ''}
-            options={
-              tab?.workflowTasks.dataExploration?.metaData.data?.originalColumns
-                .filter(col => col.type !== 'LOCAL_DATE_TIME')
-                .map(col => col.name) || []
-            }
-            onChange={newColumn =>
-              dispatch(
-                setControls({
-                  selectedMeasureColumnHeat: newColumn,
-                }),
-              )
-            }
-            menuMaxHeight={224}
-            menuWidth={250}
+            label="Measure + Aggregation-----"
+            value={selectedMeasureAggValue}
+            options={measureAggOptions}
+            getOptionLabel={getOptionLabel}
+            onChange={handleMeasureAggChange}
+            menuMaxHeight={240}
+            menuWidth={360}
           />
         </FormControl>
-
-        {/* Aggregation Selection */}
-        {selectedColumn && (
-          <FormControl fullWidth>
-            <InputLabel>
-              <Box display="flex" alignItems="center" gap={1}>
-                <FunctionsIcon fontSize="small" />
-                Apply Aggregation
-              </Box>
-            </InputLabel>
-            <Select
-              label="Apply Aggregation-----"
-              value={
-                tab?.workflowTasks.dataExploration?.controlPanel.barAggregationHeat
-                  ?.find(aggr => aggr.column === selectedColumn)?.function || ''
-              }
-              onChange={event => {
-                const value = event.target.value as AggregationFunction;
-
-                if (!selectedColumn) return;
-
-                dispatch(
-                  setControls({
-                    barAggregationHeat: [
-                      {
-                        column: selectedColumn,
-                        function: value,
-                      },
-                    ],
-                  }),
-                );
-              }}
-            >
-              {aggregationOptions.map(rule => (
-                <MenuItem key={rule} value={rule}>
-                  {rule.charAt(0).toUpperCase() + rule.slice(1)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
       </Box>
     </ThemeProvider>
   );
