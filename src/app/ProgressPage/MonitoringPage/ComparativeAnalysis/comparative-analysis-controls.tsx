@@ -34,6 +34,8 @@ const ComparativeAnalysisControls = ()=> {
   const [anchorEl, setAnchorEl] = useState <null | HTMLElement>(null);
   const [columnsAnchorEl, setColumnsAnchorEl] = useState <null | HTMLElement>(null);
   const [datasetAnchorEl, setDatasetAnchorEl] = useState<null | HTMLElement>(null);
+  const [rocSortAnchorEl, setRocSortAnchorEl] = useState<HTMLElement | null>(null);
+  const [cmSortAnchorEl, setCmSortAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(columnsAnchorEl);
   const isDatasetSelectorOpen = Boolean(datasetAnchorEl);
   const [metricsAnchorEl, setMetricsAnchorEl] = useState<null | HTMLElement>(null);
@@ -109,6 +111,20 @@ const ComparativeAnalysisControls = ()=> {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
+
+  const cmMenuOpen = Boolean(cmSortAnchorEl);
+  const rocMenuOpen = Boolean(rocSortAnchorEl);
+
+  const handleCmMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setCmSortAnchorEl(event.currentTarget);
+  };
+
+  const handleRocMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setRocSortAnchorEl(event.currentTarget);
+  };
+
+  const closeRoc = () => setRocSortAnchorEl(null);
+  const closeCm = () => setCmSortAnchorEl(null);
 
   return (
     <>
@@ -372,33 +388,6 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={sortRocByAuc}
-                  size="small"
-                  onChange={(e) => dispatch(setSortRocByAuc(e.target.checked))}
-                />
-              }
-              label="Sort by AUC"
-              sx={{ ml: 0.5 }}
-            />
-          )}
-
-          {selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={sortConfusionByF1}
-                  size="small"
-                  onChange={(e) => dispatch(setSortConfusionByF1(e.target.checked))}
-                />
-              }
-              label="Sort by F1"
-              sx={{ ml: 0.5 }}
-            />
-          )}
           {selectedComparisonTab !== 2 && (
             <ButtonGroup variant="contained" aria-label="view mode" sx={{ height: '25px' }}>
               <Button
@@ -417,6 +406,116 @@ const ComparativeAnalysisControls = ()=> {
                   Stacked
               </Button>
             </ButtonGroup>
+          )}
+        {/* create a shared popo over component in order to avoid copy pasting */}  
+          {selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
+            <>
+              <IconButton
+                aria-label="settings"
+                onClick={handleCmMenuClick}
+                sx={{
+                  position: 'relative',
+                  '& svg': { zIndex: 1, position: 'relative' },
+                }}
+              >
+                <SettingsIcon />
+              </IconButton>
+              <Menu
+                anchorEl={cmSortAnchorEl}
+                open={cmMenuOpen}
+                onClose={closeCm}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    width: 320,
+                    maxHeight: 500,
+                    padding: 0,
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
+                    border: '1px solid rgba(0,0,0,0.04)',
+                    mt: 0,
+                  },
+                }}
+                MenuListProps={{ sx: { pt: 0 } }}
+              >
+                <SectionHeader
+                  icon={<SettingsSuggestIcon fontSize="small" />}
+                  title="Control Options"
+                />
+                <Box sx={{ mt: 2 }} />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={sortConfusionByF1}
+                      size="small"
+                      onChange={(e) => {
+                        dispatch(setSortConfusionByF1(e.target.checked));
+                        setCmSortAnchorEl(null);
+                      }}
+                    />
+                  }
+                  label="Sort by F1"
+                  sx={{ ml: 0.5 }}
+                />
+              </Menu>
+            </>
+          )}
+
+          {selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
+            <>
+              <IconButton
+                aria-label="settings"
+                onClick={handleRocMenuClick}
+                sx={{
+                  position: 'relative',
+                  '& svg': { zIndex: 1, position: 'relative' },
+                }}
+              >
+                <SettingsIcon />
+              </IconButton>
+              <Menu
+                anchorEl={rocSortAnchorEl}
+                open={rocMenuOpen}
+                onClose={closeRoc}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    width: 320,
+                    maxHeight: 500,
+                    padding: 0,
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
+                    border: '1px solid rgba(0,0,0,0.04)',
+                    mt: 0,
+                  },
+                }}
+                MenuListProps={{ sx: { pt: 0 } }}
+              >
+                <SectionHeader
+                  icon={<SettingsSuggestIcon fontSize="small" />}
+                  title="Control Options"
+                />
+                <Box sx={{ mt: 2 }} />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={sortRocByAuc}
+                        size="small"
+                        onChange={(e) => {
+                          dispatch(setSortRocByAuc(e.target.checked));
+                          setRocSortAnchorEl(null);
+                        }}
+                      />
+                    }
+                    label="Sort by AUC"
+                    sx={{ ml: 0.5 }}
+                  />
+              </Menu>
+            </>
           )}
 
           {selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
