@@ -20,7 +20,8 @@ import { GridTableRowsIcon } from '@mui/x-data-grid';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import SearchableSelect from '../../../../shared/components/searchable-select';
-import { useUniqueId } from '@dnd-kit/utilities';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
 
 const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
@@ -326,23 +327,32 @@ const ComparativeAnalysisControls = ()=> {
         >
 
           {showDataComparisonViewModeToggle && selectedComparisonTab === 2 && (
-            <ButtonGroup variant="contained" aria-label="data comparison view mode" sx={{ height: '25px' }}>
-              <Button
-                variant={dataComparisonViewMode === 'overlay' ? 'contained' : 'outlined'}
-                color="primary"
-                onClick={() => dispatch(setDataComparisonViewMode('overlay'))}
-                disabled={!selectedDataset}
-              >
-                Distribution plots
-              </Button>
-              <Button
-                variant={dataComparisonViewMode === 'boxplot' ? 'contained' : 'outlined'}
-                color="primary"
-                onClick={() => dispatch(setDataComparisonViewMode('boxplot'))}
-                disabled={!selectedDataset}
-              >
-                Box plots
-              </Button>
+            <ButtonGroup
+              size="small"
+              variant="outlined" 
+              aria-label="data comparison view mode" 
+              sx={{ height: '30px' }}
+            >
+              <Tooltip title="Distribution Plots">
+                <Button
+                  variant={dataComparisonViewMode === 'overlay' ? 'contained' : 'outlined'}
+                  color="primary"
+                  onClick={() => dispatch(setDataComparisonViewMode('overlay'))}
+                  disabled={!selectedDataset}
+                >
+                  <BarChartIcon />
+                </Button>
+              </Tooltip>
+              <Tooltip title="Box Plots">
+                <Button
+                  variant={dataComparisonViewMode === 'boxplot' ? 'contained' : 'outlined'}
+                  color="primary"
+                  onClick={() => dispatch(setDataComparisonViewMode('boxplot'))}
+                  disabled={!selectedDataset}
+                >
+                  <CandlestickChartIcon />
+                </Button>
+              </Tooltip>
             </ButtonGroup>
           )}
 
