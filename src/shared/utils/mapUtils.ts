@@ -2,7 +2,8 @@ import ngeohash from 'ngeohash';
 import { polygon as turfPolygon } from '@turf/helpers';
 import booleanIntersects from '@turf/boolean-intersects';
 import type { LatLon } from '../models/exploring/latlon.model';
-import type { GeoJsonGeometry, GeoJsonPolygon } from '../models/exploring/geojson.model';
+import type { GeoJsonFeature, GeoJsonGeometry, GeoJsonPolygon } from '../models/exploring/geojson.model';
+import type { IDrawnShape } from '../models/exploring/drawn-shape.model';
 import type { IRectangle } from '../models/exploring/rectangle.model';
 
 export const getPolygonBBox = (
@@ -184,6 +185,86 @@ export const circleToRectangle = (coordinates?: LatLon[], radius?: number): IRec
     lat: [lat - deltaLat, lat + deltaLat],
     lon: [lon - deltaLon, lon + deltaLon],
   };
+};
+
+export type SelectionRectStrategy = 'byActiveSelection' | 'preferDrawnThenGeohashThenView';
+
+export const getRectAndFeatureToUse = (params: {
+  activeSelection: 'view' | 'drawn' | 'selectedGeohash';
+  drawnShape: IDrawnShape | null;
+  selectedGeohashRect: IRectangle | null;
+  viewRect: IRectangle | null;
+  zoneFeature?: GeoJsonFeature | null;
+}, options?: {
+  rectStrategy?: SelectionRectStrategy;
+}): { rectToUse: IRectangle | null; featureToUse: GeoJsonFeature | null } => {
+  const {
+    activeSelection,
+    drawnShape,
+    selectedGeohashRect,
+    viewRect,
+    zoneFeature,
+  } = params;
+
+  const rectStrategy: SelectionRectStrategy = options?.rectStrategy ?? 'byActiveSelection';
+
+  let drawnRect: IRectangle | null;
+
+  if (drawnShape?.kind === 'rectangle') {
+    drawnRect = drawnShape.rect ?? null;
+  } else if (drawnShape?.kind === 'polygon') {
+    drawnRect = coordinatesToRectangle(drawnShape.coordinates) ?? null;
+  } else if (drawnShape?.kind === 'circle') {
+    drawnRect = drawnShape.coordinates
+      ? circleToRectangle([drawnShape.coordinates[0]], drawnShape.radius)
+      : null;
+  } else {
+    drawnRect = null;
+  }
+
+  let rectToUse: IRectangle | null;
+
+  if (rectStrategy === 'preferDrawnThenGeohashThenView') {
+    rectToUse = drawnRect ?? selectedGeohashRect ?? viewRect ?? null;
+  } else if (activeSelection === 'drawn') {
+    rectToUse = drawnRect;
+  } else if (activeSelection === 'selectedGeohash') {
+    rectToUse = selectedGeohashRect;
+  } else {
+    rectToUse = viewRect;
+  }
+
+  let featureToUse: GeoJsonFeature | null;
+
+  if (zoneFeature) {
+    featureToUse = zoneFeature;
+  } else if (activeSelection === 'drawn') {
+    if (drawnShape?.kind === 'polygon') {
+      featureToUse = {
+        type: 'Feature',
+        geometry: drawnShape.coordinates ? geoPointsToGeoJsonPolygon(drawnShape.coordinates) : undefined,
+      };
+    } else if (drawnShape?.kind === 'circle') {
+      featureToUse = {
+        type: 'Feature',
+        geometry: {
+          type: 'Circle',
+          coordinates: drawnShape.coordinates
+            ? [drawnShape.coordinates[0][1], drawnShape.coordinates[0][0]]
+            : [0, 0],
+        },
+        properties: {
+          radius: drawnShape.radius,
+        },
+      };
+    } else {
+      featureToUse = null;
+    }
+  } else {
+    featureToUse = null;
+  }
+
+  return { rectToUse, featureToUse };
 };
 
 export const rectangleToGeoJsonPolygon = (rect: IRectangle): GeoJsonPolygon => {

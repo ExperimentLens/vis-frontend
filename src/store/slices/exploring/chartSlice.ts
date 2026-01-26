@@ -6,6 +6,7 @@ import { updateAnalysisResults } from './statsSlice';
 import { shallowEqual } from 'react-redux';
 import type { IVisQueryResults } from '../../../shared/models/exploring/vis-query-results.model';
 import { logger } from '../../../shared/utils/logger';
+import { getRectAndFeatureToUse } from '../../../shared/utils/mapUtils';
 
 interface ChartState {
   groupByCols: string[];
@@ -51,27 +52,38 @@ export const chartListeners = (startApplistening: AppStartListening) => {
     actionCreator: triggerChartUpdate,
     effect: async (_, { dispatch, getState }) => {
       const state = getState();
+      const { groupByCols, measureCol, aggType } = state.chart;
+      const { categoricalFilters } = state.dataset;
+      const { zone } = state.zone;
+      const { drawnShape, selectedGeohash, activeSelection } = state.map;
+      const { viewRect } = state.map;
       const datasetId = state.dataset.dataset.id;
 
       if (datasetId) {
         const newFilters: Record<string, unknown> = {
-          ...state.dataset.categoricalFilters,
+          ...categoricalFilters,
         };
 
-        state.chart.groupByCols.forEach(col => delete newFilters[col]);
+        groupByCols.forEach(col => delete newFilters[col]);
+
+        const { rectToUse, featureToUse } = getRectAndFeatureToUse({
+          activeSelection,
+          drawnShape,
+          selectedGeohashRect: selectedGeohash.rect,
+          viewRect,
+          zoneFeature: zone.feature ?? null,
+        });
 
         const queryBody = {
           categoricalFilters:
-            newFilters !== state.dataset.categoricalFilters
+            newFilters !== categoricalFilters
               ? newFilters
-              : state.dataset.categoricalFilters,
-          aggType: state.chart.aggType,
-          groupByCols: state.chart.groupByCols,
-          measureCol: state.chart.measureCol,
-          rect:
-            state.map.drawnShape ||
-            state.map.selectedGeohash.rect ||
-            state.map.viewRect,
+              : categoricalFilters,
+          aggType,
+          groupByCols,
+          measureCol,
+          feature: featureToUse,
+          rect: rectToUse,
         };
 
         try {

@@ -6,6 +6,7 @@ import type { ITimeSeriesDataResponse } from '../../../shared/models/exploring/t
 import { executeTimeSeriesQuery } from './datasetSlice';
 import type { AppStartListening } from '../../listenerMiddleware';
 import { logger } from '../../../shared/utils/logger';
+import { getRectAndFeatureToUse } from '../../../shared/utils/mapUtils';
 
 interface TimeSeriesState {
   data: IUnivariateDataPoint[] | null;
@@ -26,16 +27,24 @@ export const updateTimeSeries = createAsyncThunk(
   async (_, thunkApi) => {
     const state = thunkApi.getState() as RootState;
 
-    const { drawnShape, selectedGeohash } = state.map;
+    const { drawnShape, selectedGeohash, activeSelection } = state.map;
     const { frequency, measureCol } = state.timeSeries;
     const { timeRange, categoricalFilters } = state.dataset;
+    const { zone } = state.zone;
     // const datasetId = Object.keys(state.api.queries).find((key) => key.startsWith('getDataset('));
     const datasetId = state.dataset.dataset.id;
 
-    // TODO: Handle polygon drawing
-    const drawnRect = drawnShape?.kind === 'rectangle' ? drawnShape.rect : null;
+    const { rectToUse, featureToUse } = getRectAndFeatureToUse({
+      activeSelection,
+      drawnShape,
+      selectedGeohashRect: selectedGeohash.rect,
+      viewRect: null,
+      zoneFeature: zone.feature ?? null,
+    }, {
+      rectStrategy: 'preferDrawnThenGeohashThenView',
+    });
 
-    if (datasetId && (drawnRect || selectedGeohash.rect)) {
+    if (datasetId && rectToUse) {
       if (!measureCol)
         thunkApi.dispatch(setMeasureCol(state.chart.measureCol!));
       const timeSeriesBody = {
@@ -43,8 +52,9 @@ export const updateTimeSeries = createAsyncThunk(
         to: timeRange.to,
         measureCol: measureCol || state.chart.measureCol,
         frequency,
-        rect: drawnRect || selectedGeohash.rect, // prefer drawn rect over selected geohash
+        rect: rectToUse, // prefer drawn rect over selected geohash
         categoricalFilters,
+        feature: featureToUse,
       };
 
       const action = await thunkApi.dispatch(

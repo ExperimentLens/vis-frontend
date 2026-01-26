@@ -14,7 +14,7 @@ import { updateTimeSeries } from './timeSeriesSlice';
 import ngeohash from 'ngeohash';
 import type { MapLayer } from '../../../shared/models/exploring/dataset.model';
 import type { IDrawnShape } from '../../../shared/models/exploring/drawn-shape.model';
-import { circleToRectangle, coordinatesToRectangle } from '../../../shared/utils/mapUtils';
+import { getRectAndFeatureToUse } from '../../../shared/utils/mapUtils';
 
 export type ActiveSelection = 'view' | 'drawn' | 'selectedGeohash';
 
@@ -57,24 +57,15 @@ const handleRectUpdate = async (
   const { zoom, viewRect, selectedGeohash, activeSelection, drawnShape } = state.map;
   const { categoricalFilters, timeRange, dataset } = state.dataset;
   const { groupByCols, measureCol, aggType } = state.chart;
+  const { zone } = state.zone;
 
-  let rectToUse: IRectangle | null;
-
-  if (activeSelection === 'drawn') {
-    if (drawnShape?.kind === 'rectangle') {
-      rectToUse = drawnShape.rect ?? null;
-    } else if (drawnShape?.kind === 'polygon') {
-      rectToUse = coordinatesToRectangle(drawnShape.coordinates) ?? null;
-    } else if (drawnShape?.kind === 'circle') {
-      rectToUse = drawnShape.coordinates ? circleToRectangle([drawnShape.coordinates[0]], drawnShape.radius) : null;
-    } else {
-      rectToUse = null;
-    }
-  } else if (activeSelection === 'selectedGeohash') {
-    rectToUse = selectedGeohash.rect;
-  } else {
-    rectToUse = viewRect;
-  }
+  const { rectToUse, featureToUse } = getRectAndFeatureToUse({
+    activeSelection,
+    drawnShape,
+    selectedGeohashRect: selectedGeohash.rect,
+    viewRect,
+    zoneFeature: zone.feature ?? null,
+  });
 
   const queryBody = {
     rect: rectToUse,
@@ -85,6 +76,7 @@ const handleRectUpdate = async (
     aggType,
     from: timeRange.from,
     to: timeRange.to,
+    feature: featureToUse,
   };
 
   try {
@@ -285,19 +277,13 @@ export const mapSlice = createSlice({
   },
   selectors: {
     getActiveRect: (state): IRectangle | null => {
-      if (state.activeSelection === 'drawn') {
-        if (state.drawnShape?.kind === 'rectangle') {
-          return state.drawnShape.rect ?? null;
-        } else if (state.drawnShape?.kind === 'polygon') {
-          return coordinatesToRectangle(state.drawnShape.coordinates) ?? null;
-        }
-
-        return null;
-      } else if (state.activeSelection === 'selectedGeohash') {
-        return state.selectedGeohash.rect ?? null;
-      } else {
-        return state.viewRect ?? null;
-      }
+      return getRectAndFeatureToUse({
+        activeSelection: state.activeSelection,
+        drawnShape: state.drawnShape,
+        selectedGeohashRect: state.selectedGeohash.rect,
+        viewRect: state.viewRect,
+        zoneFeature: null,
+      }).rectToUse;
     },
   }
 });
