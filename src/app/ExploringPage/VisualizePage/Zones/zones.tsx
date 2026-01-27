@@ -22,6 +22,7 @@ import {
   Download as DownloadIcon,
   Clear as ClearIcon,
   CropFree as CropFreeIcon,
+  Upload as UploadIcon,
 } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import {
@@ -44,6 +45,7 @@ import {
   setSelectedTimeIndex,
 } from '../../../../store/slices/exploring/predictionSlice';
 import { setMapLayer } from '../../../../store/slices/exploring/mapSlice';
+import { ZonesUpload } from './zones-upload';
 
 export interface IZonesProps {
   dataset: IDataset;
@@ -63,6 +65,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
     (state: RootState) => state.map,
   );
   const dispatch = useAppDispatch();
+  const [zonesUploadOpen, setZonesUploadOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     open: boolean;
     zoneId: string | null;
@@ -123,6 +126,10 @@ export const Zones = ({ dataset }: IZonesProps) => {
       }
       dispatch(setModalOpen(false));
     }
+  };
+
+  const handleImportZones = () => {
+    setZonesUploadOpen(true);
   };
 
   const handleExportAll = () => {
@@ -186,6 +193,16 @@ export const Zones = ({ dataset }: IZonesProps) => {
         >
           Zones for {dataset.id}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title="Import Zones" placement="top">
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={<UploadIcon />}
+                onClick={handleImportZones}
+              >
+                Import Zones
+              </Button>
+            </Tooltip>
             <Tooltip title="Export All Predictions" placement="top">
               <Button
                 variant="outlined"
@@ -417,6 +434,8 @@ export const Zones = ({ dataset }: IZonesProps) => {
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
       />
+
+      <ZonesUpload open={zonesUploadOpen} onClose={() => setZonesUploadOpen(false)} />
     </>
   );
 };

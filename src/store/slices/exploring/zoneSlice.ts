@@ -76,6 +76,7 @@ interface exploringZoneState {
     getZones: boolean;
     getZone: boolean;
     postZone: boolean;
+    importZones: boolean;
     putZone: boolean;
     deleteZone: boolean;
   };
@@ -83,6 +84,7 @@ interface exploringZoneState {
     getZones: string | null;
     getZone: string | null;
     postZone: string | null;
+    importZones: string | null;
     putZone: string | null;
     deleteZone: string | null;
   };
@@ -96,6 +98,7 @@ const initialState: exploringZoneState = {
     getZones: false,
     getZone: false,
     postZone: false,
+    importZones: false,
     putZone: false,
     deleteZone: false,
   },
@@ -103,6 +106,7 @@ const initialState: exploringZoneState = {
     getZones: null,
     getZone: null,
     postZone: null,
+    importZones: null,
     putZone: null,
     deleteZone: null,
   },
@@ -192,6 +196,33 @@ export const deleteZone = createAsyncThunk<
   }
 });
 
+export const importZones = createAsyncThunk<
+  IZone[],
+  { fileName: string; file: File },
+  { rejectValue: string }
+>('api/importZones', async ({ fileName, file }, { rejectWithValue }) => {
+  try {
+    const formData = new FormData();
+
+    formData.append('file', file);
+
+    formData.append('fileName', fileName);
+
+    const response = await api.post<IZone[]>('/zones/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data;
+  } catch (error: unknown) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error occurred';
+
+    return rejectWithValue(errorMessage);
+  }
+});
+
 export const zoneSlice = createSlice({
   name: 'zone',
   initialState,
@@ -251,6 +282,20 @@ export const zoneSlice = createSlice({
         state.loading.postZone = false;
         state.error.postZone = action.payload || 'Failed to post zone';
         showError(action.payload || 'Failed to post zone');
+      })
+      // importZones
+      .addCase(importZones.pending, state => {
+        state.loading.importZones = true;
+        showInfo('Uploading zones...');
+      })
+      .addCase(importZones.fulfilled, (state, action) => {
+        state.loading.importZones = false;
+        state.zones = action.payload;
+      })
+      .addCase(importZones.rejected, (state, action) => {
+        state.loading.importZones = false;
+        state.error.importZones = action.payload || 'Failed to upload zones';
+        showError(action.payload || 'Failed to upload zones');
       })
       // deleteZone
       .addCase(deleteZone.pending, state => {
