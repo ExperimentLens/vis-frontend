@@ -2,7 +2,7 @@ import ResponsiveCardVegaLite from '../../../../shared/components/responsive-car
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import type { IMetric } from '../../../../shared/models/experiment/metric.model';
-import { Box, Card, CardContent, Divider, Paper, Typography } from '@mui/material';
+import { Box, Card, CardContent, createTheme, Divider, Paper, Slider, Typography } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import green from '@mui/material/colors/green';
@@ -11,6 +11,19 @@ import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import { setCache } from '../../../../shared/utils/localStorageCache';
 import { useLocation } from 'react-router-dom';
+import { ThemeProvider } from '@emotion/react';
+
+const theme = createTheme({
+  palette: {
+    primary: { main: '#1976d2' },
+    secondary: { main: '#dc004e' },
+  },
+  typography: {
+    fontFamily: 'Arial',
+    h6: { fontWeight: 600 },
+  },
+});
+
 
 interface GroupMetrics {
   value: number;
@@ -300,7 +313,6 @@ export const MetricCards = () => {
           encoding: {
             x: { field: 'label', type: 'ordinal' },
             y: { field: 'count', type: 'quantitative' },
-            text: { value: 'YOU' },
           },
         },
       ],
@@ -332,10 +344,6 @@ export const MetricCards = () => {
 
   const sliderMin = typeof minValue === 'number' ? minValue : (typeof metricData?.metric?.minValue === 'number' ? metricData.metric.minValue : 0);
   const sliderMax = typeof maxValue === 'number' ? maxValue : (typeof metricData?.metric?.maxValue === 'number' ? metricData.metric.maxValue : 1);
-  const sliderRange = sliderMax - sliderMin;
-  const safeRange = sliderRange === 0 ? 1 : sliderRange;
-  const youLeftPct = typeof currentValue === 'number' ? ((currentValue - sliderMin) / safeRange) * 100 : 0;
-  const avgLeftPct = typeof avgValue === 'number' ? ((avgValue - sliderMin) / safeRange) * 100 : 0;
 
   const MetricStatCard = ({ title, value, helper }: { title: string; value: React.ReactNode; helper?: React.ReactNode }) => (
     <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', flex: 1, minWidth: 260 }}>
@@ -430,6 +438,7 @@ export const MetricCards = () => {
             actions={false}
             title="Distribution Across All Workflows"
             maxHeight={320}
+            isStatic={false}
           />
         </Paper>
       )}
@@ -438,90 +447,127 @@ export const MetricCards = () => {
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
           Comparison Across All Workflows
         </Typography>
-
-        <Box sx={{ position: 'relative', px: 1, py: 2 }}>
-          <Box sx={{ height: 10, borderRadius: 999, bgcolor: '#eef1f5' }} />
-          <Box
-            sx={{
-              position: 'absolute',
-              left: 8,
-              top: 16,
-              height: 10,
-              borderRadius: 999,
-              bgcolor: '#1463ff',
-              width: `${Math.max(0, Math.min(100, youLeftPct))}%`,
-              opacity: 0.9,
-            }}
-          />
-
-          {typeof avgValue === 'number' && (
-            <>
-              <Box
-                sx={{
-                  position: 'absolute',
-                  left: `calc(${Math.max(0, Math.min(100, avgLeftPct))}% + 8px)`,
-                  top: 8,
-                  width: 2,
-                  height: 26,
-                  bgcolor: '#111827',
-                  opacity: 0.35,
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{
-                  position: 'absolute',
-                  left: `calc(${Math.max(0, Math.min(100, avgLeftPct))}% + 8px)`,
-                  top: 36,
-                  transform: 'translateX(-50%)',
-                  color: 'text.secondary',
-                }}
-              >
-                Avg
-              </Typography>
-            </>
-          )}
-
-          {typeof currentValue === 'number' && (
-            <>
-              <Box
-                sx={{
-                  position: 'absolute',
-                  left: `calc(${Math.max(0, Math.min(100, youLeftPct))}% + 8px)`,
-                  top: 6,
-                  width: 2,
-                  height: 30,
-                  bgcolor: '#1463ff',
-                }}
-              />
-              <Box
-                sx={{
-                  position: 'absolute',
-                  left: `calc(${Math.max(0, Math.min(100, youLeftPct))}% + 8px)`,
-                  top: 22,
-                  width: 8,
-                  height: 8,
-                  borderRadius: 999,
-                  bgcolor: '#1463ff',
-                  transform: 'translateX(-50%)',
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{
-                  position: 'absolute',
-                  left: `calc(${Math.max(0, Math.min(100, youLeftPct))}% + 8px)`,
-                  top: -2,
-                  transform: 'translateX(-50%)',
-                  color: '#1463ff',
-                  fontWeight: 700,
-                }}
-              >
-                You
-              </Typography>
-            </>
-          )}
-        </Box>
+        <ThemeProvider theme={theme}>
+          <Box sx={{ position: 'relative', px: 1, py: 2 }}>
+            {(() => {
+              const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+            
+              const isSingleValue =
+                typeof sliderMin === 'number' &&
+                typeof sliderMax === 'number' &&
+                Number.isFinite(sliderMin) &&
+                Number.isFinite(sliderMax) &&
+                sliderMin === sliderMax;
+            
+              // Use a "fake" range for single-value case so Slider behaves predictably
+              const min = isSingleValue ? 0 : sliderMin;
+              const max = isSingleValue ? 1 : sliderMax;
+            
+              const youValue =
+                typeof currentValue === 'number'
+                  ? (isSingleValue ? 0.5 : clamp(currentValue, sliderMin, sliderMax))
+                  : min;
+            
+              const avgValueClamped =
+                typeof avgValue === 'number'
+                  ? (isSingleValue ? 0.5 : clamp(avgValue, sliderMin, sliderMax))
+                  : undefined;
+            
+              // Marker positions (match the slider range)
+              const safeRange = max - min || 1;
+              const youPct = ((youValue - min) / safeRange) * 100;
+              const avgPct =
+                typeof avgValueClamped === 'number' ? ((avgValueClamped - min) / safeRange) * 100 : undefined;
+            
+              return (
+                <>
+                  <Slider
+                    value={youValue}
+                    min={min}
+                    max={max}
+                    track="normal"
+                    disabled
+                    sx={{
+                      '&.Mui-disabled': { opacity: 1 },
+                    
+                      '& .MuiSlider-rail': {
+                        height: 10,
+                        borderRadius: 999,
+                        backgroundColor: '#eef1f5',
+                        opacity: 1,
+                      },
+                      '& .MuiSlider-track': {
+                        height: 10,
+                        borderRadius: 999,
+                        backgroundColor: '#1463ff',
+                        opacity: 0.9,
+                        border: 'none',
+                      },
+                      '& .MuiSlider-thumb': { display: 'none' },
+                    }}
+                  />
+        
+                  {/* Average marker */}
+                  {typeof avgPct === 'number' && (
+                    <>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: `calc(${Math.max(0, Math.min(100, avgPct))}%)`,
+                          top: 16,
+                          width: 2,
+                          height: 26,
+                          bgcolor: '#111827',
+                          opacity: 0.35,
+                        }}
+                      />
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          position: 'absolute',
+                          left: `calc(${Math.max(0, Math.min(100, avgPct))}%)`,
+                          top: 36,
+                          transform: 'translateX(-50%)',
+                          color: 'text.secondary',
+                        }}
+                      >
+                        Avg
+                      </Typography>
+                    </>
+                  )}
+        
+                  {/* "You" marker */}
+                  {typeof currentValue === 'number' && (
+                    <>
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: `calc(${Math.max(0, Math.min(100, youPct))}%)`,
+                          top: 16,
+                          width: 2,
+                          height: 26,
+                          bgcolor: '#1463ff',
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          left: `calc(${Math.max(0, Math.min(100, youPct))}%)`,
+                          top: 26,
+                          width: 10,
+                          height: 10,
+                          borderRadius: 999,
+                          bgcolor: '#1463ff',
+                          transform: 'translateX(-50%)',
+                        }}
+                      />
+                    </>
+                  )}
+                </>
+              );
+            })()}
+          </Box>
+        </ThemeProvider>
 
         <Divider sx={{ my: 2 }} />
 

@@ -20,6 +20,7 @@ export default function NullTaskFallback() {
   const dispatch = useAppDispatch();
   const { experimentId } = useParams();
   const { tab } = useAppSelector((s: RootState) => s.workflowPage);
+  const {workflowSeriesMetrics} = useAppSelector(state => state.workflowPage.tab ?? {workflowSeriesMetrics: {data: [], loading: false, error: null}});
   const workflowId = tab?.workflowId;
 
   const { fallbackParams, fallbackMetrics, fallbackInputGrouped, fallbackOutputGrouped } = useMemo(() => {
@@ -140,7 +141,12 @@ export default function NullTaskFallback() {
           </Box>
         }
       />
-      {fallbackMetrics.map((metric, index) => (
+      {fallbackMetrics.map((metric, index) => {
+        const isSeiresMetric = workflowSeriesMetrics.data.some(m => m.name === metric.name && m.seriesMetric.length > 1);
+        console.log('isSeiresMetric', metric.name, isSeiresMetric);
+        console.log("here")
+
+        return (
         <TreeItem2
           key={`null-metric-${index}`}
           itemId={`null-metric-${index}`}
@@ -153,15 +159,22 @@ export default function NullTaskFallback() {
               sx={{ px: 1, py: 0.5, borderRadius: 1, cursor: 'pointer' }}
             >
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <BarChartIcon fontSize="small" sx={{ mr: 1, color: theme.palette.primary.main }} />
+                <BarChartIcon 
+                  fontSize="small" 
+                  sx={{ 
+                    mr: 1, 
+                    color: isSeiresMetric ? theme.palette.success.main : theme.palette.primary.main 
+                  }} 
+                />
                 <Typography variant="body2">
-                  {metric.name}: {Math.round(metric.value * 100) / 100}
+                  {metric.name}: {metric.value && Math.round(metric.value * 100) / 100}
                 </Typography>
               </Box>
             </Box>
           }
         />
-      ))}
+        );
+      })}
 
       {/* Inputs */}
       {(fallbackInputGrouped.noFolder.length > 0 ||

@@ -38,7 +38,7 @@ export interface IWorkflowPageModel {
         loading: boolean;
     }
     workflowMetrics: {
-        data: { name: string, value: number, avgDiff: number, avgValue: number, maxValue: number; minValue: number; task?: string; step?: number; timestamp: number;}[] | {name: string;}[] | null
+        data: { name: string, value: number, avgDiff: number, avgValue: number, maxValue: number; minValue: number; task?: string; step?: number; timestamp: number;}[] | {name: string; task?: string; value?: number;}[] | null
         loading: boolean;
     }
     workflowSeriesMetrics: {
