@@ -2,13 +2,12 @@ import ResponsiveCardVegaLite from '../../../../shared/components/responsive-car
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import type { IMetric } from '../../../../shared/models/experiment/metric.model';
-import { Box, Typography } from '@mui/material';
+import { Box, Card, CardContent, Divider, Paper, Typography } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import green from '@mui/material/colors/green';
 import red from '@mui/material/colors/red';
 import { useParams } from 'react-router-dom';
-import { DetailsCard, DetailsCardItem } from '../../../../shared/components/details-card';
 import { useMemo } from 'react';
 import { setCache } from '../../../../shared/utils/localStorageCache';
 import { useLocation } from 'react-router-dom';
@@ -155,6 +154,8 @@ export const MetricCards = () => {
   const currentWorkflowId = tab?.workflowId;
 
   const roundTo5 = (v: number) => Number(v.toFixed(5));
+  const format5 = (v: number | undefined | null) =>
+    typeof v === 'number' && Number.isFinite(v) ? v.toFixed(5) : '—';
 
   const filteredWorkflows = workflows?.data?.flatMap(w =>
     w.metrics?.filter(metric => metric.name === metricData?.metric?.name)
@@ -165,11 +166,31 @@ export const MetricCards = () => {
       })) ?? []
   ) ?? [];
 
-  const minValue = Math.min(...filteredWorkflows.map(w => w.value));
-  const maxValue = Math.max(...filteredWorkflows.map(w => w.value));
+  const currentValue = typeof metricData?.metric?.value === 'number' ? roundTo5(metricData.metric.value) : undefined;
+  const avgValue = typeof metricData?.metric?.avgValue === 'number' ? roundTo5(metricData.metric.avgValue) : undefined;
+  const avgDiff = typeof metricData?.metric?.avgDiff === 'number' && Number.isFinite(metricData.metric.avgDiff)
+    ? metricData.metric.avgDiff
+    : undefined;
 
-  const minWorkflows = filteredWorkflows.filter(w => w.value === minValue).map(w => w.parent);
-  const maxWorkflows = filteredWorkflows.filter(w => w.value === maxValue).map(w => w.parent);
+  const timestampText = useMemo(() => {
+    const ts = metricData?.metric?.timestamp;
+    if (typeof ts !== 'number') return '—';
+    try {
+      return new Date(ts).toLocaleString();
+    } catch {
+      return '—';
+    }
+  }, [metricData?.metric?.timestamp]);
+
+  const minValue = filteredWorkflows.length ? Math.min(...filteredWorkflows.map(w => w.value)) : undefined;
+  const maxValue = filteredWorkflows.length ? Math.max(...filteredWorkflows.map(w => w.value)) : undefined;
+
+  const minWorkflows = typeof minValue === 'number'
+    ? filteredWorkflows.filter(w => w.value === minValue).map(w => w.parent)
+    : [];
+  const maxWorkflows = typeof maxValue === 'number'
+    ? filteredWorkflows.filter(w => w.value === maxValue).map(w => w.parent)
+    : [];
 
   const compareIdMin = useMemo(() => `compare-min-${Date.now()}`, []);
   const compareIdMax = useMemo(() => `compare-max-${Date.now() + 1}`, []);
@@ -191,14 +212,101 @@ export const MetricCards = () => {
   };
 
   const renderDiffIcon = () => {
-    if (!metricData?.metric?.avgDiff) return null;
+    if (typeof avgDiff !== 'number') return null;
+    if (avgDiff === 0) return null;
 
-    return metricData.metric.avgDiff > 0 ? (
-      <ArrowDropUpIcon sx={{ color: green[500], mb: 1 }} />
+    return avgDiff > 0 ? (
+      <ArrowDropUpIcon sx={{ color: green[600], mb: 0.2 }} fontSize="small" />
     ) : (
-      <ArrowDropDownIcon sx={{ color: red[500], mb: 1 }} />
+      <ArrowDropDownIcon sx={{ color: red[600], mb: 0.2 }} fontSize="small" />
     );
   };
+
+  const diffColor = typeof avgDiff === 'number' ? (avgDiff >= 0 ? green[700] : red[700]) : 'text.secondary';
+
+  const percentile = useMemo(() => {
+    if (typeof currentValue !== 'number') return undefined;
+    const values = filteredWorkflows.map(w => w.rawValue).filter(v => typeof v === 'number' && Number.isFinite(v));
+    if (values.length <= 1) return undefined;
+
+    // Assumption: higher metric value is better.
+    const below = values.filter(v => v < currentValue).length;
+    const totalOthers = values.length - 1;
+    if (totalOthers <= 0) return undefined;
+    return Math.round((below / totalOthers) * 100);
+  }, [currentValue, filteredWorkflows]);
+
+  const topPercent = typeof percentile === 'number' ? Math.max(0, 100 - percentile) : undefined;
+
+  const histogram = useMemo(() => {
+    const values = filteredWorkflows.map(w => w.rawValue).filter(v => typeof v === 'number' && Number.isFinite(v));
+    if (!values.length || typeof currentValue !== 'number') return [] as Array<{ label: string; count: number; isYou: boolean }>;
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const binCount = 7;
+
+    if (min === max) {
+      return [{ label: `${roundTo5(min).toFixed(2)}–${roundTo5(max).toFixed(2)}`, count: values.length, isYou: true }];
+    }
+
+    const width = (max - min) / binCount;
+    const bins = Array.from({ length: binCount }, (_, i) => {
+      const start = min + i * width;
+      const end = i === binCount - 1 ? max : min + (i + 1) * width;
+      const label = `${start.toFixed(2)}–${end.toFixed(2)}`;
+      return { start, end, label, count: 0, isYou: false };
+    });
+
+    for (const v of values) {
+      const idx = Math.min(binCount - 1, Math.floor((v - min) / width));
+      bins[idx].count += 1;
+    }
+
+    const youIdx = Math.min(binCount - 1, Math.floor((currentValue - min) / width));
+    bins[youIdx].isYou = true;
+
+    return bins.map(b => ({ label: b.label, count: b.count, isYou: b.isYou }));
+  }, [currentValue, filteredWorkflows]);
+
+  const distributionSpec = useMemo(() => {
+    if (!histogram.length) return null;
+
+    return {
+      layer: [
+        {
+          mark: { type: 'bar', cornerRadiusTopLeft: 4, cornerRadiusTopRight: 4 },
+          encoding: {
+            x: {
+              field: 'label',
+              type: 'ordinal',
+              axis: { title: null, labelAngle: 315, labelPadding: 6 },
+              sort: null,
+            },
+            y: { field: 'count', type: 'quantitative', axis: { title: 'Workflows' } },
+            color: {
+              condition: { test: 'datum.isYou === true', value: '#1463ff' },
+              value: '#d9d9d9',
+            },
+            tooltip: [
+              { field: 'label', type: 'nominal', title: 'Range' },
+              { field: 'count', type: 'quantitative', title: 'Workflows' },
+            ],
+          },
+        },
+        {
+          transform: [{ filter: 'datum.isYou === true' }],
+          mark: { type: 'text', dy: -10, fontWeight: 700, fill: '#1463ff' },
+          encoding: {
+            x: { field: 'label', type: 'ordinal' },
+            y: { field: 'count', type: 'quantitative' },
+            text: { value: 'YOU' },
+          },
+        },
+      ],
+      data: { values: histogram },
+    };
+  }, [histogram]);
 
   const isOnlyThisWorkflowMin =
     minWorkflows.length === 1 && minWorkflows[0].id === currentWorkflowId;
@@ -222,85 +330,249 @@ export const MetricCards = () => {
   const getMaxText = () =>
     maxWorkflows.length === 1 ? 'View workflow' : `View ${maxWorkflows.length} workflows`;
 
+  const sliderMin = typeof minValue === 'number' ? minValue : (typeof metricData?.metric?.minValue === 'number' ? metricData.metric.minValue : 0);
+  const sliderMax = typeof maxValue === 'number' ? maxValue : (typeof metricData?.metric?.maxValue === 'number' ? metricData.metric.maxValue : 1);
+  const sliderRange = sliderMax - sliderMin;
+  const safeRange = sliderRange === 0 ? 1 : sliderRange;
+  const youLeftPct = typeof currentValue === 'number' ? ((currentValue - sliderMin) / safeRange) * 100 : 0;
+  const avgLeftPct = typeof avgValue === 'number' ? ((avgValue - sliderMin) / safeRange) * 100 : 0;
+
+  const MetricStatCard = ({ title, value, helper }: { title: string; value: React.ReactNode; helper?: React.ReactNode }) => (
+    <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', flex: 1, minWidth: 260 }}>
+      <CardContent sx={{ p: 2 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+          {title}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
+            {value}
+          </Typography>
+          {helper}
+        </Box>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, width: '100%' }}>
-      <DetailsCard title="Metric Details">
-        <DetailsCardItem label="Metric" value={metricData?.metric?.name} />
-        <DetailsCardItem label="Value" value={metricData?.metric?.value?.toFixed(5)} />
-        {metricData?.metric?.task && <DetailsCardItem label="Logged in Task" value={metricData.metric?.task} />}
-        <DetailsCardItem
-          label="Timestamp"
-          value={typeof metricData?.metric?.timestamp === 'number'
-            ? new Date(metricData.metric?.timestamp).toLocaleString()
-            : undefined}
-        />
-      </DetailsCard>
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 2 }}>
+        <Box>
+          <Typography variant="overline" color="text.secondary">
+            Single Value Metric
+          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+            {metricData?.metric?.name ?? 'Metric'}
+          </Typography>
+        </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          {timestampText}
+        </Typography>
+      </Box>
 
-      <DetailsCard title="Comparison Across All Workflows">
-        <DetailsCardItem
-          label="Average"
-          value={
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant="body1">
-                {metricData?.metric?.avgValue?.toFixed(5)} — Difference: {Number.isFinite(metricData?.metric?.avgDiff) ? metricData?.metric?.avgDiff.toFixed(2) : '0.00'}%
-              </Typography>
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <MetricStatCard
+          title="Current Value"
+          value={format5(currentValue)}
+          helper={
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: diffColor }}>
               {renderDiffIcon()}
+              <Typography variant="body2" sx={{ fontWeight: 600, color: diffColor }}>
+                {typeof avgDiff === 'number'
+                  ? `${avgDiff > 0 ? '+' : ''}${avgDiff.toFixed(2)}%`
+                  : '—'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                vs avg
+              </Typography>
             </Box>
           }
         />
 
-        <DetailsCardItem
-          label="Minimum"
+        <MetricStatCard
+          title="Percentile Ranking"
           value={
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant="body1" sx={{ mr: 1 }}>
-                {minValue.toFixed(5)}
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: '999px',
+                bgcolor: green[50],
+                color: green[700],
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 18,
+                fontWeight: 800,
+              }}
+            >
+              {typeof percentile === 'number' ? percentile : '—'}
+            </Box>
+          }
+          helper={
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {typeof topPercent === 'number' ? `Top ${topPercent}%` : '—'}
               </Typography>
-              {!isOnlyThisWorkflowMin && (
-                <>
-                  {' — '}
-                  <Box
-                    component="a"
-                    href={getMinHref()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleClickMin}
-                    sx={{ color: 'primary.main', textDecoration: 'underline', ml: 1 }}
-                  >
-                    {getMinText()}
-                  </Box>
-                </>
-              )}
+              <Typography variant="caption" color="text.secondary">
+                {typeof percentile === 'number'
+                  ? `Outperforms ${percentile}% of workflows`
+                  : 'Not enough data'}
+              </Typography>
             </Box>
           }
         />
+      </Box>
 
-        <DetailsCardItem
-          label="Maximum"
-          value={
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant="body1" sx={{ mr: 1 }}>
-                {maxValue.toFixed(5)}
+      {distributionSpec && (
+        <Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 2 }}>
+          <ResponsiveCardVegaLite
+            spec={distributionSpec}
+            actions={false}
+            title="Distribution Across All Workflows"
+            maxHeight={320}
+          />
+        </Paper>
+      )}
+
+      <Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 2 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
+          Comparison Across All Workflows
+        </Typography>
+
+        <Box sx={{ position: 'relative', px: 1, py: 2 }}>
+          <Box sx={{ height: 10, borderRadius: 999, bgcolor: '#eef1f5' }} />
+          <Box
+            sx={{
+              position: 'absolute',
+              left: 8,
+              top: 16,
+              height: 10,
+              borderRadius: 999,
+              bgcolor: '#1463ff',
+              width: `${Math.max(0, Math.min(100, youLeftPct))}%`,
+              opacity: 0.9,
+            }}
+          />
+
+          {typeof avgValue === 'number' && (
+            <>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: `calc(${Math.max(0, Math.min(100, avgLeftPct))}% + 8px)`,
+                  top: 8,
+                  width: 2,
+                  height: 26,
+                  bgcolor: '#111827',
+                  opacity: 0.35,
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  position: 'absolute',
+                  left: `calc(${Math.max(0, Math.min(100, avgLeftPct))}% + 8px)`,
+                  top: 36,
+                  transform: 'translateX(-50%)',
+                  color: 'text.secondary',
+                }}
+              >
+                Avg
               </Typography>
-              {!isOnlyThisWorkflowMax && (
-                <>
-                  {' — '}
-                  <Box
-                    component="a"
-                    href={getMaxHref()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={handleClickMax}
-                    sx={{ color: 'primary.main', textDecoration: 'underline', ml: 1 }}
-                  >
-                    {getMaxText()}
-                  </Box>
-                </>
+            </>
+          )}
+
+          {typeof currentValue === 'number' && (
+            <>
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: `calc(${Math.max(0, Math.min(100, youLeftPct))}% + 8px)`,
+                  top: 6,
+                  width: 2,
+                  height: 30,
+                  bgcolor: '#1463ff',
+                }}
+              />
+              <Box
+                sx={{
+                  position: 'absolute',
+                  left: `calc(${Math.max(0, Math.min(100, youLeftPct))}% + 8px)`,
+                  top: 22,
+                  width: 8,
+                  height: 8,
+                  borderRadius: 999,
+                  bgcolor: '#1463ff',
+                  transform: 'translateX(-50%)',
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  position: 'absolute',
+                  left: `calc(${Math.max(0, Math.min(100, youLeftPct))}% + 8px)`,
+                  top: -2,
+                  transform: 'translateX(-50%)',
+                  color: '#1463ff',
+                  fontWeight: 700,
+                }}
+              >
+                You
+              </Typography>
+            </>
+          )}
+        </Box>
+
+        <Divider sx={{ my: 2 }} />
+
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', flex: 1, minWidth: 240 }}>
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="caption" color="text.secondary">Minimum</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5 }}>{format5(minValue)}</Typography>
+              {!isOnlyThisWorkflowMin && minWorkflows.length > 0 && (
+                <Box
+                  component="a"
+                  href={getMinHref()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleClickMin}
+                  sx={{ color: 'primary.main', textDecoration: 'underline', display: 'inline-block', mt: 0.5 }}
+                >
+                  {getMinText()}
+                </Box>
               )}
-            </Box>
-          }
-        />
-      </DetailsCard>
+            </CardContent>
+          </Card>
+
+          <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', flex: 1, minWidth: 240, bgcolor: '#eef4ff' }}>
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="caption" color="text.secondary">Average</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5, color: '#1463ff' }}>{format5(avgValue)}</Typography>
+              <Typography variant="caption" color="text.secondary">Baseline</Typography>
+            </CardContent>
+          </Card>
+
+          <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', flex: 1, minWidth: 240 }}>
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="caption" color="text.secondary">Maximum</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5 }}>{format5(maxValue)}</Typography>
+              {!isOnlyThisWorkflowMax && maxWorkflows.length > 0 && (
+                <Box
+                  component="a"
+                  href={getMaxHref()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={handleClickMax}
+                  sx={{ color: 'primary.main', textDecoration: 'underline', display: 'inline-block', mt: 0.5 }}
+                >
+                  {getMaxText()}
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Box>
+      </Paper>
     </Box>
   );
 };
