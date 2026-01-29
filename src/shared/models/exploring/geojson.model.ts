@@ -13,16 +13,7 @@ export type GeoJsonPolygon = {
   coordinates: Array<Array<[number, number]>>;
 };
 
-export type GeoJsonCircle = {
-  type: 'Circle';
-  /**
-   * [longitude, latitude]
-   * expect a radius property (in meters) in the properties object
-   */
-  coordinates: [number, number];
-};
-
-export type GeoJsonGeometry = GeoJsonPoint | GeoJsonPolygon | GeoJsonCircle;
+export type GeoJsonGeometry = GeoJsonPoint | GeoJsonPolygon ;
 
 export type GeoJsonFeature = {
   type: 'Feature';

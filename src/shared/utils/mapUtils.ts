@@ -104,9 +104,9 @@ const circleIntersectsGeohashCell = (
 
 export const geometryToIncludedGeohashes = (geometry?: GeoJsonGeometry, precision = 8, radius?: number): string[] => {
   if (!geometry) return [];
-  if (geometry.type !== 'Polygon' && geometry.type !== 'Circle') return [];
+  if (geometry.type !== 'Polygon' && geometry.type !== 'Point') return [];
 
-  if (geometry.type === 'Circle' && radius) {
+  if (geometry.type === 'Point' && radius) {
     // GeoJSON stores positions as [lon, lat]; our LatLon is [lat, lon]
     const [lon, lat] = geometry.coordinates;
     const center: LatLon = [lat, lon];
@@ -248,13 +248,14 @@ export const getRectAndFeatureToUse = (params: {
       featureToUse = {
         type: 'Feature',
         geometry: {
-          type: 'Circle',
+          type: 'Point',
           coordinates: drawnShape.coordinates
             ? [drawnShape.coordinates[0][1], drawnShape.coordinates[0][0]]
             : [0, 0],
         },
         properties: {
           radius: drawnShape.radius,
+          shape: 'circle',
         },
       };
     } else {

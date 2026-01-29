@@ -229,11 +229,12 @@ export const MapControl = ({ id }: { id: string }) => {
               feature: {
                 type: 'Feature' as const,
                 geometry: {
-                  type: 'Circle' as const,
+                  type: 'Point' as const,
                   coordinates: [bounds.getCenter().lng, bounds.getCenter().lat] as [number, number],
                 },
                 properties: {
                   radius: radius,
+                  shape: 'circle',
                 }
               },
             };
