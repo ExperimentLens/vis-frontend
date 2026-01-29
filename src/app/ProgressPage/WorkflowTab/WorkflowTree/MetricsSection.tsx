@@ -30,8 +30,7 @@ export default function MetricsSection({ taskId, metrics }: Props) {
       />
       {metrics.map((metric, index) => {
         const isSeiresMetric = workflowSeriesMetrics.data.some(m => m.name === metric.name && m.seriesMetric.length > 1);
-        console.log('isSeiresMetric', metric.name, isSeiresMetric);
-        console.log("here")
+
         return (
           <TreeItem2
             key={`${metric.name}-${index}`}

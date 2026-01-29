@@ -238,12 +238,12 @@ export const MetricCards = () => {
   const diffColor = typeof avgDiff === 'number' ? (avgDiff >= 0 ? green[700] : red[700]) : 'text.secondary';
 
   const percentile = useMemo(() => {
-    if (typeof currentValue !== 'number') return undefined;
+    if (typeof metricData?.metric?.value !== 'number') return undefined;
     const values = filteredWorkflows.map(w => w.rawValue).filter(v => typeof v === 'number' && Number.isFinite(v));
     if (values.length <= 1) return undefined;
 
     // Assumption: higher metric value is better.
-    const below = values.filter(v => v < currentValue).length;
+    const below = values.filter(v => metricData?.metric?.value && v < metricData.metric.value).length;
     const totalOthers = values.length - 1;
     if (totalOthers <= 0) return undefined;
     return Math.round((below / totalOthers) * 100);
