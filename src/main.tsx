@@ -8,6 +8,7 @@ import theme from './mui-theme';
 import 'dayjs/locale/el';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import 'leaflet-providers';
 
 const container = document.getElementById('root');
 
