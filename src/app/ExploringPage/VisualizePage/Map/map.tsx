@@ -5,7 +5,7 @@ import {
   rsrpIntensityExtractor,
   type IPointType,
 } from '../../../../shared/utils/clusterUtils';
-import { MapContainer, Marker, TileLayer, ZoomControl, LayersControl } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, ZoomControl } from 'react-leaflet';
 import {
   defaultValue,
   type IDataset,
@@ -270,7 +270,14 @@ export const Map = (props: IMapProps) => {
         zoomControl={false}
         maxZoom={MAX_ZOOM}
       >
-        <LayersControl  position="topright">
+
+        <TileLayer
+          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          maxNativeZoom={18} // This will allow zooming beyond level 18 by scaling the available tiles, though with some quality degradation.
+          maxZoom={MAX_ZOOM}
+        />
+        {/* <LayersControl  position="topright">
           <LayersControl.BaseLayer name="Stadia OSM Bright" checked>
             <TileLayer
               minZoom={0}
@@ -287,7 +294,7 @@ export const Map = (props: IMapProps) => {
               attribution='&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
           </LayersControl.BaseLayer>
-        </LayersControl>
+        </LayersControl> */}
         <ZoomControl position="topright" />
         <MapControl id={id} />
         {mapLayer === 'cluster' ? (
