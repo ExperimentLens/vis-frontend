@@ -3,10 +3,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
 import 'leaflet-draw/dist/leaflet.draw.css';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useMap } from 'react-leaflet';
+import { useNavigate } from 'react-router-dom';
 import {
   setDrawnShape,
+  setMapLayer,
+  setSelectedGeohash,
   updateMapBounds,
 } from '../../../../store/slices/exploring/mapSlice';
 import { postZone, setZone } from '../../../../store/slices/exploring/zoneSlice';
@@ -16,12 +19,38 @@ import { resetZoneState } from '../../../../store/slices/exploring/zoneSlice';
 import type { LatLon } from '../../../../shared/models/exploring/latlon.model';
 import { geoPointsToGeoJsonPolygon, rectangleToGeoJsonPolygon } from '../../../../shared/utils/mapUtils';
 import type { IZone } from '../../../../shared/models/exploring/zone.model';
+import type { MapLayer } from '../../../../shared/models/exploring/dataset.model';
 
 export const MapControl = ({ id }: { id: string }) => {
   const map = useMap();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const { zone } = useAppSelector(state => state.zone);
+  const { mapLayer, selectedGeohash, drawnShape } = useAppSelector(state => state.map);
+  const { predictionDisplay } = useAppSelector(state => state.prediction);
   const hasInitialized = useRef(false);
+  const layerControlRef = useRef<L.Control | null>(null);
+  const layerControlContainerRef = useRef<HTMLDivElement | null>(null);
+  const layerButtonsRef = useRef<{
+    cluster?: HTMLAnchorElement;
+    heatmap?: HTMLAnchorElement;
+    geohash?: HTMLAnchorElement;
+  }>({});
+
+  const resetGeohashSelection = useCallback(() => {
+    dispatch(setSelectedGeohash(null));
+    navigate('?');
+  }, [dispatch, navigate]);
+
+  const toggleMapLayer = useCallback(
+    (layer: MapLayer) => {
+      if (layer !== 'geohash' && selectedGeohash != null) {
+        resetGeohashSelection();
+      }
+      dispatch(setMapLayer(layer));
+    },
+    [dispatch, resetGeohashSelection, selectedGeohash],
+  );
 
   // Use the custom hook for all drawing functionality
   const {
@@ -331,6 +360,122 @@ export const MapControl = ({ id }: { id: string }) => {
       map.removeControl(legend);
     };
   }, [map, id, dispatch, addDrawnLayer, clearDrawnItems]);
+
+  useEffect(() => {
+    if (!map) return;
+
+    if (predictionDisplay) {
+      if (layerControlRef.current) {
+        map.removeControl(layerControlRef.current);
+        layerControlRef.current = null;
+      }
+      layerControlContainerRef.current = null;
+      layerButtonsRef.current = {};
+
+      return;
+    }
+
+    if (!layerControlRef.current) {
+      const layerControl = new L.Control({ position: 'topright' });
+
+      layerControl.onAdd = () => {
+        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+
+        div.style.backgroundColor = 'white';
+        div.style.border = '2px solid rgba(0,0,0,0.2)';
+        div.style.borderRadius = '4px';
+
+        L.DomEvent.disableClickPropagation(div);
+        L.DomEvent.disableScrollPropagation(div);
+
+        const createButton = (
+          value: MapLayer,
+          iconSvg: string,
+          title: string,
+        ) => {
+          const button = L.DomUtil.create('a', '', div) as HTMLAnchorElement;
+
+          button.href = '#';
+          button.title = title;
+          button.setAttribute('role', 'button');
+          button.setAttribute('aria-label', title);
+          button.innerHTML = iconSvg;
+          button.style.width = '30px';
+          button.style.height = '30px';
+          button.style.lineHeight = '30px';
+          button.style.textAlign = 'center';
+          button.style.display = 'block';
+          button.style.color = 'black';
+          button.style.textDecoration = 'none';
+          button.style.fontWeight = '600';
+          button.style.borderBottom = '1px solid rgba(0,0,0,0.2)';
+
+          L.DomEvent.on(button, 'click', e => {
+            L.DomEvent.preventDefault(e);
+            if (value === 'geohash' && drawnShape != null) return;
+            toggleMapLayer(value);
+          });
+
+          return button;
+        };
+
+        const clusterIconSvg =
+          '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" style="vertical-align: middle;"><circle cx="12" cy="6" r="3" fill="currentColor"/><circle cx="6" cy="16" r="3" fill="currentColor"/><circle cx="18" cy="16" r="3" fill="currentColor"/></svg>';
+        const heatmapIconSvg =
+          '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" style="vertical-align: middle;"><path d="M5 14c0-4 3-7 7-7s7 3 7 7c0 3.9-3.1 6-7 6s-7-2.1-7-6z" fill="currentColor" opacity="0.35"/><path d="M7 14c0-3 2.4-5 5-5s5 2 5 5c0 2.7-2.2 4-5 4s-5-1.3-5-4z" fill="currentColor" opacity="0.2"/></svg>';
+        const geohashIconSvg =
+          '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" style="vertical-align: middle;"><path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke="currentColor" stroke-width="2" fill="none"/></svg>';
+
+        const clusterButton = createButton('cluster', clusterIconSvg, 'Points');
+        const heatmapButton = createButton('heatmap', heatmapIconSvg, 'Heatmap');
+        const geohashButton = createButton('geohash', geohashIconSvg, 'Geohash');
+
+        geohashButton.style.borderBottom = 'none';
+
+        layerControlContainerRef.current = div;
+        layerButtonsRef.current = {
+          cluster: clusterButton,
+          heatmap: heatmapButton,
+          geohash: geohashButton,
+        };
+
+        return div;
+      };
+
+      layerControlRef.current = layerControl;
+      map.addControl(layerControl);
+    }
+
+    return () => {
+      if (layerControlRef.current) {
+        map.removeControl(layerControlRef.current);
+        layerControlRef.current = null;
+      }
+      layerControlContainerRef.current = null;
+      layerButtonsRef.current = {};
+    };
+  }, [map, predictionDisplay, drawnShape, toggleMapLayer]);
+
+  useEffect(() => {
+    if (!layerControlContainerRef.current) return;
+
+    const { cluster, heatmap, geohash } = layerButtonsRef.current;
+    const setActive = (button?: HTMLAnchorElement, active?: boolean) => {
+      if (!button) return;
+      button.style.backgroundColor = active ? '#f4f4f4' : 'transparent';
+    };
+
+    setActive(cluster, mapLayer === 'cluster');
+    setActive(heatmap, mapLayer === 'heatmap');
+    setActive(geohash, mapLayer === 'geohash');
+
+    if (geohash) {
+      const isDisabled = drawnShape != null;
+
+      geohash.style.opacity = isDisabled ? '0.5' : '1';
+      geohash.style.pointerEvents = isDisabled ? 'none' : 'auto';
+    }
+  }, [drawnShape, mapLayer]);
 
   return null;
 };
