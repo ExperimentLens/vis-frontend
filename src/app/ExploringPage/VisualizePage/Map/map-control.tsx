@@ -331,25 +331,6 @@ export const MapControl = ({ id }: { id: string }) => {
     map.on(L.Draw.Event.DELETED, onDeletedWrapper);
     map.on('moveend', onMoveEnd);
 
-    const legend = new L.Control({ position: 'topright' });
-
-    legend.onAdd = function () {
-      const div = L.DomUtil.create('div', 'legend');
-
-      div.innerHTML +=
-        '<div class="color-block" style="background-color: #FC6666;"></div> <span class="label">Poor</span><br>';
-      div.innerHTML +=
-        '<div class="color-block" style="background-color: orange;"></div> <br><span class="label">Fair</span><br>';
-      div.innerHTML +=
-        '<div class="color-block" style="background-color: #FFF966;"></div> <span class="label">Good</span><br>';
-      div.innerHTML +=
-        '<div class="color-block" style="background-color: #99FF99;"></div> <span class="label">Excellent</span>';
-
-      return div;
-    };
-
-    legend.addTo(map);
-
     return () => {
       map.removeLayer(drawnItems);
       map.removeControl(drawControl);
@@ -357,7 +338,6 @@ export const MapControl = ({ id }: { id: string }) => {
       map.off(L.Draw.Event.CREATED, onCreatedWrapper);
       map.off(L.Draw.Event.DELETED, onDeletedWrapper);
       map.off('moveend', onMoveEnd);
-      map.removeControl(legend);
     };
   }, [map, id, dispatch, addDrawnLayer, clearDrawnItems]);
 

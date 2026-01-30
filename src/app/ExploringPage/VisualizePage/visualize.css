@@ -236,22 +236,3 @@
 .dropdown-description {
   margin: auto;
 }
-.legend {
-  position: absolute;
-  right: 40px;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  padding: 10px;
-  text-align: center;
-  font-family: Arial, sans-serif;
-}
-
-.color-block {
-  width: 20px; /* Adjust width as needed */
-  height: 20px; /* Adjust height as needed */
-  display: inline-block;
-  margin-right: 5px;
-  border-radius: 25px;
-}

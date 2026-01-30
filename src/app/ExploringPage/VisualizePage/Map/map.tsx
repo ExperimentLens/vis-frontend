@@ -29,7 +29,7 @@ import {
   setSelectedGeohash,
 } from '../../../../store/slices/exploring/mapSlice';
 import { LatLngBounds, type LatLngBoundsExpression } from 'leaflet';
-import { Zones } from '../Zones/zones';
+import { MapLegend } from './map-legend';
 
 export interface IMapProps {
   id: string;
@@ -459,7 +459,7 @@ export const Map = (props: IMapProps) => {
           />
         ) : null}
         <MapSearch />
-        <Zones dataset={dataset} />
+        <MapLegend dataset={dataset} />
       </MapContainer>
     );
   }

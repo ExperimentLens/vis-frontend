@@ -21,7 +21,6 @@ import {
   Visibility as VisibilityIcon,
   Download as DownloadIcon,
   Clear as ClearIcon,
-  CropFree as CropFreeIcon,
 } from '@mui/icons-material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import {
@@ -59,7 +58,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
     intervals,
     predictionDisplay,
   } = useAppSelector((state: RootState) => state.prediction);
-  const { mapLayer, drawnShape } = useAppSelector(
+  const { mapLayer } = useAppSelector(
     (state: RootState) => state.map,
   );
   const dispatch = useAppDispatch();
@@ -137,26 +136,13 @@ export const Zones = ({ dataset }: IZonesProps) => {
     <>
       {/* Zones Button */}
       <Tooltip title="Zones" placement="left" arrow>
-        <IconButton
+        <Button
+          variant="outlined"
+          size="small"
           onClick={handleOpenZonesModal}
-          sx={{
-            position: 'absolute',
-            width: 33,
-            height: 33,
-            backgroundColor: 'white',
-            top: predictionDisplay || drawnShape == null ? 290 : 370,
-            right: 10,
-            border: '2px solid rgba(0,0,0,0.2)',
-            borderRadius: 2,
-            zIndex: 1000,
-            '&:hover': {
-              backgroundColor: 'rgba(14, 16, 33, 0.08)',
-              boxShadow: 'none',
-            },
-          }}
         >
-          <CropFreeIcon />
-        </IconButton>
+          Zones
+        </Button>
       </Tooltip>
 
       {/* Zones Dialog */}
