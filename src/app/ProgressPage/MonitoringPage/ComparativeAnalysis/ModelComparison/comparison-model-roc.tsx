@@ -28,8 +28,8 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
     const ids = [...selectedWorkflowIds];
 
     ids.sort((a, b) => {
-      const aucA = comparativeModelRocCurve[a]?.data?.auc;
-      const aucB = comparativeModelRocCurve[b]?.data?.auc;
+      const aucA = comparativeModelRocCurve[a]?.data?.auc || comparativeModelRocCurve[a]?.data?.roc_auc;
+      const aucB = comparativeModelRocCurve[b]?.data?.auc || comparativeModelRocCurve[b]?.data?.roc_auc;
       const hasA = typeof aucA === 'number' && Number.isFinite(aucA);
       const hasB = typeof aucB === 'number' && Number.isFinite(aucB);
 
