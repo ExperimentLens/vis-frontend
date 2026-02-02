@@ -54,6 +54,42 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
   const range = maxVal - minVal;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+
+  const lastVal =
+    typeof metrics.at(-1)?.value === 'number'
+      ? metrics.at(-1)!.value
+      : undefined;
+
+  const pctVsMean =
+    typeof lastVal === 'number' && mean !== 0
+      ? ((lastVal - mean) / Math.abs(mean)) * 100
+      : undefined;
+  const round2 = (v: number) => Math.round(v * 100) / 100;
+  const format2 = (v: number | undefined) =>
+    typeof v === 'number' && Number.isFinite(v) ? round2(v).toString() : '—';
+
+  const pctText =
+    typeof pctVsMean === 'number'
+      ? `${pctVsMean >= 0 ? '+' : ''}${round2(pctVsMean)}%`
+      : '—';
+
+  const pctColor =
+    typeof pctVsMean === 'number'
+      ? (pctVsMean >= 0 ? green[700] : red[700])
+      : 'text.secondary';
+
+  const renderDiffIcon = () => {
+    if (typeof pctVsMean !== 'number' || pctVsMean === 0) return null;
+    return pctVsMean > 0 ? (
+      <ArrowDropUpIcon sx={{ color: green[600], mb: 0.2 }} fontSize="small" />
+    ) : (
+      <ArrowDropDownIcon sx={{ color: red[600], mb: 0.2 }} fontSize="small" />
+    );
+  };
+
+  const isStepMode = metrics.some(m => m.step !== null && m.step !== undefined);
+  const showSeriesCards = metrics.length > 1 && !isSingleStep;
 
   // If all values equal, pad based on magnitude (or 1 if zero)
   const base = range === 0 ? Math.max(Math.abs(maxVal), 1) : range;
@@ -72,9 +108,14 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
       },
     encoding: {
       x: {
-        field: metrics[0].step === null ? 'timestamp' : 'step', // Use the 'step' field for the x-axis (time or step sequence)
+        field: isStepMode ? 'step' : 'timestamp', // Use the 'step' field for the x-axis (time or step sequence)
         type: 'ordinal',
-        axis: { labels: false, title: metrics[0].step === null ? 'Timestamp' : 'Step' }, // Hide x-axis labels
+        axis: {
+          labels: isStepMode,
+          labelAngle: 0,
+          labelOverlap: 'greedy',
+          title: isStepMode ? 'Step' : 'Timestamp',
+        },
       },
       y: {
         field: 'value', // Use the 'value' field for the y-axis (metric values like CPU Load)
@@ -100,13 +141,81 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
   };
 
   return (
-    <Box sx={{ height: '99%' }}>
-      <ResponsiveCardVegaLite
-        spec={chartSpec}
-        actions={false}
-        title={metrics[0].task ? `${metrics[0].task}／${metrics[0].metricName}` : metrics[0].metricName}
-        maxHeight={500}
-      />
+    <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      {showSeriesCards && (
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 1 }}>
+          {/* Card 1: Current + % vs mean */}
+          <Card
+            elevation={0}
+            sx={{
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              flex: 1,
+              minWidth: 260,
+            }}
+          >
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                Current ({isStepMode ? 'last step' : 'latest'})
+              </Typography>
+          
+              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
+                  {format2(lastVal)}
+                </Typography>
+          
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {renderDiffIcon()}
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: pctColor }}>
+                    {pctText}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    vs mean
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+          
+          {/* Card 2: Range */}
+          <Card
+            elevation={0}
+            sx={{
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              flex: 1,
+              minWidth: 260,
+            }}
+          >
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+                Range
+              </Typography>
+          
+              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
+                  {format2(minVal)} – {format2(maxVal)}
+                </Typography>
+          
+                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                  span {format2(maxVal - minVal)}
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Box>
+      )}
+      <Box sx={{width: '100%'}}>
+        <ResponsiveCardVegaLite
+          spec={chartSpec}
+          actions={false}
+          title={metrics[0].task ? `${metrics[0].task}／${metrics[0].metricName}` : metrics[0].metricName}
+          maxHeight={500}
+          isStatic={false}
+        />
+      </Box>
     </Box>
   );
 };
