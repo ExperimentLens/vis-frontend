@@ -17,6 +17,7 @@ function normalizeKey(key: string) {
 
 function pct(n: number, total: number) {
   if (!total) return 0;
+
   return (n / total) * 100;
 }
 
@@ -39,7 +40,9 @@ export function DataSplitsCardContent({ dataSplitSizes }: DataSplitsCardContentP
       const bi = DEFAULT_SPLIT_ORDER.indexOf(b.key);
       const aRank = ai === -1 ? 999 : ai;
       const bRank = bi === -1 ? 999 : bi;
+
       if (aRank !== bRank) return aRank - bRank;
+
       return a.key.localeCompare(b.key);
     });
 
@@ -54,6 +57,7 @@ export function DataSplitsCardContent({ dataSplitSizes }: DataSplitsCardContentP
       color: '#64748b',
     };
     const percent = pct(e.size, total);
+
     return { ...e, ...meta, percent };
   });
 
@@ -149,7 +153,7 @@ export function DataSplitsCardContent({ dataSplitSizes }: DataSplitsCardContentP
               </Typography>
             </Box>
 
-            <Typography sx={{ fontWeight: 600}}>
+            <Typography sx={{ fontWeight: 600 }}>
               {s.size.toLocaleString()}
             </Typography>
 

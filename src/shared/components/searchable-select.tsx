@@ -43,7 +43,8 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
     getOptionLabel ? getOptionLabel(option) : option;
 
   const filteredOptions = options.filter(option =>
-    optionToLabel(option).toLowerCase().includes(search.toLowerCase()),
+    optionToLabel(option).toLowerCase()
+      .includes(search.toLowerCase()),
   );
 
   const handleChange = (event: SelectChangeEvent<string>) => {

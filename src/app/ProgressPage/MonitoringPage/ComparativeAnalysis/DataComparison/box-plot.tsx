@@ -37,12 +37,15 @@ const toNum = (v: unknown): number | null => {
   if (typeof v === 'number' && Number.isFinite(v)) return v;
   if (typeof v === 'string') {
     const n = Number(v);
+
     return Number.isFinite(n) ? n : null;
   }
+
   return null;
 };
 
-const normalizeKey = (s: string) => (s || '').trim().toLowerCase().replace(/-/g, '_');
+const normalizeKey = (s: string) => (s || '').trim().toLowerCase()
+  .replace(/-/g, '_');
 
 const BoxPlot = ({ assetName, columnName, assets, colorScale }: BoxPlotProps) => {
   const workflowIds = useMemo(() => assets.map(a => a.workflowId), [assets]);
@@ -73,6 +76,7 @@ const BoxPlot = ({ assetName, columnName, assets, colorScale }: BoxPlotProps) =>
 
       if (!Array.isArray(summary)) {
         missing = true;
+
         return;
       }
 
@@ -80,6 +84,7 @@ const BoxPlot = ({ assetName, columnName, assets, colorScale }: BoxPlotProps) =>
 
       if (!entry) {
         missing = true;
+
         return;
       }
 
@@ -138,7 +143,7 @@ const BoxPlot = ({ assetName, columnName, assets, colorScale }: BoxPlotProps) =>
             labelFontSize: 10,
             labelLimit: 90,
             labelExpr:
-              "length(datum.value) > 8 ? substring(datum.value, 0, 8) + '…' : datum.value",
+              'length(datum.value) > 8 ? substring(datum.value, 0, 8) + \'…\' : datum.value',
           },
         },
         color: {
@@ -158,7 +163,7 @@ const BoxPlot = ({ assetName, columnName, assets, colorScale }: BoxPlotProps) =>
             tooltip,
           },
         },
-         {
+        {
           // whisker cap (min)
           mark: { type: 'tick', orient: 'horizontal', size: 24, thickness: 2 },
           encoding: {

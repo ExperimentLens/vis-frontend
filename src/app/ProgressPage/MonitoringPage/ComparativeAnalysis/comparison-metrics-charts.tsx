@@ -224,6 +224,7 @@ const ComparisonMetricsCharts: React.FC = () => {
 
   const renderCharts = metricNames.map((metricName) => {
     const metricSeries = groupedMetrics[metricName];
+
     if (isMetricPending(metricName)) {
       return (
         <Grid

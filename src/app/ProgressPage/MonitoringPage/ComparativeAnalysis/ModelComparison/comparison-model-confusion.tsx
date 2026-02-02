@@ -6,7 +6,7 @@ import ResponsiveCardTable from '../../../../../shared/components/responsive-car
 import InfoMessage from '../../../../../shared/components/InfoMessage';
 import ResponsiveCardVegaLite from '../../../../../shared/components/responsive-card-vegalite';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { fetchComparativeConfusionMatrix } from '../../../../../store/slices/monitorPageSlice';
 import { Link } from 'react-router-dom';
 import TitleTooltip from '../title-tooltip';
@@ -15,11 +15,73 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
   const { workflowsTable, comparativeModelConfusionMatrix } = useAppSelector(
     (state: RootState) => state.monitorPage,
   );
+  const sortConfusionByF1 = useAppSelector((state: RootState) => state.monitorPage.sortConfusionByF1);
   const experimentId = useAppSelector(
     (state: RootState) => state.progressPage.experiment.data?.id || '',
   );
   const dispatch = useAppDispatch();
   const selectedWorkflowIds = workflowsTable.selectedWorkflows;
+
+  const orderedWorkflowIds = useMemo(() => {
+    if (!sortConfusionByF1) return selectedWorkflowIds;
+
+    const computeMacroF1 = (matrix: number[][]): number | null => {
+      const n = matrix.length;
+
+      if (n === 0) return null;
+
+      const safe = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : 0);
+      let f1Sum = 0;
+      let classes = 0;
+
+      for (let i = 0; i < n; i++) {
+        const tp = safe(matrix[i]?.[i]);
+
+        let fp = 0;
+        let fn = 0;
+
+        for (let r = 0; r < n; r++) {
+          if (r !== i) fp += safe(matrix[r]?.[i]);
+        }
+
+        for (let c = 0; c < n; c++) {
+          if (c !== i) fn += safe(matrix[i]?.[c]);
+        }
+
+        const precDen = tp + fp;
+        const recDen = tp + fn;
+        const precision = precDen > 0 ? tp / precDen : 0;
+        const recall = recDen > 0 ? tp / recDen : 0;
+        const den = precision + recall;
+        const f1 = den > 0 ? (2 * precision * recall) / den : 0;
+
+        f1Sum += f1;
+        classes += 1;
+      }
+
+      return classes > 0 ? f1Sum / classes : null;
+    };
+
+    const ids = [...selectedWorkflowIds];
+
+    ids.sort((a, b) => {
+      const ma = comparativeModelConfusionMatrix[a]?.data?.matrix;
+      const mb = comparativeModelConfusionMatrix[b]?.data?.matrix;
+
+      const f1a = Array.isArray(ma) ? computeMacroF1(ma as number[][]) : null;
+      const f1b = Array.isArray(mb) ? computeMacroF1(mb as number[][]) : null;
+      const hasA = typeof f1a === 'number' && Number.isFinite(f1a);
+      const hasB = typeof f1b === 'number' && Number.isFinite(f1b);
+
+      if (hasA && hasB) return (f1b as number) - (f1a as number);
+      if (hasA) return -1;
+      if (hasB) return 1;
+
+      return String(a).localeCompare(String(b));
+    });
+
+    return ids;
+  }, [selectedWorkflowIds, sortConfusionByF1, comparativeModelConfusionMatrix]);
 
   // Dispatch fetchComparativeConfusionMatrix for each selected workflow (runId)
   useEffect(() => {
@@ -49,7 +111,7 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
     return data;
   };
 
-  const renderCharts = selectedWorkflowIds.map((runId) => {
+  const renderCharts = orderedWorkflowIds.map((runId) => {
     const matrixState = comparativeModelConfusionMatrix[runId];
 
     const titleTooltip = <TitleTooltip workflowId={runId} />;

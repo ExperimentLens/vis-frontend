@@ -127,6 +127,8 @@ interface IMonitoringPageSlice {
       selectedComparisonTab: number
       isMosaic: boolean
       showMisclassifiedOnly: boolean
+      sortRocByAuc: boolean
+      sortConfusionByF1: boolean
       selectedWorkflowsMetrics: {
         data: {[key: string]: {name: string; seriesMetric: IMetric[]}[]}
         loading: boolean
@@ -255,6 +257,8 @@ const initialState: IMonitoringPageSlice = {
   selectedComparisonTab: 0,
   isMosaic: true,
   showMisclassifiedOnly: false,
+  sortRocByAuc: false,
+  sortConfusionByF1: false,
   selectedWorkflowsMetrics: {
     data: {},
     loading: false,
@@ -493,6 +497,12 @@ export const monitoringPageSlice = createSlice({
     },
     setSelectedModelComparisonChart: (state, action) => {
       state.selectedModelComparisonChart = action.payload;
+    },
+    setSortRocByAuc: (state, action: { payload: boolean }) => {
+      state.sortRocByAuc = action.payload;
+    },
+    setSortConfusionByF1: (state, action: { payload: boolean }) => {
+      state.sortConfusionByF1 = action.payload;
     },
     setComparativeModelInstanceControlPanel: (
       state,
@@ -897,38 +907,38 @@ export const monitoringPageSlice = createSlice({
         };
       })
       .addCase(fetchComparativeUmap.pending, (state, action) => {
-  const runId = action.meta.arg.metadata.workflowId;
+        const runId = action.meta.arg.metadata.workflowId;
 
-  if (!state.comparativeModelInstanceUmap[runId]) {
-    state.comparativeModelInstanceUmap[runId] = { data: null, loading: true, error: null };
-  } else {
-    state.comparativeModelInstanceUmap[runId].loading = true;
-    state.comparativeModelInstanceUmap[runId].error = null;
-  }
-})
-.addCase(fetchComparativeUmap.fulfilled, (state, action) => {
-  const runId = action.meta.arg.metadata.workflowId;
+        if (!state.comparativeModelInstanceUmap[runId]) {
+          state.comparativeModelInstanceUmap[runId] = { data: null, loading: true, error: null };
+        } else {
+          state.comparativeModelInstanceUmap[runId].loading = true;
+          state.comparativeModelInstanceUmap[runId].error = null;
+        }
+      })
+      .addCase(fetchComparativeUmap.fulfilled, (state, action) => {
+        const runId = action.meta.arg.metadata.workflowId;
 
-  state.comparativeModelInstanceUmap[runId] = {
-    data: action.payload,
-    loading: false,
-    error: null,
-  };
-})
-.addCase(fetchComparativeUmap.rejected, (state, action) => {
-  const runId = action.meta.arg.metadata.workflowId;
+        state.comparativeModelInstanceUmap[runId] = {
+          data: action.payload,
+          loading: false,
+          error: null,
+        };
+      })
+      .addCase(fetchComparativeUmap.rejected, (state, action) => {
+        const runId = action.meta.arg.metadata.workflowId;
 
-  if (!state.comparativeModelInstanceUmap[runId]) {
-    state.comparativeModelInstanceUmap[runId] = {
-      data: null,
-      loading: false,
-      error: 'Failed to fetch UMAP',
-    };
-  } else {
-    state.comparativeModelInstanceUmap[runId].loading = false;
-    state.comparativeModelInstanceUmap[runId].error = 'Failed to fetch UMAP';
-  }
-});
+        if (!state.comparativeModelInstanceUmap[runId]) {
+          state.comparativeModelInstanceUmap[runId] = {
+            data: null,
+            loading: false,
+            error: 'Failed to fetch UMAP',
+          };
+        } else {
+          state.comparativeModelInstanceUmap[runId].loading = false;
+          state.comparativeModelInstanceUmap[runId].error = 'Failed to fetch UMAP';
+        }
+      });
   }
 });
 
@@ -1031,5 +1041,5 @@ export const fetchComparativeUmap = createAsyncThunk(
 
 export const { setParallel, setWorkflowsTable, setScheduledTable, setVisibleTable, setSelectedTab, setSelectedComparisonTab, toggleWorkflowSelection, bulkToggleWorkflowSelection, setGroupBy,
   setHoveredWorkflow, updateWorkflowRatingLocally, setSelectedModelComparisonChart, setCommonDataAssets, setDataAssetsControlPanel, setIsMosaic, setShowMisclassifiedOnly, setComparativeModelInstanceControlPanel,
-  setExpandedGroup, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces
+  setExpandedGroup, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces, setSortRocByAuc, setSortConfusionByF1
 } = monitoringPageSlice.actions;

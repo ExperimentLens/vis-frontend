@@ -24,48 +24,51 @@ const HeatMapControlPanel = () => {
 
   const isNumericType = (t?: string) =>
     t === 'DOUBLE' || t === 'FLOAT' || t === 'INTEGER' || t === 'BIGINT';
-  
+
   const functionsForType = (t?: string): AggregationFunction[] =>
     isNumericType(t)
       ? [
-          AggregationFunction.AVG,
-          AggregationFunction.MIN,
-          AggregationFunction.MAX,
-          AggregationFunction.COUNT,
-        ]
+        AggregationFunction.AVG,
+        AggregationFunction.MIN,
+        AggregationFunction.MAX,
+        AggregationFunction.COUNT,
+      ]
       : [AggregationFunction.COUNT];
-      
+
   const originalColumns =
     tab?.workflowTasks.dataExploration?.metaData.data?.originalColumns || [];
-      
+
   // encoded options: "<column>|||<FN>"
   const measureAggOptions: string[] = originalColumns
     .filter(col => col.type !== 'LOCAL_DATE_TIME')
     .flatMap(col => functionsForType(col.type).map(fn => `${col.name}${SEP}${fn}`));
-      
+
   const getOptionLabel = (encoded: string) => {
     const [col, fn] = encoded.split(SEP);
+
     return `${col} (${fn})`;
   };
-  
+
   const parseEncoded = (encoded: string) => {
     const [column, fnRaw] = encoded.split(SEP);
+
     return { column, function: fnRaw as AggregationFunction };
   };
-  
+
   const selectedColumn =
     tab?.workflowTasks.dataExploration?.controlPanel.selectedMeasureColumnHeat || '';
-  
+
   const selectedFn =
     tab?.workflowTasks.dataExploration?.controlPanel.barAggregationHeat?.[0]
       ?.function || '';
-  
+
   const selectedMeasureAggValue =
     selectedColumn && selectedFn ? `${selectedColumn}${SEP}${selectedFn}` : '';
 
   const handleMeasureAggChange = (encoded: string) => {
     if (!encoded) {
       dispatch(setControls({ selectedMeasureColumnHeat: null, barAggregationHeat: [] }));
+
       return;
     }
 

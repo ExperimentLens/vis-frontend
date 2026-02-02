@@ -49,13 +49,16 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
 
   const filteredOptions = useMemo(() => {
     const q = search.trim().toLowerCase();
+
     if (!q) return options;
 
-    return options.filter(option => optionToLabel(option).toLowerCase().includes(q));
+    return options.filter(option => optionToLabel(option).toLowerCase()
+      .includes(q));
   }, [options, search, getOptionLabel]);
 
   const handleChange = (event: SelectChangeEvent<string[]>) => {
     const newValue = event.target.value as string[];
+
     onChange(newValue);
   };
 

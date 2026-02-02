@@ -683,6 +683,54 @@ export default function WorkflowTable() {
     return { filteredRows, filtersCounter: counter };
   };
 
+  const WorkflowColorDot = styled('span')<{
+    color: string;
+    selected: boolean;
+  }>(({ color, selected, theme }) => ({
+    width: 10,
+    height: 10,
+    borderRadius: '50%',
+    display: 'inline-block',
+    flex: '0 0 auto',
+    backgroundColor: selected ? color : theme.palette.grey[400],
+    border: `1px solid ${theme.palette.grey[500]}`,
+  }));
+
+  const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
+    const dispatch = useAppDispatch();
+    const { selectedWorkflows, workflowColors, expandedGroups } = useAppSelector(
+      (s: RootState) => s.monitorPage.workflowsTable
+    );
+
+    if (row.isGroupSummary) {
+      const isExpanded = expandedGroups.includes(row.id);
+
+      return (
+        <Box
+          onClick={(e) => {
+            e.stopPropagation();
+            dispatch(setExpandedGroup(row.id));
+          }}
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, width: '100%', height: '100%', cursor: 'pointer' }}
+        >
+          {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+          <span>{row.workflowId}</span>
+        </Box>
+      );
+    }
+
+    const workflowId = row.workflowId;
+    const isSelected = selectedWorkflows.includes(workflowId);
+    const color = workflowColors[workflowId] ?? theme.palette.grey[400];
+
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <WorkflowColorDot color={color} selected={isSelected} />
+        <span>{workflowId}</span>
+      </Box>
+    );
+  };
+
   useEffect(() => {
     if(workflowsTable.initialized) {
       const { filteredRows, filtersCounter } = applyWorkflowFilters(workflowsTable.rows, workflowsTable.filters, workflowsTable.selectedSpaces);
@@ -971,38 +1019,7 @@ export default function WorkflowTable() {
           if (key === 'workflowId') {
             return {
               ...base,
-              renderCell: (params) => {
-                if (params.row.isGroupSummary) {
-                  const groupId = params.row.id;
-                  const isExpanded = workflowsTable.expandedGroups.includes(groupId);
-
-                  return (
-                    <Box
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        dispatch(setExpandedGroup(groupId));
-                      }}
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: '100%',
-                        height: '100%',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {isExpanded ? (
-                        <ExpandMoreIcon fontSize="small" />
-                      ) : (
-                        <ChevronRightIcon fontSize="small" />
-                      )}
-                      <span>{params.value}</span>
-                    </Box>
-                  );
-                }
-
-                return <span>{params.value}</span>;
-              },
+              renderCell: (params) => <WorkflowIdCell row={params.row} />,
             };
           }
 

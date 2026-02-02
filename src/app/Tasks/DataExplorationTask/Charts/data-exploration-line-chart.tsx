@@ -11,7 +11,7 @@ import type { VisualColumn } from '../../../../shared/models/dataexploration.mod
 import { Theme } from '@mui/material/styles';
 import { vegaScaleOrUndefined } from '../../../../shared/utils/chartColorScales';
 
-//TODO: stacked mode change to one box with name Line chart
+// TODO: stacked mode change to one box with name Line chart
 
 const getColumnType = (columnType: string, fieldName?: string) => {
   if (fieldName?.toLowerCase() === 'timestamp') return 'temporal';
@@ -137,7 +137,6 @@ const LineChart = () => {
     theme
   );
 
-
   const getLineChartSpec = ({
     data,
     xAxis,
@@ -247,7 +246,7 @@ const LineChart = () => {
       return copy;
     });
 
-    //needed in order to have color encoding even for single line
+    // needed in order to have color encoding even for single line
     const valuesWithColumn = values.map(row => ({ ...row, column: yField }));
     const colorScale = vegaScaleOrUndefined(
       (tab?.workflowTasks.dataExploration?.controlPanel?.yAxis || []).map(c => c.name),

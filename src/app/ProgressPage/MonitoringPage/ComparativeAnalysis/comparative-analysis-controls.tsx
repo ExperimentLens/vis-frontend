@@ -1,7 +1,7 @@
 import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Popover, Select, Switch, Tooltip, Typography } from '@mui/material';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly } from '../../../../store/slices/monitorPageSlice';
+import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
 import theme from '../../../../mui-theme';
 import WindowRoundedIcon from '@mui/icons-material/WindowRounded';
 import RoundedCornerRoundedIcon from '@mui/icons-material/RoundedCornerRounded';
@@ -27,11 +27,15 @@ const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
   const selectedModelComparisonChart = useAppSelector((state: RootState) => state.monitorPage.selectedModelComparisonChart);
   const showMisclassifiedOnly = useAppSelector((state: RootState) => state.monitorPage.showMisclassifiedOnly);
+  const sortRocByAuc = useAppSelector((state: RootState) => state.monitorPage.sortRocByAuc);
+  const sortConfusionByF1 = useAppSelector((state: RootState) => state.monitorPage.sortConfusionByF1);
   const selectedComparisonTab = useAppSelector((state: RootState) => state.monitorPage.selectedComparisonTab);
   const comparativeVisibleMetrics = useAppSelector((state: RootState) => state.monitorPage.comparativeVisibleMetrics);
   const [anchorEl, setAnchorEl] = useState <null | HTMLElement>(null);
   const [columnsAnchorEl, setColumnsAnchorEl] = useState <null | HTMLElement>(null);
   const [datasetAnchorEl, setDatasetAnchorEl] = useState<null | HTMLElement>(null);
+  const [rocSortAnchorEl, setRocSortAnchorEl] = useState<HTMLElement | null>(null);
+  const [cmSortAnchorEl, setCmSortAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(columnsAnchorEl);
   const isDatasetSelectorOpen = Boolean(datasetAnchorEl);
   const [metricsAnchorEl, setMetricsAnchorEl] = useState<null | HTMLElement>(null);
@@ -107,6 +111,20 @@ const ComparativeAnalysisControls = ()=> {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
+
+  const cmMenuOpen = Boolean(cmSortAnchorEl);
+  const rocMenuOpen = Boolean(rocSortAnchorEl);
+
+  const handleCmMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setCmSortAnchorEl(event.currentTarget);
+  };
+
+  const handleRocMenuClick = (event: React.MouseEvent<HTMLElement>) => {
+    setRocSortAnchorEl(event.currentTarget);
+  };
+
+  const closeRoc = () => setRocSortAnchorEl(null);
+  const closeCm = () => setCmSortAnchorEl(null);
 
   return (
     <>
@@ -329,8 +347,8 @@ const ComparativeAnalysisControls = ()=> {
           {showDataComparisonViewModeToggle && selectedComparisonTab === 2 && (
             <ButtonGroup
               size="small"
-              variant="outlined" 
-              aria-label="data comparison view mode" 
+              variant="outlined"
+              aria-label="data comparison view mode"
               sx={{ height: '30px' }}
             >
               <Tooltip title="Distribution Plots">
@@ -369,6 +387,7 @@ const ComparativeAnalysisControls = ()=> {
               sx={{ ml: 0.5 }}
             />
           )}
+
           {selectedComparisonTab !== 2 && (
             <ButtonGroup variant="contained" aria-label="view mode" sx={{ height: '25px' }}>
               <Button
@@ -387,6 +406,116 @@ const ComparativeAnalysisControls = ()=> {
                   Stacked
               </Button>
             </ButtonGroup>
+          )}
+          {/* create a shared popo over component in order to avoid copy pasting */}
+          {selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
+            <>
+              <IconButton
+                aria-label="settings"
+                onClick={handleCmMenuClick}
+                sx={{
+                  position: 'relative',
+                  '& svg': { zIndex: 1, position: 'relative' },
+                }}
+              >
+                <SettingsIcon />
+              </IconButton>
+              <Menu
+                anchorEl={cmSortAnchorEl}
+                open={cmMenuOpen}
+                onClose={closeCm}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    width: 320,
+                    maxHeight: 500,
+                    padding: 0,
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
+                    border: '1px solid rgba(0,0,0,0.04)',
+                    mt: 0,
+                  },
+                }}
+                MenuListProps={{ sx: { pt: 0 } }}
+              >
+                <SectionHeader
+                  icon={<SettingsSuggestIcon fontSize="small" />}
+                  title="Control Options"
+                />
+                <Box sx={{ mt: 2 }} />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={sortConfusionByF1}
+                      size="small"
+                      onChange={(e) => {
+                        dispatch(setSortConfusionByF1(e.target.checked));
+                        setCmSortAnchorEl(null);
+                      }}
+                    />
+                  }
+                  label="Sort by F1"
+                  sx={{ ml: 0.5 }}
+                />
+              </Menu>
+            </>
+          )}
+
+          {selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
+            <>
+              <IconButton
+                aria-label="settings"
+                onClick={handleRocMenuClick}
+                sx={{
+                  position: 'relative',
+                  '& svg': { zIndex: 1, position: 'relative' },
+                }}
+              >
+                <SettingsIcon />
+              </IconButton>
+              <Menu
+                anchorEl={rocSortAnchorEl}
+                open={rocMenuOpen}
+                onClose={closeRoc}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                PaperProps={{
+                  elevation: 3,
+                  sx: {
+                    width: 320,
+                    maxHeight: 500,
+                    padding: 0,
+                    borderRadius: '12px',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
+                    border: '1px solid rgba(0,0,0,0.04)',
+                    mt: 0,
+                  },
+                }}
+                MenuListProps={{ sx: { pt: 0 } }}
+              >
+                <SectionHeader
+                  icon={<SettingsSuggestIcon fontSize="small" />}
+                  title="Control Options"
+                />
+                <Box sx={{ mt: 2 }} />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={sortRocByAuc}
+                      size="small"
+                      onChange={(e) => {
+                        dispatch(setSortRocByAuc(e.target.checked));
+                        setRocSortAnchorEl(null);
+                      }}
+                    />
+                  }
+                  label="Sort by AUC"
+                  sx={{ ml: 0.5 }}
+                />
+              </Menu>
+            </>
           )}
 
           {selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (

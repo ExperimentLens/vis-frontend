@@ -129,7 +129,9 @@ const ComparisonDataCharts = () => {
 
           if (typeof rawFormat !== 'string') return false;
 
-          const normalized = rawFormat.trim().toLowerCase().replace(/^\./, '');
+          const normalized = rawFormat.trim().toLowerCase()
+            .replace(/^\./, '');
+
           return normalized === 'csv' || normalized === 'parquet';
         })
       )

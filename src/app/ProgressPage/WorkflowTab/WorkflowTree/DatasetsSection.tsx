@@ -23,10 +23,13 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
   const dispatch = useAppDispatch();
 
   const isSupportedDatasetFormat = (format?: string | null, name?: string | null) => {
-    const normalizedFormat = (format ?? '').trim().toLowerCase().replace(/^\./, '');
+    const normalizedFormat = (format ?? '').trim().toLowerCase()
+      .replace(/^\./, '');
+
     if (normalizedFormat === 'csv' || normalizedFormat === 'parquet') return true;
 
     const normalizedName = (name ?? '').trim().toLowerCase();
+
     return normalizedName.endsWith('.csv') || normalizedName.endsWith('.parquet');
   };
 
@@ -34,6 +37,7 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
 
   const getDatasetIcon = (format?: string | null, disabled?: boolean) => {
     const color = disabled ? theme.palette.action.disabled : theme.palette.primary.main;
+
     if (!format || !format.trim()) return <InsertDriveFileRoundedIcon style={{ color }} fontSize="small" />;
     switch (format.toLowerCase()) {
       case 'csv':
@@ -91,33 +95,34 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
         (() => {
           const clickable = isDatasetClickable(ds);
           const itemId = `${kind}-ds-${taskId}-${folder}-${index}`;
-          return (
-        <TreeItem2
-          key={`${kind}-${taskId}-${folder}-${index}`}
-          itemId={itemId}
-          disabled={!clickable}
-          label={
-            <Box
-              onClick={() => {
-                if (!clickable) return;
 
-                dispatch(setSelectedId(itemId));
-                dispatch(setSelectedItem({ type: 'DATASET', data: { dataset: ds }, meta: { experimentId, workflowId } }));
-              }}
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-                cursor: clickable ? 'pointer' : 'default',
-              }}
-            >
-              {getDatasetIcon(ds.format, !clickable)}
-              <Typography variant="body2" sx={{ ml: 1, color: clickable ? 'text.primary' : 'text.disabled' }}>{ds.name}</Typography>
-            </Box>
-          }
-        />
+          return (
+            <TreeItem2
+              key={`${kind}-${taskId}-${folder}-${index}`}
+              itemId={itemId}
+              disabled={!clickable}
+              label={
+                <Box
+                  onClick={() => {
+                    if (!clickable) return;
+
+                    dispatch(setSelectedId(itemId));
+                    dispatch(setSelectedItem({ type: 'DATASET', data: { dataset: ds }, meta: { experimentId, workflowId } }));
+                  }}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    cursor: clickable ? 'pointer' : 'default',
+                  }}
+                >
+                  {getDatasetIcon(ds.format, !clickable)}
+                  <Typography variant="body2" sx={{ ml: 1, color: clickable ? 'text.primary' : 'text.disabled' }}>{ds.name}</Typography>
+                </Box>
+              }
+            />
           );
         })()
       ))}
@@ -129,33 +134,34 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
       (() => {
         const clickable = isDatasetClickable(ds);
         const itemId = `${kind}-ds-${taskId}-nofolder-${index}`;
-        return (
-      <TreeItem2
-        key={`${kind}-${taskId}-nofolder-${index}`}
-        itemId={itemId}
-        disabled={!clickable}
-        label={
-          <Box
-            onClick={() => {
-              if (!clickable) return;
 
-              dispatch(setSelectedId(itemId));
-              dispatch(setSelectedItem({ type: 'DATASET', data: { dataset: ds }, meta: { experimentId, workflowId } }));
-            }}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              px: 1,
-              py: 0.5,
-              borderRadius: 1,
-              cursor: clickable ? 'pointer' : 'default',
-            }}
-          >
-            {getDatasetIcon(ds.format, !clickable)}
-            <Typography variant="body2" sx={{ ml: 1, color: clickable ? 'text.primary' : 'text.disabled' }}>{ds.name}</Typography>
-          </Box>
-        }
-      />
+        return (
+          <TreeItem2
+            key={`${kind}-${taskId}-nofolder-${index}`}
+            itemId={itemId}
+            disabled={!clickable}
+            label={
+              <Box
+                onClick={() => {
+                  if (!clickable) return;
+
+                  dispatch(setSelectedId(itemId));
+                  dispatch(setSelectedItem({ type: 'DATASET', data: { dataset: ds }, meta: { experimentId, workflowId } }));
+                }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  cursor: clickable ? 'pointer' : 'default',
+                }}
+              >
+                {getDatasetIcon(ds.format, !clickable)}
+                <Typography variant="body2" sx={{ ml: 1, color: clickable ? 'text.primary' : 'text.disabled' }}>{ds.name}</Typography>
+              </Box>
+            }
+          />
         );
       })()
     ));

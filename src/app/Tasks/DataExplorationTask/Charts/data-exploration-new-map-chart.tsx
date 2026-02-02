@@ -190,9 +190,9 @@ const MapChart = () => {
           <div><strong>${lat}</strong>: ${latVal.toFixed(5)}</div>
           <div><strong>${lon}</strong>: ${lonVal.toFixed(5)}</div>
           ${colorByMap && colorByMap !== 'None'
-            ? `<div><strong>${colorByMap}</strong>: ${row[colorByMap]}</div>`
-            : ''
-          }
+    ? `<div><strong>${colorByMap}</strong>: ${row[colorByMap]}</div>`
+    : ''
+}
         </div>
         `,
         {

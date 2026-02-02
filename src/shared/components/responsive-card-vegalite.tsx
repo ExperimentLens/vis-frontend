@@ -129,6 +129,7 @@ const applySizeToConcatChildren = (spec: VLSpec, w: number, h?: number): VLSpec 
 
     // Recurse into known containers
     const keys = ['vconcat', 'hconcat', 'concat', 'layer'];
+
     for (const k of keys) {
       if (Array.isArray(node[k])) node[k].forEach(visit);
     }
@@ -138,6 +139,7 @@ const applySizeToConcatChildren = (spec: VLSpec, w: number, h?: number): VLSpec 
   };
 
   visit(s);
+
   return s;
 };
 
@@ -246,7 +248,6 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       setHeight(newHeight);
     }
   }, [minWidth, maxWidth, minHeight, maxHeight, aspectRatio, isStatic, isConcat]);
-
 
   // Function to handle sort change
   const handleSortChange = (direction: 'ascending' | 'descending' | 'none') => {
@@ -646,23 +647,22 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
   };
 
   const sizedSpec = useMemo(() => {
-  if (!isConcat) return displaySpec;
+    if (!isConcat) return displaySpec;
 
-  // For concat: give children the measured width so they don't default to 200px.
-  // If you *also* want consistent heights per child, pass a height too.
-  return applySizeToConcatChildren(displaySpec as any, width /*, height */);
-}, [displaySpec, isConcat, width /*, height */]);
+    // For concat: give children the measured width so they don't default to 200px.
+    // If you *also* want consistent heights per child, pass a height too.
+    return applySizeToConcatChildren(displaySpec as any, width /* , height */);
+  }, [displaySpec, isConcat, width]);
 
-const fullscreenWidth = fullScreen ? Math.floor(window.innerWidth * 0.9) : Math.floor(window.innerWidth * 0.8);
-const fullscreenHeight = isConcat ? 200 : window.innerHeight * 0.7;
+  const fullscreenWidth = fullScreen ? Math.floor(window.innerWidth * 0.9) : Math.floor(window.innerWidth * 0.8);
+  const fullscreenHeight = isConcat ? 200 : window.innerHeight * 0.7;
 
-const fullscreenSpec = useMemo(() => {
-  if (!isConcat) return displaySpec;
+  const fullscreenSpec = useMemo(() => {
+    if (!isConcat) return displaySpec;
 
-  // For concat: size children explicitly so they don't default to 200px
-  return applySizeToConcatChildren(displaySpec as any, fullscreenWidth, fullscreenHeight);
-}, [displaySpec, isConcat, fullscreenWidth, fullscreenHeight]);
-
+    // For concat: size children explicitly so they don't default to 200px
+    return applySizeToConcatChildren(displaySpec as any, fullscreenWidth, fullscreenHeight);
+  }, [displaySpec, isConcat, fullscreenWidth, fullscreenHeight]);
 
   return (
     <>
@@ -900,18 +900,18 @@ const fullscreenSpec = useMemo(() => {
             flexGrow: 1, // Allow content to grow
             overflow: 'auto', // Only make the content scrollable
             flexDirection: 'column',
-            alignItems: 'center', 
-            justifyContent: isConcat && !showInfoMessage && !loading ? 'flex-start' : 'center',          
+            alignItems: 'center',
+            justifyContent: isConcat && !showInfoMessage && !loading ? 'flex-start' : 'center',
           }}
         >
           <Box
             ref={containerRef}
             sx={{
-              width: '100%', 
-              height: isConcat && !showInfoMessage && !loading ? 'auto' : '100%', 
-              display: isConcat && !showInfoMessage && !loading ? 'block' : 'flex', 
-              alignItems: 'center', 
-              justifyContent: isStatic ? 'center' : 'flex-start',            
+              width: '100%',
+              height: isConcat && !showInfoMessage && !loading ? 'auto' : '100%',
+              display: isConcat && !showInfoMessage && !loading ? 'block' : 'flex',
+              alignItems: 'center',
+              justifyContent: isStatic ? 'center' : 'flex-start',
             }}
           >
             {showInfoMessage ? (
@@ -923,9 +923,9 @@ const fullscreenSpec = useMemo(() => {
                 spec={{
                   ...sizedSpec,
                   autosize: isConcat
-                      ? { type: 'fit-x', contains: 'padding', resize: true }
-                      : { type: 'fit', contains: 'padding', resize: true },
-                    ...(isConcat ? {} : { width, height }),
+                    ? { type: 'fit-x', contains: 'padding', resize: true }
+                    : { type: 'fit', contains: 'padding', resize: true },
+                  ...(isConcat ? {} : { width, height }),
                 }}
                 {...otherProps}
                 tooltip={tooltip}
@@ -1130,7 +1130,7 @@ const fullscreenSpec = useMemo(() => {
                   autosize: isConcat
                     ? { type: 'fit-x', contains: 'padding', resize: true }
                     : { type: 'fit', contains: 'padding', resize: true },
-                
+
                   ...(isConcat ? {} : { width: fullscreenWidth, height: fullscreenHeight }),
                 }}
                 {...otherProps}

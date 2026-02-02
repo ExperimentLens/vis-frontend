@@ -275,13 +275,13 @@ const ScatterChart = () => {
       .filter((y): y is VisualColumn => Boolean(y?.name))
       .map(y => {
         const single = getSingleScatterSpec({ data, xAxis, y, colorBy }) as any;
-      
+
         return {
           ...single,
           height: 220,
         };
       });
-    
+
     return {
       $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
       vconcat: charts,

@@ -79,23 +79,23 @@ const ModelDetails = () => {
           )}
         </DetailsCard>
 
-<DetailsCard title="Data Splits">
-  <LoadingOrEmpty
-    loading={isLoading}
-    condition={
-      hasError ||
+        <DetailsCard title="Data Splits">
+          <LoadingOrEmpty
+            loading={isLoading}
+            condition={
+              hasError ||
       !summary?.data?.dataSplitSizes ||
       Object.keys(summary.data.dataSplitSizes).length === 0
-    }
-    message="No data split information available"
-  />
+            }
+            message="No data split information available"
+          />
 
-  {!isLoading && !hasError && summary?.data?.dataSplitSizes && (
-    <DataSplitsCardContent
-      dataSplitSizes={summary.data.dataSplitSizes}
-    />
-  )}
-</DetailsCard>
+          {!isLoading && !hasError && summary?.data?.dataSplitSizes && (
+            <DataSplitsCardContent
+              dataSplitSizes={summary.data.dataSplitSizes}
+            />
+          )}
+        </DetailsCard>
       </Box>
 
       <Box paddingTop={2}>

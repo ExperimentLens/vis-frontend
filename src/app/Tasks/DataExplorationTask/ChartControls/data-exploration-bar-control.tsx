@@ -28,11 +28,11 @@ const BarChartControlPanel = () => {
   const functionsForType = (t?: string): AggregationFunction[] =>
     isNumericType(t)
       ? [
-          AggregationFunction.AVG,
-          AggregationFunction.MIN,
-          AggregationFunction.MAX,
-          AggregationFunction.COUNT,
-        ]
+        AggregationFunction.AVG,
+        AggregationFunction.MIN,
+        AggregationFunction.MAX,
+        AggregationFunction.COUNT,
+      ]
       : [AggregationFunction.COUNT];
 
   // Encoded options stored in Select value: "<column>|||<FN>"
@@ -49,11 +49,13 @@ const BarChartControlPanel = () => {
 
   const getOptionLabel = (encoded: string) => {
     const [col, fn] = encoded.split(SEP);
+
     return `${col} (${fn})`;
   };
 
   const parseEncoded = (encoded: string) => {
     const [column, fnRaw] = encoded.split(SEP);
+
     return { column, function: fnRaw as AggregationFunction };
   };
 

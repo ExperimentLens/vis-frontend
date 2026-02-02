@@ -7,7 +7,7 @@ import InfoMessage from '../../../../../shared/components/InfoMessage';
 import ResponsiveCardVegaLite from '../../../../../shared/components/responsive-card-vegalite';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import { fetchComparativeRocCurve } from '../../../../../store/slices/monitorPageSlice';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import TitleTooltip from '../title-tooltip';
 
@@ -15,11 +15,33 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
   const { workflowsTable, comparativeModelRocCurve } = useAppSelector(
     (state: RootState) => state.monitorPage,
   );
+  const sortRocByAuc = useAppSelector((state: RootState) => state.monitorPage.sortRocByAuc);
   const experimentId = useAppSelector(
     (state: RootState) => state.progressPage.experiment.data?.id || '',
   );
   const dispatch = useAppDispatch();
   const selectedWorkflowIds = workflowsTable.selectedWorkflows;
+
+  const orderedWorkflowIds = useMemo(() => {
+    if (!sortRocByAuc) return selectedWorkflowIds;
+
+    const ids = [...selectedWorkflowIds];
+
+    ids.sort((a, b) => {
+      const aucA = comparativeModelRocCurve[a]?.data?.auc;
+      const aucB = comparativeModelRocCurve[b]?.data?.auc;
+      const hasA = typeof aucA === 'number' && Number.isFinite(aucA);
+      const hasB = typeof aucB === 'number' && Number.isFinite(aucB);
+
+      if (hasA && hasB) return (aucB as number) - (aucA as number); // desc
+      if (hasA) return -1;
+      if (hasB) return 1;
+
+      return String(a).localeCompare(String(b));
+    });
+
+    return ids;
+  }, [selectedWorkflowIds, sortRocByAuc, comparativeModelRocCurve]);
 
   useEffect(() => {
     if (!experimentId) return;
@@ -31,7 +53,7 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
     });
   }, [selectedWorkflowIds, experimentId]);
 
-  const renderCharts = selectedWorkflowIds.map((runId) => {
+  const renderCharts = orderedWorkflowIds.map((runId) => {
     const rocState = comparativeModelRocCurve[runId];
 
     const titleTooltip = <TitleTooltip workflowId={runId} />;
@@ -103,14 +125,21 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
       tpr: tpr[i],
       threshold: thresholds?.[i] ?? -1,
     }));
-
+    const workflowColor = workflowsTable.workflowColors?.[runId];
     const rocSpec = {
       description: 'ROC Curve with Dynamic AUC Label',
       data: { values: rocData },
       layer: [
         // ROC Curve Line
         {
-          mark: { type: 'line', point: true },
+          mark: {
+            type: 'line',
+            point: {
+              filled: true,
+              ...(workflowColor ? { color: workflowColor } : {})
+            },
+            ...(workflowColor ? { color: workflowColor } : {})
+          },
           encoding: {
             x: {
               field: 'fpr',
