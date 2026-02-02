@@ -118,8 +118,8 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
       );
     }
 
-    const { fpr, tpr, thresholds, auc } = dataRaw;
-    const aucValue = auc?.toFixed(3) || '';
+    const { fpr, tpr, thresholds, auc, roc_auc } = dataRaw;
+    const aucValue = auc?.toFixed(3) || roc_auc?.toFixed(3) || '';
     const rocData = fpr.map((f: number, i: number) => ({
       fpr: f,
       tpr: tpr[i],

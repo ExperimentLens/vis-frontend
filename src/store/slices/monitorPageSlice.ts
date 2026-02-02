@@ -145,7 +145,7 @@ interface IMonitoringPageSlice {
       }
       comparativeModelRocCurve: {
         [workflowId: string]: {
-          data: {fpr: number[]; tpr: number[]; thresholds?: number[]; auc?: number} | null
+          data: {fpr: number[]; tpr: number[]; thresholds?: number[]; auc?: number; roc_auc?: number;} | null
           loading: boolean
           error: string | null
         }
