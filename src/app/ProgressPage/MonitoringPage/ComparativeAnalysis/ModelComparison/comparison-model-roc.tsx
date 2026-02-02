@@ -124,14 +124,21 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
       tpr: tpr[i],
       threshold: thresholds?.[i] ?? -1,
     }));
-    const workflowColor = workflowsTable.workflowColors?.[runId] || '#000000';
+    const workflowColor = workflowsTable.workflowColors?.[runId];
     const rocSpec = {
       description: 'ROC Curve with Dynamic AUC Label',
       data: { values: rocData },
       layer: [
         // ROC Curve Line
         {
-          mark: { type: 'line', point: { filled: true, color: workflowColor }, color: workflowColor },
+          mark: {
+            type: 'line',
+            point: {
+              filled: true,
+              ...(workflowColor ? { color: workflowColor } : {})
+            },
+            ...(workflowColor ? { color: workflowColor } : {})
+          },
           encoding: {
             x: {
               field: 'fpr',
