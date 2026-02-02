@@ -294,7 +294,8 @@ const AttributionHeatmaps: React.FC = () => {
           lat: p.y,
           lon: p.x,
           value: p.value,
-        })).filter(point => point.value !== 0),
+        }))
+          .filter(point => point.value !== 0),
     [plotModel, selectedFeature, selectedTime, isTargetFeature]
   );
   const createPredictionPoints = () => {

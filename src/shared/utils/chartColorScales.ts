@@ -49,5 +49,6 @@ export const vegaScaleOrUndefined = (
 ) => {
   if (!metricNames?.length) return undefined;
   const { domain, range } = buildColorScale(metricNames, theme);
+
   return { domain, range };
 };

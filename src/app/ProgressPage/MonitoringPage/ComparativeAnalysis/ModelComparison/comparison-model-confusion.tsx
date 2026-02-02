@@ -27,6 +27,7 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
 
     const computeMacroF1 = (matrix: number[][]): number | null => {
       const n = matrix.length;
+
       if (n === 0) return null;
 
       const safe = (x: unknown) => (typeof x === 'number' && Number.isFinite(x) ? x : 0);
@@ -75,6 +76,7 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
       if (hasA && hasB) return (f1b as number) - (f1a as number);
       if (hasA) return -1;
       if (hasB) return 1;
+
       return String(a).localeCompare(String(b));
     });
 

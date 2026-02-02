@@ -24,7 +24,6 @@ const theme = createTheme({
   },
 });
 
-
 interface GroupMetrics {
   value: number;
   id: string | null;
@@ -187,6 +186,7 @@ export const MetricCards = () => {
 
   const timestampText = useMemo(() => {
     const ts = metricData?.metric?.timestamp;
+
     if (typeof ts !== 'number') return '—';
     try {
       return new Date(ts).toLocaleString();
@@ -240,12 +240,15 @@ export const MetricCards = () => {
   const percentile = useMemo(() => {
     if (typeof metricData?.metric?.value !== 'number') return undefined;
     const values = filteredWorkflows.map(w => w.rawValue).filter(v => typeof v === 'number' && Number.isFinite(v));
+
     if (values.length <= 1) return undefined;
 
     // Assumption: higher metric value is better.
     const below = values.filter(v => metricData?.metric?.value && v < metricData.metric.value).length;
     const totalOthers = values.length - 1;
+
     if (totalOthers <= 0) return undefined;
+
     return Math.round((below / totalOthers) * 100);
   }, [currentValue, filteredWorkflows]);
 
@@ -253,6 +256,7 @@ export const MetricCards = () => {
 
   const histogram = useMemo(() => {
     const values = filteredWorkflows.map(w => w.rawValue).filter(v => typeof v === 'number' && Number.isFinite(v));
+
     if (!values.length || typeof currentValue !== 'number') return [] as Array<{ label: string; count: number; isYou: boolean }>;
 
     const min = Math.min(...values);
@@ -268,15 +272,18 @@ export const MetricCards = () => {
       const start = min + i * width;
       const end = i === binCount - 1 ? max : min + (i + 1) * width;
       const label = `${start.toFixed(2)}–${end.toFixed(2)}`;
+
       return { start, end, label, count: 0, isYou: false };
     });
 
     for (const v of values) {
       const idx = Math.min(binCount - 1, Math.floor((v - min) / width));
+
       bins[idx].count += 1;
     }
 
     const youIdx = Math.min(binCount - 1, Math.floor((currentValue - min) / width));
+
     bins[youIdx].isYou = true;
 
     return bins.map(b => ({ label: b.label, count: b.count, isYou: b.isYou }));
@@ -451,34 +458,34 @@ export const MetricCards = () => {
           <Box sx={{ position: 'relative', px: 1, py: 2 }}>
             {(() => {
               const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
-            
+
               const isSingleValue =
                 typeof sliderMin === 'number' &&
                 typeof sliderMax === 'number' &&
                 Number.isFinite(sliderMin) &&
                 Number.isFinite(sliderMax) &&
                 sliderMin === sliderMax;
-            
+
               // Use a "fake" range for single-value case so Slider behaves predictably
               const min = isSingleValue ? 0 : sliderMin;
               const max = isSingleValue ? 1 : sliderMax;
-            
+
               const youValue =
                 typeof currentValue === 'number'
                   ? (isSingleValue ? 0.5 : clamp(currentValue, sliderMin, sliderMax))
                   : min;
-            
+
               const avgValueClamped =
                 typeof avgValue === 'number'
                   ? (isSingleValue ? 0.5 : clamp(avgValue, sliderMin, sliderMax))
                   : undefined;
-            
+
               // Marker positions (match the slider range)
               const safeRange = max - min || 1;
               const youPct = ((youValue - min) / safeRange) * 100;
               const avgPct =
                 typeof avgValueClamped === 'number' ? ((avgValueClamped - min) / safeRange) * 100 : undefined;
-            
+
               return (
                 <>
                   <Slider
@@ -489,7 +496,7 @@ export const MetricCards = () => {
                     disabled
                     sx={{
                       '&.Mui-disabled': { opacity: 1 },
-                    
+
                       '& .MuiSlider-rail': {
                         height: 10,
                         borderRadius: 999,
@@ -506,7 +513,7 @@ export const MetricCards = () => {
                       '& .MuiSlider-thumb': { display: 'none' },
                     }}
                   />
-        
+
                   {/* Average marker */}
                   {typeof avgPct === 'number' && (
                     <>
@@ -535,7 +542,7 @@ export const MetricCards = () => {
                       </Typography>
                     </>
                   )}
-        
+
                   {/* "You" marker */}
                   {typeof currentValue === 'number' && (
                     <>

@@ -347,8 +347,8 @@ const ComparativeAnalysisControls = ()=> {
           {showDataComparisonViewModeToggle && selectedComparisonTab === 2 && (
             <ButtonGroup
               size="small"
-              variant="outlined" 
-              aria-label="data comparison view mode" 
+              variant="outlined"
+              aria-label="data comparison view mode"
               sx={{ height: '30px' }}
             >
               <Tooltip title="Distribution Plots">
@@ -407,7 +407,7 @@ const ComparativeAnalysisControls = ()=> {
               </Button>
             </ButtonGroup>
           )}
-        {/* create a shared popo over component in order to avoid copy pasting */}  
+          {/* create a shared popo over component in order to avoid copy pasting */}
           {selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
             <>
               <IconButton
@@ -500,20 +500,20 @@ const ComparativeAnalysisControls = ()=> {
                   title="Control Options"
                 />
                 <Box sx={{ mt: 2 }} />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        checked={sortRocByAuc}
-                        size="small"
-                        onChange={(e) => {
-                          dispatch(setSortRocByAuc(e.target.checked));
-                          setRocSortAnchorEl(null);
-                        }}
-                      />
-                    }
-                    label="Sort by AUC"
-                    sx={{ ml: 0.5 }}
-                  />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={sortRocByAuc}
+                      size="small"
+                      onChange={(e) => {
+                        dispatch(setSortRocByAuc(e.target.checked));
+                        setRocSortAnchorEl(null);
+                      }}
+                    />
+                  }
+                  label="Sort by AUC"
+                  sx={{ ml: 0.5 }}
+                />
               </Menu>
             </>
           )}

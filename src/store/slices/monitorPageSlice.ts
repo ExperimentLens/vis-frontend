@@ -907,38 +907,38 @@ export const monitoringPageSlice = createSlice({
         };
       })
       .addCase(fetchComparativeUmap.pending, (state, action) => {
-  const runId = action.meta.arg.metadata.workflowId;
+        const runId = action.meta.arg.metadata.workflowId;
 
-  if (!state.comparativeModelInstanceUmap[runId]) {
-    state.comparativeModelInstanceUmap[runId] = { data: null, loading: true, error: null };
-  } else {
-    state.comparativeModelInstanceUmap[runId].loading = true;
-    state.comparativeModelInstanceUmap[runId].error = null;
-  }
-})
-.addCase(fetchComparativeUmap.fulfilled, (state, action) => {
-  const runId = action.meta.arg.metadata.workflowId;
+        if (!state.comparativeModelInstanceUmap[runId]) {
+          state.comparativeModelInstanceUmap[runId] = { data: null, loading: true, error: null };
+        } else {
+          state.comparativeModelInstanceUmap[runId].loading = true;
+          state.comparativeModelInstanceUmap[runId].error = null;
+        }
+      })
+      .addCase(fetchComparativeUmap.fulfilled, (state, action) => {
+        const runId = action.meta.arg.metadata.workflowId;
 
-  state.comparativeModelInstanceUmap[runId] = {
-    data: action.payload,
-    loading: false,
-    error: null,
-  };
-})
-.addCase(fetchComparativeUmap.rejected, (state, action) => {
-  const runId = action.meta.arg.metadata.workflowId;
+        state.comparativeModelInstanceUmap[runId] = {
+          data: action.payload,
+          loading: false,
+          error: null,
+        };
+      })
+      .addCase(fetchComparativeUmap.rejected, (state, action) => {
+        const runId = action.meta.arg.metadata.workflowId;
 
-  if (!state.comparativeModelInstanceUmap[runId]) {
-    state.comparativeModelInstanceUmap[runId] = {
-      data: null,
-      loading: false,
-      error: 'Failed to fetch UMAP',
-    };
-  } else {
-    state.comparativeModelInstanceUmap[runId].loading = false;
-    state.comparativeModelInstanceUmap[runId].error = 'Failed to fetch UMAP';
-  }
-});
+        if (!state.comparativeModelInstanceUmap[runId]) {
+          state.comparativeModelInstanceUmap[runId] = {
+            data: null,
+            loading: false,
+            error: 'Failed to fetch UMAP',
+          };
+        } else {
+          state.comparativeModelInstanceUmap[runId].loading = false;
+          state.comparativeModelInstanceUmap[runId].error = 'Failed to fetch UMAP';
+        }
+      });
   }
 });
 

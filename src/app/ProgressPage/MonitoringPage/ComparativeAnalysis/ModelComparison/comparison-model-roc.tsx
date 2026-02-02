@@ -36,6 +36,7 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
       if (hasA && hasB) return (aucB as number) - (aucA as number); // desc
       if (hasA) return -1;
       if (hasB) return 1;
+
       return String(a).localeCompare(String(b));
     });
 

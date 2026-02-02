@@ -34,6 +34,7 @@ const ScatterChartControlPanel = () => {
 
   useEffect(() => {
     const nextView = yAxisCount === 1 ? 'overlay' : 'stacked';
+
     if (viewMode !== nextView) {
       dispatch(setControls({ viewMode: nextView }));
     }

@@ -10,7 +10,7 @@ type Props = { taskId: string; metrics: Metric[] | {name: string; task?: string;
 
 export default function MetricsSection({ taskId, metrics }: Props) {
   const dispatch = useAppDispatch();
-  const {workflowSeriesMetrics} = useAppSelector(state => state.workflowPage.tab ?? {workflowSeriesMetrics: {data: [], loading: false, error: null}});
+  const { workflowSeriesMetrics } = useAppSelector(state => state.workflowPage.tab ?? { workflowSeriesMetrics: { data: [], loading: false, error: null } });
 
   const round2 = (v: number) => Math.round(v * 100) / 100;
 
@@ -44,14 +44,14 @@ export default function MetricsSection({ taskId, metrics }: Props) {
                 sx={{ px: 1, py: 0.5, borderRadius: 1, cursor: 'pointer' }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <BarChartIcon 
-                    fontSize="small" 
-                    sx={{ 
-                      mr: 1, 
-                      color: isSeiresMetric ? theme.palette.success.main : theme.palette.primary.main 
-                    }} 
+                  <BarChartIcon
+                    fontSize="small"
+                    sx={{
+                      mr: 1,
+                      color: isSeiresMetric ? theme.palette.success.main : theme.palette.primary.main
+                    }}
                   />
-                    <Typography variant="body2">{metric.name}: {metric.value && round2(metric.value)}</Typography>
+                  <Typography variant="body2">{metric.name}: {metric.value && round2(metric.value)}</Typography>
                 </Box>
               </Box>
             }

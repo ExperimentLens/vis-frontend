@@ -1,4 +1,4 @@
-import {  Box, Grid, Tooltip } from '@mui/material';
+import {  Box, Grid, Tooltip, Typography } from '@mui/material';
 import type { RootState } from '../../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../../store/store';
 import Loader from '../../../../../shared/components/loader';
@@ -75,11 +75,13 @@ const ComparisonModelInstance = ({
       if (umapState?.data?.length) return;
 
       const rows = instanceState.data.slice(0, 2000);
-      //I build the payload like this to match the single instance UMAP in workflow page
+      // I build the payload like this to match the single instance UMAP in workflow page
       const payload2d: number[][] = rows.map((row, i) => {
         const arr = Object.values(row).map((val) => Number.parseFloat(val as any));
-        //we pass this in the worklfow page UMAP why?
+
+        // we pass this in the worklfow page UMAP why?
         arr.push(i);
+
         return arr;
       });
 
@@ -106,6 +108,8 @@ const ComparisonModelInstance = ({
 
   const SharedLegend = ({ entries }: { entries: { label: string; color: string }[] }) => (
     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+      {entries.length === 1 ? <Typography variant="subtitle1">Class:</Typography>
+        : <Typography variant="subtitle1">Classes:</Typography>}
       {entries.map((entry, idx) => (
         <div key={idx}>
           <span
@@ -233,7 +237,7 @@ const ComparisonModelInstance = ({
           </Grid>
         );
       }
-    
+
       if (umapState.error) {
         return (
           <Grid item xs={isMosaic ? 6 : 12} key={runId}>
@@ -248,17 +252,17 @@ const ComparisonModelInstance = ({
           </Grid>
         );
       }
-    
+
       const coords = umapState.data ?? [];
       const n = Math.min(coords.length, dataRaw.length);
-    
+
       const combinedPlotData = Array.from({ length: n }, (_, i) => {
         const original = dataRaw[i];
         const actual = (original as any)?.actual ?? '?';
         const predicted = (original as any)?.predicted ?? '?';
         const id = hashRow(original);
         const isMisclassified = actual !== predicted;
-      
+
         return {
           x: coords[i][0],
           y: coords[i][1],
@@ -270,7 +274,7 @@ const ComparisonModelInstance = ({
           index: i,
         };
       });
-    
+
       const umapSpec = {
         width: 'container',
         height: 'container',
@@ -289,47 +293,47 @@ const ComparisonModelInstance = ({
         encoding: {
           x: { field: 'x', type: 'quantitative', axis: { title: null } },
           y: { field: 'y', type: 'quantitative', axis: { title: null } },
-        
+
           color: showMisclassifiedOnly
             ? {
-                field: 'isMisclassified',
-                type: 'nominal',
-                scale: { domain: [false, true], range: ['#cccccc', '#ff0000'] },
-                legend: null,
-              }
+              field: 'isMisclassified',
+              type: 'nominal',
+              scale: { domain: [false, true], range: ['#cccccc', '#ff0000'] },
+              legend: null,
+            }
             : {
-                field: 'predicted',
-                type: 'nominal',
-                scale: {
-                  domain: Object.keys(localClassColorMap),
-                  range: Object.values(localClassColorMap),
-                },
-                legend: null,
+              field: 'predicted',
+              type: 'nominal',
+              scale: {
+                domain: Object.keys(localClassColorMap),
+                range: Object.values(localClassColorMap),
               },
-            
+              legend: null,
+            },
+
           opacity: showMisclassifiedOnly
             ? {
-                field: 'isMisclassified',
-                type: 'nominal',
-                scale: { domain: [false, true], range: [0.45, 1.0] },
-              }
+              field: 'isMisclassified',
+              type: 'nominal',
+              scale: { domain: [false, true], range: [0.45, 1.0] },
+            }
             : { value: 0.8 },
-            
+
           size: showMisclassifiedOnly
             ? {
-                field: 'isMisclassified',
-                type: 'nominal',
-                scale: { domain: [false, true], range: [60, 200], legend: false },
-              }
+              field: 'isMisclassified',
+              type: 'nominal',
+              scale: { domain: [false, true], range: [60, 200], legend: false },
+            }
             : { value: 100 },
-            
+
           tooltip: [
             { field: 'actual', type: 'nominal', title: 'Actual' },
             { field: 'predicted', type: 'nominal', title: 'Predicted' },
           ],
         },
       };
-    
+
       return (
         <Grid item xs={isMosaic ? 6 : 12} key={runId} sx={{ textAlign: 'left', width: '100%' }}>
           <ResponsiveCardVegaLite

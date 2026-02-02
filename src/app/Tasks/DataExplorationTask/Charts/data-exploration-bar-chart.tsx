@@ -18,7 +18,6 @@ const BarChart = () => {
   const viewMode =
   tab?.workflowTasks.dataExploration?.controlPanel?.viewMode || 'overlay';
 
-
   const groupByCols = tab?.workflowTasks.dataExploration?.controlPanel.barGroupBy ?? [];
 
   const aggregationCols = tab?.workflowTasks.dataExploration?.controlPanel.barAggregation
@@ -89,8 +88,7 @@ const BarChart = () => {
     ?.filter(col => ['DOUBLE', 'BIGINT', 'INTEGER', 'FLOAT'].includes(col.type))
     .map(col => col.name);
 
-    const colorScale = vegaScaleOrUndefined(yAxisColumns || [], theme);
-
+  const colorScale = vegaScaleOrUndefined(yAxisColumns || [], theme);
 
   // Transform the data into a suitable format for grouped bar chart
   const transformedData =
@@ -181,45 +179,44 @@ const BarChart = () => {
     const xAxisTitle = aggregationForMetric
       ? `${metric} (${aggregationForMetric.function})`
       : metric;
-    
-    return {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-    autosize: { type: 'fit', contains: 'padding', resize: true },
-    data: { values: limitedData.filter(d => d.type === metric) },
-    mark: 'bar',
-    encoding: {
-      y: {
-        field: xAxisColumn,
-        type: 'nominal',
-        axis: {
-          labelAngle: 0,
-          labelLimit: 100,
-          labelOverlap: 'parity',
-          tickCount: Math.floor(500 / 20),
-        },
-        sort: null,
-      },
-      x: { field: 'value', type: 'quantitative', title: xAxisTitle },
-      tooltip: [
-        { field: xAxisColumn, type: 'nominal', title: xAxisColumn },
-        ...(categoricalColumns || []).map(col => ({
-          field: col.name,
-          type: 'nominal',
-          title: col.name,
-        })),
-        { field: 'value', type: 'quantitative', title: 'Value' },
-        { field: 'type', type: 'nominal', title: 'Metric' },
-      ],
-      color: {
-        field: 'type',
-        type: 'nominal',
-        legend: null,
-        scale: colorScale,
-      },
-    },
-  };
-  };
 
+    return {
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      autosize: { type: 'fit', contains: 'padding', resize: true },
+      data: { values: limitedData.filter(d => d.type === metric) },
+      mark: 'bar',
+      encoding: {
+        y: {
+          field: xAxisColumn,
+          type: 'nominal',
+          axis: {
+            labelAngle: 0,
+            labelLimit: 100,
+            labelOverlap: 'parity',
+            tickCount: Math.floor(500 / 20),
+          },
+          sort: null,
+        },
+        x: { field: 'value', type: 'quantitative', title: xAxisTitle },
+        tooltip: [
+          { field: xAxisColumn, type: 'nominal', title: xAxisColumn },
+          ...(categoricalColumns || []).map(col => ({
+            field: col.name,
+            type: 'nominal',
+            title: col.name,
+          })),
+          { field: 'value', type: 'quantitative', title: 'Value' },
+          { field: 'type', type: 'nominal', title: 'Metric' },
+        ],
+        color: {
+          field: 'type',
+          type: 'nominal',
+          legend: null,
+          scale: colorScale,
+        },
+      },
+    };
+  };
 
   const hasData = limitedData.length > 0;
 
@@ -304,18 +301,18 @@ const BarChart = () => {
           }
         />
       ) : (
-          <ResponsiveCardVegaLite
-            spec={getStackedBarSpec(yAxisColumns || [])}
-            title="Bar Chart"
-            actions={false}
-            controlPanel={<BarChartControlPanel />}
-            maxHeight={5000}
-            loading={
-              tab?.workflowTasks.dataExploration?.barChart?.loading ||
+        <ResponsiveCardVegaLite
+          spec={getStackedBarSpec(yAxisColumns || [])}
+          title="Bar Chart"
+          actions={false}
+          controlPanel={<BarChartControlPanel />}
+          maxHeight={5000}
+          loading={
+            tab?.workflowTasks.dataExploration?.barChart?.loading ||
               tab?.workflowTasks.dataExploration?.metaData?.loading
-            }
-            isStatic={false}
-          />
+          }
+          isStatic={false}
+        />
       )}
     </Box>
   );
