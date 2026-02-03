@@ -1,10 +1,9 @@
-import { ThemeProvider } from '@mui/material/styles';
+import { AppThemeProvider } from './app-theme-provider';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import App from './App';
 import { store } from './store/store';
 import './index.css';
-import theme from './mui-theme';
 import 'dayjs/locale/el';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -18,11 +17,11 @@ if (container) {
   root.render(
     // <React.StrictMode>
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
+      <AppThemeProvider>
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale='el'>
           <App />
         </LocalizationProvider>
-      </ThemeProvider>
+      </AppThemeProvider>
     </Provider>
     // </React.StrictMode>,
   );

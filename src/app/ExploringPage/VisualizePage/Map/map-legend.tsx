@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { Zones } from '../Zones/zones';
 import type { IDataset } from '../../../../shared/models/exploring/dataset.model';
 
@@ -10,6 +10,8 @@ const legendItems = [
 ];
 
 export const MapLegend = ({ dataset }: { dataset: IDataset }) => {
+  const theme = useTheme();
+
   return (
     <Box
       sx={{
@@ -17,7 +19,7 @@ export const MapLegend = ({ dataset }: { dataset: IDataset }) => {
         position: 'absolute',
         top: 10,
         right: 60,
-        backgroundColor: 'white',
+        backgroundColor: theme.palette.background.paper,
         padding: '4px 6px',
         borderRadius: 2.5,
         boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)',

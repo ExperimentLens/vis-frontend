@@ -6,14 +6,15 @@ import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
 import InsightsIcon from '@mui/icons-material/Insights';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
-import theme from '../../../../mui-theme';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 import type { RootState } from '../../../../store/store';
+import { useTheme } from '@mui/material/styles';
 
 export default function ModelInsightsAccordion() {
   const dispatch = useAppDispatch();
   const { tab } = useAppSelector((s: RootState) => s.workflowPage);
+  const theme = useTheme();
 
   return (
     <SimpleTreeView defaultExpandedItems={['model']} selectedItems={tab?.dataTaskTable?.selectedId ?? null}>

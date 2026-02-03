@@ -100,6 +100,7 @@ const ProgressPage = (props: ProgressPageProps) => {
               height: '100%',
               transition: 'width 0.3s ease',
               flexShrink: 0,
+              borderRadius: 0,
             }}
           >
             <LeftMenu />

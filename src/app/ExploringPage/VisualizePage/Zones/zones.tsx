@@ -14,6 +14,7 @@ import {
   Tooltip,
   Button,
   Box,
+  useTheme,
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -49,6 +50,7 @@ export interface IZonesProps {
 }
 
 export const Zones = ({ dataset }: IZonesProps) => {
+  const theme = useTheme();
   const { modalOpen, zone, zones, loading, error } = useAppSelector(
     (state: RootState) => state.zone,
   );
@@ -58,9 +60,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
     intervals,
     predictionDisplay,
   } = useAppSelector((state: RootState) => state.prediction);
-  const { mapLayer } = useAppSelector(
-    (state: RootState) => state.map,
-  );
+  const { mapLayer } = useAppSelector((state: RootState) => state.map);
   const dispatch = useAppDispatch();
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
     open: boolean;
@@ -136,11 +136,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
     <>
       {/* Zones Button */}
       <Tooltip title="Zones" placement="left" arrow>
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={handleOpenZonesModal}
-        >
+        <Button variant="outlined" size="small" onClick={handleOpenZonesModal}>
           Zones
         </Button>
       </Tooltip>
@@ -154,7 +150,6 @@ export const Zones = ({ dataset }: IZonesProps) => {
         PaperProps={{
           sx: {
             borderRadius: '12px',
-            bgcolor: '#ffffff',
             boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
           },
         }}
@@ -164,7 +159,10 @@ export const Zones = ({ dataset }: IZonesProps) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background:
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(to right, #16192F, #20243D)'
+                : 'linear-gradient(to right, #f8f9fa, #edf2f7)',
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             px: 3,
             py: 1.5,
@@ -266,7 +264,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
                               ? theme => `${theme.palette.secondary.main}66`
                               : zone?.id === z.id
                                 ? theme => `${theme.palette.primary.main}66`
-                                : 'white',
+                                : theme.palette.background.paper,
                         }}
                       >
                         <TableCell sx={{ textAlign: 'center' }}>
@@ -289,8 +287,8 @@ export const Zones = ({ dataset }: IZonesProps) => {
                               </Typography>
                               <Typography>
                                 <strong>Precision:</strong>{' '}
-                                {z.geohashes[0] ? z.geohashes[0].length : '-'} <strong>Total:</strong>{' '}
-                                {z.geohashes.length}
+                                {z.geohashes[0] ? z.geohashes[0].length : '-'}{' '}
+                                <strong>Total:</strong> {z.geohashes.length}
                               </Typography>
                             </>
                           ) : (

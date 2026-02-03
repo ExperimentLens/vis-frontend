@@ -34,6 +34,7 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  useTheme,
 } from '@mui/material';
 import { Delete as DeleteIcon } from '@mui/icons-material';
 import { ConfirmationModal } from '../../../../shared/components/confirmation-modal';
@@ -47,6 +48,7 @@ export const PredictionModels = ({
   onModelSelect,
   selectedModel,
 }: PredictionModelsProps) => {
+  const theme = useTheme();
   const dispatch = useAppDispatch();
   const {
     modelsList,
@@ -209,9 +211,8 @@ export const PredictionModels = ({
               alignItems: 'center',
               justifyContent: 'space-between',
               p: 2,
-              backgroundColor: '#f8f9fa',
               borderRadius: 2,
-              border: '1px solid #e0e0e0',
+              border: `1px solid ${theme.palette.divider}`,
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -245,15 +246,9 @@ export const PredictionModels = ({
                   borderColor:
                     selectedModel === model.model_filename
                       ? 'primary.main'
-                      : '#e0e0e0',
-                  backgroundColor:
-                    selectedModel === model.model_filename ? '#e3f2fd' : '#fff',
+                      : theme.palette.divider,
                   transition: 'all 0.2s ease-in-out',
                   '&:hover': {
-                    backgroundColor:
-                      selectedModel === model.model_filename
-                        ? '#e3f2fd'
-                        : '#f5f5f5',
                     transform: 'translateY(-1px)',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                   },
@@ -336,9 +331,8 @@ export const PredictionModels = ({
               flexDirection: 'column',
               justifyContent: 'center',
               p: 2,
-              backgroundColor: '#f8f9fa',
               borderRadius: 2,
-              border: '1px solid #e0e0e0',
+              border: `1px solid ${theme.palette.divider}`,
               gap: 2,
             }}
           >

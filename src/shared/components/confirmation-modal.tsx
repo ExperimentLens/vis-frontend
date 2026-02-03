@@ -8,6 +8,7 @@ import {
   Typography,
   Box,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import {
   Warning as WarningIcon,
@@ -45,6 +46,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   loading = false,
   severity = 'warning',
 }) => {
+  const theme = useTheme();
   const getSeverityIcon = () => {
     switch (severity) {
       case 'error':
@@ -80,7 +82,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       PaperProps={{
         sx: {
           borderRadius: '12px',
-          bgcolor: '#ffffff',
+          bgcolor: theme.palette.background.paper,
           overflow: 'hidden',
           boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
         },
@@ -91,7 +93,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+          background: theme.palette.background.paper,
           borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
           px: 3,
           py: 2,
@@ -145,7 +147,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         sx={{
           p: 3,
           borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-          background: '#f8f9fa',
           gap: 2,
         }}
       >

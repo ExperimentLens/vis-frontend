@@ -1,15 +1,16 @@
 import { Box, Typography } from '@mui/material';
 import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import theme from '../../../../mui-theme';
 import { useAppDispatch } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
+import { useTheme } from '@mui/material/styles';
 
 type Metric = { name: string; value: number; task?: string | null };
 type Props = { taskId: string; metrics: Metric[] };
 
 export default function MetricsSection({ taskId, metrics }: Props) {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
 
   const round2 = (v: number) => Math.round(v * 100) / 100;
 

@@ -236,3 +236,9 @@
 .dropdown-description {
   margin: auto;
 }
+
+.map-dark .leaflet-top,
+.map-dark .leaflet-layer,
+.map-dark .leaflet-control-attribution {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}

@@ -26,6 +26,7 @@ export const MapControl = ({ id }: { id: string }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { zone } = useAppSelector(state => state.zone);
+  const {  mode } = useAppSelector((state) => state.ui);
   const { mapLayer, selectedGeohash, drawnShape } = useAppSelector(state => state.map);
   const { predictionDisplay } = useAppSelector(state => state.prediction);
   const hasInitialized = useRef(false);
@@ -59,6 +60,13 @@ export const MapControl = ({ id }: { id: string }) => {
     clearDrawnItems,
     setVisibilityChangeCallback,
   } = useMapDrawing(map, id);
+
+  useEffect(() => {
+    if (!map) return;
+    const container = map.getContainer();
+
+    container.classList.toggle('map-dark', mode === 'dark');
+  }, [map, mode]);
 
   useEffect(() => {
     if (!map) return;

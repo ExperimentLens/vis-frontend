@@ -19,7 +19,7 @@ import type { SelectChangeEvent } from '@mui/material';
 import { Badge,  Button,  FormControl,  IconButton, InputLabel, MenuItem, Popover, Select, styled, TextField, Tooltip } from '@mui/material';
 import FilterBar from '../../../../shared/components/filter-bar';
 import ProgressBar from './prgress-bar';
-import theme from '../../../../mui-theme';
+import { useTheme } from '@mui/material/styles';
 import { debounce } from 'lodash';
 import type { CustomGridColDef } from '../../../../shared/types/table-types';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -45,6 +45,7 @@ const WorkflowActions = (props: {
   experimentId: string | undefined,
 }) => {
   const { currentStatus, workflowId, experimentId } = props;
+  const theme = useTheme();
   const { workflows } = useAppSelector(
     (state: RootState) => state.progressPage,
   );
@@ -392,6 +393,7 @@ const CustomNoRowsOverlay = () => {
 const HIDDEN_INTERNAL_FIELDS = new Set(['space']);
 
 export default function WorkflowTable() {
+  const theme = useTheme();
   const { workflows } = useAppSelector(
     (state: RootState) => state.progressPage,
   );

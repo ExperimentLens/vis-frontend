@@ -20,6 +20,7 @@ import {
   FormControlLabel,
   Chip,
   InputAdornment,
+  useTheme,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -83,6 +84,7 @@ const fixedHeights = [
 ];
 
 export const Prediction = ({ zone }: IPredictionProps) => {
+  const theme = useTheme();
   const [open, setOpen] = useState(false);
   const [intervalsAmount, setIntervalsAmount] = useState(
     fixedIntervals[0].value,
@@ -363,7 +365,6 @@ export const Prediction = ({ zone }: IPredictionProps) => {
         PaperProps={{
           sx: {
             borderRadius: '12px',
-            bgcolor: '#ffffff',
             boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
           },
         }}
@@ -373,7 +374,10 @@ export const Prediction = ({ zone }: IPredictionProps) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background:
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(to right, #16192F, #20243D)'
+                : 'linear-gradient(to right, #f8f9fa, #edf2f7)',
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             px: 3,
             py: 1.5,
@@ -438,9 +442,8 @@ export const Prediction = ({ zone }: IPredictionProps) => {
                       sx={{
                         p: 2,
                         mb: 3,
-                        border: '1px solid #e0e0e0',
+                        border: `1px solid ${theme.palette.divider}`,
                         borderRadius: 2,
-                        backgroundColor: '#f8f9fa',
                       }}
                     >
                       <Typography
@@ -464,9 +467,8 @@ export const Prediction = ({ zone }: IPredictionProps) => {
                       <Box
                         sx={{
                           p: 2,
-                          border: '1px solid #e0e0e0',
+                          border: `1px solid ${theme.palette.divider}`,
                           borderRadius: 2,
-                          backgroundColor: '#fff',
                         }}
                       >
                         <Typography variant="subtitle2" gutterBottom>
@@ -539,9 +541,8 @@ export const Prediction = ({ zone }: IPredictionProps) => {
                       <Box
                         sx={{
                           p: 2,
-                          border: '1px solid #e0e0e0',
+                          border: `1px solid ${theme.palette.divider}`,
                           borderRadius: 2,
-                          backgroundColor: '#fff',
                         }}
                       >
                         <Typography variant="subtitle2" gutterBottom>
@@ -729,7 +730,6 @@ export const Prediction = ({ zone }: IPredictionProps) => {
                     textAlign: 'center',
                     mb: 4,
                     p: 3,
-                    backgroundColor: '#e8f5e8',
                     borderRadius: 2,
                     border: '1px solid #4caf50',
                   }}
@@ -751,9 +751,8 @@ export const Prediction = ({ zone }: IPredictionProps) => {
                   <Box
                     sx={{
                       p: 2,
-                      border: '1px solid #e0e0e0',
+                      border: `1px solid ${theme.palette.divider}`,
                       borderRadius: 2,
-                      backgroundColor: '#fff',
                     }}
                   >
                     <Typography
@@ -812,9 +811,8 @@ export const Prediction = ({ zone }: IPredictionProps) => {
                   <Box
                     sx={{
                       p: 2,
-                      border: '1px solid #e0e0e0',
+                      border: `1px solid ${theme.palette.divider}`,
                       borderRadius: 2,
-                      backgroundColor: '#fff',
                     }}
                   >
                     <Typography
@@ -870,7 +868,7 @@ export const Prediction = ({ zone }: IPredictionProps) => {
                   <Box
                     sx={{
                       p: 3,
-                      backgroundColor: '#f8f9fa',
+                      border: `1px solid ${theme.palette.divider}`,
                       borderRadius: 2,
                       textAlign: 'center',
                     }}
