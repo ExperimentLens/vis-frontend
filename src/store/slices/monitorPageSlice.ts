@@ -388,6 +388,7 @@ export const monitoringPageSlice = createSlice({
   name: 'monitoringPage',
   initialState,
   reducers: {
+    resetMonitoringPage: () => initialState,
     setParallel: (state, action) => {
       state.parallel = { ...state.parallel, ...action.payload };
     },
@@ -1041,5 +1042,5 @@ export const fetchComparativeUmap = createAsyncThunk(
 
 export const { setParallel, setWorkflowsTable, setScheduledTable, setVisibleTable, setSelectedTab, setSelectedComparisonTab, toggleWorkflowSelection, bulkToggleWorkflowSelection, setGroupBy,
   setHoveredWorkflow, updateWorkflowRatingLocally, setSelectedModelComparisonChart, setCommonDataAssets, setDataAssetsControlPanel, setIsMosaic, setShowMisclassifiedOnly, setComparativeModelInstanceControlPanel,
-  setExpandedGroup, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces, setSortRocByAuc, setSortConfusionByF1
+  setExpandedGroup, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces, setSortRocByAuc, setSortConfusionByF1, resetMonitoringPage
 } = monitoringPageSlice.actions;

@@ -15,6 +15,7 @@ import type { RootState } from '../../store/store';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import { setMenuOptions } from '../../store/slices/progressPageSlice';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
+import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 
 const LeftMenu = () => {
   const { experimentId } = useParams();
@@ -26,9 +27,16 @@ const LeftMenu = () => {
 
   const navItems = [
     {
+      icon: <ScienceOutlinedIcon />,
+      label: 'Experiments',
+      path: 'experiments',
+      to: '/',
+    },
+    {
       icon: <ListRoundedIcon />,
       label: 'Monitoring',
-      path: 'monitoring'
+      path: 'monitoring',
+      to: experimentId ? `/${experimentId}/monitoring` : null,
     },
     // {
     //   icon: <ViewInArIcon />,
@@ -142,8 +150,9 @@ const LeftMenu = () => {
         )}
         <Box>
           <List sx={{ p: 0 }}>
-            {navItems.map(({ icon, label, path }) => {
+            {navItems.map(({ icon, label, path, to }) => {
               const selected = menuOptions.selected === path;
+              const disabled = !to;
               const item = (
                 <ListItem
                   key={path}
@@ -151,15 +160,20 @@ const LeftMenu = () => {
                   sx={{
                     bgcolor: selected ? theme => theme.palette.customBlue.selected : 'transparent',
                     border: 'none',
-                    cursor: 'pointer',
+                    cursor: !disabled  ? 'pointer' : '',
                     borderBottom: '1px solid #ddd',
                     justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
                     height: '48px', // 48px is the standard MUI component height
+                    opacity: disabled ? 0.5 : 1,
                     '&:hover': {
-                      bgcolor: theme => theme.palette.customGrey.main
+                      bgcolor: disabled ? 'transparent' : theme => theme.palette.customGrey.main
                     },
                   }}
-                  onClick={() => navigate(`/${experimentId}/${path}`)}
+                  onClick={() => {
+                    if (!to) return;
+                    navigate(to);
+                  }}
+
                 >
                   {icon}
                   {!menuOptions.collapsed && (

@@ -18,7 +18,7 @@ import type { RootState } from '../../../../store/store';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge,  Button,  FormControl,  IconButton, InputLabel, MenuItem, Popover, Select, styled, TextField, Tooltip } from '@mui/material';
 import FilterBar from '../../../../shared/components/filter-bar';
-import ProgressBar from './prgress-bar';
+import ProgressBar from '../../../../shared/components/prgress-bar';
 import theme from '../../../../mui-theme';
 import { debounce } from 'lodash';
 import type { CustomGridColDef } from '../../../../shared/types/table-types';
