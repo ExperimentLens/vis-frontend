@@ -1,17 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Typography,
   MenuItem,
   Select,
   FormControl,
   Box,
-  Tooltip,
-  IconButton,
+  Card,
+  CardHeader,
+  CardContent,
 } from '@mui/material';
-import {
-  Fullscreen as FullscreenIcon,
-  FullscreenExit as FullscreenExitIcon,
-} from '@mui/icons-material';
+import { ReportProblemRounded as ReportProblemRoundedIcon } from '@mui/icons-material';
 import type { IDataset } from '../../../../shared/models/exploring/dataset.model';
 import {
   type RootState,
@@ -25,15 +23,14 @@ import {
 } from '../../../../store/slices/exploring/timeSeriesSlice';
 import { TimeSeriesVisualizer } from './time-series-visualizer';
 import Loader from '../../../../shared/components/loader';
+import InfoMessage from '../../../../shared/components/InfoMessage';
 
 export interface IChartTSProps {
   dataset: IDataset;
-  isFullscreen?: boolean;
-  onToggleFullscreen?: () => void;
 }
 
 export const TimeSeriesChart = (props: IChartTSProps) => {
-  const { dataset, isFullscreen = false, onToggleFullscreen } = props;
+  const { dataset } = props;
   const dispatch = useAppDispatch();
   const { data, frequency, measureCol, loading } = useAppSelector(
     (state: RootState) => state.timeSeries,
@@ -42,38 +39,6 @@ export const TimeSeriesChart = (props: IChartTSProps) => {
     loading: { executeQuery: loadingExecuteQuery },
   } = useAppSelector((state: RootState) => state.dataset);
   const [frequencyData, setFrequencyData] = useState('15m');
-
-  // State for viewport dimensions
-  const [viewportDimensions, setViewportDimensions] = useState({
-    width: window.innerWidth,
-    height: window.innerHeight,
-  });
-
-  // Update viewport dimensions on resize with throttling
-  useEffect(() => {
-    // Only track viewport changes when in fullscreen mode
-    if (!isFullscreen) return;
-
-    let timeoutId: NodeJS.Timeout;
-
-    const handleResize = () => {
-      // Throttle resize events to prevent excessive re-renders
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => {
-        setViewportDimensions({
-          width: window.innerWidth,
-          height: window.innerHeight,
-        });
-      }, 100); // 100ms throttle
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [isFullscreen]);
 
   const handleTimeInterval = (value: string) => {
     let freq = 900;
@@ -116,75 +81,31 @@ export const TimeSeriesChart = (props: IChartTSProps) => {
     setFrequencyData(getTimeIntervalFromFrequency());
   }, [frequency]);
 
-  // Calculate viewport-based dimensions with memoization
-  const chartDimensions = useMemo(() => {
-    if (isFullscreen) {
-      return {
-        minWidth: Math.floor(viewportDimensions.width * 0.6), // 60vw
-        minHeight: Math.floor(viewportDimensions.height * 0.4), // 40vh
-        maxHeight: Math.floor(viewportDimensions.height * 0.6), // 60vh
-      };
-    }
-
-    return {
-      minWidth: 100,
-      minHeight: 100,
-      maxHeight: 300,
-    };
-  }, [isFullscreen, viewportDimensions.width, viewportDimensions.height]);
-
   return (
-    data &&
-    data.length > 0 && (
-      <Box
-        sx={{
-          mt: 1,
-          border: 1,
-          borderColor: 'grey.300',
-          boxShadow: 2,
-          borderRadius: 2,
-          p: 3,
-          bgcolor: 'white',
-          ...(isFullscreen && {
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 999,
-            borderRadius: 0,
-            height: '80vh',
-            width: '80vw',
-            display: 'flex',
-            flexDirection: 'column',
-          }),
-        }}
-      >
-        {loading || loadingExecuteQuery ? (
+    <Card
+      sx={{
+        boxShadow: 2,
+        borderRadius: 2,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      {loading || loadingExecuteQuery ? (
+        <CardContent sx={{ flex: 1, display: 'flex', alignItems: 'center' }}>
           <Loader />
-        ) : (
-          <>
-            <Box>
+        </CardContent>
+      ) : (
+        <>
+          <CardHeader
+            sx={{ backgroundColor: 'action.hover', py: 1 }}
+            title={
               <Box
                 display="flex"
                 justifyContent="space-between"
                 alignItems="center"
+                p={0.5}
               >
-                {onToggleFullscreen && (
-                  <Tooltip
-                    title={
-                      isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'
-                    }
-                    placement="top"
-                  >
-                    <IconButton color="default" onClick={onToggleFullscreen}>
-                      {isFullscreen ? (
-                        <FullscreenExitIcon />
-                      ) : (
-                        <FullscreenIcon />
-                      )}
-                    </IconButton>
-                  </Tooltip>
-                )}
                 <Box display="flex" alignItems="center" gap={2}>
                   <Typography variant="body2">Time series data for</Typography>
                   <FormControl size="small" variant="standard">
@@ -209,42 +130,58 @@ export const TimeSeriesChart = (props: IChartTSProps) => {
                     </Select>
                   </FormControl>
                 </Box>
+                <Box display="flex" alignItems="center" gap={2}>
+                  <Typography variant="body2">Freq.</Typography>
+                  <FormControl size="small" variant="standard">
+                    <Select
+                      labelId="frequency-select-label"
+                      value={frequencyData}
+                      onChange={e => handleTimeInterval(e.target.value)}
+                    >
+                      <MenuItem value="15m">15m</MenuItem>
+                      <MenuItem value="30m">30m</MenuItem>
+                      <MenuItem value="1h">1h</MenuItem>
+                      <MenuItem value="6h">6h</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
               </Box>
+            }
+          />
 
-              <Box
-                display="flex"
-                justifyContent="flex-end"
-                alignItems="center"
-                my={1}
-                gap={2}
-              >
-                <Typography variant="body2">Freq.</Typography>
-                <FormControl size="small" variant="standard">
-                  <Select
-                    labelId="frequency-select-label"
-                    value={frequencyData}
-                    onChange={e => handleTimeInterval(e.target.value)}
-                  >
-                    <MenuItem value="15m">15m</MenuItem>
-                    <MenuItem value="30m">30m</MenuItem>
-                    <MenuItem value="1h">1h</MenuItem>
-                    <MenuItem value="6h">6h</MenuItem>
-                  </Select>
-                </FormControl>
-              </Box>
-            </Box>
-
-            <TimeSeriesVisualizer
-              data={data}
-              measureCol={measureCol}
-              minWidth={chartDimensions.minWidth}
-              minHeight={chartDimensions.minHeight}
-              maxHeight={chartDimensions.maxHeight}
-              isFullscreen={isFullscreen}
-            />
-          </>
-        )}
-      </Box>
-    )
+          {data && data.length > 0 ? (
+            <CardContent
+              sx={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <TimeSeriesVisualizer data={data} measureCol={measureCol} />
+            </CardContent>
+          ) : (
+            <CardContent
+              sx={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <InfoMessage
+                message="No Data Available."
+                type="info"
+                icon={
+                  <ReportProblemRoundedIcon
+                    sx={{ fontSize: 40, color: 'info.main' }}
+                  />
+                }
+                fullHeight
+              />
+            </CardContent>
+          )}
+        </>
+      )}
+    </Card>
   );
 };

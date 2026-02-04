@@ -1,5 +1,5 @@
 import './visualize.css';
-import React, { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Box, Button, Typography } from '@mui/material';
 import {
@@ -13,10 +13,7 @@ import {
 } from '../../../store/slices/exploring/datasetSlice';
 import Loader from '../../../shared/components/loader';
 import { Map } from './Map/map';
-import Stats from './Stats/stats';
 import { VisControl } from './VisControl/vis-control';
-import { Chart } from './Chart/chart';
-import { TimeSeriesChart } from './TimeSeriesChart/time-series-chart';
 import { getDataSource } from '../../../store/slices/exploring/datasourceSlice';
 import { resetChartState } from '../../../store/slices/exploring/chartSlice';
 import {
@@ -35,20 +32,16 @@ import {
 } from '../../../store/slices/exploring/predictionSlice';
 import CloseIcon from '@mui/icons-material/Close';
 import { PredictionTimeline } from './Map/PredictionTimeline/prediction-timeline';
+import { BottomBar } from './bottom-bar';
 
 const VisualizePage = () => {
   const { datasetId } = useParams();
   const dispatch = useAppDispatch();
-  const [isChartFullscreen, setIsChartFullscreen] = useState(false);
-  const [isTimeSeriesFullscreen, setIsTimeSeriesFullscreen] = useState(false);
   const { menuOptions } = useAppSelector(
     (state: RootState) => state.progressPage,
   );
   const { dataset, loading } = useAppSelector(
     (state: RootState) => state.dataset,
-  );
-  const { drawnShape, selectedGeohash } = useAppSelector(
-    (state: RootState) => state.map,
   );
   const {
     dataSource,
@@ -57,14 +50,6 @@ const VisualizePage = () => {
   const { predictionDisplay } = useAppSelector(
     (state: RootState) => state.prediction,
   );
-
-  const toggleChartFullscreen = React.useCallback(() => {
-    setIsChartFullscreen(!isChartFullscreen);
-  }, [isChartFullscreen]);
-
-  const toggleTimeSeriesFullscreen = React.useCallback(() => {
-    setIsTimeSeriesFullscreen(!isTimeSeriesFullscreen);
-  }, [isTimeSeriesFullscreen]);
 
   const handleClosePredictionDisplay = () => {
     dispatch(setPredictionDisplay(false));
@@ -140,60 +125,17 @@ const VisualizePage = () => {
           </Box>
         </>
       ) : (
-        <>
-          <Box
-            position="absolute"
-            zIndex={999}
-            top={predictionDisplay ? 32 : 0}
-            sx={{ p: 2, minWidth: 200 }}
-          >
-            <VisControl dataset={dataset} />
-          </Box>
-          <Box
-            position="absolute"
-            zIndex={999}
-            bottom={0}
-            sx={{ p: 2, minWidth: 200 }}
-          >
-            <Stats dataset={dataset} />
-          </Box>
-          {isChartFullscreen ? (
-            <Chart
-              dataset={dataset}
-              isFullscreen={isChartFullscreen}
-              onToggleFullscreen={toggleChartFullscreen}
-            />
-          ) : isTimeSeriesFullscreen ? (
-            <TimeSeriesChart
-              dataset={dataset}
-              isFullscreen={isTimeSeriesFullscreen}
-              onToggleFullscreen={toggleTimeSeriesFullscreen}
-            />
-          ) : (
-            <Box
-              position="absolute"
-              zIndex={999}
-              bottom={0}
-              right={0}
-              sx={{ p: 1, minWidth: 311, maxWidth: 1 / 4 }}
-            >
-              <Chart
-                dataset={dataset}
-                isFullscreen={isChartFullscreen}
-                onToggleFullscreen={toggleChartFullscreen}
-              />
-              {dataset.timeColumn && (drawnShape || selectedGeohash.rect) && (
-                <TimeSeriesChart
-                  dataset={dataset}
-                  isFullscreen={isTimeSeriesFullscreen}
-                  onToggleFullscreen={toggleTimeSeriesFullscreen}
-                />
-              )}
-            </Box>
-          )}
-        </>
+        <Box
+          position="absolute"
+          zIndex={999}
+          top={predictionDisplay ? 32 : 0}
+          sx={{ p: 2, minWidth: 200 }}
+        >
+          <VisControl dataset={dataset} />
+        </Box>
       )}
       <Map id={datasetId} dataset={dataset} />
+      <BottomBar dataset={dataset} />
     </>
   );
 };

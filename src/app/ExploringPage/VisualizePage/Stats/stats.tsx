@@ -9,20 +9,11 @@ import {
   MenuItem,
   Grid,
   Box,
-  TextField,
-  IconButton,
 } from '@mui/material';
-import CheckIcon from '@mui/icons-material/Check';
 import type { IDataset } from '../../../../shared/models/exploring/dataset.model';
-import {
-  type RootState,
-  useAppSelector,
-  useAppDispatch,
-} from '../../../../store/store';
+import { type RootState, useAppSelector } from '../../../../store/store';
 import type { IRectStats } from '../../../../shared/models/exploring/rect-stats.model';
 import Loader from '../../../../shared/components/loader';
-import { setSelectedGeohash } from '../../../../store/slices/exploring/mapSlice';
-import { useNavigate } from 'react-router-dom';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 
@@ -37,16 +28,7 @@ export const Stats = ({ dataset, pointCount }: IStatsPanelProps) => {
   const [anchorElFields, setAnchorElFields] = useState<null | HTMLElement>(
     null,
   );
-  const [geohashInput, setGeohashInput] = useState('');
-  const [isEditingGeohash, setIsEditingGeohash] = useState(false);
-
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
   const { rectStats } = useAppSelector((state: RootState) => state.stats);
-  const { zone } = useAppSelector((state: RootState) => state.zone);
-  const { activeSelection, selectedGeohash } = useAppSelector(
-    (state: RootState) => state.map,
-  );
   const {
     loading: { executeQuery: loadingExecuteQuery },
   } = useAppSelector((state: RootState) => state.dataset);
@@ -82,36 +64,19 @@ export const Stats = ({ dataset, pointCount }: IStatsPanelProps) => {
     setAnchorElFields(null);
   };
 
-  const handleGeohashEdit = () => {
-    setIsEditingGeohash(true);
-    setGeohashInput(selectedGeohash.string || '');
-  };
-
-  const handleGeohashSubmit = () => {
-    if (geohashInput.trim()) {
-      dispatch(setSelectedGeohash(geohashInput.trim()));
-      navigate(`?geohash=${geohashInput.trim()}`);
-    }
-    setIsEditingGeohash(false);
-  };
-
-  const handleGeohashCancel = () => {
-    setIsEditingGeohash(false);
-    setGeohashInput('');
-  };
-
-  const handleGeohashKeyPress = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      handleGeohashSubmit();
-    } else if (event.key === 'Escape') {
-      handleGeohashCancel();
-    }
-  };
-
   return (
-    <Card sx={{ gap: 1, borderRadius: 2, boxShadow: 2 }}>
+    <Card
+      sx={{
+        gap: 1,
+        borderRadius: 2,
+        boxShadow: 2,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {loadingExecuteQuery ? (
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2, flex: 1, display: 'flex', alignItems: 'center' }}>
           <Loader />
         </Box>
       ) : (
@@ -124,87 +89,15 @@ export const Stats = ({ dataset, pointCount }: IStatsPanelProps) => {
                   Statistics for <i>{rectStats.count}</i> measurements
                 </Typography>
               }
-              subheader={
-                activeSelection === 'selectedGeohash' ? (
-                  isEditingGeohash ? (
-                    <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="space-evenly"
-                      gap={1}
-                    >
-                      <TextField
-                        size="small"
-                        value={geohashInput}
-                        onChange={e => setGeohashInput(e.target.value)}
-                        onKeyDown={handleGeohashKeyPress}
-                        onBlur={handleGeohashSubmit}
-                        autoFocus
-                        sx={{
-                          '& .MuiInputBase-root': {
-                            fontSize: '0.875rem',
-                            fontStyle: 'italic',
-                            color: 'primary.main',
-                          },
-                        }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={handleGeohashSubmit}
-                        sx={{ color: 'primary.main' }}
-                      >
-                        <CheckIcon />
-                      </IconButton>
-                    </Box>
-                  ) : (
-                    <Typography
-                      variant="subtitle2"
-                      component="div"
-                      fontWeight={500}
-                      textAlign="center"
-                      sx={{
-                        fontStyle: 'italic',
-                        color: 'primary.main',
-                        cursor: 'pointer',
-                        '&:hover': {
-                          textDecoration: 'underline',
-                        },
-                      }}
-                      onClick={handleGeohashEdit}
-                    >
-                      GeoHash: {selectedGeohash.string}
-                    </Typography>
-                  )
-                ) : activeSelection === 'drawn' ? (
-                  <Typography
-                    variant="subtitle2"
-                    component="div"
-                    fontWeight={500}
-                    textAlign="center"
-                    sx={{
-                      fontStyle: 'italic',
-                      color: 'primary.main',
-                    }}
-                  >
-                    {zone.id ? `Zone: ${zone.id}` : 'Drawn Shape'}
-                  </Typography>
-                ) : (
-                  <Typography
-                    variant="subtitle2"
-                    component="div"
-                    fontWeight={500}
-                    textAlign="center"
-                    sx={{
-                      fontStyle: 'italic',
-                      color: 'primary.main',
-                    }}
-                  >
-                    {''}
-                  </Typography>
-                )
-              }
             />
-            <CardContent>
+            <CardContent
+              sx={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
               {rectStats.count === 0 ? (
                 <InfoMessage
                   message="No Data Available."
@@ -218,7 +111,7 @@ export const Stats = ({ dataset, pointCount }: IStatsPanelProps) => {
                 />
               ) : (
                 <>
-                  <Box display="flex" alignItems="center" gap={1}>
+                  <Box display="flex" alignItems="center" justifyContent="center" gap={1}>
                     <Typography variant="subtitle2" fontWeight={500}>
                       Statistics for field:
                     </Typography>
@@ -242,7 +135,7 @@ export const Stats = ({ dataset, pointCount }: IStatsPanelProps) => {
                     </Menu>
                   </Box>
 
-                  <Grid container spacing={1}>
+                  <Grid container spacing={1} justifyContent="center">
                     <Stat
                       label="Min"
                       value={formatStat(
@@ -286,7 +179,7 @@ export const Stats = ({ dataset, pointCount }: IStatsPanelProps) => {
                     />
                   </Grid>
 
-                  <Box display="flex" alignItems="center" gap={1}>
+                  <Box display="flex" alignItems="center" gap={1} justifyContent="center">
                     <Typography variant="subtitle2" fontWeight={500}>
                       Statistics between fields:
                     </Typography>
