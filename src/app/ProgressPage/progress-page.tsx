@@ -8,12 +8,16 @@ import {
   useParams,
 } from 'react-router-dom';
 import {
+  clearExperiment,
+  clearWorkflows,
   fetchExperimentWorkflows,
+  setIntialization,
   setMenuOptions,
 } from '../../store/slices/progressPageSlice';
 import ProgressPageLoading from './progress-page-loading';
 import LeftMenu from './left-menu';
 import ExperimentControls from './experiment-controls';
+import { resetMonitoringPage } from '../../store/slices/monitorPageSlice';
 
 interface ProgressPageProps {
   children?: ReactNode
@@ -30,7 +34,24 @@ const ProgressPage = (props: ProgressPageProps) => {
   const location = useLocation();
 
   useEffect(() => {
+  if (!experimentId) return;
+
+  if (experimentId !== experiment.data?.id) {
+    dispatch(clearExperiment());
+    dispatch(clearWorkflows());
+    dispatch(resetMonitoringPage());
+    dispatch(setIntialization(false));
+  }
+}, [experimentId]);
+
+
+  useEffect(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
+
+    if (pathParts.length === 0) {
+      dispatch(setMenuOptions({ ...menuOptions, selected: 'experiments' }));
+      return;
+    }
 
     if (location.pathname.includes('workflow'))
       dispatch(setMenuOptions({ ...menuOptions, selected: 'monitoring' }));
@@ -118,9 +139,11 @@ const ProgressPage = (props: ProgressPageProps) => {
             }}
           >
             {/* Experiment Controls */}
-            <Box sx={{ width: '100%' }}>
-              <ExperimentControls />
-            </Box>
+            {experimentId && (
+              <Box sx={{ width: '100%' }}>
+                <ExperimentControls />
+              </Box>
+            )}
 
             <Box
               sx={{

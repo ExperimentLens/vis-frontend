@@ -28,18 +28,27 @@ const ProgressPageLoading = () => {
   const experimentId = params.experimentId || searchParams.get('experimentId');
 
   useEffect(() => {
-    if (experimentId && experimentId !== experiment.data?.id) {
+    if (!experimentId) {
+      dispatch(setIntialization(true));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!experimentId) return;
+    if (experimentId !== experiment.data?.id) {
       dispatch(fetchExperiment(experimentId));
     }
   }, []);
 
   useEffect(() => {
+    if (!experimentId) return;
     if (!experiment.loading && experiment.data) {
       dispatch(fetchExperimentWorkflows(experimentId ?? ''));
     }
   }, [experiment]);
 
   useEffect(() => {
+    if (!experimentId) return;
     if (!experiment.loading && experiment.data) {
       setProgress(50);
     }

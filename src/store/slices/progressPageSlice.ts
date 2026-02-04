@@ -90,7 +90,19 @@ export const progressPageSlice = createSlice({
     setExperimentStatus: (state, action) => {
       if(state.experiment.data)
         state.experiment.data.status = action.payload;
-    }
+    },
+    clearExperiment: (state) => {
+      state.experiment.data = null;
+      state.experiment.loading = false;
+      state.experiment.error = null;
+    },
+
+    clearWorkflows: (state) => {
+      state.workflows.data = [];
+      state.workflows.loading = false;
+      state.workflows.error = null;
+      state.workflows.requested = false;
+    },
   },
   extraReducers: builder => {
     builder
@@ -216,7 +228,13 @@ export const progressPageSlice = createSlice({
 export const fetchAllExperiments = createAsyncThunk(
   'progressPage/fetch_all_experiments',
   async () => {
-    const res = await experimentApi.get('');
+    const limit = 50;
+
+    const res = await experimentApi.get('', {
+      params: {
+        limit,
+      },
+    });
 
     return res.data;
   }
@@ -290,7 +308,9 @@ export const {
   setIntialization,
   setMenuOptions,
   setWorkflowsData,
-  setExperimentStatus
+  setExperimentStatus,
+  clearExperiment,
+  clearWorkflows,
 } = progressPageSlice.actions;
 
 export default progressPageSlice.reducer;

@@ -10,11 +10,23 @@ import LoginPage from './app/LoginPage/login-page';
 import TokenAuthHandler from './token-auth-handler';
 import ProtectedRoute from './protected-route';
 import GamificationPage from './app/ProgressPage/GamificationPage/gamification-page';
+import ExperimentsLandingPage from './app/ProgressPage/ExperimentsLandingPage/experiments-landing-page';
 
 const routes = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/',
+    element: (
+      <ProtectedRoute>
+        <ProgressPage>
+          <ExperimentsLandingPage />
+        </ProgressPage>
+      </ProtectedRoute>
+    ),
     errorElement: <ErrorPage />
   },
   {
