@@ -3,7 +3,7 @@ import { useAppSelector } from '../../store/store';
 import { Box, Typography } from '@mui/material';
 import type { RootState } from '../../store/store';
 
-export default function ProgressBar({ workflowStatus, workflowId } : {workflowStatus : string, workflowId : string}) {
+export default function ProgressBar({ workflowStatus, workflowId, hasPercentage } : {workflowStatus : string, workflowId : string, hasPercentage?: boolean}) {
   const { workflows } = useAppSelector(
     (state: RootState) => state.progressPage,
   );
@@ -27,7 +27,7 @@ export default function ProgressBar({ workflowStatus, workflowId } : {workflowSt
     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', flexDirection: 'column', height: '100%' }}>
       <Box sx={{ display: 'flex', flexDirection: 'row', gap: 0.5 }}>
         <Typography variant="body2">{workflowStatus?.toLowerCase()}</Typography>
-        {workflowStatus === 'RUNNING' && <Typography variant="body2">{Math.floor(progressValue)}%</Typography>}
+        {workflowStatus === 'RUNNING' && hasPercentage && <Typography variant="body2">{Math.floor(progressValue)}%</Typography>}
       </Box>
       <Box sx={{ width: '100%' }}>
         <LinearProgress sx={{ borderRadius: 4 }} color={color} value={progressValue} variant="determinate"/>

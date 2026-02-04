@@ -982,6 +982,7 @@ export default function WorkflowTable() {
                 <ProgressBar
                   workflowStatus={params.value}
                   workflowId={params.row.workflowId}
+                  hasPercentage={true}
                 />
               ),
             };
