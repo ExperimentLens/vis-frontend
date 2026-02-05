@@ -10,20 +10,9 @@ import Stats from './Stats/stats';
 export const BottomBar = ({ dataset }: { dataset: IDataset }) => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { timeRange } = useAppSelector((state: RootState) => state.dataset);
-  // const { series } = useAppSelector((state: RootState) => state.stats);
-  const { activeSelection, clusters, drawnShape, selectedGeohash } =
-    useAppSelector((state: RootState) => state.map);
-  // const totalCount =
-  //   activeSelection === 'view'
-  //     ? clusters.reduce(
-  //       (acc, cluster) => acc + cluster.properties.totalCount,
-  //       0,
-  //     )
-  //     : series.reduce((acc, series) => acc + (series.value || 0), 0);
-
-  const totalCount = clusters.reduce(
-    (acc, cluster) => acc + cluster.properties.totalCount,
-    0,
+  const { totalPointCount } = useAppSelector((state: RootState) => state.stats);
+  const { activeSelection, drawnShape, selectedGeohash } = useAppSelector(
+    (state: RootState) => state.map,
   );
 
   const Header = () => (
@@ -69,7 +58,7 @@ export const BottomBar = ({ dataset }: { dataset: IDataset }) => {
             fontSize="1.2rem"
             component="span"
           >
-            {totalCount}
+            {totalPointCount}
           </Typography>
         </Typography>
         <Typography variant="body1" color="primary" textAlign="center">

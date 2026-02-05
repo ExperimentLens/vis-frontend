@@ -3,11 +3,13 @@ import type { IRectStats } from '../../../shared/models/exploring/rect-stats.mod
 import type { IGroupedStats } from '../../../shared/models/exploring/grouped-stats.model';
 
 interface StatsState {
+  totalPointCount: number;
   series: IGroupedStats[];
   rectStats: IRectStats | null;
 }
 
 const initialState: StatsState = {
+  totalPointCount: 0,
   series: [],
   rectStats: null,
 };
@@ -19,6 +21,9 @@ export const statsSlice = createSlice({
     resetStatsState: () => {
       return initialState;
     },
+    setTotalPointCount: (state, action: PayloadAction<number>) => {
+      state.totalPointCount = action.payload;
+    },
     setRectStats: (state, action: PayloadAction<IRectStats>) => {
       state.rectStats = action.payload;
     },
@@ -27,10 +32,11 @@ export const statsSlice = createSlice({
     },
     updateAnalysisResults: (
       state,
-      action: PayloadAction<{ rectStats: IRectStats; series: IGroupedStats[] }>,
+      action: PayloadAction<{ totalPointCount: number; rectStats: IRectStats; series: IGroupedStats[] }>,
     ) => {
-      const { rectStats, series } = action.payload;
+      const { totalPointCount, rectStats, series } = action.payload;
 
+      state.totalPointCount = totalPointCount;
       state.rectStats = rectStats;
       state.series = series;
     },
@@ -39,6 +45,7 @@ export const statsSlice = createSlice({
 
 export const {
   resetStatsState,
+  setTotalPointCount,
   setRectStats,
   setSeries,
   updateAnalysisResults,

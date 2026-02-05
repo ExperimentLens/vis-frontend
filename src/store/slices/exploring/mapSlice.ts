@@ -87,6 +87,7 @@ const handleRectUpdate = async (
 
       dispatch(
         updateAnalysisResults({
+          totalPointCount: result.pointCount,
           rectStats: result.rectStats,
           series: result.series,
         }),
@@ -145,6 +146,7 @@ export const updateClusters = createAsyncThunk(
       if (drawnShape == null && selectedGeohash.rect == null) {
         thunkApi.dispatch(
           updateAnalysisResults({
+            totalPointCount: result.pointCount,
             rectStats: result.rectStats,
             series: result.series,
           }),
