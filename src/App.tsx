@@ -5,8 +5,11 @@ import { clearExpiredLocalStorage } from './shared/utils/localStorageCache';
 import { useEffect } from 'react';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useTheme } from '@mui/material/styles';
 
 const App = () => {
+  const theme = useTheme();
+
   useEffect(() => {
     // Run once immediately
     clearExpiredLocalStorage(['compare-', 'experiment-', 'workflows-']);
@@ -37,7 +40,7 @@ const App = () => {
         pauseOnFocusLoss
         draggable
         pauseOnHover
-        theme="light"
+        theme={theme.palette.mode}
       />
     </>
   );

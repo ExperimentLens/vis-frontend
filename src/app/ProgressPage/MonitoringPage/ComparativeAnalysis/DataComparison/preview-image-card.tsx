@@ -29,11 +29,11 @@ export default function PreviewImageCard({ title, fileNames }: PreviewImageCardP
     setLoaded(false);
     setHasError(false);
     const img = imageRef.current;
+
     if (img && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0) {
       setLoaded(true);
     }
   }, [imageSrc]);
-
 
   return (
     <Box sx={{ height: '100%' }}>
@@ -47,6 +47,7 @@ export default function PreviewImageCard({ title, fileNames }: PreviewImageCardP
           const blob = await res.blob();
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
+
           a.href = url;
           a.download = `${title || 'image'}.jpg`;
           document.body.appendChild(a);

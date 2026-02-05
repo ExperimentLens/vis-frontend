@@ -9,17 +9,18 @@ import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded';
 import DataObjectRoundedIcon from '@mui/icons-material/DataObjectRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded';
-import theme from '../../../../mui-theme';
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
+import { useTheme } from '@mui/material/styles';
 
 export default function NullTaskFallback() {
   const dispatch = useAppDispatch();
   const { experimentId } = useParams();
   const { tab } = useAppSelector((s: RootState) => s.workflowPage);
+  const theme = useTheme();
   const workflowId = tab?.workflowId;
 
   const { fallbackParams, fallbackMetrics, fallbackInputGrouped, fallbackOutputGrouped } = useMemo(() => {

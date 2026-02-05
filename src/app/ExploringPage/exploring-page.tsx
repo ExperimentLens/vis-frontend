@@ -111,118 +111,121 @@ const ExploringPage = () => {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-        p: 2,
-      }}
-    >
-      {loading.fetch ? (
-        <Loader />
-      ) : error.fetch || error.delete ? (
-        <Alert severity="error" sx={{ width: '80%', margin: 'auto' }}>
-          {error.fetch || error.delete}
-        </Alert>
-      ) : (
-        <>
-          {dataSources.length === 0 ? (
-            <Alert severity="info" sx={{ width: '80%' }}>
+    <Paper sx={{ height: '100%' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 2,
+        }}
+      >
+        {loading.fetch ? (
+          <Loader />
+        ) : error.fetch || error.delete ? (
+          <Alert severity="error" sx={{ width: '80%', margin: 'auto' }}>
+            {error.fetch || error.delete}
+          </Alert>
+        ) : (
+          <>
+            {dataSources.length === 0 ? (
+              <Alert severity="info" sx={{ width: '80%' }}>
               No data sources found. Please upload a data source.
-            </Alert>
-          ) : (
-            <>
-              <Typography variant="h4" textAlign="center">
+              </Alert>
+            ) : (
+              <>
+                <Typography variant="h4" textAlign="center">
                 Available Data Sources
-              </Typography>
-              <TableContainer
-                component={Paper}
-                sx={{ marginTop: 2, width: '85%', maxHeight: '60%' }}
-              >
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell align="center">Name</TableCell>
-                      <TableCell align="center">Source Type</TableCell>
-                      <TableCell align="center">Format</TableCell>
-                      <TableCell align="center">Measures</TableCell>
-                      <TableCell align="center">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {dataSources
-                      .slice()
-                      .sort((a, b) => (a.format < b.format ? -1 : 1))
-                      .map(dataSource => (
-                        <TableRow key={`dataSource-row-${dataSource.fileName}`}>
-                          <TableCell sx={{ textAlign: 'center' }}>
-                            {dataSource.fileName}
-                          </TableCell>
-                          <TableCell sx={{ textAlign: 'center' }}>
-                            {dataSource.sourceType}
-                          </TableCell>
-                          <TableCell sx={{ textAlign: 'center' }}>
-                            {dataSource.format}
-                          </TableCell>
-                          <TableCell sx={{ textAlign: 'center' }}>
-                            {dataSource.measure0}, {dataSource.measure1}
-                          </TableCell>
-                          <TableCell sx={{ textAlign: 'center' }}>
-                            <IconButton
-                              color="primary"
-                              size="small"
-                              onClick={() =>
-                                handleViewClick(dataSource.fileName)
-                              }
-                            >
-                              <VisibilityIcon />
-                            </IconButton>
-                            {!supportedDatabases.includes(dataSource.format) && (
+                </Typography>
+                <TableContainer
+                  component={Paper}
+                  sx={{ marginTop: 2, width: '85%', maxHeight: '60%' }}
+                >
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell align="center">Name</TableCell>
+                        <TableCell align="center">Source Type</TableCell>
+                        <TableCell align="center">Format</TableCell>
+                        <TableCell align="center">Measures</TableCell>
+                        <TableCell align="center">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {dataSources
+                        .slice()
+                        .sort((a, b) => (a.format < b.format ? -1 : 1))
+                        .map(dataSource => (
+                          <TableRow key={`dataSource-row-${dataSource.fileName}`}>
+                            <TableCell sx={{ textAlign: 'center' }}>
+                              {dataSource.fileName}
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'center' }}>
+                              {dataSource.sourceType}
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'center' }}>
+                              {dataSource.format}
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'center' }}>
+                              {dataSource.measure0}, {dataSource.measure1}
+                            </TableCell>
+                            <TableCell sx={{ textAlign: 'center' }}>
                               <IconButton
-                                color="error"
+                                color="primary"
                                 size="small"
                                 onClick={() =>
-                                  handleDeleteClick(dataSource.fileName)
+                                  handleViewClick(dataSource.fileName)
                                 }
                               >
-                                <DeleteIcon />
+                                <VisibilityIcon />
                               </IconButton>
-                            )}
-                            {supportedDatabases.includes(dataSource.format) && (
-                              <PreprocessPsqlDataDialog dataSource={dataSource} />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </>
-          )}
+                              {!supportedDatabases.includes(dataSource.format) && (
+                                <IconButton
+                                  color="error"
+                                  size="small"
+                                  onClick={() =>
+                                    handleDeleteClick(dataSource.fileName)
+                                  }
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              )}
+                              {supportedDatabases.includes(dataSource.format) && (
+                                <PreprocessPsqlDataDialog dataSource={dataSource} />
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </>
+            )}
 
-          {/* Upload Section */}
-          <Box sx={{ width: '40%', mt: 3 }}>
-            <DataSourceFileUpload />
-          </Box>
+            {/* Upload Section */}
+            <Box sx={{ width: '40%', mt: 3 }}>
+              <DataSourceFileUpload />
+            </Box>
 
-          <ConfirmationModal
-            open={deleteConfirmation.open}
-            title="Delete Data Source"
-            message={`Are you sure you want to delete data source with id: "${deleteConfirmation.fileName}"?<br>This will delete all models and data associated with this data source.`}
-            confirmText="Delete"
-            cancelText="Cancel"
-            onConfirm={handleConfirmDelete}
-            onCancel={handleCancelDelete}
-            confirmColor="error"
-            severity="warning"
-            loading={loading.delete}
-          />
-        </>
-      )}
-    </Box>
+            <ConfirmationModal
+              open={deleteConfirmation.open}
+              title="Delete Data Source"
+              message={`Are you sure you want to delete data source with id: "${deleteConfirmation.fileName}"?<br>This will delete all models and data associated with this data source.`}
+              confirmText="Delete"
+              cancelText="Cancel"
+              onConfirm={handleConfirmDelete}
+              onCancel={handleCancelDelete}
+              confirmColor="error"
+              severity="warning"
+              loading={loading.delete}
+            />
+          </>
+        )}
+      </Box>
+
+    </Paper>
   );
 };
 

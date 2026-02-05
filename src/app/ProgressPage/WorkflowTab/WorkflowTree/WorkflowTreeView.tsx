@@ -5,13 +5,14 @@ import PsychologyAltRoundedIcon from '@mui/icons-material/PsychologyAltRounded';
 import { useEffect, useMemo, useState } from 'react';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
-import theme from '../../../../mui-theme';
+import { useTheme } from '@mui/material/styles';
 
 import WorkflowDetailsAccordion from './WorkflowDetailsAccordition';
 import ModelInsightsAccordion from './ModelInsightsAccordition';
 
 export default function WorkflowTreeView() {
   const { tab } = useAppSelector((s: RootState) => s.workflowPage);
+  const theme = useTheme();
 
   const hasExplainability = useMemo(() => {
     const tasks = tab?.workflowConfiguration.tasks;

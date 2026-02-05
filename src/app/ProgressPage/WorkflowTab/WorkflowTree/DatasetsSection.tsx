@@ -7,11 +7,11 @@ import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded';
 import DataObjectRoundedIcon from '@mui/icons-material/DataObjectRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded';
-import theme from '../../../../mui-theme';
 import { useMemo } from 'react';
 import { useAppDispatch } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 import type { IDataAsset } from '../../../../shared/models/experiment/data-asset.model';
+import { useTheme } from '@mui/material/styles';
 type Props = {
   taskId: string;
   datasets: IDataAsset[];
@@ -21,6 +21,7 @@ type Props = {
 
 export default function DatasetsSection({ taskId, datasets, experimentId, workflowId }: Props) {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
 
   const getDatasetIcon = (format?: string | null) => {
     if (!format || !format.trim()) return <InsertDriveFileRoundedIcon style={{ color: theme.palette.primary.main }} fontSize="small" />;

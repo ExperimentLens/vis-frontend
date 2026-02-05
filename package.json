@@ -46,6 +46,7 @@
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
     "leaflet-draw": "^1.0.4",
+    "leaflet-providers": "^3.0.0",
     "leaflet.heat": "^0.2.0",
     "loadash": "^1.0.0",
     "mathjs": "^13.2.0",

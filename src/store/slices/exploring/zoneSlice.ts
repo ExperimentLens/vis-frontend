@@ -340,7 +340,7 @@ export const zoneListeners = (startAppListening: AppStartListening) => {
         const coordinates = geoJsonPolygonToGeoPoints(geometry);
 
         dispatch(setDrawnShape({ kind: 'polygon', coordinates }));
-      } else if (geometry?.type === 'Circle') {
+      } else if (geometry?.type === 'Point' && feature?.properties?.shape === 'circle') {
         const coordinates: LatLon[] = [[geometry.coordinates[1], geometry.coordinates[0]]];
 
         dispatch(setDrawnShape({ kind: 'circle', coordinates, radius: feature?.properties?.radius as number }));

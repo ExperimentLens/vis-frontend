@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMap } from 'react-leaflet';
 import { createPortal } from 'react-dom';
+import { useTheme } from '@mui/material/styles';
 import CustomPopupPointArrow from './custom-popup-point-arror';
 
 interface CustomPopupProps {
@@ -18,6 +19,7 @@ const CustomPopup: React.FC<CustomPopupProps> = ({
   onClose,
 }) => {
   const map = useMap();
+  const theme = useTheme();
   const [pos, setPos] = useState<{ left: number; top: number }>({
     left: 0,
     top: 0,
@@ -111,7 +113,8 @@ const CustomPopup: React.FC<CustomPopupProps> = ({
         top: pos.top,
         transform,
         zIndex: 2000,
-        background: 'white',
+        background: theme.palette.background.paper,
+        color: theme.palette.text.primary,
         border: '1px solid #888',
         borderRadius: 8,
         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',

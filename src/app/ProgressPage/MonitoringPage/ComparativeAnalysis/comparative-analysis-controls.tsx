@@ -2,7 +2,7 @@ import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormCon
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly } from '../../../../store/slices/monitorPageSlice';
-import theme from '../../../../mui-theme';
+import { useTheme } from '@mui/material/styles';
 import WindowRoundedIcon from '@mui/icons-material/WindowRounded';
 import RoundedCornerRoundedIcon from '@mui/icons-material/RoundedCornerRounded';
 import BlurLinearIcon from '@mui/icons-material/BlurLinear';
@@ -21,6 +21,7 @@ import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 
 const ComparativeAnalysisControls = ()=> {
+  const theme = useTheme();
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
   const selectedModelComparisonChart = useAppSelector((state: RootState) => state.monitorPage.selectedModelComparisonChart);
   const showMisclassifiedOnly = useAppSelector((state: RootState) => state.monitorPage.showMisclassifiedOnly);

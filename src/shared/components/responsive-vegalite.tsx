@@ -1,18 +1,28 @@
-import { Box } from '@mui/material';
+import { Box, GlobalStyles, useTheme } from '@mui/material';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { VegaLite } from 'react-vega';
 import type { VisualizationSpec } from 'vega-embed';
 
 interface ResponsiveVegaLiteProps {
-  spec: VisualizationSpec // VegaLite specification
-  minWidth?: number
-  minHeight?: number
-  maxWidth?: number
-  maxHeight?: number
-  aspectRatio?: number // Aspect ratio (width / height)
-  [key: string]: unknown // Capture all other props
+  spec: VisualizationSpec; // VegaLite specification
+  minWidth?: number;
+  minHeight?: number;
+  maxWidth?: number;
+  maxHeight?: number;
+  aspectRatio?: number; // Aspect ratio (width / height)
+  [key: string]: unknown; // Capture all other props
 }
+
+type VegaConfig = NonNullable<VisualizationSpec['config']> & {
+  view?: Record<string, unknown>;
+  axis?: Record<string, unknown>;
+  axisX?: Record<string, unknown>;
+  axisY?: Record<string, unknown>;
+  legend?: Record<string, unknown>;
+  title?: Record<string, unknown>;
+  text?: Record<string, unknown>;
+};
 
 const ResponsiveVegaLite: React.FC<ResponsiveVegaLiteProps> = ({
   spec,
@@ -23,9 +33,64 @@ const ResponsiveVegaLite: React.FC<ResponsiveVegaLiteProps> = ({
   aspectRatio = 1, // Default aspect ratio (1:1 -> square)
   ...otherProps
 }) => {
+  const theme = useTheme();
   const [width, setWidth] = useState(minWidth);
   const [height, setHeight] = useState(minHeight);
   const containerRef = useRef<HTMLDivElement>(null);
+  const baseConfig = spec.config as VegaConfig | undefined;
+  const themedConfig = {
+    ...baseConfig,
+    view: {
+      stroke: theme.palette.divider,
+      ...(baseConfig?.view ?? {}),
+    },
+    axis: {
+      labelColor: theme.palette.text.secondary,
+      titleColor: theme.palette.text.primary,
+      tickColor: theme.palette.divider,
+      domainColor: theme.palette.divider,
+      gridColor: theme.palette.divider,
+      ...(baseConfig?.axis ?? {}),
+    },
+    axisX: {
+      labelColor: theme.palette.text.secondary,
+      titleColor: theme.palette.text.primary,
+      tickColor: theme.palette.divider,
+      domainColor: theme.palette.divider,
+      gridColor: theme.palette.divider,
+      ...(baseConfig?.axisX ?? {}),
+    },
+    axisY: {
+      labelColor: theme.palette.text.secondary,
+      titleColor: theme.palette.text.primary,
+      tickColor: theme.palette.divider,
+      domainColor: theme.palette.divider,
+      gridColor: theme.palette.divider,
+      ...(baseConfig?.axisY ?? {}),
+    },
+    legend: {
+      labelColor: theme.palette.text.secondary,
+      titleColor: theme.palette.text.primary,
+      ...(baseConfig?.legend ?? {}),
+    },
+    title: {
+      color: theme.palette.text.primary,
+      font: theme.typography.fontFamily,
+      ...(baseConfig?.title ?? {}),
+    },
+    text: {
+      color: theme.palette.text.primary,
+      ...(baseConfig?.text ?? {}),
+    },
+  } as VegaConfig;
+  const themedSpec = {
+    ...spec,
+    autosize: { type: 'fit', contains: 'padding' }, // Ensure the chart adjusts to container size
+    width: width,
+    height: height,
+    background: theme.palette.background.paper,
+    config: themedConfig as VisualizationSpec['config'],
+  } as VisualizationSpec;
 
   // Function to update the chart dimensions based on the container's size
   const updateSize = useCallback(() => {
@@ -57,20 +122,27 @@ const ResponsiveVegaLite: React.FC<ResponsiveVegaLiteProps> = ({
   }, [minWidth, minHeight, aspectRatio, updateSize]);
 
   return (
-    <Box
-      ref={containerRef}
-      sx={{ width: '100%', height: '100%', justifyContent: 'center', mb: 1 }}
-    >
-      <VegaLite
-        spec={{
-          ...spec,
-          autosize: { type: 'fit', contains: 'padding' }, // Ensure the chart adjusts to container size
-          width: width,
-          height: height,
+    <>
+      <GlobalStyles
+        styles={{
+          '#vg-tooltip-element': {
+            zIndex: theme.zIndex.modal + 2,
+          },
         }}
-        {...otherProps}
       />
-    </Box>
+      <Box
+        ref={containerRef}
+        sx={{
+          display: 'flex',
+          width: '100%',
+          height: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <VegaLite spec={themedSpec} {...otherProps} />
+      </Box>
+    </>
   );
 };
 

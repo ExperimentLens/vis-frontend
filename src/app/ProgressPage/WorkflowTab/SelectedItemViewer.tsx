@@ -9,7 +9,6 @@ import WorkflowParameter from './SelectedItemView/workflow-parameter';
 import DatasetIcon from '@mui/icons-material/Dataset';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import theme from '../../../mui-theme';
 import ModelDetails from './SelectedItemView/workflow-model-details';
 import InstanceView from './SelectedItemView/workflow-instance-view';
 import HyperparameterImpact from './SelectedItemView/workflow-hyperparameter-impact';
@@ -19,10 +18,12 @@ import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
 import InsightsIcon from '@mui/icons-material/Insights';
 import FeatureExplainability from './SelectedItemView/workflow-feature-explainability';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
+import { useTheme } from '@mui/material/styles';
 
 import CGlanceExecution from './SelectedItemView/workflow-global-counterfactuals';
 
 const SelectedItemViewer = () => {
+  const theme = useTheme();
   const { selectedItem, selectedTask } = useAppSelector(
     state =>
       state.workflowPage.tab?.dataTaskTable ?? {
@@ -121,7 +122,7 @@ const SelectedItemViewer = () => {
         />
         <Box sx={{ px: 3, py: 2, flexGrow: 1, overflow: 'auto' }}>
           <Box sx={{ overflow: 'auto', height: '100%' }}>
-            <ModelDetails/>
+            <ModelDetails />
           </Box>
 
         </Box>
@@ -137,7 +138,7 @@ const SelectedItemViewer = () => {
           icon={<QueryStatsIcon color="primary" />}
         />
         <Box sx={{ px: 3, py: 2, flexGrow: 1, overflow: 'auto' }}>
-          <InstanceView/>
+          <InstanceView />
         </Box>
       </Box>
     );
@@ -180,7 +181,7 @@ const SelectedItemViewer = () => {
         />
         <Box sx={{ px: 3, py: 2, flexGrow: 1, overflow: 'auto' }}>
 
-          <CGlanceExecution/>
+          <CGlanceExecution />
         </Box>
       </Box>
     );

@@ -11,6 +11,7 @@ import {
   TextField,
   Box,
   Alert,
+  useTheme,
 } from '@mui/material';
 import { Close as CloseIcon, Memory as MemoryIcon } from '@mui/icons-material';
 import type { IDataSource } from '../../shared/models/dataexploration.model';
@@ -29,13 +30,13 @@ export interface PreprocessPsqlDataDialogProps {
 export const PreprocessPsqlDataDialog = (
   props: PreprocessPsqlDataDialogProps,
 ) => {
+  const theme = useTheme();
   const { dataSource } = props;
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState(`SELECT * FROM ${dataSource.fileName}`);
   const [queryError, setQueryError] = useState<string | null>(null);
   const dispatch = useAppDispatch();
   const { preprocessPsqlData: preprocessPsqlDataLoading } = useAppSelector(state => state.eusome.loading);
-  const { preprocessPsqlData: preprocessPsqlDataError } = useAppSelector(state => state.eusome.error);
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
@@ -105,7 +106,7 @@ export const PreprocessPsqlDataDialog = (
         '!=',
         '(',
         ')',
-        "'",
+        '\'',
         '"',
         'true',
         'false',
@@ -178,7 +179,6 @@ export const PreprocessPsqlDataDialog = (
         PaperProps={{
           sx: {
             borderRadius: '12px',
-            bgcolor: '#ffffff',
             boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
           },
         }}
@@ -188,7 +188,10 @@ export const PreprocessPsqlDataDialog = (
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background:
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(to right, #16192F, #20243D)'
+                : 'linear-gradient(to right, #f8f9fa, #edf2f7)',
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             px: 3,
             py: 1.5,

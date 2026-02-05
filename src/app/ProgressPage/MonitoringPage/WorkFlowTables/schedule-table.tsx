@@ -6,13 +6,13 @@ import { Close } from '@mui/icons-material';
 import ToolBarWorkflow from './toolbar-workflow-table';
 import FilterBar from '../../../../shared/components/filter-bar';
 import { Popover, styled } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useEffect, useRef, useState } from 'react';
 import { setScheduledTable } from '../../../../store/slices/monitorPageSlice';
 import type { GridColumnNode } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
-import theme from '../../../../mui-theme';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import type { CustomGridColDef } from '../../../../shared/types/table-types';
@@ -55,19 +55,19 @@ const WorkflowActions = (props: {
   };
 
   const removeRow =
-  (list: Number) => {
-    let filteredWorkflows = scheduledTable.rows.filter(
-      row => !(row.id === id),
-    );
+    (list: Number) => {
+      let filteredWorkflows = scheduledTable.rows.filter(
+        row => !(row.id === id),
+      );
 
-    dispatch(
-      setScheduledTable({
-        rows: filteredWorkflows,
-        visibleRows: filteredWorkflows,
-        selectedWorkflows: [],
-      }),
-    );
-  };
+      dispatch(
+        setScheduledTable({
+          rows: filteredWorkflows,
+          visibleRows: filteredWorkflows,
+          selectedWorkflows: [],
+        }),
+      );
+    };
 
   const isStartRow = (id: number): boolean => {
     if (id === 1) {
@@ -181,6 +181,7 @@ const CustomNoRowsOverlay = () => {
 const HIDDEN_INTERNAL_FIELDS = new Set(['space']);
 
 export default function ScheduleTable() {
+  const theme = useTheme();
   const { workflows } = useAppSelector(
     (state: RootState) => state.progressPage,
   );
@@ -272,9 +273,9 @@ export default function ScheduleTable() {
         ...Array.from(uniqueParameters).reduce((acc, variant) => {
           const rawValue = params?.find(param => param.name === variant)?.value;
           const parsedValue =
-                rawValue != null && !isNaN(Number(rawValue)) && rawValue !== ''
-                  ? Number(rawValue)
-                  : rawValue ?? 'n/a';
+            rawValue != null && !isNaN(Number(rawValue)) && rawValue !== ''
+              ? Number(rawValue)
+              : rawValue ?? 'n/a';
 
           acc[variant] = parsedValue;
 
@@ -408,7 +409,7 @@ export default function ScheduleTable() {
       });
     }
 
-    if(scheduledTable.filters.length > 0) {
+    if (scheduledTable.filters.length > 0) {
       for (let i = 0; i < scheduledTable.filters.length; i++) {
         if (scheduledTable.filters[i].value !== '') {
           counter++;

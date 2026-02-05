@@ -15,6 +15,7 @@ import LocationSearchingIcon from '@mui/icons-material/LocationSearching';
 import type { RootState } from '../../store/store';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import { setMenuOptions } from '../../store/slices/progressPageSlice';
+import { ModeToggler } from '../../shared/components/mode-toggler';
 // import ViewInArIcon from '@mui/icons-material/ViewInAr';
 
 const LeftMenu = () => {
@@ -38,7 +39,7 @@ const LeftMenu = () => {
     // },
 
     {
-      icon: <LocationSearchingIcon />,
+      icon: <LocationSearchingIcon color='primary' />,
       label: 'Exploring',
       path: 'exploring'
     },
@@ -53,6 +54,7 @@ const LeftMenu = () => {
         flexDirection: 'column',
         justifyContent: 'space-between',
         position: 'relative',
+        borderRadius: 0,
       }}
     >
       <Box>
@@ -104,7 +106,6 @@ const LeftMenu = () => {
               padding: 1,
               height: '64px', // Fixed height to match experiment controls
               boxSizing: 'border-box',
-              borderBottom: '1px solid #ddd',
             }}
           >
             <Box
@@ -128,7 +129,6 @@ const LeftMenu = () => {
               gap: 1,
               padding: 1,
               boxSizing: 'border-box',
-              borderBottom: '1px solid #ddd',
             }}
           >
             <Box
@@ -156,7 +156,6 @@ const LeftMenu = () => {
                     bgcolor: selected ? theme => theme.palette.customBlue.selected : 'transparent',
                     border: 'none',
                     cursor: 'pointer',
-                    borderBottom: '1px solid #ddd',
                     justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
                     height: '48px', // 48px is the standard MUI component height
                     '&:hover': {
@@ -187,22 +186,20 @@ const LeftMenu = () => {
       <Box
         sx={{
           display: 'flex',
-          justifyContent: menuOptions.collapsed ? 'center' : 'flex-end',
-          alignItems: 'center',
+          alignItems: 'flex-end',
+          flexDirection: 'column',
+          gap: 1,
           padding: 1,
           marginBottom: 1,
         }}
       >
+        <ModeToggler />
         <IconButton
           onClick={() => dispatch(setMenuOptions({ ...menuOptions, collapsed: !menuOptions.collapsed }))}
           sx={{
-            backgroundColor: theme => theme.palette.customGrey.light || '#f5f5f5',
             borderRadius: '50%',
             width: '36px',
             height: '36px',
-            '&:hover': {
-              backgroundColor: theme => theme.palette.customGrey.main || '#e0e0e0',
-            },
             boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
           }}
         >

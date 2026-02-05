@@ -8,7 +8,6 @@ import {
 import { MapContainer, Marker, TileLayer, ZoomControl } from 'react-leaflet';
 import {
   defaultValue,
-  type MapLayer,
   type IDataset,
 } from '../../../../shared/models/exploring/dataset.model';
 import type { ICluster } from '../../../../shared/models/exploring/cluster.model';
@@ -24,19 +23,13 @@ import CustomPopup from './CustomPopup/custom-popup';
 import { HeatmapLayer } from './heatmap-layer';
 import { getRow } from '../../../../store/slices/exploring/datasetSlice';
 import { GeohashGridLayer } from './geohash-grid-layer';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   setMapLayer,
   setSelectedGeohash,
 } from '../../../../store/slices/exploring/mapSlice';
-import { ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
-import {
-  Album as HeatmapIcon,
-  GridView as GeohashIcon,
-  Spoke as ClusterIcon,
-} from '@mui/icons-material';
 import { LatLngBounds, type LatLngBoundsExpression } from 'leaflet';
-import { Zones } from '../Zones/zones';
+import { MapLegend } from './map-legend';
 
 export interface IMapProps {
   id: string;
@@ -148,12 +141,12 @@ const SinglePoint = (props: {
 export const Map = (props: IMapProps) => {
   const { id, dataset } = props;
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
   const geohash = searchParams.get('geohash');
   const dispatch = useAppDispatch();
   const mapLayer = useAppSelector((state: RootState) => state.map.mapLayer);
-  const { clusters, viewRect, zoom, selectedGeohash, drawnShape } =
-    useAppSelector((state: RootState) => state.map);
+  const { clusters, viewRect, zoom, selectedGeohash } = useAppSelector(
+    (state: RootState) => state.map,
+  );
   const {
     results,
     predictionDisplay,
@@ -258,21 +251,6 @@ export const Map = (props: IMapProps) => {
     return getPoints(clusters);
   }, [clusters]);
 
-  const resetGeohashSelection = useCallback(() => {
-    dispatch(setSelectedGeohash(null));
-    navigate('?');
-  }, [dispatch, navigate]);
-
-  const toggleMapLayer = useCallback(
-    (layer: MapLayer) => {
-      if (layer !== 'geohash' && selectedGeohash != null) {
-        resetGeohashSelection();
-      }
-      dispatch(setMapLayer(layer));
-    },
-    [dispatch, resetGeohashSelection, selectedGeohash],
-  );
-
   let content: React.ReactNode;
 
   const bounds = viewRect
@@ -292,53 +270,33 @@ export const Map = (props: IMapProps) => {
         zoomControl={false}
         maxZoom={MAX_ZOOM}
       >
+
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           maxNativeZoom={18} // This will allow zooming beyond level 18 by scaling the available tiles, though with some quality degradation.
           maxZoom={MAX_ZOOM}
         />
+        {/* <LayersControl  position="topright">
+          <LayersControl.BaseLayer name="Stadia OSM Bright" checked>
+            <TileLayer
+              minZoom={0}
+              maxZoom={MAX_ZOOM}
+              url="https://tiles.stadiamaps.com/tiles/osm_bright/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+          </LayersControl.BaseLayer>
+          <LayersControl.BaseLayer name="Stadia Alidade Satellite">
+            <TileLayer
+              minZoom={0}
+              maxZoom={MAX_ZOOM}
+              url="https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.jpg"
+              attribution='&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            />
+          </LayersControl.BaseLayer>
+        </LayersControl> */}
         <ZoomControl position="topright" />
         <MapControl id={id} />
-        {!predictionDisplay && (
-          <ToggleButtonGroup
-            exclusive
-            value={mapLayer}
-            orientation="vertical"
-            onChange={(_, value) => value && toggleMapLayer(value)}
-            sx={{
-              position: 'absolute',
-              top: drawnShape == null ? 190 : 270,
-              right: 10,
-              zIndex: 1000,
-              backgroundColor: 'white',
-              border: '2px solid rgba(0,0,0,0.2)',
-              borderRadius: 2,
-            }}
-          >
-            <Tooltip title="Points" placement="left" arrow>
-              <ToggleButton value="cluster" sx={{ width: 30, height: 30 }}>
-                <ClusterIcon />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip title="Heatmap" placement="left" arrow>
-              <ToggleButton value="heatmap" sx={{ width: 30, height: 30 }}>
-                <HeatmapIcon />
-              </ToggleButton>
-            </Tooltip>
-            <Tooltip title="Geohash" placement="left" arrow>
-              <span>
-                <ToggleButton
-                  value="geohash"
-                  sx={{ width: 30, height: 30 }}
-                  disabled={drawnShape != null}
-                >
-                  <GeohashIcon />
-                </ToggleButton>
-              </span>
-            </Tooltip>
-          </ToggleButtonGroup>
-        )}
         {mapLayer === 'cluster' ? (
           clusters.map((cluster, index) => {
             // every cluster point has coordinates
@@ -508,7 +466,7 @@ export const Map = (props: IMapProps) => {
           />
         ) : null}
         <MapSearch />
-        <Zones dataset={dataset} />
+        <MapLegend dataset={dataset} />
       </MapContainer>
     );
   }

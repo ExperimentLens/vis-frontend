@@ -3,7 +3,6 @@ import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { explainabilityQueryDefault } from '../../../../shared/models/tasks/explainability.model';
 import type { IPlotModel } from '../../../../shared/models/plotmodel.model';
-import theme from '../../../../mui-theme';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import {
   Box,
@@ -13,6 +12,7 @@ import {
   MenuItem,
   Select,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import { useParams } from 'react-router-dom';
@@ -25,6 +25,7 @@ interface AlePlotProps {
 
 const AlePlot = (props: AlePlotProps) => {
   const { explanation_type } = props;
+  const theme = useTheme();
   const { tab, isTabInitialized } = useAppSelector(
     (state: RootState) => state.workflowPage,
   );
@@ -104,7 +105,7 @@ const AlePlot = (props: AlePlotProps) => {
           'xAxis default',
         type:
           tab?.workflowTasks.modelAnalysis?.ale?.data?.xAxis.axisType ===
-          'numerical'
+            'numerical'
             ? 'quantitative'
             : 'ordinal',
         // aggregate: "mean"
@@ -117,7 +118,7 @@ const AlePlot = (props: AlePlotProps) => {
 
         type:
           tab?.workflowTasks.modelAnalysis?.ale?.data?.xAxis.axisType ===
-          'numerical'
+            'numerical'
             ? 'quantitative'
             : 'ordinal',
         axis: {
@@ -248,7 +249,7 @@ const AlePlot = (props: AlePlotProps) => {
                 !pendingTargetMetric ||
                 (pendingFeature === (plotModel?.selectedFeature ?? '') &&
                   pendingTargetMetric ===
-                    (plotModel?.targetMetric ?? defaultTargetMetric))
+                  (plotModel?.targetMetric ?? defaultTargetMetric))
               }
             >
               Apply Selections

@@ -1,12 +1,12 @@
 import { Box, Typography } from '@mui/material';
 import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
 import CommitIcon from '@mui/icons-material/Commit';
-import theme from '../../../../mui-theme';
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedTask } from '../../../../store/slices/workflowPageSlice';
+import { useTheme } from '@mui/material/styles';
 
 import ParametersSection from './ParametersSection';
 import MetricsSection from './MetricsSection';
@@ -18,6 +18,7 @@ export default function TaskTreeItem({ taskId, taskName }: Props) {
   const dispatch = useAppDispatch();
   const { experimentId } = useParams();
   const { tab } = useAppSelector((s: RootState) => s.workflowPage);
+  const theme = useTheme();
 
   const {
     paramsForTask,

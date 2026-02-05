@@ -94,6 +94,7 @@ export const chartListeners = (startApplistening: AppStartListening) => {
 
             dispatch(
               updateAnalysisResults({
+                totalPointCount: result.pointCount,
                 rectStats: result.rectStats,
                 series: result.series,
               }),
