@@ -63,24 +63,35 @@ const ComparisonMetricsCharts: React.FC = () => {
     hasFetchedOnInit.current = false;
   }, [workflows.data]);
 
+  useEffect(() => {
+    hasFetchedOnInit.current = false;
+  }, [workflowsTable.groupBy]);
+
   // fetch first five common selected workflows metrics
   useEffect(() => {
-    if (workflowsTable.initialized && experimentId && !hasFetchedOnInit.current && workflowsTable.selectedWorkflows.length > 0) {
-      const commonMetrics = getCommonMetrics(workflowsTable.selectedWorkflows)
+    if (workflowsTable.initialized && experimentId && !hasFetchedOnInit.current) {
+      const isGrouped = workflowsTable.groupBy.length > 0;
+
+      const initialMetrics = (isGrouped
+        ? workflowsTable.uniqueMetrics
+        : getCommonMetrics(workflowsTable.selectedWorkflows)
+      )
         .filter(m => m !== 'rating')
         .slice(0, 5);
+      
+      if (initialMetrics.length === 0) return;
 
-      workflowsTable.selectedWorkflows.forEach(workflowId => {
+      dispatch(setComparativeVisibleMetrics(initialMetrics));
 
-        if (commonMetrics?.length) {
-          dispatch(fetchWorkflowMetrics({ experimentId, workflowId, metricNames: commonMetrics }));
-        }
-      });
-
-      dispatch(setComparativeVisibleMetrics(commonMetrics));
+      if (!isGrouped && workflowsTable.selectedWorkflows.length > 0) {
+        workflowsTable.selectedWorkflows.forEach(workflowId => {
+          dispatch(fetchWorkflowMetrics({ experimentId, workflowId, metricNames: initialMetrics }));
+        });
+      
+        previousSelectedRef.current = workflowsTable.selectedWorkflows;
+      }
 
       hasFetchedOnInit.current = true;
-      previousSelectedRef.current = workflowsTable.selectedWorkflows;
     }
   }, [workflows.data, workflowsTable.initialized, workflowsTable.selectedWorkflows]);
 
