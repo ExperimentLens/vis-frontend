@@ -1,10 +1,10 @@
-import axios from 'axios';
 import { useEffect, useState, useMemo } from 'react';
 import Loader from '../../../../shared/components/loader';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import { Box, Grid } from '@mui/material';
 import { logger } from '../../../../shared/utils/logger';
+import { dataApi } from '../../../api/api';
 
 interface DataField {
   values: any[]
@@ -74,18 +74,13 @@ const UmapComponent = ({ data1, data2, colorField, controlPanel: ControlPanel }:
     [data2, columnNamesFiltered2],
   );
 
-  const api = axios.create({
-    baseURL: '/api/data/', // Let Nginx handle the proxy
-    withCredentials: true, // If authentication is needed
-  });
-
   // Combined fetch function
   const fetchUmapData = async () => {
     try {
       setLoading(true);
       const [response1, response2] = await Promise.all([
-        api.post<number[][]>('umap', formattedPayload1),
-        api.post<number[][]>('umap', formattedPayload2),
+        dataApi.post<number[][]>('umap', formattedPayload1),
+        dataApi.post<number[][]>('umap', formattedPayload2),
       ]);
 
       setUmapResults({ umap1: response1.data, umap2: response2.data });
