@@ -114,6 +114,7 @@ export const DataSourceFileUpload: React.FC<DataSourceFileUploadProps> = ({
       additionalFields={additionalFields}
       title="Upload Data Source"
       description="Drag and drop your CSV` or Parquet file here, or click to browse"
+      buttonText="Upload Data Source"
     />
   );
 };

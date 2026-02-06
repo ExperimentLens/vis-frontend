@@ -36,6 +36,7 @@ interface FileUploadProps<T = unknown> {
   additionalFields?: AdditionalField[];
   title?: string;
   description?: string;
+  buttonText?: string;
 }
 
 export const FileUpload = <T = unknown, >({
@@ -47,6 +48,7 @@ export const FileUpload = <T = unknown, >({
   additionalFields = [],
   title = 'Upload Dataset',
   description = 'Drag and drop your file here, or click to browse',
+  buttonText = 'Upload',
 }: FileUploadProps<T>) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -273,7 +275,8 @@ export const FileUpload = <T = unknown, >({
               </IconButton>
             </Box>
             <Chip
-              label={selectedFile.name.endsWith('.csv') ? 'CSV' : 'JSON'}
+              label={selectedFile.name.split('.').pop()
+                ?.toUpperCase() || ''}
               color="primary"
               size="small"
               sx={{ mr: 1 }}
@@ -293,7 +296,7 @@ export const FileUpload = <T = unknown, >({
                   Uploading...
                 </>
               ) : (
-                'Upload Dataset'
+                buttonText
               )}
             </Button>
           </Box>
