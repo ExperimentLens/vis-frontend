@@ -1,7 +1,6 @@
 import {
   geoJsonPolygonToGeoPoints,
   geoJsonPolygonToRectangle,
-  geometryToIncludedGeohashes,
   isAxisAlignedRectanglePolygon,
 } from '../../../shared/utils/mapUtils';
 import { api } from '../../../app/api/api';
@@ -17,7 +16,11 @@ import type { AppStartListening } from '../../listenerMiddleware';
 import { showError, showInfo, showSuccess } from '../../../shared/utils/toast';
 import type { IDataset } from '../../../shared/models/exploring/dataset.model';
 import type { IRectangle } from '../../../shared/models/exploring/rectangle.model';
-import type { PayloadAction, ThunkDispatch, UnknownAction } from '@reduxjs/toolkit';
+import type {
+  PayloadAction,
+  ThunkDispatch,
+  UnknownAction,
+} from '@reduxjs/toolkit';
 import type { LatLon } from '../../../shared/models/exploring/latlon.model';
 
 /**
@@ -153,7 +156,6 @@ export const postZone = createAsyncThunk<IZone, IZone, { rejectValue: string }>(
 
     try {
       const geometry = zone.feature?.geometry;
-      const includedGeohashes = geometryToIncludedGeohashes(geometry, 8, zone.feature?.properties?.radius as number);
 
       // Heights API is still rectangle-based; use polygon bbox for now
       const rectangle =
@@ -167,7 +169,6 @@ export const postZone = createAsyncThunk<IZone, IZone, { rejectValue: string }>(
 
       const response = await api.post<IZone>('/zones', {
         ...zone,
-        geohashes: includedGeohashes,
         heights,
       });
 
@@ -290,7 +291,8 @@ export const zoneSlice = createSlice({
       })
       .addCase(importZones.fulfilled, (state, action) => {
         state.loading.importZones = false;
-        state.zones = action.payload;
+        state.zones = [...state.zones, ...action.payload];
+        showSuccess('Zones uploaded successfully!');
       })
       .addCase(importZones.rejected, (state, action) => {
         state.loading.importZones = false;
@@ -340,10 +342,21 @@ export const zoneListeners = (startAppListening: AppStartListening) => {
         const coordinates = geoJsonPolygonToGeoPoints(geometry);
 
         dispatch(setDrawnShape({ kind: 'polygon', coordinates }));
-      } else if (geometry?.type === 'Point' && feature?.properties?.shape === 'circle') {
-        const coordinates: LatLon[] = [[geometry.coordinates[1], geometry.coordinates[0]]];
+      } else if (
+        geometry?.type === 'Point' &&
+        feature?.properties?.shape === 'circle'
+      ) {
+        const coordinates: LatLon[] = [
+          [geometry.coordinates[1], geometry.coordinates[0]],
+        ];
 
-        dispatch(setDrawnShape({ kind: 'circle', coordinates, radius: feature?.properties?.radius as number }));
+        dispatch(
+          setDrawnShape({
+            kind: 'circle',
+            coordinates,
+            radius: feature?.properties?.radius as number,
+          }),
+        );
       } else {
         // Not supported yet (Point, etc.)
         dispatch(setDrawnShape(null));

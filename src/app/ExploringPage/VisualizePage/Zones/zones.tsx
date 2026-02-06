@@ -246,13 +246,13 @@ export const Zones = ({ dataset }: IZonesProps) => {
                       ID
                     </TableCell>
                     <TableCell sx={{ textAlign: 'center', fontWeight: 'bold' }}>
+                      Name
+                    </TableCell>
+                    <TableCell sx={{ textAlign: 'center', fontWeight: 'bold' }}>
                       Created At
                     </TableCell>
                     <TableCell sx={{ textAlign: 'center', fontWeight: 'bold' }}>
                       Geohashes
-                    </TableCell>
-                    <TableCell sx={{ textAlign: 'center', fontWeight: 'bold' }}>
-                      Heights
                     </TableCell>
                     <TableCell sx={{ textAlign: 'center', fontWeight: 'bold' }}>
                       Actions
@@ -288,6 +288,9 @@ export const Zones = ({ dataset }: IZonesProps) => {
                           {z.id}
                         </TableCell>
                         <TableCell sx={{ textAlign: 'center' }}>
+                          {z.name}
+                        </TableCell>
+                        <TableCell sx={{ textAlign: 'center' }}>
                           {z.createdAt
                             ? new Date(
                               Date.parse(z.createdAt + 'Z'),
@@ -312,7 +315,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
                             '-'
                           )}
                         </TableCell>
-                        <TableCell sx={{ textAlign: 'center' }}>
+                        {/* <TableCell sx={{ textAlign: 'center' }}>
                           {z.heights && z.heights.length > 0
                             ? (() => {
                               const sortedHeights = [...z.heights].sort(
@@ -335,7 +338,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
                               );
                             })()
                             : '-'}
-                        </TableCell>
+                        </TableCell> */}
                         <TableCell sx={{ textAlign: 'center' }}>
                           <Tooltip
                             title="View"

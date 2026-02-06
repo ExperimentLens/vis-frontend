@@ -10,7 +10,11 @@ import {
   FileUpload,
   type UploadParams,
 } from '../../../../shared/components/file-upload';
-import { useAppDispatch } from '../../../../store/store';
+import {
+  type RootState,
+  useAppDispatch,
+  useAppSelector,
+} from '../../../../store/store';
 import { importZones } from '../../../../store/slices/exploring/zoneSlice';
 import type { IZone } from '../../../../shared/models/exploring/zone.model';
 
@@ -20,11 +24,12 @@ export interface IZonesUploadProps {
 }
 
 export const ZonesUpload = ({ open, onClose }: IZonesUploadProps) => {
+  const { id } = useAppSelector((state: RootState) => state.dataset.dataset);
   const dispatch = useAppDispatch();
   const handleUpload = useCallback(
     async (params: UploadParams): Promise<IZone[]> => {
       const result = await dispatch(
-        importZones({ fileName: params.file.name, file: params.file }),
+        importZones({ fileName: id || '', file: params.file }),
       ).unwrap();
 
       return result;
@@ -36,7 +41,13 @@ export const ZonesUpload = ({ open, onClose }: IZonesUploadProps) => {
     <Dialog open={open} onClose={onClose}>
       <DialogTitle>Import Zones</DialogTitle>
       <DialogContent>
-        <FileUpload onUpload={handleUpload} acceptedFileTypes={['.json']} title="Import Zones" description="Drag and drop your zones file here, or click to browse" />
+        <FileUpload
+          onUpload={handleUpload}
+          acceptedFileTypes={['.json', '.geojson']}
+          title="Import Zones"
+          description="Drag and drop your zones file here, or click to browse"
+          buttonText="Import Zones"
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
