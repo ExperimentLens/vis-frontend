@@ -44,7 +44,6 @@ import {
   setSelectedZoneId,
   setSelectedTimeIndex,
 } from '../../../../store/slices/exploring/predictionSlice';
-import { setMapLayer } from '../../../../store/slices/exploring/mapSlice';
 import { ZonesUpload } from './zones-upload';
 
 export interface IZonesProps {
@@ -62,7 +61,6 @@ export const Zones = ({ dataset }: IZonesProps) => {
     intervals,
     predictionDisplay,
   } = useAppSelector((state: RootState) => state.prediction);
-  const { mapLayer } = useAppSelector((state: RootState) => state.map);
   const dispatch = useAppDispatch();
   const [zonesUploadOpen, setZonesUploadOpen] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState<{
@@ -77,9 +75,6 @@ export const Zones = ({ dataset }: IZonesProps) => {
 
   useEffect(() => {
     if (dataset.id && modalOpen) {
-      if (mapLayer !== 'geohash') {
-        dispatch(setMapLayer('geohash'));
-      }
       if (zones.length === 0) {
         dispatch(getZonesByFileName(dataset.id));
       }

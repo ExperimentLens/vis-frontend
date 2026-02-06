@@ -58,6 +58,7 @@ import { setModalOpen as setZoneModalOpen } from '../../../../store/slices/explo
 import { exportZoneToJSON } from '../../../../shared/utils/exportUtils';
 import { PredictionModels } from './models';
 import { TaskProgress } from '../../../../shared/components/task-progress';
+import { setMapLayer } from '../../../../store/slices/exploring/mapSlice';
 
 export interface IPredictionProps {
   zone: IZone;
@@ -115,6 +116,7 @@ export const Prediction = ({ zone }: IPredictionProps) => {
     trainingTask,
     activeTasks,
   } = useAppSelector((state: RootState) => state.eusome);
+  const { mapLayer } = useAppSelector((state: RootState) => state.map);
   const dispatch = useAppDispatch();
 
   const handleOpen = () => setOpen(true);
@@ -208,6 +210,9 @@ export const Prediction = ({ zone }: IPredictionProps) => {
       }
       if (!predictionDisplay) {
         dispatch(setPredictionDisplay(true));
+      }
+      if (mapLayer !== 'geohash') {
+        dispatch(setMapLayer('geohash'));
       }
     }
   };

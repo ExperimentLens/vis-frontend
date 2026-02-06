@@ -19,6 +19,7 @@ import { resetChartState } from '../../../store/slices/exploring/chartSlice';
 import {
   resetMapState,
   setDrawnShape,
+  setMapLayer,
 } from '../../../store/slices/exploring/mapSlice';
 import { resetStatsState } from '../../../store/slices/exploring/statsSlice';
 import { resetTimeSeriesState } from '../../../store/slices/exploring/timeSeriesSlice';
@@ -50,11 +51,13 @@ const VisualizePage = () => {
   const { predictionDisplay } = useAppSelector(
     (state: RootState) => state.prediction,
   );
+  const { previousMapLayer } = useAppSelector((state: RootState) => state.map);
 
   const handleClosePredictionDisplay = () => {
     dispatch(setPredictionDisplay(false));
     dispatch(setZone({}));
     dispatch(setDrawnShape(null));
+    dispatch(setMapLayer(previousMapLayer));
   };
 
   useEffect(() => {
@@ -135,7 +138,7 @@ const VisualizePage = () => {
         </Box>
       )}
       <Map id={datasetId} dataset={dataset} />
-      <BottomBar dataset={dataset} />
+      {!predictionDisplay && <BottomBar dataset={dataset} />}
     </>
   );
 };

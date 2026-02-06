@@ -62,7 +62,7 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
     lastDrawnBounds.current = bounds;
 
     // Fit map to the rectangle bounds but with a buffer of 250px
-    map.fitBounds(leafletBounds, { padding: [250, 250] });
+    map.flyToBounds(leafletBounds, { padding: [250, 250] });
 
     if (selectedGeohash.rect) {
       const ghash = ngeohash.encode(
@@ -106,7 +106,7 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
       east: bounds.lon[1],
     };
 
-    map.fitBounds(polygon.getBounds(), { padding: [250, 250] });
+    map.flyToBounds(polygon.getBounds(), { padding: [250, 250] });
 
     // Notify parent component to update visibility
     if (onVisibilityChangeRef.current) {
@@ -118,14 +118,6 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
     if (!coordinates || !radius || !map) return;
 
     const center = L.latLng(coordinates[0][0], coordinates[0][1]);
-    const circle = L.circle(center, {
-      radius,
-      color: '#3388ff',
-      weight: 2,
-      fillOpacity: 0.1,
-      interactive: false,
-    });
-
     // IMPORTANT: `circle.getBounds()` requires the circle to be on a map (`circle._map`).
     // This hook's effect can run before `drawnItemsRef` is added to the map, so compute bounds
     // without relying on the circle being attached to a map.
@@ -134,6 +126,14 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
     if (bounds && lastDrawnBounds.current && lastDrawnBounds.current.south === bounds.getSouth() && lastDrawnBounds.current.west === bounds.getWest() && lastDrawnBounds.current.north === bounds.getNorth() && lastDrawnBounds.current.east === bounds.getEast()) {
       return; // Already drawn, skip
     }
+
+    const circle = L.circle(center, {
+      radius,
+      color: '#3388ff',
+      weight: 2,
+      fillOpacity: 0.1,
+      interactive: false,
+    });
 
     drawnItemsRef.current.clearLayers();
     drawnItemsRef.current.addLayer(circle);
@@ -144,7 +144,7 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
       east: bounds.getEast(),
     };
 
-    map.fitBounds(bounds, { padding: [250, 250] });
+    map.flyToBounds(bounds, { padding: [250, 250] });
 
     // Notify parent component to update visibility
     if (onVisibilityChangeRef.current) {

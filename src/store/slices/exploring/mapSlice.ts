@@ -32,6 +32,7 @@ interface MapState {
     rect: IRectangle | null;
   };
   mapLayer: MapLayer;
+  previousMapLayer: MapLayer;
 }
 
 const initialState: MapState = {
@@ -48,6 +49,7 @@ const initialState: MapState = {
     rect: null,
   },
   mapLayer: 'cluster',
+  previousMapLayer: 'cluster',
 };
 
 const handleRectUpdate = async (
@@ -255,6 +257,7 @@ export const mapSlice = createSlice({
       };
     },
     setMapLayer: (state, action: PayloadAction<MapLayer>) => {
+      state.previousMapLayer = state.mapLayer;
       state.mapLayer = action.payload;
     },
     setActiveSelection: (state, action: PayloadAction<ActiveSelection>) => {
