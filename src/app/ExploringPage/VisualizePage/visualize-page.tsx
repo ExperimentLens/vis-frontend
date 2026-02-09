@@ -110,18 +110,27 @@ const VisualizePage = () => {
             sx={{
               display: 'flex',
               alignItems: 'center',
-              backgroundColor: 'secondary.main',
+              backgroundColor: theme => theme.palette.primary.main,
+              opacity: 0.8,
               position: 'relative',
             }}
           >
-            <Box sx={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <Typography variant="h6" textAlign="center">
+            <Box
+              sx={{
+                flex: 1,
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography variant="h6" textAlign="center" color={theme => theme.palette.secondary.main}>
                 Prediction Display
               </Typography>
             </Box>
             <Box sx={{ position: 'absolute', right: 16 }}>
               <Button onClick={handleClosePredictionDisplay}>
-                <CloseIcon />
+                <CloseIcon
+                  sx={{ color: theme => theme.palette.secondary.main }}
+                />
               </Button>
             </Box>
           </Box>

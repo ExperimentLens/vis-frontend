@@ -6,7 +6,6 @@ import {
   Drawer,
   IconButton,
   Stack,
-  Paper,
   Typography,
 } from '@mui/material';
 import {
@@ -56,6 +55,7 @@ export const BottomBar = ({ dataset }: { dataset: IDataset }) => {
   const Header = () => (
     <Box
       sx={{
+        backgroundColor: theme => theme.palette.background.paper,
         display: 'flex',
         flexDirection: 'row',
         gap: 1,
@@ -200,9 +200,7 @@ export const BottomBar = ({ dataset }: { dataset: IDataset }) => {
       {/* <Filter /> */}
       <TimeRange open={timeRangeOpen} onClose={() => setTimeRangeOpen(false)} />
       <Filter open={filterOpen} onClose={() => setFilterOpen(false)} />
-      <Paper>
-        <Header />
-      </Paper>
+      <Header />
       <Drawer
         anchor="bottom"
         open={drawerOpen}

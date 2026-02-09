@@ -9,6 +9,7 @@ import {
   DialogTitle,
   Stack,
   Typography,
+  useTheme,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
@@ -28,6 +29,7 @@ export interface FilterProps {
 }
 
 export const Filter = ({ open, onClose }: FilterProps) => {
+  const theme = useTheme();
   const dispatch = useAppDispatch();
   const dataset = useAppSelector((state: RootState) => state.dataset.dataset);
   const { facets } = useAppSelector((state: RootState) => state.map);
@@ -44,7 +46,9 @@ export const Filter = ({ open, onClose }: FilterProps) => {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Filters</DialogTitle>
+      <DialogTitle sx={{ borderBottom: `1px solid ${theme.palette.divider}` }}>
+        Filters
+      </DialogTitle>
       <DialogContent>
         <Box sx={{ p: 1 }}>
           {facets &&

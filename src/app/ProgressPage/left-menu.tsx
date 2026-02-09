@@ -22,7 +22,7 @@ const LeftMenu = () => {
   const { experimentId } = useParams();
   const navigate = useNavigate();
   const { menuOptions } = useAppSelector(
-    (state: RootState) => state.progressPage
+    (state: RootState) => state.progressPage,
   );
   const dispatch = useAppDispatch();
 
@@ -39,15 +39,15 @@ const LeftMenu = () => {
     // },
 
     {
-      icon: <LocationSearchingIcon color='primary' />,
+      icon: <LocationSearchingIcon color="primary" />,
       label: 'Exploring',
-      path: 'exploring'
+      path: 'exploring',
     },
   ];
 
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       sx={{
         height: '100%',
         display: 'flex',
@@ -153,20 +153,31 @@ const LeftMenu = () => {
                   key={path}
                   component="button"
                   sx={{
-                    bgcolor: selected ? theme => theme.palette.customBlue.selected : 'transparent',
+                    bgcolor: selected
+                      ? theme =>
+                        theme.palette.mode === 'dark'
+                          ? '#2A2419'
+                          : theme.palette.customBlue.selected
+                      : 'transparent',
                     border: 'none',
                     cursor: 'pointer',
-                    justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
+                    justifyContent: menuOptions.collapsed
+                      ? 'center'
+                      : 'flex-start',
                     height: '48px', // 48px is the standard MUI component height
                     '&:hover': {
-                      bgcolor: theme => theme.palette.customGrey.main
+                      bgcolor: theme => theme.palette.customGrey.main,
                     },
                   }}
                   onClick={() => navigate(`/${experimentId}/${path}`)}
                 >
                   {icon}
                   {!menuOptions.collapsed && (
-                    <ListItemText sx={{ ml: 1.5 }} primary={label} />
+                    <ListItemText
+                      sx={{ ml: 1.5 }}
+                      primaryTypographyProps={{ color: 'primary.main' }}
+                      primary={label}
+                    />
                   )}
                 </ListItem>
               );
@@ -195,7 +206,14 @@ const LeftMenu = () => {
       >
         <ModeToggler />
         <IconButton
-          onClick={() => dispatch(setMenuOptions({ ...menuOptions, collapsed: !menuOptions.collapsed }))}
+          onClick={() =>
+            dispatch(
+              setMenuOptions({
+                ...menuOptions,
+                collapsed: !menuOptions.collapsed,
+              }),
+            )
+          }
           sx={{
             borderRadius: '50%',
             width: '36px',
@@ -203,10 +221,11 @@ const LeftMenu = () => {
             boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
           }}
         >
-          {menuOptions.collapsed ?
-            <ChevronRightRoundedIcon fontSize="small" /> :
+          {menuOptions.collapsed ? (
+            <ChevronRightRoundedIcon fontSize="small" />
+          ) : (
             <ChevronLeftRoundedIcon fontSize="small" />
-          }
+          )}
         </IconButton>
       </Box>
     </Paper>

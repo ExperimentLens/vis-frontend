@@ -242,3 +242,15 @@
 .map-dark .leaflet-control-attribution {
   filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
 }
+
+.map-dark .leaflet-tooltip-own {
+  border: 1px solid #121212;
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+.map-dark .leaflet-tooltip-top:before {
+  bottom: 0;
+  margin-bottom: -12px;
+  border-top-color: #121212;
+}

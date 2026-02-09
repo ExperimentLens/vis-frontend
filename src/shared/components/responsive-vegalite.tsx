@@ -22,6 +22,9 @@ type VegaConfig = NonNullable<VisualizationSpec['config']> & {
   legend?: Record<string, unknown>;
   title?: Record<string, unknown>;
   text?: Record<string, unknown>;
+  bar?: Record<string, unknown>;
+  line?: Record<string, unknown>;
+  point?: Record<string, unknown>;
 };
 
 const ResponsiveVegaLite: React.FC<ResponsiveVegaLiteProps> = ({
@@ -81,6 +84,18 @@ const ResponsiveVegaLite: React.FC<ResponsiveVegaLiteProps> = ({
     text: {
       color: theme.palette.text.primary,
       ...(baseConfig?.text ?? {}),
+    },
+    bar: {
+      color: theme.palette.primary.main,
+      ...(baseConfig?.bar ?? {}),
+    },
+    line: {
+      color: theme.palette.primary.main,
+      ...(baseConfig?.line ?? {}),
+    },
+    point: {
+      color: theme.palette.primary.main,
+      ...(baseConfig?.point ?? {}),
     },
   } as VegaConfig;
   const themedSpec = {

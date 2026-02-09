@@ -14,6 +14,7 @@ import {
   Select,
   MenuItem,
   type SelectChangeEvent,
+  useTheme,
 } from '@mui/material';
 import {
   type RootState,
@@ -35,15 +36,15 @@ export const PredictionTimeline = () => {
     selectedZoneId,
     predictionDisplay,
   } = useAppSelector((state: RootState) => state.prediction);
-
+  const theme = useTheme();
   // Create a custom theme for the slider to avoid gradient color issues
   const sliderTheme = createTheme({
     palette: {
       primary: {
-        main: '#6BBC8C',
+        main: theme.palette.primary.main,
       },
       secondary: {
-        main: '#6BBC8C',
+        main: theme.palette.secondary.main,
       },
     },
   });
@@ -268,20 +269,24 @@ export const PredictionTimeline = () => {
                 onChange={handleTimeChange}
                 valueLabelDisplay="auto"
                 valueLabelFormat={value => formatTimestamp(timeSlots[value])}
-                color="primary"
-                sx={{ mb: 1 }}
+                sx={{
+                  mb: 1,
+                  '& .MuiSlider-markLabel': {
+                    color: theme.palette.primary.main,
+                  },
+                }}
               />
             </ThemeProvider>
           )}
 
           {/* Time Counter and Zone Info */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-            <Typography variant="caption">
+            <Typography variant="caption" color="secondary">
               {selectedTimeIndex + 1} / {timeSlots.length}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {availableZones.length} zone{availableZones.length !== 1 ? 's' : ''}{' '}
-              available
+            <Typography variant="caption" color="secondary">
+              {availableZones.length} zone
+              {availableZones.length !== 1 ? 's' : ''} available
             </Typography>
           </Box>
         </Box>

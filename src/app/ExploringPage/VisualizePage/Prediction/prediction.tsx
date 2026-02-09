@@ -379,10 +379,7 @@ export const Prediction = ({ zone }: IPredictionProps) => {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background:
-              theme.palette.mode === 'dark'
-                ? 'linear-gradient(to right, #16192F, #20243D)'
-                : 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background: theme.palette.customGradientDialog.main,
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             px: 3,
             py: 1.5,

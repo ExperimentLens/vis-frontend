@@ -9,6 +9,7 @@ import {
   MAX_ZOOM,
 } from '../../../../shared/utils/clusterUtils';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '@mui/material';
 
 // Map zoom level to geohash precision
 // This function maps zoom levels to geohash precision levels, respecting MAX_ZOOM
@@ -147,6 +148,7 @@ export const GeohashGridLayer = ({
   predictionDisplay,
 }: GeohashGridLayerProps) => {
   const map = useMap();
+  const theme = useTheme();
   const navigate = useNavigate();
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const predictedGeohashes = useMemo(
@@ -383,6 +385,7 @@ export const GeohashGridLayer = ({
             {
               permanent: false,
               direction: 'top',
+              className: 'leaflet-tooltip-own',
             },
           );
         }
@@ -431,7 +434,7 @@ export const GeohashGridLayer = ({
         const label = L.marker([centerLat, centerLon], {
           icon: L.divIcon({
             className: 'geohash-label',
-            html: `<div style="font-size:${fontSize}px;color:#333;text-shadow:0 1px 2px #fff;text-align:center;line-height:${iconHeight}px;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">${level === 'prediction' ? hash : hash.slice(-1)}</div>`,
+            html: `<div style="font-size:${fontSize}px;color:${theme.palette.text.primary};text-shadow:0 1px 2px #fff;text-align:center;line-height:${iconHeight}px;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">${level === 'prediction' ? hash : hash.slice(-1)}</div>`,
             iconSize: [iconWidth, iconHeight],
             iconAnchor: [iconWidth / 2, iconHeight / 2],
           }),
