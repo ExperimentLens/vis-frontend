@@ -44,7 +44,7 @@ const ExperimentsLandingPage = () => {
           px: 2,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 600 }} noWrap>
+        <Typography variant="h6" sx={{ fontWeight: 600 }} color="primary" noWrap>
           All Experiments
         </Typography>
       </Box>

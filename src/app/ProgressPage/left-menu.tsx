@@ -6,6 +6,7 @@ import {
   ListItemText,
   Paper,
   IconButton,
+  ListItemButton,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import ListRoundedIcon from '@mui/icons-material/ListRounded';
@@ -16,6 +17,7 @@ import { useAppDispatch, useAppSelector } from '../../store/store';
 import { setMenuOptions } from '../../store/slices/progressPageSlice';
 import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
+import { Link as RouterLink } from 'react-router-dom';
 
 const LeftMenu = () => {
   const { experimentId } = useParams();
@@ -156,32 +158,39 @@ const LeftMenu = () => {
               const item = (
                 <ListItem
                   key={path}
-                  component="button"
-                  sx={{
-                    bgcolor: selected ? theme => theme.palette.customBlue.selected : 'transparent',
-                    border: 'none',
-                    cursor: !disabled  ? 'pointer' : '',
-                    borderBottom: '1px solid #ddd',
-                    justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
-                    height: '48px', // 48px is the standard MUI component height
-                    opacity: disabled ? 0.5 : 1,
-                    '&:hover': {
-                      bgcolor: disabled ? 'transparent' : theme => theme.palette.customGrey.main
-                    },
-                  }}
-                  onClick={() => {
-                    if (!to) return;
-                    navigate(to);
-                  }}
-
+                  disablePadding
+                  sx={{ borderBottom: '1px solid #ddd' }}
                 >
-                  {icon}
-                  {!menuOptions.collapsed && (
-                    <ListItemText sx={{ ml: 1.5 }} primary={label} />
-                  )}
+                  <ListItemButton
+                    component={disabled ? 'div' : RouterLink}
+                    to={disabled ? undefined : to}
+                    selected={selected}
+                    sx={{
+                      justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
+                      height: '48px',
+                      opacity: disabled ? 0.5 : 1,
+                      pointerEvents: disabled ? 'none' : 'auto',
+                      '&.Mui-selected': {
+                        bgcolor: theme => theme.palette.customBlue.selected,
+                        '&:hover': {
+                          bgcolor: theme => theme.palette.customBlue.selected,
+                        },
+                      },
+                      '&:hover': {
+                        bgcolor: disabled
+                          ? 'transparent'
+                          : theme => theme.palette.customGrey.main,
+                      },
+                    }}
+                  >
+                    {icon}
+                    {!menuOptions.collapsed && (
+                      <ListItemText sx={{ ml: 1.5 }} primary={label} />
+                    )}
+                  </ListItemButton>
                 </ListItem>
               );
-
+            
               return menuOptions.collapsed ? (
                 <Tooltip key={path} title={label} arrow placement="right">
                   {item}
