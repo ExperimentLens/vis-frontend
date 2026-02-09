@@ -63,6 +63,16 @@ export const createAppTheme = (mode: 'light' | 'dark') => {
       allVariants: { color: mode === 'dark' ? '#FFFFFF' : '#0E1021' },
     },
     components: {
+      MuiDialogContent: {
+        styleOverrides: {
+          root: ({ theme }) => ({
+            paddingTop: theme.spacing(3),
+            '.MuiDialogTitle-root + &': {
+              paddingTop: theme.spacing(3),
+            },
+          }),
+        },
+      },
       MuiTableCell: {
         styleOverrides: {
           stickyHeader: {

@@ -12,6 +12,7 @@ import {
 import '../../index.css';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import { Paper } from '@mui/material';
 
 const ProgressPageLoading = () => {
   const { workflows, experiment } = useAppSelector(
@@ -71,7 +72,7 @@ const ProgressPageLoading = () => {
   return (
     <>
       <Grid
-        id={'error-page'}
+        component={Paper}
         sx={{
           height: '100vh',
           width: '100vw',

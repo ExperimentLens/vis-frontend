@@ -24,7 +24,7 @@ import { predictionSlice } from './slices/exploring/predictionSlice';
 import { predictionListeners } from './slices/exploring/predictionSlice';
 import { eusomeSlice } from './slices/exploring/eusomeSlice';
 import { eusomeApiListeners } from './slices/exploring/eusomeSlice';
-import { uiSlice } from './slices/exploring/uiSlice';
+import { uiListeners, uiSlice } from './slices/exploring/uiSlice';
 
 export const store = configureStore({
   reducer: {
@@ -65,3 +65,4 @@ timeSeriesListeners(startAppListening);
 zoneListeners(startAppListening);
 predictionListeners(startAppListening);
 eusomeApiListeners(startAppListening);
+uiListeners(startAppListening);

@@ -43,6 +43,7 @@ export const ZonesUpload = ({ open, onClose }: IZonesUploadProps) => {
       <DialogContent>
         <FileUpload
           onUpload={handleUpload}
+          onUploadSuccess={onClose}
           acceptedFileTypes={['.json', '.geojson']}
           title="Import Zones"
           description="Drag and drop your zones file here, or click to browse"
