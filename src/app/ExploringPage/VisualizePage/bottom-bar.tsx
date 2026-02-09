@@ -1,75 +1,176 @@
+import _ from 'lodash';
 import { useState } from 'react';
-import { Box, Drawer, Paper, Typography } from '@mui/material';
+import {
+  Box,
+  Chip,
+  Drawer,
+  IconButton,
+  Stack,
+  Paper,
+  Typography,
+} from '@mui/material';
+import {
+  KeyboardDoubleArrowUp as KeyboardDoubleArrowUpIcon,
+  KeyboardDoubleArrowDown as KeyboardDoubleArrowDownIcon,
+  Close as CloseIcon,
+} from '@mui/icons-material';
 import type { IDataset } from '../../../shared/models/exploring/dataset.model';
-import { useAppSelector, type RootState } from '../../../store/store';
+import {
+  useAppDispatch,
+  useAppSelector,
+  type RootState,
+} from '../../../store/store';
 import dayjs from 'dayjs';
 import { Chart } from './Chart/chart';
 import { TimeSeriesChart } from './TimeSeriesChart/time-series-chart';
+// import { Filter } from './VisControl/filter';
+import { TimeRange } from './VisControl/time-range';
 import Stats from './Stats/stats';
+import {
+  setCategoricalFilters,
+  triggerDatasetUiUpdate,
+} from '../../../store/slices/exploring/datasetSlice';
+import { Filter } from './VisControl/filter';
 
 export const BottomBar = ({ dataset }: { dataset: IDataset }) => {
+  const dispatch = useAppDispatch();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { timeRange } = useAppSelector((state: RootState) => state.dataset);
   const { totalPointCount } = useAppSelector((state: RootState) => state.stats);
   const { activeSelection, drawnShape, selectedGeohash } = useAppSelector(
     (state: RootState) => state.map,
   );
+  const { categoricalFilters } = useAppSelector(
+    (state: RootState) => state.dataset,
+  );
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [timeRangeOpen, setTimeRangeOpen] = useState(false);
+
+  const removeFilter = (dim: string) => {
+    const newFilters = _.omit(categoricalFilters, [dim]);
+
+    dispatch(setCategoricalFilters(newFilters));
+    dispatch(triggerDatasetUiUpdate());
+  };
 
   const Header = () => (
     <Box
-      onClick={() => setDrawerOpen(!drawerOpen)}
       sx={{
         display: 'flex',
         flexDirection: 'row',
         gap: 1,
         justifyContent: 'space-between',
-        paddingX: 1,
+        padding: 1,
         alignItems: 'center',
-        cursor: 'pointer',
         borderBottom: drawerOpen ? '1px solid ' : 'none',
       }}
     >
-      <Typography variant="h6">
-        Measures:{' '}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          gap: 1,
+          alignItems: 'center',
+          maxWidth: '25%',
+        }}
+      >
         <Typography
+          variant="h6"
           color="primary"
-          fontWeight="bold"
-          fontSize="1.2rem"
-          component="span"
+          onClick={() => setFilterOpen(true)}
+          sx={{ cursor: 'pointer' }}
         >
-          {dataset.measure0}
-        </Typography>{' '}
-        |{' '}
-        <Typography
-          color="primary"
-          fontWeight="bold"
-          fontSize="1.2rem"
-          component="span"
+          Filters
+        </Typography>
+        {/* Active filters */}
+        <Box
+          sx={{
+            display: 'flex',
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            // 1. Hide scrollbar by default
+            '&::-webkit-scrollbar': {
+              height: '6px',
+              backgroundColor: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: 'transparent',
+              borderRadius: '10px',
+            },
+            // 2. Show scrollbar on hover
+            '&:hover': {
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: '#ccc', // Smooth gray appears
+              },
+            },
+          }}
         >
-          {dataset.measure1}
-        </Typography>
-      </Typography>
-      <Box>
-        <Typography variant="h6">
-          Total Points:{' '}
-          <Typography
-            color="primary"
-            fontWeight="bold"
-            fontSize="1.2rem"
-            component="span"
-          >
-            {totalPointCount}
-          </Typography>
-        </Typography>
-        <Typography variant="body1" color="primary" textAlign="center">
-          {activeSelection === 'drawn'
-            ? 'Drawn Area'
-            : activeSelection === 'selectedGeohash'
-              ? `Geohash: ${selectedGeohash.string}`
-              : ''}
-        </Typography>
+          {categoricalFilters && Object.keys(categoricalFilters).length > 0 && (
+            <Stack direction="row" spacing={1} alignItems="center">
+              {Object.entries(categoricalFilters)
+                .reverse()
+                .map(([dim, value]) => (
+                  <Chip
+                    key={dim}
+                    label={`${dim}: ${value}`}
+                    onDelete={() => removeFilter(dim)}
+                    deleteIcon={<CloseIcon />}
+                    color="secondary"
+                    variant="filled"
+                  />
+                ))}
+            </Stack>
+          )}
+        </Box>
       </Box>
-      <Typography variant="h6">
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 1,
+        }}
+      >
+        <IconButton onClick={() => setDrawerOpen(!drawerOpen)} size="small">
+          {drawerOpen ? (
+            <KeyboardDoubleArrowDownIcon />
+          ) : (
+            <KeyboardDoubleArrowUpIcon />
+          )}
+        </IconButton>
+        <Box>
+          <Typography variant="h6">
+            Total Points:{' '}
+            <Typography
+              color="primary"
+              fontWeight="bold"
+              fontSize="1.2rem"
+              component="span"
+            >
+              {totalPointCount}
+            </Typography>
+          </Typography>
+          <Typography variant="body1" color="primary" textAlign="center">
+            {activeSelection === 'drawn'
+              ? 'Drawn Area'
+              : activeSelection === 'selectedGeohash'
+                ? `Geohash: ${selectedGeohash.string}`
+                : ''}
+          </Typography>
+        </Box>
+        <IconButton onClick={() => setDrawerOpen(!drawerOpen)} size="small">
+          {drawerOpen ? (
+            <KeyboardDoubleArrowDownIcon />
+          ) : (
+            <KeyboardDoubleArrowUpIcon />
+          )}
+        </IconButton>
+      </Box>
+      <Typography
+        variant="h6"
+        onClick={() => setTimeRangeOpen(true)}
+        sx={{ cursor: 'pointer' }}
+      >
         From:{' '}
         <Typography
           color="primary"
@@ -96,6 +197,9 @@ export const BottomBar = ({ dataset }: { dataset: IDataset }) => {
 
   return (
     <>
+      {/* <Filter /> */}
+      <TimeRange open={timeRangeOpen} onClose={() => setTimeRangeOpen(false)} />
+      <Filter open={filterOpen} onClose={() => setFilterOpen(false)} />
       <Paper>
         <Header />
       </Paper>

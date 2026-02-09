@@ -13,7 +13,6 @@ import {
 } from '../../../store/slices/exploring/datasetSlice';
 import Loader from '../../../shared/components/loader';
 import { Map } from './Map/map';
-import { VisControl } from './VisControl/vis-control';
 import { getDataSource } from '../../../store/slices/exploring/datasourceSlice';
 import { resetChartState } from '../../../store/slices/exploring/chartSlice';
 import {
@@ -127,16 +126,7 @@ const VisualizePage = () => {
             </Box>
           </Box>
         </>
-      ) : (
-        <Box
-          position="absolute"
-          zIndex={999}
-          top={predictionDisplay ? 32 : 0}
-          sx={{ p: 2, minWidth: 200 }}
-        >
-          <VisControl dataset={dataset} />
-        </Box>
-      )}
+      ) : null}
       <Map id={datasetId} dataset={dataset} />
       {!predictionDisplay && <BottomBar dataset={dataset} />}
     </>
