@@ -1,5 +1,6 @@
 import L from 'leaflet';
 import ngeohash from 'ngeohash';
+import { useTheme } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../../store/store';
@@ -7,6 +8,7 @@ import { coordinatesToRectangle } from '../../../../shared/utils/mapUtils';
 import type { LatLon } from '../../../../shared/models/exploring/latlon.model';
 
 export const useMapDrawing = (map: L.Map | null, id: string) => {
+  const theme = useTheme();
   const navigate = useNavigate();
   const drawnItemsRef = useRef<L.FeatureGroup>(new L.FeatureGroup());
   const drawnShape = useAppSelector(state => state.map.drawnShape);
@@ -46,7 +48,7 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
     );
 
     const rectangle = L.rectangle(leafletBounds, {
-      color: '#3388ff',
+      color: theme.palette.primary.main,
       weight: 2,
       fillOpacity: 0.1,
       interactive: false,
@@ -91,7 +93,7 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
     }
 
     const polygon = L.polygon(coordinates.map(([lat, lon]) => L.latLng(lat, lon)), {
-      color: '#3388ff',
+      color: theme.palette.primary.main,
       weight: 2,
       fillOpacity: 0.1,
       interactive: false,
@@ -129,7 +131,7 @@ export const useMapDrawing = (map: L.Map | null, id: string) => {
 
     const circle = L.circle(center, {
       radius,
-      color: '#3388ff',
+      color: theme.palette.primary.main,
       weight: 2,
       fillOpacity: 0.1,
       interactive: false,

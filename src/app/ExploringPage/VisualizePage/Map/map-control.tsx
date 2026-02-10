@@ -1,4 +1,5 @@
 import type { LatLng } from 'leaflet';
+import { useTheme } from '@mui/material';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw';
@@ -23,6 +24,7 @@ import type { MapLayer } from '../../../../shared/models/exploring/dataset.model
 
 export const MapControl = ({ id }: { id: string }) => {
   const map = useMap();
+  const theme = useTheme();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { zone } = useAppSelector(state => state.zone);
@@ -74,6 +76,10 @@ export const MapControl = ({ id }: { id: string }) => {
     function onCreated(e: L.LeafletEvent) {
       const event = e as L.DrawEvents.Created;
       const layer = event.layer;
+
+      if ('setStyle' in layer && typeof layer.setStyle === 'function') {
+        (layer as L.Path).setStyle({ color: theme.palette.primary.main, fillColor: theme.palette.primary.main });
+      }
 
       // Use the hook's method to add the layer
       addDrawnLayer(layer);
@@ -135,14 +141,24 @@ export const MapControl = ({ id }: { id: string }) => {
 
     map.addLayer(drawnItems);
 
+    // Shape options for the preview while drawing (rectangle/polygon/circle)
+    const drawShapeOptions: L.PathOptions = {
+      color: theme.palette.primary.main,
+      weight: 2,
+      opacity: 0.8,
+      fill: true,
+      fillColor: theme.palette.primary.main,
+      fillOpacity: 0.1,
+    };
+
     // Custom drawing control with separate save/clear functionality
     const drawControl = new L.Control.Draw({
       position: 'topright',
       draw: {
-        rectangle: { showArea: false }, // disable showArea
+        rectangle: { showArea: false, shapeOptions: drawShapeOptions },
         polyline: false,
-        polygon: { showArea: false },
-        circle: { showRadius: true },
+        polygon: { showArea: false, shapeOptions: drawShapeOptions },
+        circle: { showRadius: true, shapeOptions: drawShapeOptions },
         marker: false,
         circlemarker: false,
       },
@@ -347,7 +363,7 @@ export const MapControl = ({ id }: { id: string }) => {
       map.off(L.Draw.Event.DELETED, onDeletedWrapper);
       map.off('moveend', onMoveEnd);
     };
-  }, [map, id, dispatch, addDrawnLayer, clearDrawnItems]);
+  }, [map, id, dispatch, addDrawnLayer, clearDrawnItems, theme.palette.primary.main]);
 
   useEffect(() => {
     if (!map) return;
