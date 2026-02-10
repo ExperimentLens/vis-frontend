@@ -122,14 +122,14 @@ const VisualizePage = () => {
                 justifyContent: 'center',
               }}
             >
-              <Typography variant="h6" textAlign="center" color={theme => theme.palette.secondary.main}>
+              <Typography variant="h6" textAlign="center" color={theme => theme.palette.background.paper}>
                 Prediction Display
               </Typography>
             </Box>
             <Box sx={{ position: 'absolute', right: 16 }}>
               <Button onClick={handleClosePredictionDisplay}>
                 <CloseIcon
-                  sx={{ color: theme => theme.palette.secondary.main }}
+                  sx={{ color: theme => theme.palette.background.paper }}
                 />
               </Button>
             </Box>
