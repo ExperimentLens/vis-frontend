@@ -6,6 +6,7 @@ import {
   ListItemText,
   Paper,
   IconButton,
+  useTheme,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 // import ListRoundedIcon from '@mui/icons-material/ListRounded';
@@ -19,6 +20,7 @@ import { ModeToggler } from '../../shared/components/mode-toggler';
 // import ViewInArIcon from '@mui/icons-material/ViewInAr';
 
 const LeftMenu = () => {
+  const theme = useTheme();
   const { experimentId } = useParams();
   const navigate = useNavigate();
   const { menuOptions } = useAppSelector(
@@ -110,7 +112,7 @@ const LeftMenu = () => {
           >
             <Box
               component="img"
-              src="/images/eusome-logo.png"
+              src={theme.palette.mode === 'dark' ? '/images/eusome-logo-dark.png' : '/images/eusome-logo.png'}
               alt="EUSOME logo"
               sx={{
                 width: '40px',
@@ -133,7 +135,7 @@ const LeftMenu = () => {
           >
             <Box
               component="img"
-              src="/images/eusome-logo-full.png"
+              src={theme.palette.mode === 'dark' ? '/images/eusome-logo-full-dark.png' : '/images/eusome-logo-full.png'}
               alt="EUSOME logo"
               sx={{
                 margin: '0 auto',

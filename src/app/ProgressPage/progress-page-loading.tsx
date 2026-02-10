@@ -12,9 +12,10 @@ import {
 import '../../index.css';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
-import { Paper } from '@mui/material';
+import { Paper, useTheme } from '@mui/material';
 
 const ProgressPageLoading = () => {
+  const theme = useTheme();
   const { workflows, experiment } = useAppSelector(
     (state: RootState) => state.progressPage,
   );
@@ -83,7 +84,7 @@ const ProgressPageLoading = () => {
       >
         <Grid sx={{ display: 'flex', rowGap: 2, flexDirection: 'column' }}>
           <img
-            src="/images/eusome-logo.png"
+            src={theme.palette.mode === 'dark' ? '/images/eusome-logo-dark.png' : '/images/eusome-logo.png'}
             height={130}
             style={{ objectFit: 'contain' }}
             alt="EUSOME logo"
