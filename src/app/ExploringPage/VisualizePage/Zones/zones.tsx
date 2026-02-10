@@ -358,7 +358,7 @@ export const Zones = ({ dataset }: IZonesProps) => {
                               <VisibilityIcon />
                             </IconButton>
                           </Tooltip>
-                          {z && <Prediction zone={z} />}
+                          {z && z.type !== 'restriction' && <Prediction zone={z} />}
                           <Tooltip
                             title="Delete"
                             placement="top"
@@ -397,6 +397,17 @@ export const Zones = ({ dataset }: IZonesProps) => {
               </Table>
             </TableContainer>
           )}
+          {/* Legend for describing background color of rows */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+              <Box sx={{ width: 10, height: 10, backgroundColor: theme.palette.secondary.main }} />
+              <Typography>Predictions available</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+              <Box sx={{ width: 10, height: 10, backgroundColor: theme.palette.primary.main }} />
+              <Typography>Viewed zone</Typography>
+            </Box>
+          </Box>
         </DialogContent>
       </Dialog>
 

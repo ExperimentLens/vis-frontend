@@ -16,7 +16,11 @@ import {
   useAppSelector,
 } from '../../../../store/store';
 import { importZones } from '../../../../store/slices/exploring/zoneSlice';
-import type { IZone } from '../../../../shared/models/exploring/zone.model';
+import {
+  type IZone,
+  ZoneTypeValues,
+  type ZoneType,
+} from '../../../../shared/models/exploring/zone.model';
 
 export interface IZonesUploadProps {
   open: boolean;
@@ -29,7 +33,11 @@ export const ZonesUpload = ({ open, onClose }: IZonesUploadProps) => {
   const handleUpload = useCallback(
     async (params: UploadParams): Promise<IZone[]> => {
       const result = await dispatch(
-        importZones({ fileName: id || '', file: params.file }),
+        importZones({
+          fileName: id || '',
+          file: params.file,
+          type: params.additionalFields?.type as ZoneType,
+        }),
       ).unwrap();
 
       return result;
@@ -45,6 +53,15 @@ export const ZonesUpload = ({ open, onClose }: IZonesUploadProps) => {
           onUpload={handleUpload}
           onUploadSuccess={onClose}
           acceptedFileTypes={['.json', '.geojson']}
+          additionalFields={[
+            {
+              name: 'type',
+              label: 'Type',
+              required: true,
+              placeholder: 'Enter zone type',
+              values: ZoneTypeValues,
+            },
+          ]}
           title="Import Zones"
           description="Drag and drop your zones file here, or click to browse"
           buttonText="Import Zones"

@@ -9,6 +9,7 @@ import { type RootState } from '../../store';
 import { fetchColumnsValues } from './datasetSlice';
 import {
   defaultValue as zoneDefaultValue,
+  type ZoneType,
   type IZone,
 } from '../../../shared/models/exploring/zone.model';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
@@ -199,15 +200,17 @@ export const deleteZone = createAsyncThunk<
 
 export const importZones = createAsyncThunk<
   IZone[],
-  { fileName: string; file: File },
+  { fileName: string; file: File; type: ZoneType },
   { rejectValue: string }
->('api/importZones', async ({ fileName, file }, { rejectWithValue }) => {
+>('api/importZones', async ({ fileName, file, type }, { rejectWithValue }) => {
   try {
     const formData = new FormData();
 
     formData.append('file', file);
 
     formData.append('fileName', fileName);
+
+    formData.append('type', type);
 
     const response = await api.post<IZone[]>('/zones/import', formData, {
       headers: {

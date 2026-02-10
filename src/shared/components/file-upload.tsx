@@ -10,6 +10,10 @@ import {
   IconButton,
   Chip,
   TextField,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -20,6 +24,7 @@ export interface AdditionalField {
   label: string;
   required?: boolean;
   placeholder?: string;
+  values?: string[];
 }
 
 export interface UploadParams {
@@ -245,24 +250,58 @@ export const FileUpload = <T = unknown, >({
                   {formatFileSize(selectedFile.size)}
                 </Typography>
 
-                {additionalFields.map(field => (
-                  <TextField
-                    key={field.name}
-                    size="small"
-                    label={field.label}
-                    placeholder={field.placeholder}
-                    value={fieldValues[field.name] || ''}
-                    onChange={e =>
-                      setFieldValues(prev => ({
-                        ...prev,
-                        [field.name]: e.target.value,
-                      }))
-                    }
-                    onClick={e => e.stopPropagation()}
-                    required={field.required}
-                    sx={{ m: 1 }}
-                  />
-                ))}
+                {additionalFields.map(field =>
+                  field.values && field.values.length > 0 ? (
+                    <FormControl
+                      key={field.name}
+                      size="small"
+                      variant="outlined"
+                      required={field.required}
+                      sx={{ m: 1, minWidth: 160 }}
+                    >
+                      <InputLabel id={`${field.name}-label`}>
+                        {field.label}
+                      </InputLabel>
+                      <Select
+                        labelId={`${field.name}-label`}
+                        label={field.label}
+                        value={fieldValues[field.name] ?? field.values[0]}
+                        onChange={e =>
+                          setFieldValues(prev => ({
+                            ...prev,
+                            [field.name]: e.target.value,
+                          }))
+                        }
+                        onClick={e => e.stopPropagation()}
+                      >
+                        {field.values.map(value => (
+                          <MenuItem key={value} value={value}>
+                            {value}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  ) : (
+                    <TextField
+                      key={field.name}
+                      size="small"
+                      variant="outlined"
+                      label={field.label}
+                      placeholder={field.placeholder}
+                      value={fieldValues[field.name] || ''}
+                      onChange={e =>
+                        setFieldValues(prev => ({
+                          ...prev,
+                          [field.name]: e.target.value,
+                        }))
+                      }
+                      onClick={e => e.stopPropagation()}
+                      required={field.required}
+                      InputLabelProps={{ shrink: true }}
+                      sx={{ m: 1 }}
+                    />
+                  ),
+                )}
               </Box>
               <IconButton
                 onClick={e => {
