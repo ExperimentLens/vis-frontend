@@ -1,4 +1,5 @@
 import { Box, GlobalStyles, useTheme } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { VegaLite } from 'react-vega';
@@ -25,6 +26,8 @@ type VegaConfig = NonNullable<VisualizationSpec['config']> & {
   bar?: Record<string, unknown>;
   line?: Record<string, unknown>;
   point?: Record<string, unknown>;
+  area?: Record<string, unknown>;
+  range?: Record<string, unknown>;
 };
 
 const ResponsiveVegaLite: React.FC<ResponsiveVegaLiteProps> = ({
@@ -97,7 +100,27 @@ const ResponsiveVegaLite: React.FC<ResponsiveVegaLiteProps> = ({
       color: theme.palette.primary.main,
       ...(baseConfig?.point ?? {}),
     },
+    area: {
+      color: theme.palette.primary.main,
+      ...(baseConfig?.area ?? {}),
+    },
+    ...(baseConfig?.range && { range: baseConfig.range }),
   } as VegaConfig;
+
+  // Heatmap color range from theme primary so it adapts to light/dark mode
+  const heatmapColorRange = [
+    alpha(theme.palette.primary.main, 0.12),
+    theme.palette.primary.main,
+  ] as [string, string];
+
+  const singleSpec = spec as { mark?: unknown; encoding?: { color?: { type?: string; scale?: object } } };
+  const isHeatmap =
+    (singleSpec.mark === 'rect' ||
+      (typeof singleSpec.mark === 'object' && (singleSpec.mark as { type?: string })?.type === 'rect')) &&
+    singleSpec.encoding?.color &&
+    (typeof singleSpec.encoding.color === 'object' && singleSpec.encoding.color !== null) &&
+    singleSpec.encoding.color.type === 'quantitative';
+
   const themedSpec = {
     ...spec,
     autosize: { type: 'fit', contains: 'padding' }, // Ensure the chart adjusts to container size
@@ -105,6 +128,25 @@ const ResponsiveVegaLite: React.FC<ResponsiveVegaLiteProps> = ({
     height: height,
     background: theme.palette.background.paper,
     config: themedConfig as VisualizationSpec['config'],
+    ...(isHeatmap && singleSpec.encoding && {
+      encoding: {
+        ...singleSpec.encoding,
+        color: {
+          ...(typeof singleSpec.encoding.color === 'object' && singleSpec.encoding.color !== null
+            ? singleSpec.encoding.color
+            : {}),
+          scale: {
+            ...(typeof singleSpec.encoding.color === 'object' &&
+            singleSpec.encoding.color !== null &&
+            singleSpec.encoding.color.scale &&
+            typeof singleSpec.encoding.color.scale === 'object'
+              ? singleSpec.encoding.color.scale
+              : {}),
+            range: heatmapColorRange,
+          },
+        },
+      },
+    }),
   } as VisualizationSpec;
 
   // Function to update the chart dimensions based on the container's size
