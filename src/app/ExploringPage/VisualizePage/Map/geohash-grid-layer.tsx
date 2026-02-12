@@ -434,7 +434,7 @@ export const GeohashGridLayer = ({
         const label = L.marker([centerLat, centerLon], {
           icon: L.divIcon({
             className: 'geohash-label',
-            html: `<div style="font-size:${fontSize}px;color:${theme.palette.text.primary};text-shadow:0 1px 2px #fff;text-align:center;line-height:${iconHeight}px;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">${level === 'prediction' ? hash : hash.slice(-1)}</div>`,
+            html: `<div style="font-size:${fontSize}px;color:${theme.palette.text.primary};text-shadow:0 1px 2px #fff;text-align:center;line-height:${iconHeight}px;width:100%;height:100%;display:flex;align-items:center;justify-content:center;">${level === 'prediction' ? '' : hash.slice(-1)}</div>`,
             iconSize: [iconWidth, iconHeight],
             iconAnchor: [iconWidth / 2, iconHeight / 2],
           }),
