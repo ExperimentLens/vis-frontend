@@ -50,6 +50,8 @@ import CreateIcon from '@mui/icons-material/Create';
 import type { IRun } from '../../../../shared/models/experiment/run.model';
 import { setWorkflowsData } from '../../../../store/slices/progressPageSlice';
 import DownloadIcon from '@mui/icons-material/Download';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import { Link } from 'react-router-dom';
 
 interface ToolBarWorkflowProps {
   filterNumbers: number
@@ -314,6 +316,14 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
                 <AddIcon />
               </IconButton>
             </Tooltip> */}
+            {
+              visibleTable === 'workflows' && (
+                <Tooltip title="Experiment Highlights">
+                  <IconButton component={Link} to={`/${experiment.data?.id}/highlights`}>
+                    <AutoAwesomeIcon />
+                  </IconButton>
+                </Tooltip>
+            )}
             {showSpaceButton && (
               <Tooltip title="Spaces">
                 <IconButton onClick={handleSpaceOptionsOpen}>
