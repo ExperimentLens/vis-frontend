@@ -66,6 +66,7 @@ const buildTagsString = (tags?: Record<string, string>) =>
 
 const matchesQuery = (row: ExperimentRow, q: string) => {
   const query = q.trim().toLowerCase();
+
   if (!query) return true;
 
   return (
@@ -124,7 +125,9 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
 
   const statusOptions = useMemo(() => {
     const set = new Set<string>();
+
     experiments.forEach((e) => set.add(normalizeStatus(e.status)));
+
     return ['ALL', ...Array.from(set).sort((a, b) => a.localeCompare(b))];
   }, [experiments]);
 
@@ -150,8 +153,10 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
 
   const filtersCount = useMemo(() => {
     let c = 0;
+
     if (query.trim()) c += 1;
     if (statusFilter !== 'ALL') c += 1;
+
     return c;
   }, [query, statusFilter]);
 

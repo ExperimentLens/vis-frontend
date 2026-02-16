@@ -26,7 +26,9 @@ const ExperimentsToolbarContext = React.createContext<ExperimentsToolbarCtxValue
 
 export const useExperimentsToolbar = () => {
   const ctx = useContext(ExperimentsToolbarContext);
+
   if (!ctx) throw new Error('ExperimentsToolbarContext missing Provider');
+
   return ctx;
 };
 

@@ -28,7 +28,7 @@ export type ClusterInsight = {
     modelQualityScore?: string | number;
     qualityInterpretation?: string;
     confusionMatrix?: Partial<Record<
-      "truePositives" | "trueNegatives" | "falsePositives" | "falseNegatives",
+      'truePositives' | 'trueNegatives' | 'falsePositives' | 'falseNegatives',
       number
     >>;
   };

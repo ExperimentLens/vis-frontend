@@ -34,22 +34,22 @@ const ProgressPage = (props: ProgressPageProps) => {
   const location = useLocation();
 
   useEffect(() => {
-  if (!experimentId) return;
+    if (!experimentId) return;
 
-  if (experimentId !== experiment.data?.id) {
-    dispatch(clearExperiment());
-    dispatch(clearWorkflows());
-    dispatch(resetMonitoringPage());
-    dispatch(setIntialization(false));
-  }
-}, [experimentId]);
-
+    if (experimentId !== experiment.data?.id) {
+      dispatch(clearExperiment());
+      dispatch(clearWorkflows());
+      dispatch(resetMonitoringPage());
+      dispatch(setIntialization(false));
+    }
+  }, [experimentId]);
 
   useEffect(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
 
     if (pathParts.length === 0) {
       dispatch(setMenuOptions({ ...menuOptions, selected: 'experiments' }));
+
       return;
     }
 

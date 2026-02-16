@@ -323,7 +323,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
                     <AutoAwesomeIcon />
                   </IconButton>
                 </Tooltip>
-            )}
+              )}
             {showSpaceButton && (
               <Tooltip title="Spaces">
                 <IconButton onClick={handleSpaceOptionsOpen}>

@@ -81,6 +81,7 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
 
   const renderDiffIcon = () => {
     if (typeof pctVsMean !== 'number' || pctVsMean === 0) return null;
+
     return pctVsMean > 0 ? (
       <ArrowDropUpIcon sx={{ color: green[600], mb: 0.2 }} fontSize="small" />
     ) : (
@@ -159,12 +160,12 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                 Current ({isStepMode ? 'last step' : 'latest'})
               </Typography>
-          
+
               <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
                   {format2(lastVal)}
                 </Typography>
-          
+
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   {renderDiffIcon()}
                   <Typography variant="body2" sx={{ fontWeight: 700, color: pctColor }}>
@@ -177,7 +178,7 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
               </Box>
             </CardContent>
           </Card>
-          
+
           {/* Card 2: Range */}
           <Card
             elevation={0}
@@ -193,12 +194,12 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                 Range
               </Typography>
-          
+
               <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
                   {format2(minVal)} – {format2(maxVal)}
                 </Typography>
-          
+
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
                   span {format2(maxVal - minVal)}
                 </Typography>
@@ -207,7 +208,7 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
           </Card>
         </Box>
       )}
-      <Box sx={{width: '100%'}}>
+      <Box sx={{ width: '100%' }}>
         <ResponsiveCardVegaLite
           spec={chartSpec}
           actions={false}

@@ -190,7 +190,7 @@ const LeftMenu = () => {
                   </ListItemButton>
                 </ListItem>
               );
-            
+
               return menuOptions.collapsed ? (
                 <Tooltip key={path} title={label} arrow placement="right">
                   {item}

@@ -78,7 +78,7 @@ const ComparisonMetricsCharts: React.FC = () => {
       )
         .filter(m => m !== 'rating')
         .slice(0, 5);
-      
+
       if (initialMetrics.length === 0) return;
 
       dispatch(setComparativeVisibleMetrics(initialMetrics));
@@ -87,7 +87,7 @@ const ComparisonMetricsCharts: React.FC = () => {
         workflowsTable.selectedWorkflows.forEach(workflowId => {
           dispatch(fetchWorkflowMetrics({ experimentId, workflowId, metricNames: initialMetrics }));
         });
-      
+
         previousSelectedRef.current = workflowsTable.selectedWorkflows;
       }
 
