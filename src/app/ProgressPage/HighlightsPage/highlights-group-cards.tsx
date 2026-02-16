@@ -160,7 +160,7 @@ const ClusterCard = ({
           size="small"
           onClick={() => setOpen(v => !v)}
           sx={{
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            transform: open ? 'rotate(360deg)' : 'rotate(270deg)',
             transition: 'transform 160ms ease',
           }}
         >
