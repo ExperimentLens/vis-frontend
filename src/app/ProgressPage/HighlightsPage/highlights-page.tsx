@@ -35,8 +35,8 @@ const HighlightsPage = () => {
   if (loading) return <Loader />;
 
   return (
-    <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box>
+    <Box sx={{ px: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box sx={{py: 2}}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <LayersIcon color="primary" />
           <Typography
