@@ -15,9 +15,10 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import type { RootState } from '../../../store/store';
 import { useAppSelector } from '../../../store/store';
-import type { ClusterInsight } from '../../../shared/models/experiment.highlights.model';
+import type { ClusterInsight, PcaSpacePoint } from '../../../shared/models/experiment.highlights.model';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import InfoMessage from '../../../shared/components/InfoMessage';
+import ResponsiveCardVegaLite from '../../../shared/components/responsive-card-vegalite';
 
 const Sparkline = ({ values, color }: { values: number[]; color: string }) => {
   const w = 54;
@@ -195,6 +196,22 @@ const ClusterCard = ({
           bal: <strong>{typeof bal === 'number' ? `${Math.round(bal * 100)}%` : '—'}</strong>
         </Typography>
 
+        <Tooltip title={cluster?.modelEvaluation?.qualityInterpretation?.split(' - ')[1] || 'No quality interpretation available'}>
+         <Chip
+          label={cluster?.modelEvaluation?.qualityInterpretation?.split(' - ')[0] || 'No Quality'}
+          size="small"
+          color={
+            cluster?.modelEvaluation?.qualityInterpretation?.includes('Excellent')
+              ? 'success'
+              : cluster?.modelEvaluation?.qualityInterpretation?.includes('Medium')
+              ? 'warning'
+              : cluster?.modelEvaluation?.qualityInterpretation?.includes('Poor')
+              ? 'error'
+              : 'default'
+          }
+        />
+        </Tooltip>
+        
         <Box sx={{ flex: 1 }} />
 
         <Tooltip title="Analyze Pattern">
@@ -248,6 +265,13 @@ const HighlightsGroupsCards: React.FC = () => {
     (state: RootState) => state.experimentHighlights
   );
   const { data } = experimentHighlights;
+  const theme = useTheme();
+
+  const pcaSpace: PcaSpacePoint[] = useMemo(
+    () => (data?.pcaSpace ?? []) as PcaSpacePoint[],
+    [data]
+  );
+
   const clusters = useMemo(() => {
     if (!data?.clusterInsights) return [];
 
@@ -272,6 +296,65 @@ const HighlightsGroupsCards: React.FC = () => {
 
   return (
     <Box sx={{ p: 2 }}>
+      {pcaSpace.length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="subtitle2"
+            sx={{ mb: 1.5, letterSpacing: 0.6 }}
+          >
+            
+          </Typography>
+          <ResponsiveCardVegaLite
+          title="CLUSTER DISTRIBUTION"
+            actions={false}
+            spec={{
+              description: 'PCA projection of workflows colored by cluster',
+              mark: { type: 'point', tooltip: true },
+              // Clone each datum so Vega can annotate rows without
+              // mutating frozen/proxied Redux objects.
+              data: { values: pcaSpace.map(p => ({ ...p })) },
+              encoding: {
+                x: {
+                  field: 'PC_1',
+                  type: 'quantitative',
+                  title: 'PC 1',
+                },
+                y: {
+                  field: 'PC_2',
+                  type: 'quantitative',
+                  title: 'PC 2',
+                },
+                color: {
+                  field: 'cluster',
+                  type: 'nominal',
+                  title: 'Cluster',
+                  scale: {
+                    // Align cluster colors with the group cards
+                    domain: [0, 1, 2, 3],
+                    range: [
+                      theme.palette.primary.main,
+                      theme.palette.secondary.main,
+                      theme.palette.success.main,
+                      theme.palette.warning.main,
+                    ],
+                  },
+                  legend: { title: 'Cluster' },
+                },
+                tooltip: [
+                  {
+                    field: 'workflowId',
+                    type: 'nominal',
+                    title: 'Workflow ID',
+                  },
+                  { field: 'cluster', type: 'nominal', title: 'Cluster' },
+                  { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                  { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                ],
+              },
+            }}
+          />
+        </Box>
+      )}
       <Typography variant="subtitle2" sx={{ mb: 2, letterSpacing: 0.6 }}>
         EXPERIMENT GROUPS
       </Typography>
