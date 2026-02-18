@@ -1,8 +1,17 @@
+export type PcaSpacePoint = {
+  workflowId: string;
+  PC_1: number;
+  PC_2: number;
+  cluster: number;
+};
+
 export type ExperimentHighlightsResponse = {
   success: boolean;
   message: string;
   elapsedTime: number;
   clusterInsights: Record<string, ClusterInsight>;
+  // Optional PCA projection of workflows in cluster space
+  pcaSpace?: PcaSpacePoint[];
 };
 
 export type ClusterInsight = {

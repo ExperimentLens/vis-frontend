@@ -2,13 +2,15 @@ import { useEffect } from 'react';
 import type { RootState } from '../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../store/store';
 import { fetchExperimentHighlights } from '../../../store/slices/experimentHighlightsSlice';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import HighlightsGroupsCards from './highlights-group-cards';
 import Loader from '../../../shared/components/loader';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import { Box, Divider, Typography, useTheme } from '@mui/material';
 import LayersIcon from '@mui/icons-material/Layers';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+
 
 const HighlightsPage = () => {
   const { experimentId } = useParams();
@@ -16,12 +18,14 @@ const HighlightsPage = () => {
   const { data, loading, error } = experimentHighlights;
   const dispatch = useAppDispatch();
   const theme = useTheme();
+  const navigate = useNavigate();
+  
 
   useEffect(() => {
     if(experimentId) {
       dispatch(fetchExperimentHighlights(experimentId));
     }
-  }, []);
+  }, [experimentId]);
 
   const totalWorkflows =
         Object.values(data?.clusterInsights || {}).reduce(
@@ -37,7 +41,12 @@ const HighlightsPage = () => {
   return (
     <Box sx={{ px: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
       <Box sx={{py: 2}}>
+        
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ArrowBackIcon
+                sx={{ fontSize: 24, cursor: 'pointer', color: 'grey' }}
+                onClick={() => navigate(`/${experimentId}/monitoring`)}
+              />
           <LayersIcon color="primary" />
           <Typography
             variant="h6"
