@@ -50,7 +50,8 @@ const Histogram = ({ columnName, dataset, workflowId, color }: IHistogramProps) 
             format: dataset?.format || '',
             sourceType: dataset?.sourceType || '',
             fileName: dataset?.name || '',
-            runId: workflowId || ''
+            runId: workflowId || '',
+            experimentId: '',
           },
           groupBy,
           aggregations: aggregation,

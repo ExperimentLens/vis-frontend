@@ -57,6 +57,7 @@ const WorkflowTab = () => {
 
   useEffect(() => {
     return () => {
+      prevWorkflowRef.current = null;
       dispatch(resetWorkflowTab());
     };
   }, []);

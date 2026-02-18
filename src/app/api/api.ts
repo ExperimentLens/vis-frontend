@@ -34,11 +34,9 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   response => response,
   error => {
-    // Handle 401 errors globally
     if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login
       localStorage.removeItem('auth_token');
-      // Consider using history.push or similar for navigation
+      window.location.href = '/login';
     }
 
     return Promise.reject(error);
@@ -58,11 +56,9 @@ experimentApi.interceptors.request.use(config => {
 experimentApi.interceptors.response.use(
   response => response,
   error => {
-    // Handle 401 errors globally
     if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login
       localStorage.removeItem('auth_token');
-      // Consider using history.push or similar for navigation
+      window.location.href = '/login';
     }
 
     return Promise.reject(error);
@@ -82,11 +78,9 @@ dataApi.interceptors.request.use(config => {
 dataApi.interceptors.response.use(
   response => response,
   error => {
-    // Handle 401 errors globally
     if (error.response && error.response.status === 401) {
-      // Clear token and redirect to login
       localStorage.removeItem('auth_token');
-      // Consider using history.push or similar for navigation
+      window.location.href = '/login';
     }
 
     return Promise.reject(error);

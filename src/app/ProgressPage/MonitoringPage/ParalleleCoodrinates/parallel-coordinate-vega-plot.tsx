@@ -2,7 +2,7 @@ import type { ViewListener } from 'react-vega';
 import { Vega } from 'react-vega';
 import { scheme } from 'vega';
 import vegaTooltip from 'vega-tooltip';
-import type { Axis, Item, Scale } from 'vega-typings/types';
+import type { Axis, Item, Scale } from 'vega-typings';
 import type { View } from 'vega';
 import { useEffect, useState, useRef } from 'react';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';

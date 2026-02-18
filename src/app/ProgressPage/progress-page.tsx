@@ -29,7 +29,7 @@ const ProgressPage = (props: ProgressPageProps) => {
   );
   const { experimentId } = useParams();
   const dispatch = useAppDispatch();
-  const intervalId = useRef<NodeJS.Timeout | null>(null);
+  const intervalId = useRef<ReturnType<typeof setInterval> | null>(null);
   const { children } = props;
   const location = useLocation();
 

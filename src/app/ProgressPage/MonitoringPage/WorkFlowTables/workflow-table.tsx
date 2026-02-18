@@ -701,8 +701,6 @@ export default function WorkflowTable() {
     const { selectedWorkflows, workflowColors, expandedGroups } = useAppSelector(
       (s: RootState) => s.monitorPage.workflowsTable
     );
-    const { selectedTab } =
-      useAppSelector((state: RootState) => state.monitorPage);
 
     if (row.isGroupSummary) {
       const isExpanded = expandedGroups.includes(row.id);
@@ -727,7 +725,7 @@ export default function WorkflowTable() {
 
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        {selectedTab === 1 && <WorkflowColorDot color={color} selected={isSelected} />}
+        <WorkflowColorDot color={color} selected={isSelected} />
         <span>{workflowId}</span>
       </Box>
     );

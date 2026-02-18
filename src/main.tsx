@@ -1,4 +1,5 @@
 import { ThemeProvider } from '@mui/material/styles';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import App from './App';
@@ -12,13 +13,13 @@ if (container) {
   const root = createRoot(container);
 
   root.render(
-    // <React.StrictMode>
-    <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <App />
-      </ThemeProvider>
-    </Provider>
-    // </React.StrictMode>,
+    <StrictMode>
+      <Provider store={store}>
+        <ThemeProvider theme={theme}>
+          <App />
+        </ThemeProvider>
+      </Provider>
+    </StrictMode>,
   );
 } else {
   throw new Error(
