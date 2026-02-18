@@ -5,8 +5,6 @@ import {
   Select,
   OutlinedInput,
   MenuItem,
-  Checkbox,
-  ListItemText,
   FormControlLabel,
   Radio,
   RadioGroup,
@@ -16,7 +14,6 @@ import {
 } from '@mui/material';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import type { SelectChangeEvent } from '@mui/material';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
 import { ThemeProvider } from '@emotion/react';
 import PaletteIcon from '@mui/icons-material/Palette';

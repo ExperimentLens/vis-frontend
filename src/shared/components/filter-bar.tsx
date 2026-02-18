@@ -93,7 +93,7 @@ export default function FilterBar({
   const prevSuggestions = useRef<Suggestion[]>([]);
   const prevStep = useRef<FilterStep>(FilterStep.IDLE);
   const [availableOperators, setAvailableOperators] = useState<typeof stringOperators | typeof numberOperators>(stringOperators);
-  const [currentColumnType, setCurrentColumnType] = useState<string | undefined>(undefined);
+  const [, setCurrentColumnType] = useState<string | undefined>(undefined);
 
   const validColumns = useMemo(() =>
     columns.filter(col =>
@@ -102,7 +102,7 @@ export default function FilterBar({
       value: col.field,
       label: col.headerName as string,
     })),
-    [columns]
+  [columns]
   );
 
   // Focus the input field when the component mounts
@@ -191,11 +191,11 @@ export default function FilterBar({
         const selectedItem = suggestions[selectedSuggestionIndex];
 
         if (currentStep === FilterStep.COLUMN) {
-          selectedItem.value && selectColumn(selectedItem.value);
+          if (selectedItem.value) selectColumn(selectedItem.value);
         } else if (currentStep === FilterStep.OPERATOR) {
-          selectedItem.id && selectOperator(selectedItem.id);
+          if (selectedItem.id) selectOperator(selectedItem.id);
         } else if (currentStep === FilterStep.VALUE) {
-          selectedItem.value && addFilter(selectedItem.value);
+          if (selectedItem.value) addFilter(selectedItem.value);
         }
       } else if (currentStep === FilterStep.VALUE && inputValue) {
         addFilter(inputValue);
@@ -555,11 +555,11 @@ export default function FilterBar({
                   }}
                   onClick={() => {
                     if (currentStep === FilterStep.COLUMN) {
-                      item.value && selectColumn(item.value);
+                      if (item.value) selectColumn(item.value);
                     } else if (currentStep === FilterStep.OPERATOR) {
-                      item.id && selectOperator(item.id);
+                      if (item.id) selectOperator(item.id);
                     } else if (currentStep === FilterStep.VALUE) {
-                      item.value && addFilter(item.value);
+                      if (item.value) addFilter(item.value);
                     }
                   }}
                 >

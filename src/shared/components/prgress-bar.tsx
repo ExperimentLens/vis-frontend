@@ -13,7 +13,7 @@ export default function ProgressBar({ workflowStatus, workflowId, hasPercentage 
   if (workflowStatus === 'COMPLETED' || workflowStatus === 'FAILED' || workflowStatus === 'KILLED') {
     progressValue = 100;
   } else {
-    if (workflow?.tasks == null) {
+    if (workflow?.tasks === null || workflow?.tasks === undefined) {
       progressValue = 0;
     } else {
       const completedTasks = workflow?.tasks.filter(task => task.endTime).length;

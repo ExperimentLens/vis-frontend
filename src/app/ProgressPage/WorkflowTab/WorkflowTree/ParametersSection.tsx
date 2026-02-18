@@ -5,7 +5,7 @@ import theme from '../../../../mui-theme';
 import { useAppDispatch } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 
-type Param = { name: string; value: any; task?: string | null };
+type Param = { name: string; value: unknown; task?: string | null };
 type Props = { taskId: string; paramsForTask: Param[]; variantId?: string };
 
 export default function ParametersSection({ taskId, paramsForTask, variantId }: Props) {

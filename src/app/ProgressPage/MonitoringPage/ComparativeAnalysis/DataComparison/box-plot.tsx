@@ -52,7 +52,7 @@ const BoxPlot = ({ assetName, columnName, assets, colorScale }: BoxPlotProps) =>
 
   const tooltipHandler = useMemo(() => {
     return new Handler({
-      sanitize: (v: any) => String(v),
+      sanitize: (v: unknown) => String(v),
     }).call;
   }, []);
 

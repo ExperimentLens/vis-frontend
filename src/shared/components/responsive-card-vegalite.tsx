@@ -103,14 +103,17 @@ const SectionHeader = ({
   </Box>
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type VLSpec = Record<string, any>;
 
-const isObject = (v: any): v is Record<string, any> =>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isObject = (v: unknown): v is Record<string, any> =>
   v !== null && typeof v === 'object' && !Array.isArray(v);
 
 const applySizeToConcatChildren = (spec: VLSpec, w: number, h?: number): VLSpec => {
   const s: VLSpec = JSON.parse(JSON.stringify(spec));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const visit = (node: any) => {
     if (!isObject(node)) return;
 
@@ -222,9 +225,9 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
   const displaySpec = getSortedSpec();
 
   const isConcat =
-    Boolean((displaySpec as any)?.vconcat) ||
-    Boolean((displaySpec as any)?.hconcat) ||
-    Boolean((displaySpec as any)?.concat);
+    Boolean(displaySpec?.vconcat) ||
+    Boolean(displaySpec?.hconcat) ||
+    Boolean(displaySpec?.concat);
 
   // Function to update the chart dimensions based on the container's size
   const updateSize = useCallback(() => {
@@ -502,7 +505,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
     // rAF throttle for clamp
     let raf: number | null = null;
     const schedule = () => {
-      if (raf != null) return;
+      if (raf !== null) return;
       raf = requestAnimationFrame(() => {
         raf = null;
         clampLive();
@@ -528,7 +531,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       window.removeEventListener('resize', schedule);
       window.removeEventListener('click', onWindowClick);
       rootObserver.disconnect();
-      if (raf != null) cancelAnimationFrame(raf);
+      if (raf !== null) cancelAnimationFrame(raf);
 
       closePinned();
 
@@ -651,6 +654,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
 
     // For concat: give children the measured width so they don't default to 200px.
     // If you *also* want consistent heights per child, pass a height too.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return applySizeToConcatChildren(displaySpec as any, width /* , height */);
   }, [displaySpec, isConcat, width]);
 
@@ -661,6 +665,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
     if (!isConcat) return displaySpec;
 
     // For concat: size children explicitly so they don't default to 200px
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return applySizeToConcatChildren(displaySpec as any, fullscreenWidth, fullscreenHeight);
   }, [displaySpec, isConcat, fullscreenWidth, fullscreenHeight]);
 

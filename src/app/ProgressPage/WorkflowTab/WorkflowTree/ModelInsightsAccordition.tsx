@@ -76,7 +76,7 @@ export default function ModelInsightsAccordion() {
                   onClick={() => {
                     if(disabled) return;
                     dispatch(setSelectedId(id));
-                    dispatch(setSelectedItem({ type: id as any }));
+                    dispatch(setSelectedItem({ type: id, data: {} }));
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>

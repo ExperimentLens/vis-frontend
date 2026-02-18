@@ -1,4 +1,4 @@
-import { Box, useTheme, useMediaQuery, Grid } from '@mui/material';
+import { Box, useTheme, useMediaQuery } from '@mui/material';
 import { useEffect } from 'react';
 import { cloneDeep } from 'lodash';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -18,7 +18,7 @@ interface CalculateTransform {
 }
 
 const normalizeNumericString = (v: unknown): string | null => {
-  if (v == null) return null;
+  if (v === null || v === undefined) return null;
   const s = String(v).trim();
 
   if (!s) return null;
@@ -29,7 +29,7 @@ const normalizeNumericString = (v: unknown): string | null => {
 const isNumericLikeValue = (v: unknown): boolean => {
   const n = normalizeNumericString(v);
 
-  if (n == null) return false;
+  if (n === null || n === undefined) return false;
 
   return /^[-+]?(\d+(\.\d*)?|\.\d+)(e[-+]?\d+)?$/i.test(n);
 };
@@ -40,7 +40,7 @@ const isFieldNumericLike = (data: ScatterChartDataRow[], field: string): boolean
   for (const row of data) {
     const v = row[field];
 
-    if (v == null || v === '') continue;
+    if (v === null || v === undefined || v === '') continue;
     seen = true;
     if (!isNumericLikeValue(v)) return false;
   }
@@ -274,6 +274,7 @@ const ScatterChart = () => {
     const charts = (yAxis ?? [])
       .filter((y): y is VisualColumn => Boolean(y?.name))
       .map(y => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const single = getSingleScatterSpec({ data, xAxis, y, colorBy }) as any;
 
         return {

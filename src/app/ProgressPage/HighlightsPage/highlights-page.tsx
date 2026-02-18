@@ -9,8 +9,8 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import { Box, Divider, Typography, useTheme } from '@mui/material';
 import LayersIcon from '@mui/icons-material/Layers';
+import type { ClusterInsight } from '../../../shared/models/experiment.highlights.model';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-
 
 const HighlightsPage = () => {
   const { experimentId } = useParams();
@@ -19,7 +19,6 @@ const HighlightsPage = () => {
   const dispatch = useAppDispatch();
   const theme = useTheme();
   const navigate = useNavigate();
-  
 
   useEffect(() => {
     if(experimentId) {
@@ -29,7 +28,7 @@ const HighlightsPage = () => {
 
   const totalWorkflows =
         Object.values(data?.clusterInsights || {}).reduce(
-          (sum: number, cluster: any) =>
+          (sum: number, cluster: ClusterInsight) =>
             sum + (cluster?.metadata?.nWorkflows || 0),
           0
         ) || 0;
@@ -40,13 +39,13 @@ const HighlightsPage = () => {
 
   return (
     <Box sx={{ px: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{py: 2}}>
-        
+      <Box sx={{ py: 2 }}>
+
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ArrowBackIcon
-                sx={{ fontSize: 24, cursor: 'pointer', color: 'grey' }}
-                onClick={() => navigate(`/${experimentId}/monitoring`)}
-              />
+            sx={{ fontSize: 24, cursor: 'pointer', color: 'grey' }}
+            onClick={() => navigate(`/${experimentId}/monitoring`)}
+          />
           <LayersIcon color="primary" />
           <Typography
             variant="h6"

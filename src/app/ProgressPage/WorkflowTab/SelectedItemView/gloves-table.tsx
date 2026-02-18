@@ -85,7 +85,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
 }));
 
 const GlovesTable: React.FC<DataTableProps> = ({
-  title,
+  title: _title,
   data,
   eff_cost_actions,
 }) => {

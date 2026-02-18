@@ -159,9 +159,9 @@ const OverlayHistogram = ({
   }, [workflowIds, colorScale]);
 
   const tooltipHandler = new Handler({
-    sanitize: (v: any) => String(v),
-    formatTooltip: (value: Record<string, any>, sanitize) => {
-      const bin = value[columnName] ?? value['binLabel'];
+    sanitize: (v: unknown) => String(v),
+    formatTooltip: (value: Record<string, unknown>, sanitize) => {
+      const bin = String(value[columnName] ?? value['binLabel']);
 
       const rowsInBin = rows.filter(r => r.binLabel === bin);
       const countByWf = new Map<string, number>();
@@ -272,7 +272,7 @@ const OverlayHistogram = ({
   } = useMemo(() => {
     const normalized = norm(columnName);
 
-    const rawByWorkflow: Record<string, any[]> = {};
+    const rawByWorkflow: Record<string, Array<Record<string, string | number>>> = {};
 
     workflowIds.forEach(wid => {
       rawByWorkflow[wid] = Array.isArray(slices[wid]?.data?.data)
@@ -285,7 +285,7 @@ const OverlayHistogram = ({
 
     const sampleRow = workflowIds
       .map(wid => rawByWorkflow[wid]?.[0])
-      .find(r => r && typeof r === 'object') as Record<string, any> | undefined;
+      .find(r => r && typeof r === 'object') as Record<string, string | number> | undefined;
 
     if (sampleRow) {
       const keys = Object.keys(sampleRow);

@@ -16,7 +16,7 @@ import { setSelectedTab, setWorkflowsTable, toggleWorkflowSelection, setHoveredW
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge,  Button,  FormControl,  IconButton, InputLabel, MenuItem, Popover, Select, styled, TextField, Tooltip } from '@mui/material';
+import { Badge,  Button,  FormControl,  IconButton, Popover, styled, TextField, Tooltip } from '@mui/material';
 import FilterBar from '../../../../shared/components/filter-bar';
 import ProgressBar from '../../../../shared/components/prgress-bar';
 import theme from '../../../../mui-theme';
@@ -467,7 +467,7 @@ export default function WorkflowTable() {
   };
 
   const handleLaunchCompletedTab =
-    () => (e: React.SyntheticEvent) => {
+    () => () => {
       dispatch(setSelectedTab(1));
       const searchParams = new URLSearchParams(location.search);
 
@@ -480,7 +480,11 @@ export default function WorkflowTable() {
 
   const filterClicked = (event: React.MouseEvent<HTMLElement>) => {
     setFilterOpen(!isFilterOpen);
-    !isFilterOpen ? setAnchorEl(event.currentTarget) : setAnchorEl(null);
+    if (!isFilterOpen) {
+      setAnchorEl(event.currentTarget);
+    } else {
+      setAnchorEl(null);
+    }
   };
 
   const handleFilterChange = (
@@ -864,7 +868,7 @@ export default function WorkflowTable() {
           }
 
           return acc;
-        }, {})).filter(([_, variants]) => variants.size > 1)
+        }, {})).filter(([, variants]) => variants.size > 1)
         .map(([name]) => name);
 
       // Create rows for the table based on the unique parameters we found
@@ -888,7 +892,7 @@ export default function WorkflowTable() {
             ...Array.from(uniqueParameters).reduce((acc, variant) => {
               const rawValue = params?.find(param => param.name === variant)?.value;
               const parsedValue =
-                rawValue != null && !isNaN(Number(rawValue)) && rawValue !== ''
+                rawValue !== null && rawValue !== undefined && !isNaN(Number(rawValue)) && rawValue !== ''
                   ? Number(rawValue)
                   : rawValue ?? 'n/a';
 
@@ -902,14 +906,14 @@ export default function WorkflowTable() {
 
                 // Pick the one with highest step or fallback to latest timestamp
                 const latestMetric = matchingMetrics.reduce((latest, current) => {
-                  if (current.step != null && latest.step != null) {
+                  if (current.step !== null && current.step !== undefined && latest.step !== null && latest.step !== undefined) {
                     return current.step > latest.step ? current : latest;
                   } else {
                     return current.timestamp > latest.timestamp ? current : latest;
                   }
                 }, matchingMetrics[0]);
 
-                acc[variant] = latestMetric?.value != null ? latestMetric.value : 'n/a';
+                acc[variant] = latestMetric?.value !== null && latestMetric?.value !== undefined ? latestMetric.value : 'n/a';
               } else {
                 acc[variant] = 'n/a';
               }
@@ -970,7 +974,7 @@ export default function WorkflowTable() {
             sortable: key !== 'action' && !workflowsTable.groupBy.length,
 
             type:
-        typeof (rows[0] as Record<string, any>)[key] === 'number'
+        typeof (rows[0] as Record<string, string | number | boolean | undefined>)[key] === 'number'
           ? 'number'
           : 'string',
           };
@@ -1027,7 +1031,7 @@ export default function WorkflowTable() {
           return base;
         });
 
-      const { filteredRows, filtersCounter } = applyWorkflowFilters(
+      const { filteredRows } = applyWorkflowFilters(
         rows,
         workflowsTable.filters,
         workflowsTable.selectedSpaces,
@@ -1174,7 +1178,7 @@ export default function WorkflowTable() {
       .filter((r) => !r.isGroupSummary)
       .map((r) =>
         exportableCols
-          .map((c) => csvEscape((r as any)[c.field]))
+          .map((c) => csvEscape(r[c.field]))
           .join(',')
       );
 

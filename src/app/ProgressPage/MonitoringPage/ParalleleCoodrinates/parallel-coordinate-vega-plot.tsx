@@ -8,7 +8,6 @@ import { useEffect, useState, useRef } from 'react';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
 
 interface ParallelCoordinateVegaProps {
-  parallelData: ParallelDataItem[]
   progressParallel: { selected: string }
   foldArray: React.MutableRefObject<string[]>
   selectedWorkflows: string[]
@@ -31,7 +30,6 @@ function setValuesIfSelectedAndDefault(
 }
 
 const ParallelCoordinateVega = ({
-  parallelData,
   progressParallel,
   foldArray,
   selectedWorkflows,
@@ -47,7 +45,7 @@ const ParallelCoordinateVega = ({
     if (!container) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         const { width } = entry.contentRect;
 
         setChartWidth(width);
@@ -191,12 +189,12 @@ const ParallelCoordinateVega = ({
       return !isNaN(val);
     })
     .map((row) => {
-      const filled: any = { ...row };
+      const filled: ParallelDataItem & { selected: boolean } = { ...row };
 
       for (const axis of columnNames) {
         if (
           filled[axis] === '' ||
-        filled[axis] == null ||
+        filled[axis] === null || filled[axis] === undefined ||
         (typeof filled[axis] === 'number' && Number.isNaN(filled[axis]))
         ) {
           filled[axis] = 'n/a';

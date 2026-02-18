@@ -26,7 +26,7 @@ const TitleTooltip = ({ workflowId }: {workflowId: string}) => {
         <TableHead>
           <TableRow>
             <TableCell>workflowId</TableCell>
-            {workflow.params.map(p => (<TableCell>{p.name}</TableCell>))}
+            {workflow.params.map(p => (<TableCell key={p.name}>{p.name}</TableCell>))}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -44,7 +44,7 @@ const TitleTooltip = ({ workflowId }: {workflowId: string}) => {
               </Box>
               {workflowId}
             </TableCell>
-            {workflow.params.map(p => (<TableCell>{p.value}</TableCell>))}
+            {workflow.params.map(p => (<TableCell key={p.name}>{p.value}</TableCell>))}
           </TableRow>
         </TableBody>
       </Table>

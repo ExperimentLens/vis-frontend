@@ -1,4 +1,4 @@
-import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, InputLabel, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Popover, Select, Switch, Tooltip, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Popover, Switch, Tooltip, Typography } from '@mui/material';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';

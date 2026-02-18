@@ -145,7 +145,7 @@ const ParallelCoordinatePlot = () => {
       }
     });
 
-    return parallelData.map((item, index) => {
+    return parallelData.map((item) => {
       const newItem = { ...item };
 
       for (const key in newItem) {

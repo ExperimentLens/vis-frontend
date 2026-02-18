@@ -65,9 +65,10 @@ export interface HeatMapLeafletProps {
 const DEFAULT_TILES = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 
 // ----- helpers: legend control (class-style, TS-safe) -----
-const createLegendControl = (position: L.ControlPosition = 'topright', cssGradient: string) => {
+const createLegendControl = (position: L.ControlPosition = 'topright', _cssGradient: string) => {
   const legend = new L.Control({ position });
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (legend as any).onAdd = function () {
     const div = L.DomUtil.create('div', 'leaflet-legend');
 
@@ -112,54 +113,12 @@ const scaleValuesTo01 = (vals: number[], minI = 0.35, gamma = 0.5) => {
   return { scaled, min, max };
 };
 
-const getColorFromGradient = (stops: Record<number, string>, t: number) => {
-  const entries = Object.entries(stops)
-    .map(([k, v]) => [parseFloat(k), v] as [number, string])
-    .sort((a, b) => a[0] - b[0]);
-
-  if (!entries.length) return '#ff0000';
-
-  if (t <= entries[0][0]) return entries[0][1];
-  if (t >= entries[entries.length - 1][0]) return entries[entries.length - 1][1];
-
-  let i = 1;
-
-  while (i < entries.length && t > entries[i][0]) i++;
-  const [p0, c0] = entries[i - 1];
-  const [p1, c1] = entries[i];
-
-  const f = (t - p0) / (p1 - p0);
-
-  const hexToRgb = (hex: string) => {
-    const h = hex.replace('#', '');
-    const r = parseInt(h.slice(0, 2), 16);
-    const g = parseInt(h.slice(2, 4), 16);
-    const b = parseInt(h.slice(4, 6), 16);
-
-    return { r, g, b };
-  };
-
-  const rgbToHex = (r: number, g: number, b: number) =>
-    `#${r.toString(16).padStart(2, '0')}${g
-      .toString(16)
-      .padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-
-  const { r: r0, g: g0, b: b0 } = hexToRgb(c0);
-  const { r: r1, g: g1, b: b1 } = hexToRgb(c1);
-
-  const r = Math.round(r0 + (r1 - r0) * f);
-  const g = Math.round(g0 + (g1 - g0) * f);
-  const b = Math.round(b0 + (b1 - b0) * f);
-
-  return rgbToHex(r, g, b);
-};
-
 const HeatMapLeaflet: React.FC<HeatMapLeafletProps> = ({
   points,
   attributionPoints = [],
   title,
   legendLabel = 'Value',
-  height = useMediaQuery(theme.breakpoints.down('xl')) ? 400 : 650,
+  height: heightProp,
   radius = 18,
   blur = 15,
   maxZoom = 18,
@@ -173,6 +132,8 @@ const HeatMapLeaflet: React.FC<HeatMapLeafletProps> = ({
   syncedView,
   onViewChange,
 }) => {
+  const isXlDown = useMediaQuery(theme.breakpoints.down('xl'));
+  const height = heightProp ?? (isXlDown ? 400 : 650);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const heatRef = useRef<L.Layer | null>(null);
@@ -234,6 +195,7 @@ const HeatMapLeaflet: React.FC<HeatMapLeafletProps> = ({
     if (title) {
       const badge = new L.Control({ position: 'topleft' });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (badge as any).onAdd = function () {
         const div = L.DomUtil.create('div', 'leaflet-badge');
 
@@ -270,6 +232,7 @@ const HeatMapLeaflet: React.FC<HeatMapLeafletProps> = ({
       heatRef.current.remove();
       heatRef.current = null;
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     heatRef.current = (L as any).heatLayer(heatData, {
       radius,
       blur,
@@ -339,6 +302,7 @@ const HeatMapLeaflet: React.FC<HeatMapLeafletProps> = ({
     lg.addTo(m);
     legendRef.current = lg;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const container = (lg as any)._container as HTMLElement | undefined;
 
     if (container) {

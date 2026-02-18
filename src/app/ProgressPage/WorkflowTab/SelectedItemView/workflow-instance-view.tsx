@@ -80,7 +80,7 @@ const InstanceView = () => {
     id: string;
     data: TestInstance;
 }
-  ): Boolean => {
+  ): boolean => {
     if(point?.data?.predicted !== point?.data?.actual) return true;
 
     return false;

@@ -38,7 +38,7 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
   onDownload,
   onClose,
   maxWidth = 2000,
-  maxHeight = 300,
+  maxHeight: _maxHeight = 300,
   additionalOptions,
   downloadLabel = 'Download',
   showDownloadButton = true,

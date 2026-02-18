@@ -62,7 +62,7 @@ function FlowGraph(props: IFlowGraphProps) {
     backgroundColor: 'white',
   };
 
-  const getNodeSelectState = (task: ITask) => {
+  const getNodeSelectState = (_task: ITask) => {
     return false;
   };
 

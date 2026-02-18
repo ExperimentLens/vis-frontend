@@ -3,9 +3,6 @@ import {
   Box,
   Grid,
   FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Typography,
   Slider,
   Checkbox,
@@ -79,7 +76,7 @@ const makeHeatmapValues = (
   for (let i = 0; i < N; i++) {
     const t = ts ? (ts[i] as string | number) : null;
 
-    if (timeValue != null && ts && String(t) !== String(timeValue)) continue;
+    if ((timeValue !== null && timeValue !== undefined) && ts && String(t) !== String(timeValue)) continue;
 
     const x = numeric(xs[i]);
     const y = numeric(ys[i]);
@@ -258,7 +255,7 @@ const AttributionHeatmaps: React.FC = () => {
         const next = (prev + 1) % timeOptions.length;
         const tVal = timeOptions[next];
 
-        if (tVal != null) handleTimeChange(tVal);
+        if (tVal !== null && tVal !== undefined) handleTimeChange(tVal);
 
         return next;
       });
@@ -506,7 +503,7 @@ const AttributionHeatmaps: React.FC = () => {
                 setTimeIndex(idx);
                 const tVal = timeOptions[idx];
 
-                if (tVal != null) handleTimeChange(tVal);
+                if (tVal !== null && tVal !== undefined) handleTimeChange(tVal);
               }}
               marks={
                 timeOptions.length <= 10

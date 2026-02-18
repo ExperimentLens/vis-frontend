@@ -76,7 +76,7 @@ const ScatterChartControlPanel = () => {
     }
 
     const currentSelected = controlPanel?.selectedColumns || [];
-    const requiredCols = [xAxis, ...validYAxis, colorBy].filter(Boolean) as any[];
+    const requiredCols = [xAxis, ...validYAxis, colorBy].filter(Boolean) as NonNullable<typeof xAxis>[];
 
     const missingCols = requiredCols.filter(
       reqCol => !currentSelected.find(sel => sel.name === reqCol?.name)
@@ -87,7 +87,7 @@ const ScatterChartControlPanel = () => {
         ...currentSelected,
         ...missingCols.filter(Boolean),
       ];
-      const cleanedSelected = updatedSelected.filter((col: any) => col?.name && col.type);
+      const cleanedSelected = updatedSelected.filter((col) => col?.name && col.type);
 
       dispatch(setControls({ selectedColumns: cleanedSelected }));
     }
@@ -145,7 +145,7 @@ const ScatterChartControlPanel = () => {
               onChange={(selected) => {
                 handleYAxisChange({
                   target: { value: selected },
-                } as any);
+                } as SelectChangeEvent<string[]>);
               }}
               menuMaxHeight={224}
               menuWidth={250}
@@ -177,7 +177,7 @@ const ScatterChartControlPanel = () => {
               onChange={value =>
                 handleColorByChange({
                   target: { value },
-                } as any)
+                } as SelectChangeEvent<string>)
               }
               menuMaxHeight={224}
               menuWidth={250}

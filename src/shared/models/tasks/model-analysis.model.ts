@@ -37,7 +37,7 @@ export const prepareDataExplorationResponse = (payload: IDataExplorationResponse
 export const handleMultiTimeSeriesData = (payload : IDataExplorationResponse) => {
   const fileData: RawRow[][] = JSON.parse(payload.data as string);
   // const seriesData = payload.fileNames;
-  const flatFileData: ParsedRow[] =  fileData.flatMap((file, id)=> {
+  const flatFileData: ParsedRow[] =  fileData.flatMap((file, _id)=> {
     return file.map(row => {
       return {
         ...row,

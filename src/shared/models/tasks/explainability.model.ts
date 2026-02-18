@@ -104,9 +104,7 @@ export const fetchExplainabilityPlotPayloadDefault: FetchExplainabilityPlotPaylo
     },
   };
 
-export type FeatureImportanceQuery = {
-
-}
+export type FeatureImportanceQuery = object
 
 export type FetchFeatureImportancePlotPayload = {
   query: FeatureImportanceQuery

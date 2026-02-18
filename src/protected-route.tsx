@@ -27,7 +27,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       if (decoded.exp && decoded.exp < now) {
         expired = true;
       }
-    } catch (e) {
+    } catch {
       invalidOrMissing = true;
     }
   }

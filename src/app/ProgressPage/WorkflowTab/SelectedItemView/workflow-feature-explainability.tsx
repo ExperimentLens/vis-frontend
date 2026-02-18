@@ -9,7 +9,6 @@ import AttributionHeatmaps from '../../../Tasks/ModelAnalysisTask/plots/attribut
 import ShapPlot from '../../../Tasks/ModelAnalysisTask/plots/shap-plot';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
-import { IDataAsset } from '../../../../shared/models/experiment/data-asset.model';
 
 const FeatureExplainability = () => {
   const { tab } = useAppSelector((state: RootState) => state.workflowPage);
@@ -20,7 +19,7 @@ const FeatureExplainability = () => {
   );
 
   const isSpecialExperiment = hasModelPt || tab?.workflowId === 'KvJ97JkBYAWZyMn0wGW2';
-  const [isMosaic, setIsMosaic] = useState(true);
+  const [isMosaic] = useState(true);
 
   return (
     <Box>

@@ -8,20 +8,18 @@ import {
   IconButton,
   ListItemButton,
 } from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import ListRoundedIcon from '@mui/icons-material/ListRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import type { RootState } from '../../store/store';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import { setMenuOptions } from '../../store/slices/progressPageSlice';
-import ViewInArIcon from '@mui/icons-material/ViewInAr';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import { Link as RouterLink } from 'react-router-dom';
 
 const LeftMenu = () => {
   const { experimentId } = useParams();
-  const navigate = useNavigate();
   const { menuOptions } = useAppSelector(
     (state: RootState) => state.progressPage
   );

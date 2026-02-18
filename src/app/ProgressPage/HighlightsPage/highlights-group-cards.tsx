@@ -107,7 +107,7 @@ const ClusterCard = ({
     theme.palette.success.main,
     theme.palette.warning.main,
     theme.palette.error.main,
-  ]; 
+  ];
 
   const name = clusterKey;
 
@@ -123,7 +123,7 @@ const ClusterCard = ({
 
   const metricTiles = useMemo(() => {
     const stats = cluster?.featureSelection?.featureStatistics ?? {};
-    const items = Object.entries(stats).map(([k, v]: any) => ({
+    const items = Object.entries(stats).map(([k, v]: [string, { zScore?: number; clusterMean?: number }]) => ({
       key: k,
       z: Math.abs(Number(v?.zScore ?? 0)),
       mean: Number(v?.clusterMean ?? 0),
@@ -197,27 +197,27 @@ const ClusterCard = ({
         </Typography>
 
         <Tooltip title={cluster?.modelEvaluation?.qualityInterpretation?.split(' - ')[1] || 'No quality interpretation available'}>
-         <Chip
-          label={cluster?.modelEvaluation?.qualityInterpretation?.split(' - ')[0] || 'No Quality'}
-          size="small"
-          color={
-            cluster?.modelEvaluation?.qualityInterpretation?.includes('Excellent')
-              ? 'success'
-              : cluster?.modelEvaluation?.qualityInterpretation?.includes('Medium')
-              ? 'warning'
-              : cluster?.modelEvaluation?.qualityInterpretation?.includes('Poor')
-              ? 'error'
-              : 'default'
-          }
-        />
+          <Chip
+            label={cluster?.modelEvaluation?.qualityInterpretation?.split(' - ')[0] || 'No Quality'}
+            size="small"
+            color={
+              cluster?.modelEvaluation?.qualityInterpretation?.includes('Excellent')
+                ? 'success'
+                : cluster?.modelEvaluation?.qualityInterpretation?.includes('Medium')
+                  ? 'warning'
+                  : cluster?.modelEvaluation?.qualityInterpretation?.includes('Poor')
+                    ? 'error'
+                    : 'default'
+            }
+          />
         </Tooltip>
-        
+
         <Box sx={{ flex: 1 }} />
 
         <Tooltip title="Analyze Pattern">
           <Box
             component="button"
-            onClick={() => console.log('Analyze cluster')}
+            onClick={() => {}}
             style={{
               background: 'transparent',
               border: 'none',
@@ -302,10 +302,10 @@ const HighlightsGroupsCards: React.FC = () => {
             variant="subtitle2"
             sx={{ mb: 1.5, letterSpacing: 0.6 }}
           >
-            
+
           </Typography>
           <ResponsiveCardVegaLite
-          title="CLUSTER DISTRIBUTION"
+            title="CLUSTER DISTRIBUTION"
             actions={false}
             spec={{
               description: 'PCA projection of workflows colored by cluster',
@@ -361,7 +361,7 @@ const HighlightsGroupsCards: React.FC = () => {
 
       <Stack spacing={2}>
         {clusters.map((cluster, idx) => (
-          <ClusterCard 
+          <ClusterCard
             key={cluster.clusterKey}
             cluster={cluster.cluster}
             clusterKey={cluster.clusterKey}

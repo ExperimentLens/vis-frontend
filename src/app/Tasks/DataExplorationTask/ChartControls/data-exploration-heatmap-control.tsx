@@ -1,8 +1,5 @@
 import {
   Box,
-  MenuItem,
-  Select,
-  InputLabel,
   FormControl,
   createTheme,
   ThemeProvider,
@@ -10,7 +7,6 @@ import {
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
 import CategoryIcon from '@mui/icons-material/Category';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import FunctionsIcon from '@mui/icons-material/Functions';
 import { AggregationFunction } from '../../../../shared/models/dataexploration.model';
 import SearchableMultiSelect from '../../../../shared/components/searchable-select-multiple';

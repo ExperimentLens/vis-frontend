@@ -200,7 +200,7 @@ export const progressPageSlice = createSlice({
           }
         }
       })
-      .addCase(fetchUserEvaluation.pending, (state, action) => {
+      .addCase(fetchUserEvaluation.pending, (state) => {
         state.workflowEvaluation.loading = true;
       })
       .addCase(fetchUserEvaluation.rejected, (state, action) => {

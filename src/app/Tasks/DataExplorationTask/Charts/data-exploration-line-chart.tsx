@@ -1,4 +1,4 @@
-import { Box, useTheme, useMediaQuery, Grid } from '@mui/material';
+import { Box, useTheme, useMediaQuery } from '@mui/material';
 import { useEffect } from 'react';
 import { cloneDeep } from 'lodash';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -8,7 +8,6 @@ import InfoMessage from '../../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
 import type { VisualColumn } from '../../../../shared/models/dataexploration.model';
-import { Theme } from '@mui/material/styles';
 import { vegaScaleOrUndefined } from '../../../../shared/utils/chartColorScales';
 
 // TODO: stacked mode change to one box with name Line chart
@@ -31,7 +30,7 @@ const getColumnType = (columnType: string, fieldName?: string) => {
 type LineChartDataRow = Record<string, number | string | Date | null>;
 
 const normalizeNumericString = (v: unknown): string | null => {
-  if (v == null) return null;
+  if (v === null || v === undefined) return null;
   const s = String(v).trim();
 
   if (!s) return null;
@@ -42,7 +41,7 @@ const normalizeNumericString = (v: unknown): string | null => {
 const isNumericLikeValue = (v: unknown): boolean => {
   const n = normalizeNumericString(v);
 
-  if (n == null) return false;
+  if (n === null || n === undefined) return false;
 
   return /^[-+]?(\d+(\.\d*)?|\.\d+)(e[-+]?\d+)?$/i.test(n);
 };
@@ -53,7 +52,7 @@ const isFieldNumericLike = (data: LineChartDataRow[], field: string): boolean =>
   for (const row of data) {
     const v = row[field];
 
-    if (v == null || v === '') continue;
+    if (v === null || v === undefined || v === '') continue;
     seen = true;
     if (!isNumericLikeValue(v)) return false;
   }
@@ -166,6 +165,7 @@ const LineChart = () => {
 
         longData.push({
           [xField]: xVal,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           value: yIsNumericLike ? coerceIfNumericLike(row[y.name]) as number : (row[y.name] as any),
           variable: y.name,
         });
@@ -331,6 +331,7 @@ const LineChart = () => {
     const charts = (yAxis ?? [])
       .filter((y): y is VisualColumn => Boolean(y?.name))
       .map((y) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const single = getSingleLineSpec({ data, xAxis, y }) as any;
 
         return {

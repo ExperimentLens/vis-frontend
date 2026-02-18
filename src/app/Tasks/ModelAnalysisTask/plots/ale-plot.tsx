@@ -9,9 +9,6 @@ import {
   Box,
   Button,
   FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
 } from '@mui/material';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';

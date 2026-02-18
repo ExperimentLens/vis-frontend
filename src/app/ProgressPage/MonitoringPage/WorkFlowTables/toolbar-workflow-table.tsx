@@ -359,9 +359,9 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
                 </IconButton>
               </Tooltip>
             )}
-            {props.onDownloadCsv && (
+            {onDownloadCsv && (
               <Tooltip title="Export to CSV">
-                <IconButton onClick={props.onDownloadCsv}>
+                <IconButton onClick={onDownloadCsv}>
                   <DownloadIcon />
                 </IconButton>
               </Tooltip>

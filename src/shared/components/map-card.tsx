@@ -91,7 +91,7 @@ const SectionHeader = ({
 
 const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
   mapRef,
-  fullscreenMapRef,
+  fullscreenMapRef: _fullscreenMapRef,
   title,
   minWidth = 100,
   minHeight = 100,
@@ -101,7 +101,6 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
   controlPanel,
   infoMessage,
   showInfoMessage,
-  ...otherProps
 }) => {
   const [width, setWidth] = useState(minWidth);
   const [height, setHeight] = useState(minHeight);

@@ -88,9 +88,9 @@ const InstanceShapPlot = ({ shapPoint, onClose }: ShpaPlotProps) => {
     const data = plotModel?.data;
 
     const baseValue =
-      data?.xAxis?.axisValues?.[0] != null ? Number(data.xAxis.axisValues[0]) : 0;
+      data?.xAxis?.axisValues?.[0] !== null && data?.xAxis?.axisValues?.[0] !== undefined ? Number(data.xAxis.axisValues[0]) : 0;
     const fxValue =
-      data?.xAxis?.axisValues?.[1] != null ? Number(data.xAxis.axisValues[1]) : 0;
+      data?.xAxis?.axisValues?.[1] !== null && data?.xAxis?.axisValues?.[1] !== undefined ? Number(data.xAxis.axisValues[1]) : 0;
 
     // Keep incoming order or sort by |shap| if you prefer:
     const contribs = (data?.shapContributions ?? [])?.filter(

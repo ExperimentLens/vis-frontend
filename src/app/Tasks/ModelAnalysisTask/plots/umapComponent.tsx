@@ -7,7 +7,7 @@ import { logger } from '../../../../shared/utils/logger';
 import { dataApi } from '../../../api/api';
 
 interface DataField {
-  values: any[]
+  values: unknown[]
 }
 
 interface UmapComponentProps {
@@ -84,7 +84,7 @@ const UmapComponent = ({ data1, data2, colorField, controlPanel: ControlPanel }:
       ]);
 
       setUmapResults({ umap1: response1.data, umap2: response2.data });
-    } catch (err) {
+    } catch {
       setError('Failed to fetch UMAP data');
     } finally {
       setLoading(false);
@@ -170,7 +170,7 @@ const UmapComponent = ({ data1, data2, colorField, controlPanel: ControlPanel }:
   //   createScatterData(umapResults.umap1),
   //   createScatterData(umapResults.umap2),
   // );
-  const predictionSpec = (umapResult: number[][] | null, colorData: any[]) => ({
+  const predictionSpec = (umapResult: number[][] | null, colorData: unknown[]) => ({
 
     width: 450,
     height: 450,

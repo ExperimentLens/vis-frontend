@@ -77,7 +77,7 @@ const ComparisonModelInstance = ({
       const rows = instanceState.data.slice(0, 2000);
       // I build the payload like this to match the single instance UMAP in workflow page
       const payload2d: number[][] = rows.map((row, i) => {
-        const arr = Object.values(row).map((val) => Number.parseFloat(val as any));
+        const arr = Object.values(row).map((val) => Number.parseFloat(String(val)));
 
         // we pass this in the worklfow page UMAP why?
         arr.push(i);
@@ -258,8 +258,8 @@ const ComparisonModelInstance = ({
 
       const combinedPlotData = Array.from({ length: n }, (_, i) => {
         const original = dataRaw[i];
-        const actual = (original as any)?.actual ?? '?';
-        const predicted = (original as any)?.predicted ?? '?';
+        const actual = original.actual ?? '?';
+        const predicted = original.predicted ?? '?';
         const id = hashRow(original);
         const isMisclassified = actual !== predicted;
 

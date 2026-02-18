@@ -26,7 +26,7 @@ const GlovesMetricSummary: React.FC = () => {
     );
   }
 
-  if (TotalCost == null || TotalEffectiveness == null) {
+  if (TotalCost === null || TotalCost === undefined || TotalEffectiveness === null || TotalEffectiveness === undefined) {
     return (
       <InfoMessage
         message="No total cost or effectiveness data available."

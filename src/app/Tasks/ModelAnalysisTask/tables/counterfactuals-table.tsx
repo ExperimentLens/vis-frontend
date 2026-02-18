@@ -257,7 +257,7 @@ const CounterfactualsTable = (props: ITableComponent) => {
     return !isNaN(n) && isFinite(n);
   };
 
-  const handleReconfigure = (row: any) => {
+  const handleReconfigure = (row: Record<string, unknown>) => {
     const currentWorkflow = workflows?.data?.find(
       (workflow) => workflow.id === tab?.workflowId
     );

@@ -24,7 +24,7 @@ export default function NullTaskFallback() {
   const workflowId = tab?.workflowId;
 
   const { fallbackParams, fallbackMetrics, fallbackInputGrouped, fallbackOutputGrouped } = useMemo(() => {
-    const nullTask = (v: { task?: string | null }) => v.task == null;
+    const nullTask = (v: { task?: string | null }) => v.task === null || v.task === undefined;
     const params = tab?.workflowConfiguration.params?.filter(nullTask) ?? [];
     const datasets = tab?.workflowConfiguration.dataAssets?.filter(nullTask) ?? [];
     const metrics = tab?.workflowMetrics.data?.filter(m => nullTask(m) && m.name !== 'rating') ?? [];
@@ -143,9 +143,6 @@ export default function NullTaskFallback() {
       />
       {fallbackMetrics.map((metric, index) => {
         const isSeiresMetric = workflowSeriesMetrics.data.some(m => m.name === metric.name && m.seriesMetric.length > 1);
-
-        console.log('isSeiresMetric', metric.name, isSeiresMetric);
-        console.log('here');
 
         return (
           <TreeItem2

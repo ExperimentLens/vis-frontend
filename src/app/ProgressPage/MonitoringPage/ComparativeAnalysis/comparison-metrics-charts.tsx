@@ -151,7 +151,7 @@ const ComparisonMetricsCharts: React.FC = () => {
   }, [comparativeVisibleMetrics]);
 
   const normalizeTimestamp = (timestamp: number | undefined): string | undefined => {
-    if (timestamp == null) return undefined;
+    if (timestamp === null || timestamp === undefined) return undefined;
     const date = new Date(timestamp);
 
     return isNaN(date.getTime()) ? undefined : date.toISOString();
@@ -253,9 +253,9 @@ const ComparisonMetricsCharts: React.FC = () => {
     const isGrouped = workflowsTable.groupBy.length > 0;
 
     const signalListeners = {
-      hover: (_name: string, value: any) => {
+      hover: (_name: string, value: { id?: string | string[] }) => {
         const next =
-          value && typeof value === 'object'
+          value && value.id
             ? (Array.isArray(value.id) ? value.id[0] : value.id) ?? null
             : null;
 

@@ -337,7 +337,7 @@ export default function WorkflowTreeView() {
                         {taskVariants[name] && taskVariants[name] !== name && (() => {
                           const fullTask = tab.workflowConfiguration.tasks?.find(t => t.id === id);
                           const isInteractiveUnfinished =
-    fullTask?.tags?.type === 'interactive' && fullTask?.endTime == null;
+    fullTask?.tags?.type === 'interactive' && (fullTask?.endTime === null || fullTask?.endTime === undefined);
 
                           return (
                             <Typography
@@ -840,7 +840,7 @@ export default function WorkflowTreeView() {
             {/* Fallback for null-task entries if no unique tasks. Supporting mlflow */}
             {uniqueTasks.length === 0 &&
             (() => {
-              const nullTask = (val: { task?: string | null }) => val.task == null;
+              const nullTask = (val: { task?: string | null }) => val.task === null || val.task === undefined;
 
               const fallbackParams =
                 tab?.workflowConfiguration.params?.filter(nullTask) || [];
@@ -1507,7 +1507,7 @@ export default function WorkflowTreeView() {
                       cursor: 'pointer',
                       bgcolor: 'transparent',
                     }}
-                    onClick={e => {
+                    onClick={() => {
                       dispatch(setSelectedId('instance-view'));
                       dispatch(
                         setSelectedItem({
@@ -1547,7 +1547,7 @@ export default function WorkflowTreeView() {
                       cursor: 'pointer',
                       bgcolor: 'transparent',
                     }}
-                    onClick={e => {
+                    onClick={() => {
                       dispatch(setSelectedId('feature-effects'));
                       dispatch(
                         setSelectedItem({
@@ -1587,7 +1587,7 @@ export default function WorkflowTreeView() {
                       cursor: 'pointer',
                       bgcolor: 'transparent',
                     }}
-                    onClick={e => {
+                    onClick={() => {
                       dispatch(setSelectedId('hyperparameters'));
                       dispatch(
                         setSelectedItem({
@@ -1627,7 +1627,7 @@ export default function WorkflowTreeView() {
                       cursor: 'pointer',
                       bgcolor: 'transparent',
                     }}
-                    onClick={e => {
+                    onClick={() => {
                       dispatch(setSelectedId('global-counterfactuals'));
                       dispatch(
                         setSelectedItem({
