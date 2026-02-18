@@ -288,7 +288,7 @@ export const MetricCards = () => {
       })) ?? []
   ) ?? [];
 
-  const currentValue = typeof metricData?.metric?.value === 'number' ? roundTo5(metricData.metric.value) : undefined;
+  const currentValue = typeof metricData?.metric?.value === 'number' && Number.isFinite(metricData.metric.value) ? roundTo5(metricData.metric.value) : undefined;
   const avgValue = typeof metricData?.metric?.avgValue === 'number' ? roundTo5(metricData.metric.avgValue) : undefined;
   const avgDiff = typeof metricData?.metric?.avgDiff === 'number' && Number.isFinite(metricData.metric.avgDiff)
     ? metricData.metric.avgDiff
@@ -354,7 +354,7 @@ export const MetricCards = () => {
     if (values.length <= 1) return undefined;
 
     // Assumption: higher metric value is better.
-    const below = values.filter(v => metricData?.metric?.value && v < metricData.metric.value).length;
+    const below = values.filter(v => typeof metricData?.metric?.value === 'number' && Number.isFinite(metricData.metric.value) && v < metricData.metric.value).length;
     const totalOthers = values.length - 1;
 
     if (totalOthers <= 0) return undefined;
@@ -367,7 +367,7 @@ export const MetricCards = () => {
   const histogram = useMemo(() => {
     const values = filteredWorkflows.map(w => w.rawValue).filter(v => typeof v === 'number' && Number.isFinite(v));
 
-    if (!values.length || typeof currentValue !== 'number') return [] as Array<{ label: string; count: number; isYou: boolean }>;
+    if (!values.length || typeof currentValue !== 'number' || !Number.isFinite(currentValue)) return [] as Array<{ label: string; count: number; isYou: boolean }>;
 
     const min = Math.min(...values);
     const max = Math.max(...values);
@@ -392,7 +392,8 @@ export const MetricCards = () => {
       bins[idx].count += 1;
     }
 
-    const youIdx = Math.min(binCount - 1, Math.floor((currentValue - min) / width));
+    const youIdxRaw = Math.floor((currentValue - min) / width);
+    const youIdx = Math.max(0, Math.min(binCount - 1, youIdxRaw));
 
     bins[youIdx].isYou = true;
 
