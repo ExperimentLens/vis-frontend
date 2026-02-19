@@ -1,5 +1,4 @@
 import { Box, CircularProgress, Typography } from '@mui/material';
-import { grey } from '@mui/material/colors';
 
 const Loader = () => {
   return(<Box
@@ -12,7 +11,7 @@ const Loader = () => {
     }}
   >
     <CircularProgress />
-    <Typography variant="body2" sx={{ ml: 1, color: grey[600] }}>
+    <Typography variant="body2" sx={{ ml: 1, color: 'text.secondary' }}>
           Loading...
     </Typography>
   </Box>);

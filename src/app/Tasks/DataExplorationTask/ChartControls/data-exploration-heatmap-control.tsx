@@ -1,8 +1,6 @@
 import {
   Box,
   FormControl,
-  createTheme,
-  ThemeProvider,
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
@@ -78,26 +76,8 @@ const HeatMapControlPanel = () => {
     );
   };
 
-  // Custom theme
-  const theme = createTheme({
-    palette: {
-      primary: { main: '#1976d2' },
-      secondary: { main: '#dc004e' },
-    },
-    typography: {
-      fontFamily: 'Arial',
-      h6: { fontWeight: 600 },
-    },
-    components: {
-      MuiButton: {
-        styleOverrides: { root: { borderRadius: '20px' } },
-      },
-    },
-  });
-
   return (
-    <ThemeProvider theme={theme}>
-      <Box
+    <Box
         sx={{
           display: 'flex',
           gap: '1rem',
@@ -154,7 +134,6 @@ const HeatMapControlPanel = () => {
           />
         </FormControl>
       </Box>
-    </ThemeProvider>
   );
 };
 

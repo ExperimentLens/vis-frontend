@@ -13,7 +13,6 @@ import type { ScheduleTableRow } from '../../../../store/slices/monitorPageSlice
 import { setScheduledTable } from '../../../../store/slices/monitorPageSlice';
 import type { GridColumnNode } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
-import theme from '../../../../mui-theme';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import type { CustomGridColDef } from '../../../../shared/types/table-types';
@@ -611,7 +610,7 @@ export default function ScheduleTable() {
                   display: 'block',
                   width: '100%',
                   height: '2px',
-                  backgroundColor: theme.palette.primary.main,
+                  backgroundColor: theme => theme.palette.primary.main,
                   position: 'absolute',
                   bottom: 0,
                   left: 0,
@@ -628,7 +627,7 @@ export default function ScheduleTable() {
                   display: 'block',
                   width: '100%',
                   height: '2px',
-                  backgroundColor: theme.palette.secondary.dark,
+                  backgroundColor: theme => theme.palette.secondary.dark,
                   position: 'absolute',
                   bottom: 0,
                   left: 0,

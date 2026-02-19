@@ -1,4 +1,4 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Typography, useTheme } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
@@ -21,7 +21,6 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import PsychologyAltRoundedIcon from '@mui/icons-material/PsychologyAltRounded';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import CommitIcon from '@mui/icons-material/Commit';
-import theme from '../../../../mui-theme';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
@@ -34,6 +33,8 @@ export default function WorkflowTreeView() {
   const { tab } = useAppSelector((state: RootState) => state.workflowPage);
   const dispatch = useAppDispatch();
   const [workflowExpanded, setWorkflowExpanded] = useState(true);
+  const theme = useTheme();
+  
   // const [modelExpanded, setModelExpanded] = useState(true);
   const hasExplainability = useMemo(() => {
     const tasks = tab?.workflowConfiguration.tasks;

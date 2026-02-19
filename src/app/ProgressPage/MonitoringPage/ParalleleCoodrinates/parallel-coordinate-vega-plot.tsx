@@ -5,6 +5,7 @@ import vegaTooltip from 'vega-tooltip';
 import type { Axis, Item, Scale } from 'vega-typings';
 import type { View } from 'vega';
 import { useEffect, useState, useRef } from 'react';
+import { useTheme } from '@mui/material/styles';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
 
 interface ParallelCoordinateVegaProps {
@@ -35,6 +36,7 @@ const ParallelCoordinateVega = ({
   selectedWorkflows,
   processedData
 }: ParallelCoordinateVegaProps) => {
+  const theme = useTheme();
   const [chartHeight, setChartHeight] = useState(window.innerHeight * 0.27);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(0);
@@ -158,6 +160,14 @@ const ParallelCoordinateVega = ({
         scheme('category20')[0],
       ],
     });
+  } else {
+    // Fallback so marks that reference this scale don't error when there's no numeric data
+    generatedScales.push({
+      name: 'selectedLastColumnColorScale',
+      type: 'ordinal',
+      domain: [],
+      range: ['#999999'],
+    } as unknown as Scale);
   }
 
   for (const columnName of foldArray.current) {
@@ -215,7 +225,14 @@ const ParallelCoordinateVega = ({
           width: chartWidth,
           padding: { top: 15, left: 2, right: 2, bottom: 2 },
           autosize: { type: 'fit', contains: 'padding' }, // Ensure the chart adjusts to container size
+          background: 'transparent',
           config: {
+            axis: {
+              labelColor: theme.palette.text.primary,
+              titleColor: theme.palette.text.primary,
+              tickColor: theme.palette.text.secondary,
+              domainColor: theme.palette.text.secondary,
+            },
             axisY: {
               titleY: -12,
               titleX: 10,
@@ -235,14 +252,18 @@ const ParallelCoordinateVega = ({
             },
             {
               name: 'gradientData',
-              transform: [
-                {
-                  type: 'sequence',
-                  start: selectedLastColumnMin,
-                  stop: selectedLastColumnMax,
-                  step: (selectedLastColumnMax - selectedLastColumnMin) / 256,
-                },
-              ],
+              ...(isValidDomain
+                ? {
+                  transform: [
+                    {
+                      type: 'sequence',
+                      start: selectedLastColumnMin,
+                      stop: selectedLastColumnMax,
+                      step: (selectedLastColumnMax - selectedLastColumnMin) / 256,
+                    },
+                  ],
+                }
+                : { values: [] }),
             },
           ],
           signals: [
@@ -321,9 +342,9 @@ const ParallelCoordinateVega = ({
                 },
               ],
             },
-            {
+            ...(isValidDomain ? [{
               name: 'colourRect',
-              type: 'rect',
+              type: 'rect' as const,
               from: { data: 'gradientData' },
               encode: {
                 enter: {
@@ -341,7 +362,7 @@ const ParallelCoordinateVega = ({
                   },
                 },
               },
-            },
+            }] : []),
           ],
         }}
       />

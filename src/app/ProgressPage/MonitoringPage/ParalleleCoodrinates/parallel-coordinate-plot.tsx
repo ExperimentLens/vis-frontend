@@ -306,7 +306,6 @@ const ParallelCoordinatePlot = () => {
               }}
             />
             <ParallelCoordinateVega
-              parallelData={parallelData}
               progressParallel={parallel}
               foldArray={foldArray}
               selectedWorkflows={workflowsTable.selectedWorkflows}

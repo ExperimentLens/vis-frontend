@@ -12,9 +12,12 @@ import { useParams } from 'react-router-dom';
 import ListRoundedIcon from '@mui/icons-material/ListRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
+import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
 import type { RootState } from '../../store/store';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import { setMenuOptions } from '../../store/slices/progressPageSlice';
+import { toggleThemeMode } from '../../store/slices/uiSlice';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import { Link as RouterLink } from 'react-router-dom';
 
@@ -23,6 +26,7 @@ const LeftMenu = () => {
   const { menuOptions } = useAppSelector(
     (state: RootState) => state.progressPage
   );
+  const themeMode = useAppSelector((state: RootState) => state.ui.themeMode);
   const dispatch = useAppDispatch();
 
   const navItems = [
@@ -204,21 +208,42 @@ const LeftMenu = () => {
       <Box
         sx={{
           display: 'flex',
-          justifyContent: menuOptions.collapsed ? 'center' : 'flex-end',
-          alignItems: 'center',
+          flexDirection: 'column',
+          alignItems: menuOptions.collapsed ? 'center' : 'flex-end',
           padding: 1,
           marginBottom: 1,
+          gap: 1,
         }}
       >
+        <Tooltip title={themeMode === 'light' ? 'Dark mode' : 'Light mode'} placement="right" arrow>
+          <IconButton
+            onClick={() => dispatch(toggleThemeMode())}
+            sx={{
+              backgroundColor: theme => theme.palette.customGrey.light,
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              '&:hover': {
+                backgroundColor: theme => theme.palette.customGrey.main,
+              },
+              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            {themeMode === 'light'
+              ? <DarkModeRoundedIcon fontSize="small" />
+              : <LightModeRoundedIcon fontSize="small" />
+            }
+          </IconButton>
+        </Tooltip>
         <IconButton
           onClick={() => dispatch(setMenuOptions({ ...menuOptions, collapsed: !menuOptions.collapsed }))}
           sx={{
-            backgroundColor: theme => theme.palette.customGrey.light || '#f5f5f5',
+            backgroundColor: theme => theme.palette.customGrey.light,
             borderRadius: '50%',
             width: '36px',
             height: '36px',
             '&:hover': {
-              backgroundColor: theme => theme.palette.customGrey.main || '#e0e0e0',
+              backgroundColor: theme => theme.palette.customGrey.main,
             },
             boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
           }}

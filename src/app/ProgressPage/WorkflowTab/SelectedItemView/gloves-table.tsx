@@ -50,7 +50,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     position: 'sticky',
     bottom: 0,
     zIndex: 2,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'background.paper',
   },
   '& .MuiTablePagination-root': {
     overflow: 'visible',
@@ -138,8 +138,8 @@ const GlovesTable: React.FC<DataTableProps> = ({
         return (
           <Box display="flex" alignItems="center" justifyContent="center">
             <Typography variant="body2">{value}</Typography>
-            {isPositive && <ArrowDropUp style={{ color: 'green' }} />}
-            {isNegative && <ArrowDropDown style={{ color: 'red' }} />}
+            {isPositive && <ArrowDropUp sx={{ color: 'success.main' }} />}
+            {isNegative && <ArrowDropDown sx={{ color: 'error.main' }} />}
           </Box>
         );
       },

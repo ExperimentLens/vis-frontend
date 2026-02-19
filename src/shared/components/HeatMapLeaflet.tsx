@@ -3,18 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
-import { createTheme, useMediaQuery } from '@mui/material';
-
-const theme = createTheme({
-  palette: {
-    primary: { main: '#1976d2' },
-    secondary: { main: '#dc004e' },
-  },
-  typography: {
-    fontFamily: 'Arial',
-    h6: { fontWeight: 600 },
-  },
-});
+import { useTheme, useMediaQuery } from '@mui/material';
 
 export type HeatPointLL = { lat: number; lon: number; value: number };
 
@@ -132,6 +121,7 @@ const HeatMapLeaflet: React.FC<HeatMapLeafletProps> = ({
   syncedView,
   onViewChange,
 }) => {
+  const theme = useTheme();
   const isXlDown = useMediaQuery(theme.breakpoints.down('xl'));
   const height = heightProp ?? (isXlDown ? 400 : 650);
   const containerRef = useRef<HTMLDivElement | null>(null);

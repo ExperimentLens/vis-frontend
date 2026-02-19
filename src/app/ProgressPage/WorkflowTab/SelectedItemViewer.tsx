@@ -1,4 +1,4 @@
-import { Typography, Box } from '@mui/material';
+import { Typography, Box, useTheme } from '@mui/material';
 import { useAppSelector } from '../../../store/store';
 import DataExplorationComponent from '../../Tasks/DataExplorationTask/ComponentContainer/DataExplorationComponent';
 import { WorkflowMetricChart } from './SelectedItemView/workflow-metric-chart';
@@ -9,7 +9,6 @@ import WorkflowParameter from './SelectedItemView/workflow-parameter';
 import DatasetIcon from '@mui/icons-material/Dataset';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import theme from '../../../mui-theme';
 import ModelDetails from './SelectedItemView/workflow-model-details';
 import InstanceView from './SelectedItemView/workflow-instance-view';
 import HyperparameterImpact from './SelectedItemView/workflow-hyperparameter-impact';
@@ -30,6 +29,7 @@ const SelectedItemViewer = () => {
         selectedTask: null,
       },
   );
+  const theme = useTheme();
 
   // Enhanced header component for consistency
   const Header = ({ title, icon }: { title: string; icon?: React.ReactNode }) => (

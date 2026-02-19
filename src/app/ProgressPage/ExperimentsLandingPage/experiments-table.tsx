@@ -10,6 +10,7 @@ import {
   Tooltip,
   Typography,
   Button,
+  useTheme,
 } from '@mui/material';
 import {
   DataGrid,
@@ -21,7 +22,6 @@ import LaunchIcon from '@mui/icons-material/Launch';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
 import type { IExperiment } from '../../../shared/models/experiment/experiment.model';
-import theme from '../../../mui-theme';
 
 import ExperimentsTableToolbar, {
   ExperimentsToolbarProvider,
@@ -85,17 +85,17 @@ const FilterHeader = () => (
       borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
       px: 2,
       py: 1.5,
-      background: 'linear-gradient(to right, #f1f5f9, #f8fafc)',
+      background: theme => theme.palette.customSurface.sectionHeader,
       borderTopLeftRadius: '10px',
       borderTopRightRadius: '10px',
       width: '100%',
       gap: 1.5,
     }}
   >
-    <Box sx={{ color: '#3566b5', display: 'flex', alignItems: 'center' }}>
+    <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
       <FilterListIcon fontSize="small" />
     </Box>
-    <Typography sx={{ fontWeight: 600, color: '#1e3a5f' }} variant="subtitle1">
+    <Typography sx={{ fontWeight: 600, color: 'text.primary' }} variant="subtitle1">
       Filters
     </Typography>
   </Box>
@@ -123,6 +123,8 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
     setStatusFilter('ALL');
   };
 
+  const theme = useTheme();
+  
   const statusOptions = useMemo(() => {
     const set = new Set<string>();
 

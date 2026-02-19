@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import InputIcon from '@mui/icons-material/Input';
 import OutputIcon from '@mui/icons-material/Output';
@@ -7,7 +7,6 @@ import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded';
 import DataObjectRoundedIcon from '@mui/icons-material/DataObjectRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded';
-import theme from '../../../../mui-theme';
 import { useMemo } from 'react';
 import { useAppDispatch } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
@@ -21,6 +20,7 @@ type Props = {
 
 export default function DatasetsSection({ taskId, datasets, experimentId, workflowId }: Props) {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
 
   const isSupportedDatasetFormat = (format?: string | null, name?: string | null) => {
     const normalizedFormat = (format ?? '').trim().toLowerCase()

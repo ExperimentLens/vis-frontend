@@ -24,7 +24,6 @@ import CloseIcon from '@mui/icons-material/Close';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { grey } from '@mui/material/colors';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import DownloadIcon from '@mui/icons-material/Download';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
@@ -55,10 +54,10 @@ const SectionHeader = ({
     sx={{
       display: 'flex',
       alignItems: 'center',
-      borderBottom: `1px solid ${grey[200]}`,
+      borderBottom: theme => `1px solid ${theme.palette.divider}`,
       px: 2,
       py: 1.5,
-      background: 'linear-gradient(to right, #f1f5f9, #f8fafc)',
+      background: theme => theme.palette.customSurface.sectionHeader,
       borderTopLeftRadius: '10px',
       borderTopRightRadius: '10px',
       margin: 0, // Ensure no margin
@@ -69,7 +68,7 @@ const SectionHeader = ({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      color: '#3566b5',
+      color: 'primary.main',
       mr: 1.5
     }}>
       {icon}
@@ -80,7 +79,7 @@ const SectionHeader = ({
         display: 'flex',
         alignItems: 'center',
         fontWeight: 600,
-        color: '#1e3a5f',
+        color: 'text.primary',
         letterSpacing: '0.3px',
       }}
     >
@@ -364,7 +363,7 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
                 textTransform: 'uppercase',
                 fontWeight: 600,
                 letterSpacing: '0.5px',
-                color: '#2a3f5f'
+                color: 'text.primary'
               }}
             >
               {title}
@@ -372,7 +371,7 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
           }
           // subheader="September 14, 2016"
           sx={{
-            background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background: theme => theme.palette.customSurface.cardHeader,
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             padding: '4px 16px',
             height: '40px',
@@ -382,7 +381,7 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
           }}
         />
         <CardContent sx={{
-          backgroundColor: '#ffffff',
+          bgcolor: 'customSurface.cardContent',
           py: 2,
           px: 3,
           '&:last-child': {
@@ -433,7 +432,7 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
             width: fullScreen ? '100%' : '90vw',
             height: fullScreen ? '100%' : '90vh',
             maxWidth: 'unset',
-            bgcolor: '#ffffff',
+            bgcolor: 'background.paper',
             overflow: 'hidden',
             boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
           }
@@ -443,14 +442,14 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+          background: theme => theme.palette.customSurface.cardHeader,
           borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
           px: 3,
           py: 1.5,
         }}>
           <Typography variant="h6" component="div" sx={{
             fontWeight: 600,
-            color: '#2a3f5f',
+            color: 'text.primary',
             letterSpacing: '0.3px',
           }}>
             {title}
@@ -544,7 +543,7 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
           px: 3,
           py: 2,
           borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-          background: '#f8f9fa',
+          background: theme => theme.palette.customSurface.footer,
         }}>
           <Button
             onClick={handleDownloadChart}

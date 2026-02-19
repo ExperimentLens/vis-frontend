@@ -236,7 +236,7 @@ const InstanceView = () => {
       position: 'sticky',
       bottom: 0,
       zIndex: 2,
-      backgroundColor: '#ffffff',
+      backgroundColor: 'background.paper',
     },
     '& .MuiTablePagination-root': {
       overflow: 'visible',

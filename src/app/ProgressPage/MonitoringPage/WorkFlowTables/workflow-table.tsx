@@ -16,10 +16,9 @@ import { setSelectedTab, setWorkflowsTable, toggleWorkflowSelection, setHoveredW
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Badge,  Button,  FormControl,  IconButton, Popover, styled, TextField, Tooltip } from '@mui/material';
+import { Badge,  Button,  FormControl,  IconButton, Popover, styled, TextField, Tooltip, useTheme } from '@mui/material';
 import FilterBar from '../../../../shared/components/filter-bar';
 import ProgressBar from '../../../../shared/components/prgress-bar';
-import theme from '../../../../mui-theme';
 import { debounce } from 'lodash';
 import type { CustomGridColDef } from '../../../../shared/types/table-types';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -51,7 +50,7 @@ const WorkflowActions = memo((props: {
   );
   const dispatch = useAppDispatch();
   const [anchorElCreateWorkflow, setAnchorElCreateWorkflow] = useState<null | HTMLElement>(null);
-
+  const theme = useTheme();
   const uniqueParameters = useMemo(() =>
     workflowsData.reduce(
       (acc: Record<string, Set<string>>, workflow) => {
@@ -180,6 +179,7 @@ const WorkflowActions = memo((props: {
       })
     );
   };
+  
 
   return (
     <span onClick={event => event.stopPropagation()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -483,7 +483,7 @@ const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
 
   const workflowId = row.workflowId;
   const isSelected = selectedWorkflows.includes(workflowId);
-  const color = workflowColors[workflowId] ?? theme.palette.grey[400];
+  const color = workflowColors[workflowId];
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1315,7 +1315,7 @@ export default function WorkflowTable() {
                   display: 'block',
                   width: '100%',
                   height: '2px',
-                  backgroundColor: theme.palette.primary.main,
+                  backgroundColor: theme => theme.palette.customPrimary.main,
                   position: 'absolute',
                   bottom: 0,
                   left: 0,
@@ -1332,14 +1332,14 @@ export default function WorkflowTable() {
                   display: 'block',
                   width: '100%',
                   height: '2px',
-                  backgroundColor: theme.palette.secondary.dark,
+                  backgroundColor: theme => theme.palette.secondary.dark,
                   position: 'absolute',
                   bottom: 0,
                   left: 0,
                 },
               },
               '& .workflow-hovered-row': {
-                outline: `2px solid ${theme.palette.primary.main}`,
+                outline: theme =>  `2px solid ${theme.palette.primary.main}`,
                 outlineOffset: -2,
               },
             }}

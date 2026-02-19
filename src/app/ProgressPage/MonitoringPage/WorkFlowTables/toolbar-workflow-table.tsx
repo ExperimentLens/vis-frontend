@@ -186,7 +186,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
         borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
         px: 2,
         py: 1.5,
-        background: 'linear-gradient(to right, #f1f5f9, #f8fafc)',
+        background: theme => theme.palette.customSurface.sectionHeader,
         borderTopLeftRadius: '10px',
         borderTopRightRadius: '10px',
         margin: 0,
@@ -197,7 +197,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#3566b5',
+        color: 'primary.main',
         mr: 1.5
       }}>
         {icon}
@@ -208,7 +208,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
           display: 'flex',
           alignItems: 'center',
           fontWeight: 600,
-          color: '#1e3a5f',
+          color: 'text.primary',
           letterSpacing: '0.3px',
         }}
       >
@@ -522,7 +522,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
                   display: 'flex',
                   justifyContent: 'center',
                   borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-                  background: '#f8f9fa'
+                  background: theme => theme.palette.customSurface.footer
                 }}>
                   <Button
                     onClick={() => dispatch(setSelectedSpaces({ spaces: [], table: visibleTable }))}
@@ -540,7 +540,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
                   display: 'flex',
                   justifyContent: 'center',
                   borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-                  background: '#f8f9fa'
+                  background: theme => theme.palette.customSurface.footer
                 }}>
                   <Button
                     onClick={() => dispatch(setSelectedSpaces({ spaces: [], table: visibleTable }))}
@@ -720,7 +720,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
                   display: 'flex',
                   justifyContent: 'center',
                   borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-                  background: '#f8f9fa'
+                  background: theme => theme.palette.customSurface.sectionHeader,
                 }}>
                   <Button
                     onClick={() => dispatch(setGroupBy([]))}

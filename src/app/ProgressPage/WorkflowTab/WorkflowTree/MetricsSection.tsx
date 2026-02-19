@@ -1,7 +1,6 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import theme from '../../../../mui-theme';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 
@@ -13,6 +12,7 @@ export default function MetricsSection({ taskId, metrics }: Props) {
   const { workflowSeriesMetrics } = useAppSelector(state => state.workflowPage.tab ?? { workflowSeriesMetrics: { data: [], loading: false, error: null } });
 
   const round2 = (v: number) => Math.round(v * 100) / 100;
+  const theme = useTheme();
 
   return (
     <>

@@ -1,7 +1,6 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
-import theme from '../../../../mui-theme';
 import { useAppDispatch } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 
@@ -10,6 +9,7 @@ type Props = { taskId: string; paramsForTask: Param[]; variantId?: string };
 
 export default function ParametersSection({ taskId, paramsForTask, variantId }: Props) {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
 
   return (
     <>

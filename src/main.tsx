@@ -1,11 +1,10 @@
-import { ThemeProvider } from '@mui/material/styles';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Provider } from 'react-redux';
 import App from './App';
 import { store } from './store/store';
+import ThemeWrapper from './ThemeWrapper';
 import './index.css';
-import theme from './mui-theme';
 
 const container = document.getElementById('root');
 
@@ -15,9 +14,9 @@ if (container) {
   root.render(
     <StrictMode>
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
+        <ThemeWrapper>
           <App />
-        </ThemeProvider>
+        </ThemeWrapper>
       </Provider>
     </StrictMode>,
   );

@@ -8,7 +8,6 @@ import {
   Checkbox,
   FormControlLabel,
   IconButton,
-  createTheme,
   useMediaQuery,
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -26,7 +25,7 @@ import {
 import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
-import { ThemeProvider } from '@emotion/react';
+import { useTheme } from '@mui/material/styles';
 
 import HeatMapLeaflet from '../../../../shared/components/HeatMapLeaflet';
 import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
@@ -38,17 +37,6 @@ import SearchableSelect from '../../../../shared/components/searchable-select';
 type HeatPoint = { x: number; y: number; time: string | number; value: number };
 
 const numeric = (v: unknown): number => (typeof v === 'number' ? v : Number(v));
-
-const theme = createTheme({
-  palette: {
-    primary: { main: '#1976d2' },
-    secondary: { main: '#dc004e' },
-  },
-  typography: {
-    fontFamily: 'Arial',
-    h6: { fontWeight: 600 },
-  },
-});
 
 const distinctTimes = (table?: ITableContents) => {
   if (!table?.time?.values) return [];
@@ -94,6 +82,7 @@ const AttributionHeatmaps: React.FC = () => {
   const dispatch = useAppDispatch();
   const { tab, isTabInitialized } = useAppSelector((s: RootState) => s.workflowPage);
   const { experimentId } = useParams();
+  const appTheme = useTheme();
 
   const plotSlice = tab?.workflowTasks.modelAnalysis?.segmentation;
   const selectedFeature = plotSlice?.selectedFeature ?? '';
@@ -356,7 +345,6 @@ const AttributionHeatmaps: React.FC = () => {
       />
 
       <FormControl fullWidth disabled={!timeOptions.length || !!plotSlice?.loading}>
-        <ThemeProvider theme={theme}>
           <Box display="flex" alignItems="center" gap={1}>
             <TrackChangesIcon fontSize="small" />
             <Typography gutterBottom>Radius</Typography>
@@ -370,7 +358,6 @@ const AttributionHeatmaps: React.FC = () => {
             max={50}
             disabled={!timeOptions.length || !!plotSlice?.loading}
           />
-        </ThemeProvider>
       </FormControl>
     </Box>
   );
@@ -489,34 +476,32 @@ const AttributionHeatmaps: React.FC = () => {
             {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
           </IconButton>
         </Box>
-        <ThemeProvider theme={theme}>
-          <Box sx={{ flex: 1 }}>
-            <Slider
-              min={0}
-              max={timeOptions.length - 1}
-              step={1}
-              value={timeIndex}
-              onChange={(_, newValue) => {
-                const idx = newValue as number;
+        <Box sx={{ flex: 1 }}>
+          <Slider
+            min={0}
+            max={timeOptions.length - 1}
+            step={1}
+            value={timeIndex}
+            onChange={(_, newValue) => {
+              const idx = newValue as number;
 
-                setIsPlaying(false);
-                setTimeIndex(idx);
-                const tVal = timeOptions[idx];
+              setIsPlaying(false);
+              setTimeIndex(idx);
+              const tVal = timeOptions[idx];
 
-                if (tVal !== null && tVal !== undefined) handleTimeChange(tVal);
-              }}
-              marks={
-                timeOptions.length <= 10
-                  ? timeOptions.map((_, idx) => ({
-                    value: idx,
-                  }))
-                  : undefined
-              }
-              valueLabelDisplay="off"
-              disabled={!!plotSlice?.loading || !timeOptions.length}
-            />
-          </Box>
-        </ThemeProvider>
+              if (tVal !== null && tVal !== undefined) handleTimeChange(tVal);
+            }}
+            marks={
+              timeOptions.length <= 10
+                ? timeOptions.map((_, idx) => ({
+                  value: idx,
+                }))
+                : undefined
+            }
+            valueLabelDisplay="off"
+            disabled={!!plotSlice?.loading || !timeOptions.length}
+          />
+        </Box>
       </Box>
     ) : null;
 
@@ -530,7 +515,7 @@ const AttributionHeatmaps: React.FC = () => {
             controlPanel={controlPanel}
             showDownloadButton
             showFullScreenButton
-            minHeight={useMediaQuery(theme.breakpoints.down('xl')) ? 400 : 650}
+            minHeight={useMediaQuery(appTheme.breakpoints.down('xl')) ? 400 : 650}
             noPadding
           >
             <Box display='flex' flexDirection='column' width='100%' height='100%'>

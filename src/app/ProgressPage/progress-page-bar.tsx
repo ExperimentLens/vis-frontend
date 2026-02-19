@@ -40,16 +40,13 @@ const ProgressPageBar = () => {
               fontWeight: '600',
               '& .MuiChip-label': {
                 fontSize: '1rem',
-              }
+              },
+              color: theme.palette.primary.main,
             }}
           />
           <Box sx={{
             display: 'inline-flex',
             alignItems: 'center',
-            backgroundColor: theme.palette.background.paper,
-            // borderRadius: '16px',
-            // px: 1,
-            // border: `1px solid ${theme.palette.divider}`
           }}>
             <Typography
               variant="body2"

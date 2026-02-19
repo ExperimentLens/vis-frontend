@@ -65,7 +65,7 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
             style: { maxHeight: menuMaxHeight, width: menuWidth },
             sx: {
               '& .MuiMenuItem-root:hover': {
-                backgroundColor: 'rgba(25, 118, 210, 0.12)',
+                backgroundColor: 'action.selected',
               },
             },
 

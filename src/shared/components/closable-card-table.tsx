@@ -116,7 +116,7 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
                 textTransform: 'uppercase',
                 fontWeight: 600,
                 letterSpacing: '0.5px',
-                color: '#2a3f5f',
+                color: 'text.primary',
               }}
             >
               {title}
@@ -131,7 +131,7 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
           </Box>
         }
         sx={{
-          background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+          background: theme => theme.palette.customSurface.cardHeader,
           borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
           padding: '8px 16px',
           minHeight: '48px',
@@ -141,17 +141,17 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
       />
       <CardContent
         sx={{
-          backgroundColor: '#ffffff',
+          bgcolor: 'customSurface.cardContent',
           p: noPadding ? 0 : 2,
           '&:last-child': {
             paddingBottom: noPadding ? 0 : 3,
           },
           borderRadius: '0 0 12px 12px',
-          flexGrow: 1, // Allow content to grow and fill space
-          display: 'flex', // Enable flexbox
-          flexDirection: 'column', // Stack children vertically
-          overflow: noPadding ? 'hidden' : 'auto', // Control overflow based on padding
-          height: '100%', // Ensure CardContent takes full height
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: noPadding ? 'hidden' : 'auto',
+          height: '100%',
         }}
       >
         {children}

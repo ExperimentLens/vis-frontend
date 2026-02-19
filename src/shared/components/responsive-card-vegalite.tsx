@@ -24,7 +24,6 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VegaLite } from 'react-vega';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { grey } from '@mui/material/colors';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import DownloadIcon from '@mui/icons-material/Download';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
@@ -67,10 +66,10 @@ const SectionHeader = ({
     sx={{
       display: 'flex',
       alignItems: 'center',
-      borderBottom: `1px solid ${grey[200]}`,
+      borderBottom: theme => `1px solid ${theme.palette.divider}`,
       px: 2,
       py: 1.5,
-      background: 'linear-gradient(to right, #f1f5f9, #f8fafc)',
+      background: theme => theme.palette.customSurface.sectionHeader,
       borderTopLeftRadius: '10px',
       borderTopRightRadius: '10px',
       margin: 0, // Ensure no margin
@@ -82,7 +81,7 @@ const SectionHeader = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#3566b5',
+        color: 'primary.main',
         mr: 1.5,
       }}
     >
@@ -94,7 +93,7 @@ const SectionHeader = ({
         display: 'flex',
         alignItems: 'center',
         fontWeight: 600,
-        color: '#1e3a5f',
+        color: 'text.primary',
         letterSpacing: '0.3px',
       }}
     >
@@ -410,6 +409,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       btn.style.cursor = 'pointer';
       btn.style.border = 'none';
       btn.style.background = 'transparent';
+      btn.style.color = 'black';
       btn.style.fontSize = '18px';
       btn.style.lineHeight = '1';
       btn.style.padding = '2px 6px';
@@ -426,6 +426,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       body.style.overflowWrap = 'normal';
       body.style.overflowX = 'auto';
       body.style.overflowY = 'auto';
+      body.style.color = 'black';
       body.innerHTML = src.innerHTML;
 
       wrap.appendChild(head);
@@ -698,7 +699,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background: theme => theme.palette.customSurface.cardHeader,
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             padding: '4px 16px',
             height: '40px',
@@ -725,7 +726,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
                 textTransform: 'uppercase',
                 fontWeight: 600,
                 letterSpacing: '0.5px',
-                color: '#2a3f5f',
+                color: 'text.primary',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -894,7 +895,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
         </Box>
         <CardContent
           sx={{
-            backgroundColor: '#ffffff',
+            bgcolor: 'customSurface.cardContent',
             py: 2,
             px: 3,
             '&:last-child': {
@@ -955,7 +956,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             width: fullScreen ? '100%' : '90vw',
             height: fullScreen ? '100%' : '90vh',
             maxWidth: 'unset',
-            bgcolor: '#ffffff',
+            bgcolor: 'background.paper',
             overflow: 'hidden',
             boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
           },
@@ -966,7 +967,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background: theme => theme.palette.customSurface.cardHeader,
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             px: 3,
             py: 1.5,
@@ -978,7 +979,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
               component="div"
               sx={{
                 fontWeight: 600,
-                color: '#2a3f5f',
+                color: 'text.primary',
                 letterSpacing: '0.3px',
               }}
             >
@@ -1161,7 +1162,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             px: 3,
             py: 2,
             borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-            background: '#f8f9fa',
+            background: theme => theme.palette.customSurface.footer,
           }}
         >
           <Button

@@ -63,7 +63,7 @@ export const SectionHeader = ({
       borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
       px: 2,
       py: 1.5,
-      background: 'linear-gradient(to right, #f1f5f9, #f8fafc)',
+      background: theme => theme.palette.customSurface.sectionHeader,
       borderTopLeftRadius: '10px',
       borderTopRightRadius: '10px',
       margin: 0,
@@ -75,7 +75,7 @@ export const SectionHeader = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#3566b5',
+        color: 'primary.main',
         mr: 1.5,
       }}
     >
@@ -87,7 +87,7 @@ export const SectionHeader = ({
         display: 'flex',
         alignItems: 'center',
         fontWeight: 600,
-        color: '#1e3a5f',
+        color: 'text.primary',
         letterSpacing: '0.3px',
       }}
     >
@@ -222,7 +222,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background: theme => theme.palette.customSurface.cardHeader,
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             padding: '4px 16px',
             height: shouldShowControlsInHeader ? 'auto' : '40px',
@@ -250,7 +250,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                 fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                color: '#2a3f5f',
+                color: 'text.primary',
                 maxWidth: '100%',
                 flexShrink: 1,
               }}
@@ -404,7 +404,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
         </Box>
         <CardContent
           sx={{
-            backgroundColor: '#ffffff',
+            bgcolor: 'customSurface.cardContent',
             p: noPadding ? 0 : 2,
             '&:last-child': {
               paddingBottom: noPadding ? 0 : 3,
@@ -435,7 +435,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
               width: fullScreen ? '100%' : '90vw',
               height: fullScreen ? '100%' : '90vh',
               maxWidth: 'unset',
-              bgcolor: '#ffffff',
+              bgcolor: 'background.paper',
               overflow: 'hidden',
               boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
             },
@@ -446,7 +446,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+              background: theme => theme.palette.customSurface.cardHeader,
               borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
               px: 3,
               py: 1.5,
@@ -458,7 +458,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                 component="div"
                 sx={{
                   fontWeight: 600,
-                  color: '#2a3f5f',
+                  color: 'text.primary',
                   letterSpacing: '0.3px',
                 }}
               >
@@ -598,7 +598,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
             sx={{
               p: 2,
               borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-              background: '#f8f9fa',
+              background: theme => theme.palette.customSurface.footer,
             }}
           >
             {onDownload && showDownloadButton && (

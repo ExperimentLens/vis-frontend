@@ -2,7 +2,6 @@ import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormCon
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
-import theme from '../../../../mui-theme';
 import WindowRoundedIcon from '@mui/icons-material/WindowRounded';
 import RoundedCornerRoundedIcon from '@mui/icons-material/RoundedCornerRounded';
 import BlurLinearIcon from '@mui/icons-material/BlurLinear';
@@ -210,7 +209,7 @@ const ComparativeAnalysisControls = ()=> {
                   background:
                       selectedModelComparisonChart === option.label
                         ? undefined
-                        : theme.palette.customGrey.light,
+                        : theme => theme.palette.customGrey.light,
                   '& .MuiChip-icon': {
                     fontSize: 25,
                     marginLeft: 0,

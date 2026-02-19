@@ -17,18 +17,6 @@ import type { ITask } from '../../../shared/models/experiment/task.model';
 import { Tooltip } from '@mui/material';
 import type { IParam } from '../../../shared/models/experiment/param.model';
 
-const startEndNodeStyle = {
-  borderRadius: '100%',
-  backgroundColor: '#fff',
-  width: 50,
-  height: 50,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  userSelect: 'none' as const,
-  cursor: 'default',
-};
-
 interface IFlowGraphProps {
   workflowSvg: { tasks: ITask[] | undefined; start: number | undefined; end: number | undefined } | null
   params: IParam[] | undefined | null
@@ -43,23 +31,35 @@ function FlowGraph(props: IFlowGraphProps) {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
 
+  const startEndNodeStyle = {
+    borderRadius: '100%',
+    backgroundColor: theme.palette.background.paper,
+    width: 50,
+    height: 50,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    userSelect: 'none' as const,
+    cursor: 'default',
+  };
+
   const clickableNodeStyle = {
     cursor: 'default',
     border: `1px solid ${theme.palette.primary.main}`,
-    backgroundColor: 'white',
+    backgroundColor: theme.palette.background.paper,
   };
 
   const disabledNodeStyle = {
     cursor: 'default',
     border: `1px solid ${theme.palette.customGrey.dark}`,
     color: `${theme.palette.customGrey.dark}`,
-    backgroundColor: 'white',
+    backgroundColor: theme.palette.background.paper,
   };
 
   const interactiveNodeStyle = {
     cursor: 'default',
     border: '1px solid orange',
-    backgroundColor: 'white',
+    backgroundColor: theme.palette.background.paper,
   };
 
   const getNodeSelectState = (_task: ITask) => {
@@ -251,7 +251,7 @@ function FlowGraph(props: IFlowGraphProps) {
       style={{
         height: '15vh',
         width: '100%',
-        border: '1px solid #ddd',
+        border: `1px solid ${theme.palette.divider}`,
         borderRadius: '8px',
       }}
       ref={flowWrapper}

@@ -1,6 +1,5 @@
 import { Paper, Box, Typography, Tooltip, IconButton } from '@mui/material';
 import InfoIcon from '@mui/icons-material/Info';
-import { grey } from '@mui/material/colors';
 
 const WorkflowCard: React.FC<{
   title: string
@@ -31,7 +30,7 @@ const WorkflowCard: React.FC<{
           py: 0.5,
           display: 'flex',
           alignItems: 'center',
-          borderBottom: `1px solid ${grey[400]}`,
+          borderBottom: theme => `1px solid ${theme.palette.divider}`,
         }}
       >
         <Typography fontSize={'1rem'} fontWeight={600}>

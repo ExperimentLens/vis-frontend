@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
 import BarChartIcon from '@mui/icons-material/BarChart';
@@ -9,7 +9,6 @@ import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded';
 import DataObjectRoundedIcon from '@mui/icons-material/DataObjectRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded';
-import theme from '../../../../mui-theme';
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -22,6 +21,7 @@ export default function NullTaskFallback() {
   const { tab } = useAppSelector((s: RootState) => s.workflowPage);
   const { workflowSeriesMetrics } = useAppSelector(state => state.workflowPage.tab ?? { workflowSeriesMetrics: { data: [], loading: false, error: null } });
   const workflowId = tab?.workflowId;
+  const theme = useTheme();
 
   const { fallbackParams, fallbackMetrics, fallbackInputGrouped, fallbackOutputGrouped } = useMemo(() => {
     const nullTask = (v: { task?: string | null }) => v.task === null || v.task === undefined;

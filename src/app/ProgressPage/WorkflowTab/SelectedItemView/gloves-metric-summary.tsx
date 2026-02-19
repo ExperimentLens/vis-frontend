@@ -55,7 +55,7 @@ const GlovesMetricSummary: React.FC = () => {
               flex: 1,
               padding: 1,
               borderRadius: 2,
-              background: 'linear-gradient(135deg, #f3f4f6, #e0e7ff)',
+              background: theme => theme.palette.customSurface.statCard,
               boxShadow: 1,
             }}
           >
@@ -73,7 +73,7 @@ const GlovesMetricSummary: React.FC = () => {
               flex: 1,
               padding: 1,
               borderRadius: 2,
-              background: 'linear-gradient(135deg, #d7f5d1, #a2d57a)',
+              background: theme => theme.palette.customSurface.statCardSuccess,
               boxShadow: 1,
             }}
           >
