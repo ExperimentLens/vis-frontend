@@ -70,6 +70,41 @@ const initialState: IProgressPage = {
   },
 };
 
+function workflowsDiffer(existing: IRun[], incoming: IRun[]): boolean {
+  if (existing.length !== incoming.length) return true;
+
+  for (let i = 0; i < incoming.length; i++) {
+    const ex = existing[i];
+    const inc = incoming[i];
+
+    if (ex.id !== inc.id || ex.status !== inc.status || ex.space !== inc.space || ex.name !== inc.name) return true;
+
+    if ((ex.tasks?.length ?? 0) !== (inc.tasks?.length ?? 0)) return true;
+    if (ex.tasks && inc.tasks) {
+      const exDone = ex.tasks.filter(t => t.endTime).length;
+      const incDone = inc.tasks.filter(t => t.endTime).length;
+
+      if (exDone !== incDone) return true;
+    }
+
+    if ((ex.metrics?.length ?? 0) !== (inc.metrics?.length ?? 0)) return true;
+    if (ex.metrics && inc.metrics) {
+      for (let j = 0; j < inc.metrics.length; j++) {
+        if (ex.metrics[j]?.name !== inc.metrics[j]?.name || ex.metrics[j]?.value !== inc.metrics[j]?.value) return true;
+      }
+    }
+
+    if ((ex.params?.length ?? 0) !== (inc.params?.length ?? 0)) return true;
+    if (ex.params && inc.params) {
+      for (let j = 0; j < inc.params.length; j++) {
+        if (ex.params[j]?.name !== inc.params[j]?.name || ex.params[j]?.value !== inc.params[j]?.value) return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 export const progressPageSlice = createSlice({
   name: 'ProgressPage',
   initialState,
@@ -115,7 +150,7 @@ export const progressPageSlice = createSlice({
         const incoming = action.payload;
         const existing = state.workflows.data;
 
-        const isDifferent = JSON.stringify(existing) !== JSON.stringify(incoming);
+        const isDifferent = workflowsDiffer(existing, incoming);
 
         if (isDifferent) {
           state.workflows.data = incoming;

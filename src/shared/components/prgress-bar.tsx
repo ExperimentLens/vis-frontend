@@ -1,14 +1,15 @@
+import { memo } from 'react';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useAppSelector } from '../../store/store';
 import { Box, Typography } from '@mui/material';
 import type { RootState } from '../../store/store';
 
-export default function ProgressBar({ workflowStatus, workflowId, hasPercentage } : {workflowStatus : string, workflowId : string, hasPercentage?: boolean}) {
-  const { workflows } = useAppSelector(
-    (state: RootState) => state.progressPage,
+const ProgressBar = memo(({ workflowStatus, workflowId, hasPercentage } : {workflowStatus : string, workflowId : string, hasPercentage?: boolean}) => {
+  const workflow = useAppSelector(
+    (state: RootState) => state.progressPage.workflows.data.find(w => w.id === workflowId)
   );
+
   let progressValue;
-  const workflow = workflows.data.find(workflow => workflow.id === workflowId);
 
   if (workflowStatus === 'COMPLETED' || workflowStatus === 'FAILED' || workflowStatus === 'KILLED') {
     progressValue = 100;
@@ -34,4 +35,6 @@ export default function ProgressBar({ workflowStatus, workflowId, hasPercentage 
       </Box>
     </Box>
   );
-}
+});
+
+export default ProgressBar;
