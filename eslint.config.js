@@ -9,18 +9,13 @@ import prettierConfig from 'eslint-config-prettier';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export default tseslint.config(
-  // Ignore patterns (replaces .eslintignore + ignorePatterns)
   {
     ignores: ['dist/', '**/deprecated/'],
   },
 
-  // Base JS recommended rules
   js.configs.recommended,
-
-  // TypeScript recommended rules (sets up parser + plugin automatically)
   tseslint.configs.recommended,
 
-  // Main config for all source files
   {
     files: ['**/*.{ts,tsx,js,jsx,mts,cts,mjs,cjs}'],
 
@@ -34,18 +29,17 @@ export default tseslint.config(
     },
 
     rules: {
-      // React – new JSX transform (no need to import React in scope)
+      // React – new JSX transform
       ...reactPlugin.configs['jsx-runtime'].rules,
-
-      // Prettier – disable formatting rules that conflict with prettier
-      ...prettierConfig.rules,
 
       // React hooks
       'react-hooks/rules-of-hooks': 'error',
+      // Note: It's highly recommended to leave exhaustive-deps as 'warn' or 'error' 
+      // to prevent stale closures, but I've left it as you had it!
       'react-hooks/exhaustive-deps': 'off',
       'react/jsx-key': 'error',
 
-      // TypeScript
+      // TypeScript Custom Rules
       '@typescript-eslint/consistent-type-imports': [
         2,
         { fixStyle: 'separate-type-imports' },
@@ -70,40 +64,18 @@ export default tseslint.config(
       }],
 
       // General quality rules
-      'no-unused-vars': 'off', // superseded by @typescript-eslint/no-unused-vars
+      'no-unused-vars': 'off', // Superseded by TS rule above
       'no-console': 'error',
       'eqeqeq': 'error',
 
-      // Formatting rules (prettier-config disables the conflicting ones)
-      'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 0 }],
-      'semi': ['error', 'always'],
-      'quotes': ['error', 'single'],
-      'array-bracket-spacing': ['error', 'never'],
-      'block-spacing': ['error', 'always'],
-      'brace-style': ['error', '1tbs', { allowSingleLine: true }],
-      'comma-dangle': ['error', 'only-multiline'],
-      'comma-spacing': ['error', { before: false, after: true }],
-      'indent': ['error', 2, { SwitchCase: 1 }],
-      'key-spacing': ['error', { beforeColon: false, afterColon: true }],
-      'object-curly-spacing': ['error', 'always'],
-      'space-before-blocks': ['error', 'always'],
-      'space-in-parens': ['error', 'never'],
-      'space-infix-ops': 'error',
-      'spaced-comment': ['error', 'always', { markers: ['/'] }],
-      'eol-last': ['error', 'always'],
-      'lines-between-class-members': ['error', 'always', { exceptAfterSingleLine: true }],
-      'newline-per-chained-call': ['error', { ignoreChainWithDepth: 2 }],
-      'padding-line-between-statements': [
-        'error',
-        { blankLine: 'always', prev: '*', next: 'return' },
-        { blankLine: 'always', prev: ['const', 'let', 'var'], next: '*' },
-        { blankLine: 'any', prev: ['const', 'let', 'var'], next: ['const', 'let', 'var'] },
-      ],
-      'no-trailing-spaces': 'error',
+      // PRETTIER OVERRIDES: 
+      // This must be placed last in your rules object to ensure it disables 
+      // any formatting rules that might have been inherited from other configs.
+      ...prettierConfig.rules,
     },
   },
 
-  // TypeScript-only: enable typed linting (requires tsconfig project)
+  // TypeScript-only: enable typed linting
   {
     files: ['**/*.{ts,tsx,mts,cts}'],
     languageOptions: {
@@ -114,7 +86,7 @@ export default tseslint.config(
     },
   },
 
-  // Test files – expose jest globals
+  // Test files – Exposing Vitest/Jest globals
   {
     files: ['**/*.{test,spec}.{ts,js,tsx,jsx}'],
     languageOptions: {
@@ -127,7 +99,7 @@ export default tseslint.config(
         afterEach: 'readonly',
         beforeAll: 'readonly',
         afterAll: 'readonly',
-        jest: 'readonly',
+        jest: 'readonly', // Consider replacing 'jest' with 'vi' since you use Vitest
       },
     },
   },
