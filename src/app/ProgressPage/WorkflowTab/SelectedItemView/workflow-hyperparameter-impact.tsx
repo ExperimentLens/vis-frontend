@@ -43,13 +43,13 @@ const HyperparameterImpact = () => {
         container
         spacing={2}
       >
-        <Grid item xs={isMosaic ? 6 : 12}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }}>
           <PdpPlot explanation_type="hyperparameterExplanation" />
         </Grid>
-        <Grid item xs={isMosaic ? 6 : 12}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }}>
           <AlePlot explanation_type="hyperparameterExplanation" />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Contourplot explanation_type="hyperparameterExplanation" />
         </Grid>
       </Grid>

@@ -6,7 +6,7 @@ import { createTheme, responsiveFontSizes } from '@mui/material/styles';
 declare module '@mui/material/styles' {
   interface Palette {
     customGradient: {
-      main: string
+      gradient: string
     }
     customGrey: {
       main: string
@@ -20,7 +20,7 @@ declare module '@mui/material/styles' {
   }
   interface PaletteOptions {
     customGradient?: {
-      main: string
+      gradient: string
     }
     customGrey?: {
       main: string
@@ -44,7 +44,7 @@ let theme = createTheme({
       main: '#6BBC8C',
     },
     customGradient: {
-      main: 'linear-gradient(45deg, #6BBC8C 30%, #3766AF 90%)',
+      gradient: 'linear-gradient(45deg, #6BBC8C 30%, #3766AF 90%)',
     },
     customGrey: {
       main: grey[100],

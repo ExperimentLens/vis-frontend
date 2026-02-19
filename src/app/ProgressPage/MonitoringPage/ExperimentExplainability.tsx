@@ -33,16 +33,16 @@ const ExperimentExplainability = () => {
         container
         spacing={2}
       >
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <FeatureImportancePlot explanation_type="experimentExplanation" />
         </Grid>
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <PdpPlot explanation_type="experimentExplanation" />
         </Grid>
-        <Grid item xs={6}>
+        <Grid size={{ xs: 6 }}>
           <AlePlot explanation_type="experimentExplanation" />
         </Grid>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <Contourplot explanation_type="experimentExplanation" />
         </Grid>
       </Grid>

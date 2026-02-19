@@ -239,10 +239,9 @@ const ComparisonMetricsCharts: React.FC = () => {
     if (isMetricPending(metricName)) {
       return (
         <Grid
-          item
-          xs={isMosaic ? 6 : 12}
+          size={{ xs: isMosaic ? 6 : 12 }}
           key={metricName}
-          sx={{ textAlign: 'left', width: '100%' }}
+          sx={{ textAlign: 'left' }}
         >
           <ResponsiveCardTable title={metricName} minHeight={300} showSettings={false}>
             <Loader />
@@ -412,10 +411,9 @@ const ComparisonMetricsCharts: React.FC = () => {
 
     return (
       <Grid
-        item
-        xs={isMosaic ? 6 : 12}
+        size={{ xs: isMosaic ? 6 : 12 }}
         key={metricName}
-        sx={{ textAlign: 'left', width: '100%' }}
+        sx={{ textAlign: 'left' }}
       >
         <ResponsiveCardVegaLite
           spec={chartSpec}

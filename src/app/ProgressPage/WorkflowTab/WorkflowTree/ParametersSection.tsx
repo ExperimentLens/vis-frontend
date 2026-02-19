@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
 import theme from '../../../../mui-theme';
 import { useAppDispatch } from '../../../../store/store';
@@ -13,7 +13,7 @@ export default function ParametersSection({ taskId, paramsForTask, variantId }: 
 
   return (
     <>
-      <TreeItem2
+      <TreeItem
         itemId={`parameters-header-${taskId}`}
         slotProps={{ content: { style: { pointerEvents: 'none', backgroundColor: 'transparent' } } }}
         label={
@@ -26,7 +26,7 @@ export default function ParametersSection({ taskId, paramsForTask, variantId }: 
         }
       />
       {paramsForTask.map((param, index) => (
-        <TreeItem2
+        <TreeItem
           key={`${param.name}-${index}`}
           itemId={`param-${taskId}-${index}`}
           label={

@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import InputIcon from '@mui/icons-material/Input';
@@ -85,7 +85,7 @@ export default function NullTaskFallback() {
   return (
     <>
       {/* Parameters */}
-      <TreeItem2
+      <TreeItem
         itemId={'parameters-header'}
         slotProps={{ content: { style: { pointerEvents: 'none', backgroundColor: 'transparent' } } }}
         label={
@@ -102,7 +102,7 @@ export default function NullTaskFallback() {
         }
       />
       {fallbackParams.map((param, index) => (
-        <TreeItem2
+        <TreeItem
           key={`null-param-${index}`}
           itemId={`null-param-${index}`}
           label={
@@ -125,7 +125,7 @@ export default function NullTaskFallback() {
       ))}
 
       {/* Metrics */}
-      <TreeItem2
+      <TreeItem
         itemId={'metrics-header'}
         slotProps={{ content: { style: { pointerEvents: 'none', backgroundColor: 'transparent' } } }}
         label={
@@ -145,7 +145,7 @@ export default function NullTaskFallback() {
         const isSeiresMetric = workflowSeriesMetrics.data.some(m => m.name === metric.name && m.seriesMetric.length > 1);
 
         return (
-          <TreeItem2
+          <TreeItem
             key={`null-metric-${index}`}
             itemId={`null-metric-${index}`}
             label={
@@ -177,7 +177,7 @@ export default function NullTaskFallback() {
       {/* Inputs */}
       {(fallbackInputGrouped.noFolder.length > 0 ||
         Object.keys(fallbackInputGrouped.folders).length > 0) && (
-        <TreeItem2
+        <TreeItem
           itemId="task-null-inputs"
           slotProps={{ content: { style: { padding: 0 }, onClick: (e) => e.stopPropagation() } }}
           label={
@@ -190,7 +190,7 @@ export default function NullTaskFallback() {
           }
         >
           {fallbackInputGrouped.noFolder.map((ds, index) => (
-            <TreeItem2
+            <TreeItem
               key={`null-input-${index}`}
               itemId={`null-input-${index}`}
               disabled={!ds.source}
@@ -225,7 +225,7 @@ export default function NullTaskFallback() {
             />
           ))}
           {Object.entries(fallbackInputGrouped.folders).map(([folder, dsList], folderIndex) => (
-            <TreeItem2
+            <TreeItem
               key={`input-folder-${folderIndex}`}
               itemId={`input-folder-${folderIndex}`}
               slotProps={{ content: { style: { padding: 0 }, onClick: (e) => e.stopPropagation() } }}
@@ -237,7 +237,7 @@ export default function NullTaskFallback() {
               }
             >
               {dsList.map((ds, index) => (
-                <TreeItem2
+                <TreeItem
                   key={`null-input-${folder}-${index}`}
                   itemId={`null-input-${folder}-${index}`}
                   disabled={!ds.source}
@@ -271,15 +271,15 @@ export default function NullTaskFallback() {
                   }
                 />
               ))}
-            </TreeItem2>
+            </TreeItem>
           ))}
-        </TreeItem2>
+        </TreeItem>
       )}
 
       {/* Outputs */}
       {(fallbackOutputGrouped.noFolder.length > 0 ||
         Object.keys(fallbackOutputGrouped.folders).length > 0) && (
-        <TreeItem2
+        <TreeItem
           itemId="task-null-outputs"
           slotProps={{ content: { style: { padding: 0 }, onClick: (e) => e.stopPropagation() } }}
           label={
@@ -292,7 +292,7 @@ export default function NullTaskFallback() {
           }
         >
           {fallbackOutputGrouped.noFolder.map((ds, index) => (
-            <TreeItem2
+            <TreeItem
               key={`null-output-${index}`}
               itemId={`null-output-${index}`}
               disabled={!ds.source}
@@ -327,7 +327,7 @@ export default function NullTaskFallback() {
             />
           ))}
           {Object.entries(fallbackOutputGrouped.folders).map(([folder, dsList], folderIndex) => (
-            <TreeItem2
+            <TreeItem
               key={`output-folder-${folderIndex}`}
               itemId={`output-folder-${folderIndex}`}
               slotProps={{ content: { style: { padding: 0 }, onClick: (e) => e.stopPropagation() } }}
@@ -339,7 +339,7 @@ export default function NullTaskFallback() {
               }
             >
               {dsList.map((ds, index) => (
-                <TreeItem2
+                <TreeItem
                   key={`null-output-${folder}-${index}`}
                   itemId={`null-output-${folder}-${index}`}
                   disabled={!ds.source}
@@ -373,9 +373,9 @@ export default function NullTaskFallback() {
                   }
                 />
               ))}
-            </TreeItem2>
+            </TreeItem>
           ))}
-        </TreeItem2>
+        </TreeItem>
       )}
     </>
   );

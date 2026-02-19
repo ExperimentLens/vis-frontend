@@ -1,6 +1,6 @@
 import { Box, Typography } from '@mui/material';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
@@ -20,7 +20,7 @@ export default function ModelInsightsAccordion() {
 
   return (
     <SimpleTreeView defaultExpandedItems={['model']} selectedItems={tab?.dataTaskTable?.selectedId ?? null}>
-      <TreeItem2
+      <TreeItem
         aria-expanded
         itemId="model"
         slotProps={{ content: { style: { paddingTop: 0, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 } } }}
@@ -59,7 +59,7 @@ export default function ModelInsightsAccordion() {
           const disabled = id !== 'feature-effects' && hasModelpt;
 
           return (
-            <TreeItem2
+            <TreeItem
               key={id}
               itemId={id}
               aria-disabled={disabled}
@@ -88,7 +88,7 @@ export default function ModelInsightsAccordion() {
             />
           );
         })}
-      </TreeItem2>
+      </TreeItem>
     </SimpleTreeView>
   );
 }

@@ -135,7 +135,7 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
     // Handle loading and error states
     if (!matrixState || matrixState.loading) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <Loader />
           </ResponsiveCardTable>
@@ -145,7 +145,7 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
 
     if (matrixState.error) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <InfoMessage
               message={matrixState.error}
@@ -164,7 +164,7 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
 
     if (!dataRaw || !dataRaw.labels || !dataRaw.matrix) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <InfoMessage
               message={'No confusion matrix data available'}
@@ -215,10 +215,9 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
 
     return (
       <Grid
-        item
-        xs={isMosaic ? 6 : 12}
+        size={{ xs: isMosaic ? 6 : 12 }}
         key={runId}
-        sx={{ textAlign: 'left', width: '100%' }}
+        sx={{ textAlign: 'left' }}
       >
         <ResponsiveCardVegaLite
           spec={confusionMatrixSpec}

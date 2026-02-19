@@ -162,7 +162,7 @@ const ComparisonModelInstance = ({
     // Handle loading and error states
     if (!instanceState || instanceState.loading) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <Loader />
           </ResponsiveCardTable>
@@ -172,7 +172,7 @@ const ComparisonModelInstance = ({
 
     if (instanceState.error) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <InfoMessage
               message={instanceState.error}
@@ -193,7 +193,7 @@ const ComparisonModelInstance = ({
 
     if (!dataRaw) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <InfoMessage
               message={'No instance data available'}
@@ -230,7 +230,7 @@ const ComparisonModelInstance = ({
     if (useUmap) {
       if (!umapState || umapState.loading) {
         return (
-          <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+          <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
             <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
               <Loader />
             </ResponsiveCardTable>
@@ -240,7 +240,7 @@ const ComparisonModelInstance = ({
 
       if (umapState.error) {
         return (
-          <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+          <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
             <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
               <InfoMessage
                 message={umapState.error}
@@ -335,7 +335,7 @@ const ComparisonModelInstance = ({
       };
 
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId} sx={{ textAlign: 'left', width: '100%' }}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId} sx={{ textAlign: 'left' }}>
           <ResponsiveCardVegaLite
             spec={umapSpec}
             actions={false}
@@ -463,10 +463,9 @@ const ComparisonModelInstance = ({
 
     return (
       <Grid
-        item
-        xs={isMosaic ? 6 : 12}
+        size={{ xs: isMosaic ? 6 : 12 }}
         key={runId}
-        sx={{ textAlign: 'left', width: '100%' }}
+        sx={{ textAlign: 'left' }}
       >
         <ResponsiveCardVegaLite
           spec={confusionMatrixSpec}

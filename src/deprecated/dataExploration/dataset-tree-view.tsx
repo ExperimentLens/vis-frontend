@@ -2,7 +2,7 @@ import { Box, Typography } from "@mui/material"
 import { useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
 import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView"
-import { TreeItem2 } from "@mui/x-tree-view/TreeItem2"
+import { TreeItem } from "@mui/x-tree-view/TreeItem"
 import type { RootState } from "../../store/store";
 import { useAppDispatch, useAppSelector } from "../../store/store"
 import { setDataTable } from "../../store/slices/workflowPageSlice"
@@ -85,9 +85,9 @@ export default function DatasetTreeView() {
   return (
     <Box sx={{ p: 2 }}>
       <SimpleTreeView defaultExpandedItems={["root"]}>
-        <TreeItem2 itemId="root" label={<Typography sx={{ fontWeight: 500 }}>Tasks</Typography>}>
+        <TreeItem itemId="root" label={<Typography sx={{ fontWeight: 500 }}>Tasks</Typography>}>
           {Object.entries(groupedByTask).map(([taskName, datasets]) => (
-            <TreeItem2
+            <TreeItem
               key={taskName}
               itemId={`task-${taskName}`}
               label={<Typography sx={{ fontWeight: 500 }}>{taskName}</Typography>}
@@ -95,7 +95,7 @@ export default function DatasetTreeView() {
               {datasets.map((ds: DatasetRow) => {
 
                 return (
-                  <TreeItem2
+                  <TreeItem
                     key={ds.id}
                     itemId={`ds-${ds.id}`}
                     label={
@@ -118,9 +118,9 @@ export default function DatasetTreeView() {
                   />
                 )
               })}
-            </TreeItem2>
+            </TreeItem>
           ))}
-        </TreeItem2>
+        </TreeItem>
       </SimpleTreeView>
     </Box>
   )

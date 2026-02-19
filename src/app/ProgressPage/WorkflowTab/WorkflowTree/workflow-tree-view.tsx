@@ -1,7 +1,7 @@
 import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded';
 import DataObjectRoundedIcon from '@mui/icons-material/DataObjectRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
@@ -261,7 +261,7 @@ export default function WorkflowTreeView() {
               );
 
               return (
-                <TreeItem2
+                <TreeItem
                   aria-expanded={true}
                   key={id}
                   itemId={`task-${id}`}
@@ -355,7 +355,7 @@ export default function WorkflowTreeView() {
                   }
                 >
                   {/* Parameters */}
-                  <TreeItem2
+                  <TreeItem
                     itemId={`parameters-header-${id}`} // ✅ Use a dynamic, unique ID
                     slotProps={{
                       content: {
@@ -399,7 +399,7 @@ export default function WorkflowTreeView() {
                     }
                   />
                   {paramsForTask.map((param, index) => (
-                    <TreeItem2
+                    <TreeItem
                       key={`${param.name}-${index}`}
                       itemId={`param-${id}-${index}`}
                       label={
@@ -436,7 +436,7 @@ export default function WorkflowTreeView() {
                   ))}
 
                   {/* Metrics */}
-                  <TreeItem2
+                  <TreeItem
                     itemId={`metrics-header-${id}`} // ✅ Use a dynamic, unique ID
                     slotProps={{
                       content: {
@@ -480,7 +480,7 @@ export default function WorkflowTreeView() {
                     }
                   />
                   {uniqueMetricsByName.map((metric, index) => (
-                    <TreeItem2
+                    <TreeItem
                       key={`${metric.name}-${index}`}
                       itemId={`metric-${id}-${index}`}
                       label={
@@ -515,7 +515,7 @@ export default function WorkflowTreeView() {
 
                   {/* Inpputs */}
                   {datasetsForTask.some(ds => ds.role === 'INPUT') && (
-                    <TreeItem2
+                    <TreeItem
                       itemId={`task-${id}-inputs`}
                       slotProps={{
                         content: {
@@ -561,7 +561,7 @@ export default function WorkflowTreeView() {
                       }
                     >
                       {inputGrouped.noFolder.map((ds, index) => (
-                        <TreeItem2
+                        <TreeItem
                           key={`input-${id}-nofolder-${index}`}
                           itemId={`input-ds-${id}-nofolder-${index}`}
                           disabled={!ds.source}
@@ -597,7 +597,7 @@ export default function WorkflowTreeView() {
                         />
                       ))}
                       {Object.entries(inputGrouped.folders).map(([folder, dsList], folderIndex) => (
-                        <TreeItem2
+                        <TreeItem
                           key={`input-folder-${id}-${folderIndex}`}
                           itemId={`input-folder-${id}-${folderIndex}`}
                           slotProps={{
@@ -633,7 +633,7 @@ export default function WorkflowTreeView() {
                           }
                         >
                           {dsList.map((ds, index) => (
-                            <TreeItem2
+                            <TreeItem
                               key={`input-${id}-${folder}-${index}`}
                               itemId={`input-ds-${id}-${folder}-${index}`}
                               disabled={!ds.source}
@@ -668,14 +668,14 @@ export default function WorkflowTreeView() {
                               }
                             />
                           ))}
-                        </TreeItem2>
+                        </TreeItem>
                       ))}
-                    </TreeItem2>
+                    </TreeItem>
                   )}
 
                   {/* Outputs */}
                   {datasetsForTask.some(ds => ds.role === 'OUTPUT') && (
-                    <TreeItem2
+                    <TreeItem
                       itemId={`task-${id}-outputs`}
                       slotProps={{
                         content: {
@@ -721,7 +721,7 @@ export default function WorkflowTreeView() {
                       }
                     >
                       {outputGrouped.noFolder.map((ds, index) => (
-                        <TreeItem2
+                        <TreeItem
                           key={`output-${id}-nofolder-${index}`}
                           itemId={`output-ds-${id}-nofolder-${index}`}
                           disabled={!ds.source}
@@ -758,7 +758,7 @@ export default function WorkflowTreeView() {
                       ))}
 
                       {Object.entries(outputGrouped.folders).map(([folder, dsList], folderIndex) => (
-                        <TreeItem2
+                        <TreeItem
                           key={`output-folder-${id}-${folderIndex}`}
                           itemId={`output-folder-${id}-${folderIndex}`}
                           slotProps={{
@@ -794,7 +794,7 @@ export default function WorkflowTreeView() {
                           }
                         >
                           {dsList.map((ds, index) => (
-                            <TreeItem2
+                            <TreeItem
                               key={`output-${id}-${folder}-${index}`}
                               itemId={`output-ds-${id}-${folder}-${index}`}
                               disabled={!ds.source}
@@ -829,11 +829,11 @@ export default function WorkflowTreeView() {
                               }
                             />
                           ))}
-                        </TreeItem2>
+                        </TreeItem>
                       ))}
-                    </TreeItem2>
+                    </TreeItem>
                   )}
-                </TreeItem2>
+                </TreeItem>
               );
             })}
 
@@ -891,7 +891,7 @@ export default function WorkflowTreeView() {
               return (
                 <>
                   {/* Parameters */}
-                  <TreeItem2
+                  <TreeItem
                     itemId={'parameters-header'}
                     slotProps={{
                       content: {
@@ -935,7 +935,7 @@ export default function WorkflowTreeView() {
                     }
                   />
                   {fallbackParams.map((param, index) => (
-                    <TreeItem2
+                    <TreeItem
                       key={`null-param-${index}`}
                       itemId={`null-param-${index}`}
                       label={
@@ -971,7 +971,7 @@ export default function WorkflowTreeView() {
                     />
                   ))}
                   {/* Metrics */}
-                  <TreeItem2
+                  <TreeItem
                     itemId={'metrics-header'}
                     slotProps={{
                       content: {
@@ -1015,7 +1015,7 @@ export default function WorkflowTreeView() {
                     }
                   />
                   {fallbackMetrics.map((metric, index) => (
-                    <TreeItem2
+                    <TreeItem
                       key={`null-metric-${index}`}
                       itemId={`null-metric-${index}`}
                       label={
@@ -1049,7 +1049,7 @@ export default function WorkflowTreeView() {
                   ))}
                   {/* Inputs */}
                   {fallbackDatasets.some(ds => ds.role === 'INPUT') && (
-                    <TreeItem2
+                    <TreeItem
                       itemId="task-null-inputs"
                       slotProps={{
                         content: {
@@ -1096,7 +1096,7 @@ export default function WorkflowTreeView() {
                       }
                     >
                       {fallbackInputGrouped.noFolder.map((ds, index) => (
-                        <TreeItem2
+                        <TreeItem
                           key={`null-input-${index}`}
                           itemId={`null-input-${index}`}
                           disabled={!ds.source}
@@ -1132,7 +1132,7 @@ export default function WorkflowTreeView() {
                         />
                       ))}
                       {Object.entries(fallbackInputGrouped.folders).map(([folder, dsList], folderIndex) => (
-                        <TreeItem2
+                        <TreeItem
                           key={`input-folder-${folderIndex}`}
                           itemId={`input-folder-${folderIndex}`}
                           slotProps={{
@@ -1168,7 +1168,7 @@ export default function WorkflowTreeView() {
                           }
                         >
                           {dsList.map((ds, index) => (
-                            <TreeItem2
+                            <TreeItem
                               key={`null-input-${folder}-${index}`}
                               itemId={`null-input-${folder}-${index}`}
                               disabled={!ds.source}
@@ -1203,13 +1203,13 @@ export default function WorkflowTreeView() {
                               }
                             />
                           ))}
-                        </TreeItem2>
+                        </TreeItem>
                       ))}
-                    </TreeItem2>
+                    </TreeItem>
                   )}
                   {/* Outputs */}
                   {fallbackDatasets.some(ds => ds.role === 'OUTPUT') && (
-                    <TreeItem2
+                    <TreeItem
                       itemId="task-null-outputs"
                       slotProps={{
                         content: {
@@ -1256,7 +1256,7 @@ export default function WorkflowTreeView() {
                       }
                     >
                       {fallbackOutputGrouped.noFolder.map((ds, index) => (
-                        <TreeItem2
+                        <TreeItem
                           key={`null-output-${index}`}
                           itemId={`null-output-${index}`}
                           disabled={!ds.source}
@@ -1293,7 +1293,7 @@ export default function WorkflowTreeView() {
                       ))}
 
                       {Object.entries(fallbackOutputGrouped.folders).map(([folder, dsList], folderIndex) => (
-                        <TreeItem2
+                        <TreeItem
                           key={`output-folder-${folderIndex}`}
                           itemId={`output-folder-${folderIndex}`}
                           slotProps={{
@@ -1329,7 +1329,7 @@ export default function WorkflowTreeView() {
                           }
                         >
                           {dsList.map((ds, index) => (
-                            <TreeItem2
+                            <TreeItem
                               key={`null-output-${folder}-${index}`}
                               itemId={`null-output-${folder}-${index}`}
                               disabled={!ds.source}
@@ -1364,9 +1364,9 @@ export default function WorkflowTreeView() {
                               }
                             />
                           ))}
-                        </TreeItem2>
+                        </TreeItem>
                       ))}
-                    </TreeItem2>
+                    </TreeItem>
                   )}
                 </>
               );
@@ -1437,7 +1437,7 @@ export default function WorkflowTreeView() {
         <AccordionDetails>
           {/* TreeView */}
           <SimpleTreeView defaultExpandedItems={['model']} selectedItems={ tab.dataTaskTable.selectedId ? tab.dataTaskTable.selectedId : null }>
-            <TreeItem2
+            <TreeItem
               aria-expanded={true}
               itemId="model"
               slotProps={{
@@ -1496,7 +1496,7 @@ export default function WorkflowTreeView() {
                 </Box>
               }
             >
-              <TreeItem2
+              <TreeItem
                 itemId="instance-view"
                 label={
                   <Box
@@ -1536,7 +1536,7 @@ export default function WorkflowTreeView() {
                   </Box>
                 }
               />
-              <TreeItem2
+              <TreeItem
                 itemId="feature-effects"
                 label={
                   <Box
@@ -1576,7 +1576,7 @@ export default function WorkflowTreeView() {
                   </Box>
                 }
               />
-              <TreeItem2
+              <TreeItem
                 itemId="hyperparameters"
                 label={
                   <Box
@@ -1616,7 +1616,7 @@ export default function WorkflowTreeView() {
                   </Box>
                 }
               />
-              <TreeItem2
+              <TreeItem
                 itemId="global-counterfactuals"
                 label={
                   <Box
@@ -1656,7 +1656,7 @@ export default function WorkflowTreeView() {
                   </Box>
                 }
               />
-            </TreeItem2>
+            </TreeItem>
           </SimpleTreeView>
         </AccordionDetails>
       </Accordion>

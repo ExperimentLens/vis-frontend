@@ -406,7 +406,7 @@ const AttributionHeatmaps: React.FC = () => {
 
   const splitMapsContent = (
     <Grid container spacing={1} sx={{ p: 1 }}>
-      <Grid item xs={12} md={6}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <Box sx={{ width: '100%', height: '100%' }}>
           <HeatMapLeaflet
             points={featurePts}
@@ -431,7 +431,7 @@ const AttributionHeatmaps: React.FC = () => {
           />
         </Box>
       </Grid>
-      <Grid item xs={12} md={6}>
+      <Grid size={{ xs: 12, md: 6 }}>
         <Box sx={{ width: '100%', height: '100%' }}>
           <HeatMapLeaflet
             points={createPredictionPoints()}
@@ -523,7 +523,7 @@ const AttributionHeatmaps: React.FC = () => {
   return (
     <Box sx={{ width: '100%' }}>
       <Grid container spacing={2}>
-        <Grid item xs={12}>
+        <Grid size={{ xs: 12 }}>
           <ResponsiveCardTable
             title="Feature / Attribution Map"
             details={plotModel?.plotDescr || null}

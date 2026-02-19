@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import theme from '../../../../mui-theme';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -16,7 +16,7 @@ export default function MetricsSection({ taskId, metrics }: Props) {
 
   return (
     <>
-      <TreeItem2
+      <TreeItem
         itemId={`metrics-header-${taskId}`}
         slotProps={{ content: { style: { pointerEvents: 'none', backgroundColor: 'transparent' } } }}
         label={
@@ -32,7 +32,7 @@ export default function MetricsSection({ taskId, metrics }: Props) {
         const isSeiresMetric = workflowSeriesMetrics.data.some(m => m.name === metric.name && m.seriesMetric.length > 1);
 
         return (
-          <TreeItem2
+          <TreeItem
             key={`${metric.name}-${index}`}
             itemId={`metric-${taskId}-${index}`}
             label={

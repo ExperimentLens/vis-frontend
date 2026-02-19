@@ -5,8 +5,7 @@ import type { IMetric } from '../../../../shared/models/experiment/metric.model'
 import { Box, Card, CardContent, createTheme, Divider, Paper, Slider, Typography } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import green from '@mui/material/colors/green';
-import red from '@mui/material/colors/red';
+import { green, red } from '@mui/material/colors';
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import { setCache } from '../../../../shared/utils/localStorageCache';

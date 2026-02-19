@@ -364,7 +364,7 @@ const GlovesScatter = ({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
           {data1 && data2 && (
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <ResponsiveCardVegaLite
                   actions={false}
                   title="Action Selection"
@@ -376,7 +376,7 @@ const GlovesScatter = ({
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <ResponsiveCardVegaLite
                   actions={false}
                   title="Post-Action Selection"

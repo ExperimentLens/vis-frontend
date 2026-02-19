@@ -459,11 +459,12 @@ export default function WorkflowTable() {
   const prevGroupByRef = useRef<string[]>([]);
 
   const handleSelectionChange = (newSelection: GridRowSelectionModel) => {
-    if (newSelection === workflowsTable.selectedWorkflows) return;
-    newSelection.forEach(workflowId => {
-      dispatch(toggleWorkflowSelection(workflowId));
+    const newIds = Array.from(newSelection.ids) as string[];
+
+    newSelection.ids.forEach(workflowId => {
+      dispatch(toggleWorkflowSelection(workflowId as string));
     });
-    dispatch(setWorkflowsTable({ selectedWorkflows: newSelection }));
+    dispatch(setWorkflowsTable({ selectedWorkflows: newIds }));
   };
 
   const handleLaunchCompletedTab =
@@ -1291,7 +1292,7 @@ export default function WorkflowTable() {
             }
             checkboxSelection
             onRowSelectionModelChange={handleSelectionChange}
-            rowSelectionModel={workflowsTable.selectedWorkflows}
+            rowSelectionModel={{ type: 'include', ids: new Set(workflowsTable.selectedWorkflows) }}
             getRowClassName={(params) =>
               selectedTab === 1 && workflowsTable.hoveredWorkflowId && params.id === workflowsTable.hoveredWorkflowId
                 ? 'workflow-hovered-row'
