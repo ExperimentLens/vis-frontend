@@ -54,12 +54,9 @@ const ParallelCoordinatePlot = () => {
         workflows.data.filter(workflow => workflow.status !== 'SCHEDULED')
           .reduce((acc: string[], workflow) => {
             const params = workflow.params;
-            let paramNames = [];
 
             if (params) {
-              paramNames = params.map(param => param.name);
-
-              return [...acc, ...paramNames];
+              return [...acc, ...params.map(param => param.name)];
             } else {
               return [...acc];
             }

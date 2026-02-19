@@ -141,7 +141,7 @@ const Histogram = ({ columnName, dataset, workflowId, color }: IHistogramProps) 
   const isNumericColumn = Array.isArray(rawData) &&
   rawData.some(d => typeof d[columnName] === 'number');
 
-  let chartData: { binLabel: string; count: number }[] = [];
+  let chartData: { binLabel: string; count: number }[];
 
   if (isNumericColumn) {
     const numericData = rawData

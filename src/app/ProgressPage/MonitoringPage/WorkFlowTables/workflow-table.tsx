@@ -830,12 +830,9 @@ export default function WorkflowTable() {
         workflows.data.filter(workflow => workflow.status !== 'SCHEDULED')
           .reduce((acc: string[], workflow) => {
             const params = workflow.params;
-            let paramNames: string[] = [];
 
             if (params) {
-              paramNames = params.map(param => param.name);
-
-              return [...acc, ...paramNames];
+              return [...acc, ...params.map(param => param.name)];
             } else {
               return [...acc];
             }
@@ -845,12 +842,9 @@ export default function WorkflowTable() {
         workflows.data.filter(workflow => workflow.status !== 'SCHEDULED')
           .reduce((acc: string[], workflow) => {
             const metrics = workflow.metrics;
-            let metricNames: string[] = [];
 
             if(metrics) {
-              metricNames = metrics.map(metric => metric.name).filter(name => name !== 'rating');;
-
-              return [...acc, ...metricNames];
+              return [...acc, ...metrics.map(metric => metric.name).filter(name => name !== 'rating')];
             } else {
               return [...acc];
             }

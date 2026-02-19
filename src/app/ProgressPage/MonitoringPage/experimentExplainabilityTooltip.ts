@@ -217,7 +217,7 @@ export const createExperimentExplainabilityTooltipHandler = ({
       }).join('');
 
       if (filteredWorkflowIds.length === 0) {
-        let filterMessage = '';
+        let filterMessage: string;
 
         if (selectedFeature && selectedFeature2) {
           filterMessage = `No workflows found with ${selectedFeature} = ${sanitize(xValue)} and ${selectedFeature2} = ${sanitize(yValue)}`;
@@ -237,7 +237,7 @@ export const createExperimentExplainabilityTooltipHandler = ({
         `;
       }
 
-      let titleText = '';
+      let titleText: string;
 
       if (selectedFeature && selectedFeature2) {
         titleText = `Workflows with ${selectedFeature} = ${sanitize(xValue)} and ${selectedFeature2} = ${sanitize(yValue)} (${filteredWorkflowIds.length} of ${workflowIds.length}):`;
