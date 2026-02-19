@@ -4,6 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../store/store';
 import Typography from '@mui/material/Typography';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useEffect, useState } from 'react';
+import { useTheme } from '@mui/material';
 import {
   fetchExperiment,
   fetchExperimentWorkflows,
@@ -17,6 +18,7 @@ const ProgressPageLoading = () => {
   const { workflows, experiment } = useAppSelector(
     (state: RootState) => state.progressPage,
   );
+  const theme = useTheme();
   const dispatch = useAppDispatch();
   const [progress, setProgress] = useState(0);
   const [searchParams] = useSearchParams();
@@ -81,12 +83,10 @@ const ProgressPageLoading = () => {
     <>
       <Grid
         id={'error-page'}
-        sx={{
-          height: '100vh',
-          width: '100vw',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
+        sx={{ height: '100vh', width: '100vw', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        style={{
+          background: theme.palette.mode === 'dark' ? theme.palette.background.default : '#E6E6E6',
+          transition: 'background 0.3s',
         }}
       >
         <Grid sx={{ display: 'flex', rowGap: 2, flexDirection: 'column' }}>
