@@ -650,6 +650,19 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
     setFullscreenAnchorEl(null);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const deepMerge = (target: any, source: any): any => {
+    if (!isObject(target) || !isObject(source)) return source;
+
+    const out: any = { ...target };
+    for (const key of Object.keys(source)) {
+      const sv = source[key];
+      const tv = target[key];
+      out[key] = isObject(tv) && isObject(sv) ? deepMerge(tv, sv) : sv;
+    }
+    return out;
+  };
+
   const sizedSpec = useMemo(() => {
     if (!isConcat) return displaySpec;
 
@@ -670,6 +683,55 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
     return applySizeToConcatChildren(displaySpec as any, fullscreenWidth, fullscreenHeight);
   }, [displaySpec, isConcat, fullscreenWidth, fullscreenHeight]);
 
+  const vegaBg = theme.palette.customSurface.cardContent;
+  const textColor = theme.palette.text.primary;
+  const dividerColor = theme.palette.divider;
+
+  const vegaThemePatch = useMemo(() => {
+    return {
+      background: vegaBg,
+      config: {
+        view: { fill: vegaBg, stroke: null },
+        axis: {
+          labelColor: textColor,
+          titleColor: textColor,
+          gridColor: dividerColor,
+          domainColor: dividerColor,
+          tickColor: dividerColor,
+        },
+        legend: {
+          labelColor: textColor,
+          titleColor: textColor,
+        },
+        title: { color: textColor },
+      },
+    };
+  }, [vegaBg, textColor, dividerColor]);
+
+  const themedSizedSpec = useMemo(() => {
+    const base = {
+      ...sizedSpec,
+      autosize: isConcat
+        ? { type: 'fit-x', contains: 'padding', resize: true }
+        : { type: 'fit', contains: 'padding', resize: true },
+      ...(isConcat ? {} : { width, height }),
+    };
+
+    // Make sure our theme wins (deep merge so config.axis etc merges nicely)
+    return deepMerge(base, vegaThemePatch);
+  }, [sizedSpec, isConcat, width, height, vegaThemePatch]);
+
+  const themedFullscreenSpec = useMemo(() => {
+    const base = {
+      ...fullscreenSpec,
+      autosize: isConcat
+        ? { type: 'fit-x', contains: 'padding', resize: true }
+        : { type: 'fit', contains: 'padding', resize: true },
+      ...(isConcat ? {} : { width: fullscreenWidth, height: fullscreenHeight }),
+    };
+
+    return deepMerge(base, vegaThemePatch);
+  }, [fullscreenSpec, isConcat, fullscreenWidth, fullscreenHeight, vegaThemePatch]);
   return (
     <>
       <style>
@@ -927,7 +989,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             ) : (
               <VegaLite
                 spec={{
-                  ...sizedSpec,
+                  ...themedSizedSpec,
                   autosize: isConcat
                     ? { type: 'fit-x', contains: 'padding', resize: true }
                     : { type: 'fit', contains: 'padding', resize: true },
@@ -1132,7 +1194,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             ) : (
               <VegaLite
                 spec={{
-                  ...fullscreenSpec,
+                  ...themedFullscreenSpec,
                   autosize: isConcat
                     ? { type: 'fit-x', contains: 'padding', resize: true }
                     : { type: 'fit', contains: 'padding', resize: true },
