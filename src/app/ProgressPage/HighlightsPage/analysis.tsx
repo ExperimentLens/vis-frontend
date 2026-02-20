@@ -20,6 +20,7 @@ import type { ClusterInsight, PcaSpacePoint } from '../../../shared/models/exper
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import ResponsiveCardVegaLite from '../../../shared/components/responsive-card-vegalite';
+import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
 
 
 interface ClusterCardProps {
@@ -33,6 +34,34 @@ interface ClusterCardProps {
 interface ClusterChartProps {
   cluster?: ClusterInsight;
 }
+
+interface DecisionRule {
+  rule: string;
+  f1Score: number;
+  precision: number;
+  recall: number;
+  nWorkflowsInCluster: number;
+  combinedScore: number;
+}
+
+interface DecisionRulesSectionProps {
+  rules?: DecisionRule[];
+  clusterKey?: string | null;
+}
+
+const getClusterColorFromKey = (clusterKey: string, theme: any) => {
+  const colors = [
+    theme.palette.primary.main,
+    theme.palette.secondary.main,
+    theme.palette.success.main,
+    theme.palette.warning.main,
+  ];
+
+  const index = Number.parseInt(clusterKey, 10);
+  if (Number.isNaN(index)) return theme.palette.primary.main;
+
+  return colors[index % colors.length];
+};
 
 const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
   if (!cluster?.distinctFeatures?.featureStatistics) return null;
@@ -83,6 +112,246 @@ const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
         },
       }}
     />
+  );
+};
+
+const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clusterKey }) => {
+  const theme = useTheme();
+
+  if (!rules || rules.length === 0) return null;
+
+   const [showAlternatives, setShowAlternatives] = useState(false);
+
+  const formatPercent = (value: number) => `${Math.round((value ?? 0) * 100)}%`;
+  const clusterColor = clusterKey
+    ? getClusterColorFromKey(clusterKey, theme)
+    : theme.palette.primary.main;
+
+  const [primaryRule, ...alternativeRules] = rules;
+
+  return (
+
+    <ResponsiveCardTable title={" DECISION RULES"} showSettings={false} showFullScreenButton={false} >
+    <Box sx={{ mb: 4 }}>
+      <Typography
+        variant="subtitle2"
+        sx={{ mb: 1, letterSpacing: 0.6, fontWeight: 700 }}
+      >
+       
+      </Typography>
+      <Stack spacing={2}>
+        {/* Primary rule */}
+        <Card
+          sx={{
+            p: 2,
+            backgroundColor: theme.palette.background.paper,
+            borderRadius: 1,
+            boxShadow: 1,
+          }}
+        >
+          <Stack spacing={1.5}>
+            <Typography
+              variant="body2"
+              sx={{
+                fontFamily: 'monospace',
+                color: 'text.primary',
+                fontSize: 13,
+              }}
+            >
+              {primaryRule.rule}
+            </Typography>
+
+            <Stack
+              direction="row"
+              spacing={3}
+              sx={{ mt: 0.5, flexWrap: 'wrap' }}
+            >
+              {[{
+                label: 'F1',
+                value: primaryRule.f1Score,
+              }, {
+                label: 'PRECISION',
+                value: primaryRule.precision,
+              }, {
+                label: 'RECALL',
+                value: primaryRule.recall,
+              }, {
+                label: 'COMBINED',
+                value: primaryRule.combinedScore,
+              }].map(metric => (
+                <Box
+                  key={metric.label}
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.5,
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'text.secondary',
+                        letterSpacing: 0.8,
+                        minWidth: 70,
+                      }}
+                    >
+                      {metric.label}
+                    </Typography>
+                    <LinearProgress
+                      variant="determinate"
+                      value={(metric.value ?? 0) * 100}
+                      sx={{
+                        flex: 1,
+                        height: 6,
+                        borderRadius: 999,
+                        backgroundColor: theme.palette.action.disabledBackground,
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: clusterColor,
+                        },
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{ minWidth: 40, textAlign: 'right', color: 'text.secondary' }}
+                    >
+                      {formatPercent(metric.value ?? 0)}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+            </Stack>
+
+            <Typography
+              variant="caption"
+              sx={{ color: 'text.secondary', mt: 0.5 }}
+            >
+              {primaryRule.nWorkflowsInCluster} workflows matched
+            </Typography>
+          </Stack>
+        </Card>
+
+        {/* Alternative rules toggle */}
+        {alternativeRules.length > 0 && (
+          <Box>
+            <Button
+              size="small"
+              onClick={() => setShowAlternatives(prev => !prev)}
+              sx={{
+                textTransform: 'none',
+                px: 0,
+                mt: 1,
+              }}
+            >
+              {showAlternatives ? 'Hide Alternative Rules' : `Alternative Rules (${alternativeRules.length})`}
+            </Button>
+
+            <Collapse in={showAlternatives}>
+              <Stack spacing={2} sx={{ mt: 1 }}>
+                {alternativeRules.map((rule, index) => (
+                  <Card
+                    key={index}
+                    sx={{
+                      p: 2,
+                      backgroundColor: theme.palette.background.paper,
+                      borderRadius: 1,
+                      boxShadow: 1,
+                    }}
+                  >
+                    <Stack spacing={1.5}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: 'monospace',
+                          color: 'text.primary',
+                          fontSize: 13,
+                        }}
+                      >
+                        {rule.rule}
+                      </Typography>
+
+                      <Stack
+                        direction="row"
+                        spacing={3}
+                        sx={{ mt: 0.5, flexWrap: 'wrap' }}
+                      >
+                        {[{
+                          label: 'F1',
+                          value: rule.f1Score,
+                        }, {
+                          label: 'PRECISION',
+                          value: rule.precision,
+                        }, {
+                          label: 'RECALL',
+                          value: rule.recall,
+                        }, {
+                          label: 'COMBINED',
+                          value: rule.combinedScore,
+                        }].map(metric => (
+                          <Box
+                            key={metric.label}
+                            sx={{
+                              flex: 1,
+                              minWidth: 0,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 0.5,
+                            }}
+                          >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography
+                                variant="caption"
+                                sx={{
+                                  color: 'text.secondary',
+                                  letterSpacing: 0.8,
+                                  minWidth: 70,
+                                }}
+                              >
+                                {metric.label}
+                              </Typography>
+                              <LinearProgress
+                                variant="determinate"
+                                value={(metric.value ?? 0) * 100}
+                                sx={{
+                                  flex: 1,
+                                  height: 6,
+                                  borderRadius: 999,
+                                  backgroundColor: theme.palette.action.disabledBackground,
+                                  '& .MuiLinearProgress-bar': {
+                                    backgroundColor: clusterColor,
+                                  },
+                                }}
+                              />
+                              <Typography
+                                variant="caption"
+                                sx={{ minWidth: 40, textAlign: 'right', color: 'text.secondary' }}
+                              >
+                                {formatPercent(metric.value ?? 0)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ))}
+                      </Stack>
+
+                      <Typography
+                        variant="caption"
+                        sx={{ color: 'text.secondary', mt: 0.5 }}
+                      >
+                        {rule.nWorkflowsInCluster} workflows matched
+                      </Typography>
+                    </Stack>
+                  </Card>
+                ))}
+              </Stack>
+            </Collapse>
+          </Box>
+        )}
+      </Stack>
+    </Box>
+    </ResponsiveCardTable>
+
   );
 };
 
@@ -161,16 +430,6 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
 }) => {
   const [expandedFeatures, setExpandedFeatures] = useState(false);
 
-  const getClusterColor = (index: number) => {
-    const colors = [
-      theme.palette.primary.main,
-      theme.palette.secondary.main,
-      theme.palette.success.main,
-      theme.palette.warning.main,
-    ];
-    return colors[parseInt(clusterKey) % colors.length];
-  };
-
   const numWorkflows = cluster.metadata?.nWorkflows ?? 0;
   const proportion = (cluster.metadata?.percentageOfTotal ?? 0) / 100;
   const quality = Number(cluster.modelEvaluation?.modelQualityScore) || 0;
@@ -182,12 +441,12 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
         onClick={() => onSelect(clusterKey)}
         sx={{
           p: 2,
-          borderLeft: `4px solid ${getClusterColor(parseInt(clusterKey))}`,
+          borderLeft: `4px solid ${getClusterColorFromKey(clusterKey, theme)}`,
           backgroundColor: isSelected ? 'action.selected' : 'background.paper',
           boxShadow: isSelected ? 3 : 1,
           transition: 'all 0.2s ease',
           cursor: 'pointer',
-          border: isSelected ? `2px solid ${getClusterColor(parseInt(clusterKey))}` : 'none',
+          border: isSelected ? `2px solid ${getClusterColorFromKey(clusterKey, theme)}` : 'none',
           '&:hover': {
             boxShadow: 3,
             backgroundColor: isSelected ? 'action.selected' : 'action.hover',
@@ -201,7 +460,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
               variant="h6"
               sx={{
                 fontWeight: 700,
-                color: getClusterColor(parseInt(clusterKey)),
+                color: getClusterColorFromKey(clusterKey, theme),
               }}
             >
               Cluster {clusterKey}
@@ -244,7 +503,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
                   borderRadius: 1,
                   backgroundColor: theme.palette.action.disabledBackground,
                   '& .MuiLinearProgress-bar': {
-                    backgroundColor: getClusterColor(parseInt(clusterKey)),
+                    backgroundColor: getClusterColorFromKey(clusterKey, theme),
                   },
                 }}
               />
@@ -414,6 +673,12 @@ const AnalysisGroup: React.FC = () => {
       
       {selectedCluster && clusters.length > 0 && (
         <Grid container spacing={2}>
+          <Grid size={{ xs: 12 }}>
+            <DecisionRulesSection
+              rules={selectedClusterData?.decisionTreeRules}
+              clusterKey={selectedCluster}
+            />
+          </Grid>
           <Grid size={{ xs: 6 }}>
             <Box>
               <FeatureZScoresChart cluster={selectedClusterData ?? undefined} />
