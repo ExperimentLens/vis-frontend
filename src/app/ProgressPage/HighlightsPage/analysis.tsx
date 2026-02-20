@@ -737,12 +737,7 @@ const AnalysisGroup: React.FC = () => {
       
       {selectedCluster && clusters.length > 0 && (
         <Grid container spacing={2}>
-          <Grid size={{ xs: 12 }}>
-            <DecisionRulesSection
-              rules={selectedClusterData?.decisionTreeRules}
-              clusterKey={selectedCluster}
-            />
-          </Grid>
+          
           <Grid size={{ xs: 6 }}>
             <Box>
               <FeatureZScoresChart cluster={selectedClusterData ?? undefined} />
@@ -753,10 +748,16 @@ const AnalysisGroup: React.FC = () => {
               <ClusterVsOthersChart cluster={selectedClusterData ?? undefined} />
             </Box>
           </Grid>
-          <Grid size={{ xs: 12 }}>
+          <Grid size={{ xs: 6 }}>
             <Box>
               <CorrelationAnalysisChart cluster={selectedClusterData ?? undefined} />
             </Box>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <DecisionRulesSection
+              rules={selectedClusterData?.decisionTreeRules}
+              clusterKey={selectedCluster}
+            />
           </Grid>
         </Grid>
         )}
