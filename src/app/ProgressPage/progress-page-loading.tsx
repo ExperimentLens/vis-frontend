@@ -91,7 +91,10 @@ const ProgressPageLoading = () => {
       >
         <Grid sx={{ display: 'flex', rowGap: 2, flexDirection: 'column' }}>
           <img
-            src="/images/extremexp-logo.png"
+            src={theme.palette.mode === 'dark' 
+              ? '/images/extremexp-logo-removebg-preview.png' 
+              : '/images/extremexp-logo.png'
+            }
             height={130}
             style={{ objectFit: 'contain' }}
             alt="extremexp logo"
