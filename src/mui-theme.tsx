@@ -141,6 +141,40 @@ export const createAppTheme = (mode: ThemeMode) => {
         color: isDark ? '#FFFFFF' : '#0E1021',
       },
     },
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          html: {
+            // Firefox
+            scrollbarWidth: 'thin',
+          },
+        
+          body: {
+            // Firefox
+            scrollbarColor: isDark
+              ? `${grey[700]} ${grey[900]}`
+              : `${grey[500]} ${grey[100]}`,
+          },
+        
+          // Chrome / Edge / Safari
+          '*::-webkit-scrollbar': {
+            width: 10,
+            height: 10,
+          },
+          '*::-webkit-scrollbar-track': {
+            backgroundColor: isDark ? grey[900] : grey[100],
+          },
+          '*::-webkit-scrollbar-thumb': {
+            backgroundColor: isDark ? grey[700] : grey[400],
+            borderRadius: 10,
+            border: `2px solid ${isDark ? grey[900] : grey[100]}`,
+          },
+          '*::-webkit-scrollbar-thumb:hover': {
+            backgroundColor: isDark ? grey[600] : grey[500],
+          },
+        },
+      },
+    },
   });
 
   theme = responsiveFontSizes(theme, { factor: 2 });
