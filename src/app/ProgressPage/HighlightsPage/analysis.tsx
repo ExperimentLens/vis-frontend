@@ -665,21 +665,32 @@ const AnalysisGroup: React.FC = () => {
       {/* Cluster Grid Cards */}
       {clusters.length > 0 && (
         <Box sx={{ mb: 4 }}>
-          <Typography variant="subtitle2" sx={{ mb: 2, letterSpacing: 0.6, fontWeight: 700 }}>
-            CLUSTER OVERVIEW
-          </Typography>
-          <Grid container spacing={2}>
+         
+          <ResponsiveCardTable title={"CLUSTER OVERVIEW"} showSettings={false} showFullScreenButton={false} >
+          <Box
+            sx={{
+              display: 'flex',
+              gap: 2,
+              overflowX: 'auto',
+              pb: 1,
+            }}
+          >
             {clusters.map(({ clusterKey, cluster }) => (
-              <ClusterCard
+              <Box
                 key={clusterKey}
-                clusterKey={clusterKey}
-                cluster={cluster}
-                theme={theme}
-                isSelected={selectedCluster === clusterKey}
-                onSelect={setSelectedCluster}
-              />
+                sx={{ minWidth: 280, flexShrink: 0 }}
+              >
+                <ClusterCard
+                  clusterKey={clusterKey}
+                  cluster={cluster}
+                  theme={theme}
+                  isSelected={selectedCluster === clusterKey}
+                  onSelect={setSelectedCluster}
+                />
+              </Box>
             ))}
-          </Grid>
+          </Box>
+          </ResponsiveCardTable>
         </Box>
       )}
       {pcaSpace.length > 0 && (
