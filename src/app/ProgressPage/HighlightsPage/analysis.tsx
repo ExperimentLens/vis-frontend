@@ -16,7 +16,8 @@ import {
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import type { RootState } from '../../../store/store';
 import { useAppSelector } from '../../../store/store';
-import type { ClusterInsight, PcaSpacePoint } from '../../../shared/models/experiment.highlights.model';
+import type { ClusterInsight, FeatureStatistic, PcaSpacePoint } from '../../../shared/models/experiment.highlights.model';
+import type { Theme } from '@mui/material/styles';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import ResponsiveCardVegaLite from '../../../shared/components/responsive-card-vegalite';
@@ -26,7 +27,7 @@ import ResponsiveCardTable from '../../../shared/components/responsive-card-tabl
 interface ClusterCardProps {
   clusterKey: string;
   cluster: ClusterInsight;
-  theme: any;
+  theme: Theme;
   isSelected: boolean;
   onSelect: (clusterKey: string) => void;
 }
@@ -49,7 +50,7 @@ interface DecisionRulesSectionProps {
   clusterKey?: string | null;
 }
 
-const getClusterColorFromKey = (clusterKey: string, theme: any) => {
+const getClusterColorFromKey = (clusterKey: string, theme: Theme) => {
   const colors = [
     theme.palette.primary.main,
     theme.palette.secondary.main,
@@ -67,7 +68,7 @@ const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
   if (!cluster?.distinctFeatures?.featureStatistics) return null;
 
   const featureStats = cluster.distinctFeatures.featureStatistics;
-  const featureData = Object.entries(featureStats).map(([featureName, stats]: [string, any]) => ({
+  const featureData = Object.entries(featureStats).map(([featureName, stats]: [string, FeatureStatistic]) => ({
     feature: featureName,
     zScore: stats.zScore ?? 0,
     distinctivenessScore: stats.distinctivenessScore ?? 0,
@@ -118,9 +119,9 @@ const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
 const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clusterKey }) => {
   const theme = useTheme();
 
-  if (!rules || rules.length === 0) return null;
+  const [showAlternatives, setShowAlternatives] = useState(false);
 
-   const [showAlternatives, setShowAlternatives] = useState(false);
+  if (!rules || rules.length === 0) return null;
 
   const formatPercent = (value: number) => `${Math.round((value ?? 0) * 100)}%`;
   const clusterColor = clusterKey
@@ -360,7 +361,7 @@ const ClusterVsOthersChart: React.FC<ClusterChartProps> = ({ cluster }) => {
 
   const featureStats = cluster.distinctFeatures.featureStatistics;
   const comparisonData = Object.entries(featureStats)
-    .map(([featureName, stats]: [string, any]) => [
+    .map(([featureName, stats]: [string, FeatureStatistic]) => [
       {
         feature: featureName,
         mean: stats.otherClustersMean ?? 0,
@@ -428,7 +429,7 @@ const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
   }
 
   const rows = Object.entries(correlation.removedFeatures)
-    .map(([featureName, info]: [string, any]) => ({
+    .map(([featureName, info]: [string, { maxRelationship: number; relatedTo: string; allRelationships: string[] }]) => ({
       removedFeature: featureName,
       relatedTo: info?.relatedTo ?? 'unknown',
       maxRelationship: info?.maxRelationship ?? 0,

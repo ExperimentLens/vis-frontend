@@ -654,6 +654,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
   const deepMerge = (target: any, source: any): any => {
     if (!isObject(target) || !isObject(source)) return source;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const out: any = { ...target };
     for (const key of Object.keys(source)) {
       const sv = source[key];

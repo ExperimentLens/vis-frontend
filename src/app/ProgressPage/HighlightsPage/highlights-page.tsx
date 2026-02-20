@@ -3,7 +3,6 @@ import type { RootState } from '../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../store/store';
 import { fetchExperimentHighlights } from '../../../store/slices/experimentHighlightsSlice';
 import { useNavigate, useParams } from 'react-router-dom';
-import HighlightsGroupsCards from './highlights-group-cards';
 import Loader from '../../../shared/components/loader';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import InfoMessage from '../../../shared/components/InfoMessage';
