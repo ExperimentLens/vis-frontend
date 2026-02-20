@@ -413,14 +413,19 @@ const AnalysisGroup: React.FC = () => {
       </Typography>
       
       {selectedCluster && clusters.length > 0 && (
-        <Box>
-          <FeatureZScoresChart cluster={selectedClusterData ?? undefined} />
-        </Box>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 6 }}>
+            <Box>
+              <FeatureZScoresChart cluster={selectedClusterData ?? undefined} />
+            </Box>
+          </Grid>
+          <Grid size={{ xs: 6 }}>
+            <Box>
+              <ClusterVsOthersChart cluster={selectedClusterData ?? undefined} />
+            </Box>
+          </Grid>
+        </Grid>
         )}
-        <Box sx={{ mt: 4 }}>
-          <ClusterVsOthersChart cluster={selectedClusterData ?? undefined} />
-        </Box>
-      
     </Box>
     
   );
