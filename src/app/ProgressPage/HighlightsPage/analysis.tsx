@@ -173,11 +173,11 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
 
   const numWorkflows = cluster.metadata?.nWorkflows ?? 0;
   const proportion = (cluster.metadata?.percentageOfTotal ?? 0) / 100;
-  const quality = cluster.modelEvaluation?.modelQualityScore ?? 0;
+  const quality = Number(cluster.modelEvaluation?.modelQualityScore) || 0;
   const features = cluster.highShapFeatures?.features ?? [];
 
   return (
-    <Grid item xs={12} sm={6} md={4} >
+    <Grid size={{ xs: 12, sm: 6, md: 4 }} >
       <Card
         onClick={() => onSelect(clusterKey)}
         sx={{
