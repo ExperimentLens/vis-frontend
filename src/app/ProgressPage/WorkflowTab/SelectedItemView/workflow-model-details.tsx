@@ -14,7 +14,7 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useEffect } from 'react';
 import { fetchModelSummary } from '../../../../store/slices/modelAnalysisSlice';
 import { useParams } from 'react-router-dom';
-import { InfoOutlined } from '@mui/icons-material';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import Loader from '../../../../shared/components/loader';
 import { DataSplitsCardContent } from '../../../../shared/components/data-splits-card';
 

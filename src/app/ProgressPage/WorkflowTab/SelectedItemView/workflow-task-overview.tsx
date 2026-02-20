@@ -1,5 +1,7 @@
 import { Box, Typography, useTheme } from '@mui/material';
-import { CheckCircle as CheckCircleIcon, WarningAmberRounded as WarningAmberRoundedIcon, InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import { DetailsCard, DetailsCardItem } from '../../../../shared/components/details-card';

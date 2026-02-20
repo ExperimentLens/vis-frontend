@@ -19,7 +19,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge,  Button,  FormControl,  IconButton, Popover, styled, TextField, Tooltip, useTheme } from '@mui/material';
 import FilterBar from '../../../../shared/components/filter-bar';
 import ProgressBar from '../../../../shared/components/prgress-bar';
-import { debounce } from 'lodash';
+import debounce from 'lodash/debounce';
 import type { CustomGridColDef } from '../../../../shared/types/table-types';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import WorkflowRating from './workflow-rating';

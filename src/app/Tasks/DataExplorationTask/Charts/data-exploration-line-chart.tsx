@@ -1,6 +1,6 @@
 import { Box, useTheme, useMediaQuery } from '@mui/material';
 import { useEffect } from 'react';
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash/cloneDeep';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import LineChartControlPanel from '../ChartControls/data-exploration-line-control';

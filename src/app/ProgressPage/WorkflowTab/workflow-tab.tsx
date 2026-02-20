@@ -10,7 +10,7 @@ import WorkflowTreeView from './WorkflowTree/WorkflowTreeView';
 import SelectedItemViewer from './SelectedItemViewer';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import { useTheme } from '@mui/material/styles';
-import { isEqual } from 'lodash';
+import isEqual from 'lodash/isEqual';
 import type { IRun } from '../../../shared/models/experiment/run.model';
 
 const WorkflowTab = () => {

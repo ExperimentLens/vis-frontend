@@ -2,7 +2,7 @@ import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import ArrowUp from '@mui/icons-material/KeyboardArrowUp';
 import ArrowDown from '@mui/icons-material/KeyboardArrowDown';
-import { Close } from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
 import ToolBarWorkflow from './toolbar-workflow-table';
 import FilterBar from '../../../../shared/components/filter-bar';
 import { Popover, styled } from '@mui/material';
