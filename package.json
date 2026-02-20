@@ -64,7 +64,6 @@
     "vite-plugin-svgr": "^4.5.0"
   },
   "overrides": {
-    "minimatch": "^10.2.1",
-    "ajv": "^8.12.0"
+    "minimatch": "^10.2.1"
   }
 }
