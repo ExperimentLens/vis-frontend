@@ -11,6 +11,7 @@ import { Box, Divider, Typography, useTheme } from '@mui/material';
 import LayersIcon from '@mui/icons-material/Layers';
 import type { ClusterInsight } from '../../../shared/models/experiment.highlights.model';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AnalysisGroup from './analysis';
 
 const HighlightsPage = () => {
   const { experimentId } = useParams();
@@ -75,7 +76,7 @@ const HighlightsPage = () => {
         />
       ) : (
         <Box sx={{ flex: 1, overflowY: 'auto' }}>
-          <HighlightsGroupsCards />
+          <AnalysisGroup />
         </Box>
       )}
     </Box>
