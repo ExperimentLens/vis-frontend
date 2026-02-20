@@ -420,6 +420,70 @@ const ClusterVsOthersChart: React.FC<ClusterChartProps> = ({ cluster }) => {
   );
 };
 
+const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
+  const correlation = cluster?.correlationAnalysis;
+
+  if (!correlation || !correlation.removedFeatures || correlation.nRemovedFeatures === 0) {
+    return null;
+  }
+
+  const rows = Object.entries(correlation.removedFeatures)
+    .map(([featureName, info]: [string, any]) => ({
+      removedFeature: featureName,
+      relatedTo: info?.relatedTo ?? 'unknown',
+      maxRelationship: info?.maxRelationship ?? 0,
+    }))
+    // Group visually by `relatedTo`, and within each group sort by strength desc
+    .sort((a, b) => {
+      const relCmp = a.relatedTo.localeCompare(b.relatedTo);
+      if (relCmp !== 0) return relCmp;
+      return b.maxRelationship - a.maxRelationship;
+    });
+
+  if (rows.length === 0) return null;
+
+  return (
+    <ResponsiveCardVegaLite
+      title="REMOVED FEATURES CORRELATION"
+      actions={false}
+      spec={{
+        description: 'Features removed due to strong correlation',
+        mark: { type: 'bar' },
+        data: { values: rows },
+        encoding: {
+          y: {
+            field: 'removedFeature',
+            type: 'nominal',
+            title: 'Removed feature',
+            // Preserve the pre-sorted order so items
+            // sharing the same `relatedTo` appear together
+            sort: null,
+          },
+          x: {
+            field: 'maxRelationship',
+            type: 'quantitative',
+            title: 'Max relationship strength',
+            scale: { domain: [0, 1] },
+          },
+          color: {
+            field: 'relatedTo',
+            type: 'nominal',
+            title: 'Most related to',
+            legend: {
+              orient: 'bottom',
+            },
+          },
+          tooltip: [
+            { field: 'removedFeature', type: 'nominal', title: 'Removed feature' },
+            { field: 'relatedTo', type: 'nominal', title: 'Most related to' },
+            { field: 'maxRelationship', type: 'quantitative', title: 'Relationship', format: '.3f' },
+          ],
+        },
+      }}
+    />
+  );
+};
+
 
 const ClusterCard: React.FC<ClusterCardProps> = ({
   clusterKey,
@@ -687,6 +751,11 @@ const AnalysisGroup: React.FC = () => {
           <Grid size={{ xs: 6 }}>
             <Box>
               <ClusterVsOthersChart cluster={selectedClusterData ?? undefined} />
+            </Box>
+          </Grid>
+          <Grid size={{ xs: 12 }}>
+            <Box>
+              <CorrelationAnalysisChart cluster={selectedClusterData ?? undefined} />
             </Box>
           </Grid>
         </Grid>
