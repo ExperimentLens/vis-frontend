@@ -1,4 +1,4 @@
-import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Menu, MenuItem, Popover, Switch, Tooltip, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Popover, Switch, Tooltip, Typography } from '@mui/material';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
@@ -16,11 +16,10 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 import DatasetSelectorBar from './DataComparison/comparative-data-selector-bar';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import SearchableSelect from '../../../../shared/components/searchable-select';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
+import SelectionPopover from '../../../../shared/components/selection-popover';
 
 const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
@@ -131,9 +130,9 @@ const ComparativeAnalysisControls = ()=> {
         display="flex"
         alignItems="center"
         sx={{
-          p: 2,
-          minHeight: { xs: 16, lg: 40 },
-          height: 'auto',
+          px: 2,
+          height: 56,
+          minHeight: 56,
           flexWrap: { xs: 'wrap', lg: 'nowrap' },
           overflowX: 'auto',
         }}
@@ -145,51 +144,24 @@ const ComparativeAnalysisControls = ()=> {
                 <ViewColumnIcon />
               </IconButton>
             </Tooltip>
-            <Popover
+            <SelectionPopover
               open={isMetricsMenuOpen}
               anchorEl={metricsAnchorEl}
               onClose={handleCloseMetricsMenu}
+              title="Visible Metrics"
+              icon={<GridTableRowsIcon fontSize="small" />}
+              options={workflowsTable.uniqueMetrics.filter(m => m !== 'rating')}
+              selectedOptions={comparativeVisibleMetrics}
+              onToggle={(metricName) => {
+                const updated = comparativeVisibleMetrics.includes(metricName)
+                  ? comparativeVisibleMetrics.filter(m => m !== metricName)
+                  : [metricName, ...comparativeVisibleMetrics];
+
+                dispatch(setComparativeVisibleMetrics(updated));
+              }}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
               transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-              PaperProps={{
-                sx: {
-                  width: 300,
-                  maxHeight: 250,
-                  overflow: 'hidden',
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                  border: '1px solid rgba(0,0,0,0.04)',
-                },
-              }}
-            >
-              <SectionHeader icon={<GridTableRowsIcon fontSize="small" />} title="Visible Metrics" />
-              <List sx={{ maxHeight: 200, overflowY: 'auto', px: 1 }}>
-                {workflowsTable.uniqueMetrics
-                  .filter(metric => metric !== 'rating')
-                  .map((metricName) => (
-                    <ListItem key={metricName} dense disablePadding>
-                      <ListItemButton
-                        onClick={() => {
-                          const updated = comparativeVisibleMetrics.includes(metricName)
-                            ? comparativeVisibleMetrics.filter(m => m !== metricName)
-                            : [metricName, ...comparativeVisibleMetrics];
-
-                          dispatch(setComparativeVisibleMetrics(updated));
-                        }}
-                      >
-                        <ListItemIcon>
-                          {comparativeVisibleMetrics.includes(metricName) ? (
-                            <CheckBoxIcon color="primary" fontSize="small" />
-                          ) : (
-                            <CheckBoxOutlineBlankIcon fontSize="small" color="action" />
-                          )}
-                        </ListItemIcon>
-                        <ListItemText primary={metricName} />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
-              </List>
-            </Popover>
+            />
           </Box>
         )}
         {selectedComparisonTab === 1 ? (
@@ -266,71 +238,26 @@ const ComparativeAnalysisControls = ()=> {
             >
               <DatasetSelectorBar />
             </Popover>
-            <Popover
-              id={'Columns'}
+            <SelectionPopover
+              id="Columns"
               open={open}
               anchorEl={columnsAnchorEl}
               onClose={handleClose}
+              title="Visible Columns"
+              icon={<GridTableRowsIcon fontSize="small" />}
+              options={commonColumns.map(c => c.name)}
+              selectedOptions={selectedColumns}
+              onToggle={(colName) => {
+                if (!selectedDataset) return;
+                const updated = selectedColumns.includes(colName)
+                  ? selectedColumns.filter(col => col !== colName)
+                  : [...selectedColumns, colName];
+
+                dispatch(setDataComparisonSelectedColumns({ assetName: selectedDataset, selectedColumns: updated }));
+              }}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
               transformOrigin={{ vertical: 'top', horizontal: 'left' }}
-              PaperProps={{
-                elevation: 3,
-                sx: {
-                  width: 300,
-                  maxHeight: 250,
-                  overflow: 'hidden',
-                  padding: 0,
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                  border: '1px solid rgba(0,0,0,0.04)',
-                  mt: 1,
-                  '& .MuiList-root': {
-                    padding: 0,
-                  }
-                },
-              }}
-            >
-              <SectionHeader icon={<GridTableRowsIcon fontSize="small" />} title="Visible Columns" />
-
-              <List sx={{ width: '100%', py: 0, maxHeight: 200, overflow: 'auto' }}>
-                {commonColumns.map(column => (
-                  <ListItem
-                    key={column.name}
-                    disablePadding
-                    sx={{ '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.04)' } }}
-                  >
-                    <ListItemButton
-                      dense
-                      onClick={() => {
-                        if(!selectedDataset) return;
-                        const updated = selectedColumns.includes(column.name)
-                          ? selectedColumns.filter(col => col !== column.name)
-                          : [...selectedColumns, column.name];
-
-                        dispatch(
-                          setDataComparisonSelectedColumns({
-                            assetName: selectedDataset,
-                            selectedColumns: updated,
-                          }),
-                        );
-                      }}
-                    >
-                      <ListItemIcon>
-                        {selectedColumns.includes(column.name) ? (
-                          <CheckBoxIcon color="primary" fontSize="small" />
-                        ) : (
-                          <CheckBoxOutlineBlankIcon fontSize="small" color="action" />
-                        )}
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={column.name}
-                        primaryTypographyProps={{ fontSize: '0.95rem' }}
-                      />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
-              </List>
-            </Popover>
+            />
 
           </>
         )}
