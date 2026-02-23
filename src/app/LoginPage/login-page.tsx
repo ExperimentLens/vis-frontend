@@ -81,7 +81,7 @@ const LoginPage = () => {
         }}
       >
         <img
-          src="/images/extremexp-logo.png"
+          src={theme.palette.mode === 'dark' ? '/images/extremexp-logo-removebg-preview.png' : '/images/extremexp-logo.png'}
           height={130}
           alt="ExtremeXP Logo"
           style={{ backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.default : '#E6E6E6' }}
