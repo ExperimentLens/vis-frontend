@@ -7,7 +7,6 @@ interface ExperimentExplainabilityTooltipProps {
   workflowColors: Record<string, string>;
   xAxisName?: string;
   yAxisName?: string;
-  axisType?: string;
   selectedFeature?: string;
   selectedFeature2?: string;
   experimentId?: string;
@@ -19,7 +18,6 @@ export const createExperimentExplainabilityTooltipHandler = ({
   workflowColors,
   xAxisName = 'xAxis default',
   yAxisName = 'yAxis default',
-  axisType = 'numerical',
   selectedFeature,
   selectedFeature2,
   experimentId
@@ -45,24 +43,23 @@ export const createExperimentExplainabilityTooltipHandler = ({
   ).sort();
 
   const handler = new Handler({
-    sanitize: (v: any) => {
-      if (v == null) return '';
+    sanitize: (v: unknown) => {
+      if (v === null || v === undefined) return '';
       if (typeof v === 'number') return v.toFixed(4);
 
       return String(v);
     },
-    formatTooltip: (value: Record<string, any>, sanitize) => {
+    formatTooltip: (value: Record<string, unknown>, sanitize) => {
       let xValue = '';
       let yValue = '';
       let zValue = '';
 
-      console.log(value);
       if (value[xAxisName]) {
-        xValue = value[xAxisName];
+        xValue = String(value[xAxisName]);
       } else if (value.x !== undefined) {
-        xValue = value.x;
+        xValue = String(value.x);
       } else if (value.feature1 !== undefined) {
-        xValue = value.feature1;
+        xValue = String(value.feature1);
       } else {
         const keys = Object.keys(value).filter(key =>
           key !== yAxisName &&
@@ -73,16 +70,16 @@ export const createExperimentExplainabilityTooltipHandler = ({
         );
 
         if (keys.length > 0) {
-          xValue = value[keys[0]];
+          xValue = String(value[keys[0]]);
         }
       }
 
       if (value[yAxisName]) {
-        yValue = value[yAxisName];
+        yValue = String(value[yAxisName]);
       } else if (value.y !== undefined) {
-        yValue = value.y;
+        yValue = String(value.y);
       } else if (value.feature2 !== undefined) {
-        yValue = value.feature2;
+        yValue = String(value.feature2);
       } else {
         const keys = Object.keys(value).filter(key =>
           key !== xAxisName &&
@@ -94,21 +91,21 @@ export const createExperimentExplainabilityTooltipHandler = ({
         );
 
         if (keys.length > 0) {
-          yValue = value[keys[0]];
+          yValue = String(value[keys[0]]);
         }
       }
 
       if (value.z !== undefined) {
-        zValue = value.z;
+        zValue = String(value.z);
       } else if (value.value !== undefined) {
-        zValue = value.value;
+        zValue = String(value.value);
       } else if (value['Average Predicted Value'] !== undefined) {
-        zValue = value['Average Predicted Value'];
+        zValue = String(value['Average Predicted Value']);
       }
 
       if (!xValue && !yValue) {
         const availableData = Object.entries(value)
-          .map(([key, val]) => `<div><strong>${sanitize(key)}:</strong> ${sanitize(val)}</div>`)
+          .map(([key, val]) => `<div><strong>${sanitize(key)}:</strong> ${sanitize(String(val))}</div>`)
           .join('');
 
         return `
@@ -220,7 +217,7 @@ export const createExperimentExplainabilityTooltipHandler = ({
       }).join('');
 
       if (filteredWorkflowIds.length === 0) {
-        let filterMessage = '';
+        let filterMessage: string;
 
         if (selectedFeature && selectedFeature2) {
           filterMessage = `No workflows found with ${selectedFeature} = ${sanitize(xValue)} and ${selectedFeature2} = ${sanitize(yValue)}`;
@@ -240,7 +237,7 @@ export const createExperimentExplainabilityTooltipHandler = ({
         `;
       }
 
-      let titleText = '';
+      let titleText: string;
 
       if (selectedFeature && selectedFeature2) {
         titleText = `Workflows with ${selectedFeature} = ${sanitize(xValue)} and ${selectedFeature2} = ${sanitize(yValue)} (${filteredWorkflowIds.length} of ${workflowIds.length}):`;

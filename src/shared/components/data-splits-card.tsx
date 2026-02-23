@@ -63,7 +63,7 @@ export function DataSplitsCardContent({ dataSplitSizes }: DataSplitsCardContentP
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-      <Typography sx={{ color: '#64748b', fontWeight: 600, fontSize: 13 }}>
+      <Typography sx={{ color: 'text.secondary', fontWeight: 600, fontSize: 13 }}>
         Total: {total.toLocaleString()} samples
       </Typography>
 
@@ -74,7 +74,7 @@ export function DataSplitsCardContent({ dataSplitSizes }: DataSplitsCardContentP
           borderRadius: 5,
           overflow: 'hidden',
           display: 'flex',
-          backgroundColor: '#e2e8f0',
+          bgcolor: 'customSurface.barTrack',
         }}
       >
         {enriched.map((s, idx) => (
@@ -98,7 +98,7 @@ export function DataSplitsCardContent({ dataSplitSizes }: DataSplitsCardContentP
                   top: 0,
                   bottom: 0,
                   width: 2,
-                  backgroundColor: '#ffffff',
+                  bgcolor: 'background.paper',
                 }}
               />
             )}
@@ -129,7 +129,7 @@ export function DataSplitsCardContent({ dataSplitSizes }: DataSplitsCardContentP
           <Box
             key={`tile-${s.key}-${idx}`}
             sx={{
-              backgroundColor: '#f8fafc',
+              bgcolor: 'customSurface.tray',
               borderRadius: 5,
               px: 1,
               py: 1,
@@ -157,7 +157,7 @@ export function DataSplitsCardContent({ dataSplitSizes }: DataSplitsCardContentP
               {s.size.toLocaleString()}
             </Typography>
 
-            <Typography sx={{ fontWeight: 600, color: '#64748b', fontSize: 13 }}>
+            <Typography sx={{ fontWeight: 600, color: 'text.secondary', fontSize: 13 }}>
               {formatPct(s.percent)}
             </Typography>
           </Box>

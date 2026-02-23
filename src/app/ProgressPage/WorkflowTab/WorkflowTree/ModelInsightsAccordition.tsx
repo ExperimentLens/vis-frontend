@@ -1,12 +1,11 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
 import InsightsIcon from '@mui/icons-material/Insights';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
-import theme from '../../../../mui-theme';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 import type { RootState } from '../../../../store/store';
@@ -20,10 +19,11 @@ export default function ModelInsightsAccordion() {
   const hasModelpt = tab?.workflowConfiguration.dataAssets?.some(
     asset => asset.name === 'model.pt'
   );
+  const theme = useTheme();
 
   return (
     <SimpleTreeView defaultExpandedItems={['model']} selectedItems={tab?.dataTaskTable?.selectedId ?? null}>
-      <TreeItem2
+      <TreeItem
         aria-expanded
         itemId="model"
         slotProps={{ content: { style: { paddingTop: 0, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 } } }}
@@ -63,7 +63,7 @@ export default function ModelInsightsAccordion() {
           const disabledIdeko = id !== 'hyperparameters' && experiment.data?.name === 'main_BestClassifier';
 
           return (
-            <TreeItem2
+            <TreeItem
               key={id}
               itemId={id}
               aria-disabled={disabled || disabledIdeko}
@@ -80,7 +80,7 @@ export default function ModelInsightsAccordion() {
                   onClick={() => {
                     if(disabled || disabledIdeko) return;
                     dispatch(setSelectedId(id));
-                    dispatch(setSelectedItem({ type: id as any }));
+                    dispatch(setSelectedItem({ type: id, data: {} }));
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -92,7 +92,7 @@ export default function ModelInsightsAccordion() {
             />
           );
         })}
-      </TreeItem2>
+      </TreeItem>
     </SimpleTreeView>
   );
 }

@@ -57,10 +57,10 @@ const CompareCompleted = () => {
                 }}
               >
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <MetricsDistribution />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <TopWorkflowMetric />
                   </Grid>
                 </Grid>
@@ -88,10 +88,10 @@ const CompareCompleted = () => {
                 }}
               >
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <VariabilityPointCharts />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid size={{ xs: 12, md: 6 }}>
                     <VariabilityPointHeatmap />
                   </Grid>
                 </Grid>

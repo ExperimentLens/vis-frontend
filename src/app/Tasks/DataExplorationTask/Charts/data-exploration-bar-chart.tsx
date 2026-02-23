@@ -1,4 +1,4 @@
-import { Box, useTheme, useMediaQuery, Grid } from '@mui/material';
+import { Box, useTheme, useMediaQuery } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import BarChartControlPanel from '../ChartControls/data-exploration-bar-control';
 import InfoMessage from '../../../../shared/components/InfoMessage';
@@ -258,6 +258,7 @@ const BarChart = () => {
     const charts = (metrics ?? [])
       .filter(Boolean)
       .map(metric => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const single = getSingleMetricBarSpec(metric) as any;
 
         return {

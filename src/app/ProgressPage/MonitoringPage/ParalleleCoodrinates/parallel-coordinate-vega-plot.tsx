@@ -2,13 +2,13 @@ import type { ViewListener } from 'react-vega';
 import { Vega } from 'react-vega';
 import { scheme } from 'vega';
 import vegaTooltip from 'vega-tooltip';
-import type { Axis, Item, Scale } from 'vega-typings/types';
+import type { Axis, Item, Scale } from 'vega-typings';
 import type { View } from 'vega';
 import { useEffect, useState, useRef } from 'react';
+import { useTheme } from '@mui/material/styles';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
 
 interface ParallelCoordinateVegaProps {
-  parallelData: ParallelDataItem[]
   progressParallel: { selected: string }
   foldArray: React.MutableRefObject<string[]>
   selectedWorkflows: string[]
@@ -31,12 +31,12 @@ function setValuesIfSelectedAndDefault(
 }
 
 const ParallelCoordinateVega = ({
-  parallelData,
   progressParallel,
   foldArray,
   selectedWorkflows,
   processedData
 }: ParallelCoordinateVegaProps) => {
+  const theme = useTheme();
   const [chartHeight, setChartHeight] = useState(window.innerHeight * 0.27);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(0);
@@ -47,7 +47,7 @@ const ParallelCoordinateVega = ({
     if (!container) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         const { width } = entry.contentRect;
 
         setChartWidth(width);
@@ -160,6 +160,14 @@ const ParallelCoordinateVega = ({
         scheme('category20')[0],
       ],
     });
+  } else {
+    // Fallback so marks that reference this scale don't error when there's no numeric data
+    generatedScales.push({
+      name: 'selectedLastColumnColorScale',
+      type: 'ordinal',
+      domain: [],
+      range: ['#999999'],
+    } as unknown as Scale);
   }
 
   for (const columnName of foldArray.current) {
@@ -191,12 +199,12 @@ const ParallelCoordinateVega = ({
       return !isNaN(val);
     })
     .map((row) => {
-      const filled: any = { ...row };
+      const filled: ParallelDataItem & { selected: boolean } = { ...row };
 
       for (const axis of columnNames) {
         if (
           filled[axis] === '' ||
-        filled[axis] == null ||
+        filled[axis] === null || filled[axis] === undefined ||
         (typeof filled[axis] === 'number' && Number.isNaN(filled[axis]))
         ) {
           filled[axis] = 'n/a';
@@ -217,7 +225,14 @@ const ParallelCoordinateVega = ({
           width: chartWidth,
           padding: { top: 15, left: 2, right: 2, bottom: 2 },
           autosize: { type: 'fit', contains: 'padding' }, // Ensure the chart adjusts to container size
+          background: 'transparent',
           config: {
+            axis: {
+              labelColor: theme.palette.text.primary,
+              titleColor: theme.palette.text.primary,
+              tickColor: theme.palette.text.secondary,
+              domainColor: theme.palette.text.secondary,
+            },
             axisY: {
               titleY: -12,
               titleX: 10,
@@ -237,14 +252,18 @@ const ParallelCoordinateVega = ({
             },
             {
               name: 'gradientData',
-              transform: [
-                {
-                  type: 'sequence',
-                  start: selectedLastColumnMin,
-                  stop: selectedLastColumnMax,
-                  step: (selectedLastColumnMax - selectedLastColumnMin) / 256,
-                },
-              ],
+              ...(isValidDomain
+                ? {
+                  transform: [
+                    {
+                      type: 'sequence',
+                      start: selectedLastColumnMin,
+                      stop: selectedLastColumnMax,
+                      step: (selectedLastColumnMax - selectedLastColumnMin) / 256,
+                    },
+                  ],
+                }
+                : { values: [] }),
             },
           ],
           signals: [
@@ -323,9 +342,9 @@ const ParallelCoordinateVega = ({
                 },
               ],
             },
-            {
+            ...(isValidDomain ? [{
               name: 'colourRect',
-              type: 'rect',
+              type: 'rect' as const,
               from: { data: 'gradientData' },
               encode: {
                 enter: {
@@ -343,7 +362,7 @@ const ParallelCoordinateVega = ({
                   },
                 },
               },
-            },
+            }] : []),
           ],
         }}
       />

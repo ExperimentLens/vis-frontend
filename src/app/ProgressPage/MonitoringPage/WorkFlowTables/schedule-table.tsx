@@ -2,7 +2,7 @@ import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
 import ArrowUp from '@mui/icons-material/KeyboardArrowUp';
 import ArrowDown from '@mui/icons-material/KeyboardArrowDown';
-import { Close } from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
 import ToolBarWorkflow from './toolbar-workflow-table';
 import FilterBar from '../../../../shared/components/filter-bar';
 import { Popover, styled } from '@mui/material';
@@ -13,7 +13,6 @@ import type { ScheduleTableRow } from '../../../../store/slices/monitorPageSlice
 import { setScheduledTable } from '../../../../store/slices/monitorPageSlice';
 import type { GridColumnNode } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
-import theme from '../../../../mui-theme';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import type { CustomGridColDef } from '../../../../shared/types/table-types';
@@ -55,9 +54,8 @@ const WorkflowActions = (props: {
     }
   };
 
-  const removeRow =
-  (list: Number) => {
-    let filteredWorkflows = scheduledTable.rows.filter(
+  const removeRow = () => {
+    const filteredWorkflows = scheduledTable.rows.filter(
       row => !(row.id === id),
     );
 
@@ -108,7 +106,7 @@ const WorkflowActions = (props: {
         }}
       />
       <Close
-        onClick={() => removeRow(id)} // TODO: Create function deleting the workflow (delete from scheduled? Or from whole database?)
+        onClick={() => removeRow()} // TODO: Create function deleting the workflow (delete from scheduled? Or from whole database?)
         sx={{
           cursor: 'pointer',
           color: theme => theme.palette.primary.main,
@@ -199,12 +197,9 @@ export default function ScheduleTable() {
         workflows.data.filter(workflow => workflow.status === 'SCHEDULED')
           .reduce((acc: string[], workflow) => {
             const params = workflow.params;
-            let paramNames: string[] = [];
 
             if (params) {
-              paramNames = params.map(param => param.name);
-
-              return [...acc, ...paramNames];
+              return [...acc, ...params.map(param => param.name)];
             } else {
               return [...acc];
             }
@@ -223,7 +218,7 @@ export default function ScheduleTable() {
           }
 
           return acc;
-        }, {})).filter(([_, variants]) => variants.size > 1)
+        }, {})).filter(([, variants]) => variants.size > 1)
         .map(([name]) => name);
 
       const rows: ScheduleTableRow[] = workflows.data
@@ -245,7 +240,7 @@ export default function ScheduleTable() {
             ...Array.from(uniqueParameters).reduce((acc, variant) => {
               const rawValue = params?.find(param => param.name === variant)?.value;
               const parsedValue =
-                rawValue != null && !isNaN(Number(rawValue)) && rawValue !== ''
+                rawValue !== null && rawValue !== undefined && !isNaN(Number(rawValue)) && rawValue !== ''
                   ? Number(rawValue)
                   : rawValue ?? 'n/a';
 
@@ -273,7 +268,7 @@ export default function ScheduleTable() {
         ...Array.from(uniqueParameters).reduce((acc, variant) => {
           const rawValue = params?.find(param => param.name === variant)?.value;
           const parsedValue =
-                rawValue != null && !isNaN(Number(rawValue)) && rawValue !== ''
+                rawValue !== null && rawValue !== undefined && !isNaN(Number(rawValue)) && rawValue !== ''
                   ? Number(rawValue)
                   : rawValue ?? 'n/a';
 
@@ -318,7 +313,7 @@ export default function ScheduleTable() {
         return acc;
       }, {} as Record<string, boolean>);
 
-      const { filteredRows, filtersCounter } = applyScheduledFilters(
+      const { filteredRows } = applyScheduledFilters(
         rows,
         scheduledTable.filters,
         scheduledTable.selectedSpaces,
@@ -340,11 +335,15 @@ export default function ScheduleTable() {
 
   const filterClicked = (event: React.MouseEvent<HTMLElement>) => {
     setFilterOpen(!isFilterOpen);
-    !isFilterOpen ? setAnchorEl(event.currentTarget as HTMLButtonElement) : setAnchorEl(null);
+    if (!isFilterOpen) {
+      setAnchorEl(event.currentTarget as HTMLButtonElement);
+    } else {
+      setAnchorEl(null);
+    }
   };
 
   const removeSelected =
-    (list: Number[] | string) => (e: React.SyntheticEvent) => {
+    (list: number[] | string) => () => {
       let filteredWorkflows;
 
       if (typeof list !== 'string') {
@@ -611,7 +610,7 @@ export default function ScheduleTable() {
                   display: 'block',
                   width: '100%',
                   height: '2px',
-                  backgroundColor: theme.palette.primary.main,
+                  backgroundColor: theme => theme.palette.primary.main,
                   position: 'absolute',
                   bottom: 0,
                   left: 0,
@@ -628,7 +627,7 @@ export default function ScheduleTable() {
                   display: 'block',
                   width: '100%',
                   height: '2px',
-                  backgroundColor: theme.palette.secondary.dark,
+                  backgroundColor: theme => theme.palette.secondary.dark,
                   position: 'absolute',
                   bottom: 0,
                   left: 0,

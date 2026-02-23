@@ -1,7 +1,6 @@
-import { Box, Typography } from '@mui/material';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { Box, Typography, useTheme } from '@mui/material';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import CommitIcon from '@mui/icons-material/Commit';
-import theme from '../../../../mui-theme';
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -18,6 +17,7 @@ export default function TaskTreeItem({ taskId, taskName }: Props) {
   const dispatch = useAppDispatch();
   const { experimentId } = useParams();
   const { tab } = useAppSelector((s: RootState) => s.workflowPage);
+  const theme = useTheme();
 
   const {
     paramsForTask,
@@ -59,7 +59,7 @@ export default function TaskTreeItem({ taskId, taskName }: Props) {
   }, [tab, taskId]);
 
   return (
-    <TreeItem2
+    <TreeItem
       aria-expanded
       itemId={`task-${taskId}`}
       slotProps={{
@@ -99,6 +99,6 @@ export default function TaskTreeItem({ taskId, taskName }: Props) {
         experimentId={experimentId}
         workflowId={workflowId}
       />
-    </TreeItem2>
+    </TreeItem>
   );
 }

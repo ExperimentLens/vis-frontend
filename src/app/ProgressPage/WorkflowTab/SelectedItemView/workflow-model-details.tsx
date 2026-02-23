@@ -14,7 +14,7 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useEffect } from 'react';
 import { fetchModelSummary } from '../../../../store/slices/modelAnalysisSlice';
 import { useParams } from 'react-router-dom';
-import { InfoOutlined } from '@mui/icons-material';
+import InfoOutlined from '@mui/icons-material/InfoOutlined';
 import Loader from '../../../../shared/components/loader';
 import { DataSplitsCardContent } from '../../../../shared/components/data-splits-card';
 
@@ -100,17 +100,17 @@ const ModelDetails = () => {
 
       <Box paddingTop={2}>
         <Grid container spacing={2}>
-          <Grid item xs={6}>
+          <Grid size={{ xs: 6 }}>
             <Box sx={{ minHeight: { md: 305, xl: 400 } }}>
               <ConfusionMatrixPlot />
             </Box>
           </Grid>
-          <Grid item xs={6}>
+          <Grid size={{ xs: 6 }}>
             <Box sx={{ minHeight: { md: 305, xl: 400 } }}>
               <RocCurvePlot />
             </Box>
           </Grid>
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <ClassificationReportTable />
           </Grid>
         </Grid>

@@ -59,7 +59,7 @@ export const checkAuthentication = async (externalToken: string) => {
     });
 
     return true;
-  } catch (error) {
+  } catch {
     removeToken();
 
     return false;

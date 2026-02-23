@@ -700,7 +700,7 @@ export const monitoringPageSlice = createSlice({
       .addCase(fetchComparativeRocCurve.fulfilled, (state, action) => {
         const runId = action.meta.arg.runId;
 
-        let rawData: any;
+        let rawData: unknown;
 
         if (typeof action.payload === 'string') {
           const trimmed = action.payload.trim();

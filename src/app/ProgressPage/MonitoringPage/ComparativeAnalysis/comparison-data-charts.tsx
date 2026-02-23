@@ -227,7 +227,7 @@ const ComparisonDataCharts = () => {
   const renderCharts =
     selectedDataset && assetsForSelectedDataset.length && selectedColumns.length
       ? selectedColumns.map((col) => (
-        <Grid item xs={6} key={col}>
+        <Grid size={{ xs: 6 }} key={col}>
           {dataComparisonViewMode === 'boxplot' ? (
             <BoxPlot
               assetName={selectedDataset!}
@@ -322,7 +322,7 @@ const ComparisonDataCharts = () => {
             );
 
             return (
-              <Grid item xs={6} key={`${selectedDataset}-${workflowId}`}>
+              <Grid size={{ xs: 6 }} key={`${selectedDataset}-${workflowId}`}>
                 <PreviewImageCard
                   title={titleNode}
                   fileNames={fileNames}

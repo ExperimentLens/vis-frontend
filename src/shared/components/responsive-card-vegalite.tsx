@@ -24,7 +24,6 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { VegaLite } from 'react-vega';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { grey } from '@mui/material/colors';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import DownloadIcon from '@mui/icons-material/Download';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
@@ -67,10 +66,10 @@ const SectionHeader = ({
     sx={{
       display: 'flex',
       alignItems: 'center',
-      borderBottom: `1px solid ${grey[200]}`,
+      borderBottom: theme => `1px solid ${theme.palette.divider}`,
       px: 2,
       py: 1.5,
-      background: 'linear-gradient(to right, #f1f5f9, #f8fafc)',
+      background: theme => theme.palette.customSurface.sectionHeader,
       borderTopLeftRadius: '10px',
       borderTopRightRadius: '10px',
       margin: 0, // Ensure no margin
@@ -82,7 +81,7 @@ const SectionHeader = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#3566b5',
+        color: 'primary.main',
         mr: 1.5,
       }}
     >
@@ -94,7 +93,7 @@ const SectionHeader = ({
         display: 'flex',
         alignItems: 'center',
         fontWeight: 600,
-        color: '#1e3a5f',
+        color: 'text.primary',
         letterSpacing: '0.3px',
       }}
     >
@@ -103,14 +102,17 @@ const SectionHeader = ({
   </Box>
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type VLSpec = Record<string, any>;
 
-const isObject = (v: any): v is Record<string, any> =>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isObject = (v: unknown): v is Record<string, any> =>
   v !== null && typeof v === 'object' && !Array.isArray(v);
 
 const applySizeToConcatChildren = (spec: VLSpec, w: number, h?: number): VLSpec => {
   const s: VLSpec = JSON.parse(JSON.stringify(spec));
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const visit = (node: any) => {
     if (!isObject(node)) return;
 
@@ -222,9 +224,9 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
   const displaySpec = getSortedSpec();
 
   const isConcat =
-    Boolean((displaySpec as any)?.vconcat) ||
-    Boolean((displaySpec as any)?.hconcat) ||
-    Boolean((displaySpec as any)?.concat);
+    Boolean(displaySpec?.vconcat) ||
+    Boolean(displaySpec?.hconcat) ||
+    Boolean(displaySpec?.concat);
 
   // Function to update the chart dimensions based on the container's size
   const updateSize = useCallback(() => {
@@ -407,6 +409,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       btn.style.cursor = 'pointer';
       btn.style.border = 'none';
       btn.style.background = 'transparent';
+      btn.style.color = 'black';
       btn.style.fontSize = '18px';
       btn.style.lineHeight = '1';
       btn.style.padding = '2px 6px';
@@ -423,6 +426,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       body.style.overflowWrap = 'normal';
       body.style.overflowX = 'auto';
       body.style.overflowY = 'auto';
+      body.style.color = 'black';
       body.innerHTML = src.innerHTML;
 
       wrap.appendChild(head);
@@ -502,7 +506,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
     // rAF throttle for clamp
     let raf: number | null = null;
     const schedule = () => {
-      if (raf != null) return;
+      if (raf !== null) return;
       raf = requestAnimationFrame(() => {
         raf = null;
         clampLive();
@@ -528,7 +532,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       window.removeEventListener('resize', schedule);
       window.removeEventListener('click', onWindowClick);
       rootObserver.disconnect();
-      if (raf != null) cancelAnimationFrame(raf);
+      if (raf !== null) cancelAnimationFrame(raf);
 
       closePinned();
 
@@ -646,11 +650,26 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
     setFullscreenAnchorEl(null);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const deepMerge = (target: any, source: any): any => {
+    if (!isObject(target) || !isObject(source)) return source;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const out: any = { ...target };
+    for (const key of Object.keys(source)) {
+      const sv = source[key];
+      const tv = target[key];
+      out[key] = isObject(tv) && isObject(sv) ? deepMerge(tv, sv) : sv;
+    }
+    return out;
+  };
+
   const sizedSpec = useMemo(() => {
     if (!isConcat) return displaySpec;
 
     // For concat: give children the measured width so they don't default to 200px.
     // If you *also* want consistent heights per child, pass a height too.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return applySizeToConcatChildren(displaySpec as any, width /* , height */);
   }, [displaySpec, isConcat, width]);
 
@@ -661,9 +680,59 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
     if (!isConcat) return displaySpec;
 
     // For concat: size children explicitly so they don't default to 200px
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return applySizeToConcatChildren(displaySpec as any, fullscreenWidth, fullscreenHeight);
   }, [displaySpec, isConcat, fullscreenWidth, fullscreenHeight]);
 
+  const vegaBg = theme.palette.customSurface.cardContent;
+  const textColor = theme.palette.text.primary;
+  const dividerColor = theme.palette.divider;
+
+  const vegaThemePatch = useMemo(() => {
+    return {
+      background: vegaBg,
+      config: {
+        view: { fill: vegaBg, stroke: null },
+        axis: {
+          labelColor: textColor,
+          titleColor: textColor,
+          gridColor: dividerColor,
+          domainColor: dividerColor,
+          tickColor: dividerColor,
+        },
+        legend: {
+          labelColor: textColor,
+          titleColor: textColor,
+        },
+        title: { color: textColor },
+      },
+    };
+  }, [vegaBg, textColor, dividerColor]);
+
+  const themedSizedSpec = useMemo(() => {
+    const base = {
+      ...sizedSpec,
+      autosize: isConcat
+        ? { type: 'fit-x', contains: 'padding', resize: true }
+        : { type: 'fit', contains: 'padding', resize: true },
+      ...(isConcat ? {} : { width, height }),
+    };
+
+    // Make sure our theme wins (deep merge so config.axis etc merges nicely)
+    return deepMerge(base, vegaThemePatch);
+  }, [sizedSpec, isConcat, width, height, vegaThemePatch]);
+
+  const themedFullscreenSpec = useMemo(() => {
+    const base = {
+      ...fullscreenSpec,
+      autosize: isConcat
+        ? { type: 'fit-x', contains: 'padding', resize: true }
+        : { type: 'fit', contains: 'padding', resize: true },
+      ...(isConcat ? {} : { width: fullscreenWidth, height: fullscreenHeight }),
+    };
+
+    return deepMerge(base, vegaThemePatch);
+  }, [fullscreenSpec, isConcat, fullscreenWidth, fullscreenHeight, vegaThemePatch]);
   return (
     <>
       <style>
@@ -693,7 +762,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background: theme => theme.palette.customSurface.cardHeader,
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             padding: '4px 16px',
             height: '40px',
@@ -720,7 +789,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
                 textTransform: 'uppercase',
                 fontWeight: 600,
                 letterSpacing: '0.5px',
-                color: '#2a3f5f',
+                color: 'text.primary',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -889,7 +958,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
         </Box>
         <CardContent
           sx={{
-            backgroundColor: '#ffffff',
+            bgcolor: 'customSurface.cardContent',
             py: 2,
             px: 3,
             '&:last-child': {
@@ -921,7 +990,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             ) : (
               <VegaLite
                 spec={{
-                  ...sizedSpec,
+                  ...themedSizedSpec,
                   autosize: isConcat
                     ? { type: 'fit-x', contains: 'padding', resize: true }
                     : { type: 'fit', contains: 'padding', resize: true },
@@ -950,7 +1019,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             width: fullScreen ? '100%' : '90vw',
             height: fullScreen ? '100%' : '90vh',
             maxWidth: 'unset',
-            bgcolor: '#ffffff',
+            bgcolor: 'background.paper',
             overflow: 'hidden',
             boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
           },
@@ -961,7 +1030,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+            background: theme => theme.palette.customSurface.cardHeader,
             borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
             px: 3,
             py: 1.5,
@@ -973,7 +1042,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
               component="div"
               sx={{
                 fontWeight: 600,
-                color: '#2a3f5f',
+                color: 'text.primary',
                 letterSpacing: '0.3px',
               }}
             >
@@ -1126,7 +1195,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             ) : (
               <VegaLite
                 spec={{
-                  ...fullscreenSpec,
+                  ...themedFullscreenSpec,
                   autosize: isConcat
                     ? { type: 'fit-x', contains: 'padding', resize: true }
                     : { type: 'fit', contains: 'padding', resize: true },
@@ -1156,7 +1225,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             px: 3,
             py: 2,
             borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-            background: '#f8f9fa',
+            background: theme => theme.palette.customSurface.footer,
           }}
         >
           <Button

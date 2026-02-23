@@ -10,8 +10,8 @@ export type VegaOrdinalColorScale = {
  * You can tweak the order once and both charts will update.
  */
 export const getColorPalette = (theme: Theme): string[] => [
-  theme.palette.primary.main,
   theme.palette.secondary.main,
+  theme.palette.customPrimary.main,
   theme.palette.error.main,
   theme.palette.warning.main,
   theme.palette.info.main,

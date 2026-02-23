@@ -138,7 +138,7 @@ export default function PreviewImageCard({ title, fileNames }: PreviewImageCardP
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: '#f9f9f9',
+                  bgcolor: 'background.default',
                   p: 2,
                 }}
               >

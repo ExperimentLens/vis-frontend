@@ -15,12 +15,11 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { setSelectedTab, setWorkflowsTable, toggleWorkflowSelection, setHoveredWorkflow, setVisibleTable, setExpandedGroup } from '../../../../store/slices/monitorPageSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge,  Button,  FormControl,  IconButton, InputLabel, MenuItem, Popover, Select, styled, TextField, Tooltip } from '@mui/material';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { Badge,  Button,  FormControl,  IconButton, Popover, styled, TextField, Tooltip, useTheme } from '@mui/material';
 import FilterBar from '../../../../shared/components/filter-bar';
 import ProgressBar from '../../../../shared/components/prgress-bar';
-import theme from '../../../../mui-theme';
-import { debounce } from 'lodash';
+import debounce from 'lodash/debounce';
 import type { CustomGridColDef } from '../../../../shared/types/table-types';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import WorkflowRating from './workflow-rating';
@@ -40,38 +39,42 @@ export interface Data {
 
 // WorkflowActions
 
-const WorkflowActions = (props: {
+const WorkflowActions = memo((props: {
   currentStatus: string
   workflowId: string,
   experimentId: string | undefined,
 }) => {
   const { currentStatus, workflowId, experimentId } = props;
-  const { workflows } = useAppSelector(
-    (state: RootState) => state.progressPage,
+  const workflowsData = useAppSelector(
+    (state: RootState) => state.progressPage.workflows.data,
   );
   const dispatch = useAppDispatch();
   const [anchorElCreateWorkflow, setAnchorElCreateWorkflow] = useState<null | HTMLElement>(null);
+  const theme = useTheme();
+  const uniqueParameters = useMemo(() =>
+    workflowsData.reduce(
+      (acc: Record<string, Set<string>>, workflow) => {
+        if (workflow.params) {
+          workflow.params.forEach(param => {
+            if (!acc[param.name]) {
+              acc[param.name] = new Set();
+            }
+            acc[param.name].add(param.value);
+          });
+        }
 
-  const uniqueParameters = workflows.data.reduce(
-    (acc: Record<string, Set<string>>, workflow) => {
-      if (workflow.params) {
-        workflow.params.forEach(param => {
-          if (!acc[param.name]) {
-            acc[param.name] = new Set();
-          }
-          acc[param.name].add(param.value);
-        });
-      }
-
-      return acc;
-    },
-    {}
-  );
+        return acc;
+      },
+      {}
+    ),
+  [workflowsData]);
 
   const [workflowName, setWorkflowName] = useState('');
   const [selectedParams, setSelectedParams] = useState<Record<string, string>>({});
 
-  const currentWorkflow = workflows.data?.find(w => w.id === workflowId);
+  const currentWorkflow = useMemo(() =>
+    workflowsData?.find(w => w.id === workflowId),
+  [workflowsData, workflowId]);
 
   useEffect(() => {
     if (anchorElCreateWorkflow && currentWorkflow) {
@@ -119,7 +122,7 @@ const WorkflowActions = (props: {
       dataAssets: [],
       tags: {},
     };
-    const updatedWorkflows = workflows.data.concat(newRun);
+    const updatedWorkflows = workflowsData.concat(newRun);
 
     dispatch(setWorkflowsData(updatedWorkflows));
 
@@ -128,7 +131,7 @@ const WorkflowActions = (props: {
 
   const handlePausePlay = () => {
     if(currentStatus === 'PAUSED') {
-      const updatedWorkflows = workflows.data?.map(workflow =>
+      const updatedWorkflows = workflowsData?.map(workflow =>
         workflow.id === workflowId
           ? { ...workflow, status: 'RUNNING' }
           : workflow
@@ -143,7 +146,7 @@ const WorkflowActions = (props: {
         })
       );
     } else {
-      const updatedWorkflows = workflows.data?.map(workflow =>
+      const updatedWorkflows = workflowsData?.map(workflow =>
         workflow.id === workflowId
           ? { ...workflow, status: 'PAUSED' }
           : workflow
@@ -161,7 +164,7 @@ const WorkflowActions = (props: {
   };
 
   const handleStop = () => {
-    const updatedWorkflows = workflows.data?.map(workflow =>
+    const updatedWorkflows = workflowsData?.map(workflow =>
       workflow.id === workflowId
         ? { ...workflow, status: 'KILLED' }
         : workflow
@@ -176,6 +179,7 @@ const WorkflowActions = (props: {
       })
     );
   };
+  
 
   return (
     <span onClick={event => event.stopPropagation()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -319,7 +323,7 @@ const WorkflowActions = (props: {
       </Popover>
     </span>
   );
-};
+});
 
 const ACTION_COL_WIDTH = 120;
 const STATUS_COL_WIDTH = 120;
@@ -441,6 +445,54 @@ const getCsvHeader = (c: { headerName?: string; field: string }) => {
   return headerName || c.field;
 };
 
+const WorkflowColorDot = styled('span')<{
+  color: string;
+  selected: boolean;
+}>(({ color, selected, theme }) => ({
+  width: 10,
+  height: 10,
+  borderRadius: '50%',
+  display: 'inline-block',
+  flex: '0 0 auto',
+  backgroundColor: selected ? color : theme.palette.grey[400],
+  border: `1px solid ${theme.palette.grey[500]}`,
+}));
+
+const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
+  const dispatch = useAppDispatch();
+  const { selectedWorkflows, workflowColors, expandedGroups } = useAppSelector(
+    (s: RootState) => s.monitorPage.workflowsTable
+  );
+
+  if (row.isGroupSummary) {
+    const isExpanded = expandedGroups.includes(row.id);
+
+    return (
+      <Box
+        onClick={(e) => {
+          e.stopPropagation();
+          dispatch(setExpandedGroup(row.id));
+        }}
+        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, width: '100%', height: '100%', cursor: 'pointer' }}
+      >
+        {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+        <span>{row.workflowId}</span>
+      </Box>
+    );
+  }
+
+  const workflowId = row.workflowId;
+  const isSelected = selectedWorkflows.includes(workflowId);
+  const color = workflowColors[workflowId];
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+      <WorkflowColorDot color={color} selected={isSelected} />
+      <span>{workflowId}</span>
+    </Box>
+  );
+};
+
 export default function WorkflowTable() {
   const { workflows } = useAppSelector(
     (state: RootState) => state.progressPage,
@@ -459,15 +511,16 @@ export default function WorkflowTable() {
   const prevGroupByRef = useRef<string[]>([]);
 
   const handleSelectionChange = (newSelection: GridRowSelectionModel) => {
-    if (newSelection === workflowsTable.selectedWorkflows) return;
-    newSelection.forEach(workflowId => {
-      dispatch(toggleWorkflowSelection(workflowId));
+    const newIds = Array.from(newSelection.ids) as string[];
+
+    newSelection.ids.forEach(workflowId => {
+      dispatch(toggleWorkflowSelection(workflowId as string));
     });
-    dispatch(setWorkflowsTable({ selectedWorkflows: newSelection }));
+    dispatch(setWorkflowsTable({ selectedWorkflows: newIds }));
   };
 
   const handleLaunchCompletedTab =
-    () => (e: React.SyntheticEvent) => {
+    () => () => {
       dispatch(setSelectedTab(1));
       const searchParams = new URLSearchParams(location.search);
 
@@ -480,7 +533,11 @@ export default function WorkflowTable() {
 
   const filterClicked = (event: React.MouseEvent<HTMLElement>) => {
     setFilterOpen(!isFilterOpen);
-    !isFilterOpen ? setAnchorEl(event.currentTarget) : setAnchorEl(null);
+    if (!isFilterOpen) {
+      setAnchorEl(event.currentTarget);
+    } else {
+      setAnchorEl(null);
+    }
   };
 
   const handleFilterChange = (
@@ -683,54 +740,6 @@ export default function WorkflowTable() {
     return { filteredRows, filtersCounter: counter };
   };
 
-  const WorkflowColorDot = styled('span')<{
-    color: string;
-    selected: boolean;
-  }>(({ color, selected, theme }) => ({
-    width: 10,
-    height: 10,
-    borderRadius: '50%',
-    display: 'inline-block',
-    flex: '0 0 auto',
-    backgroundColor: selected ? color : theme.palette.grey[400],
-    border: `1px solid ${theme.palette.grey[500]}`,
-  }));
-
-  const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
-    const dispatch = useAppDispatch();
-    const { selectedWorkflows, workflowColors, expandedGroups } = useAppSelector(
-      (s: RootState) => s.monitorPage.workflowsTable
-    );
-
-    if (row.isGroupSummary) {
-      const isExpanded = expandedGroups.includes(row.id);
-
-      return (
-        <Box
-          onClick={(e) => {
-            e.stopPropagation();
-            dispatch(setExpandedGroup(row.id));
-          }}
-          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, width: '100%', height: '100%', cursor: 'pointer' }}
-        >
-          {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
-          <span>{row.workflowId}</span>
-        </Box>
-      );
-    }
-
-    const workflowId = row.workflowId;
-    const isSelected = selectedWorkflows.includes(workflowId);
-    const color = workflowColors[workflowId] ?? theme.palette.grey[400];
-
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <WorkflowColorDot color={color} selected={isSelected} />
-        <span>{workflowId}</span>
-      </Box>
-    );
-  };
-
   useEffect(() => {
     if(workflowsTable.initialized) {
       const { filteredRows, filtersCounter } = applyWorkflowFilters(workflowsTable.rows, workflowsTable.filters, workflowsTable.selectedSpaces);
@@ -825,12 +834,9 @@ export default function WorkflowTable() {
         workflows.data.filter(workflow => workflow.status !== 'SCHEDULED')
           .reduce((acc: string[], workflow) => {
             const params = workflow.params;
-            let paramNames: string[] = [];
 
             if (params) {
-              paramNames = params.map(param => param.name);
-
-              return [...acc, ...paramNames];
+              return [...acc, ...params.map(param => param.name)];
             } else {
               return [...acc];
             }
@@ -840,12 +846,9 @@ export default function WorkflowTable() {
         workflows.data.filter(workflow => workflow.status !== 'SCHEDULED')
           .reduce((acc: string[], workflow) => {
             const metrics = workflow.metrics;
-            let metricNames: string[] = [];
 
             if(metrics) {
-              metricNames = metrics.map(metric => metric.name).filter(name => name !== 'rating');;
-
-              return [...acc, ...metricNames];
+              return [...acc, ...metrics.map(metric => metric.name).filter(name => name !== 'rating')];
             } else {
               return [...acc];
             }
@@ -864,7 +867,7 @@ export default function WorkflowTable() {
           }
 
           return acc;
-        }, {})).filter(([_, variants]) => variants.size > 1)
+        }, {})).filter(([, variants]) => variants.size > 1)
         .map(([name]) => name);
 
       // Create rows for the table based on the unique parameters we found
@@ -888,7 +891,7 @@ export default function WorkflowTable() {
             ...Array.from(uniqueParameters).reduce((acc, variant) => {
               const rawValue = params?.find(param => param.name === variant)?.value;
               const parsedValue =
-                rawValue != null && !isNaN(Number(rawValue)) && rawValue !== ''
+                rawValue !== null && rawValue !== undefined && !isNaN(Number(rawValue)) && rawValue !== ''
                   ? Number(rawValue)
                   : rawValue ?? 'n/a';
 
@@ -902,14 +905,14 @@ export default function WorkflowTable() {
 
                 // Pick the one with highest step or fallback to latest timestamp
                 const latestMetric = matchingMetrics.reduce((latest, current) => {
-                  if (current.step != null && latest.step != null) {
+                  if (current.step !== null && current.step !== undefined && latest.step !== null && latest.step !== undefined) {
                     return current.step > latest.step ? current : latest;
                   } else {
                     return current.timestamp > latest.timestamp ? current : latest;
                   }
                 }, matchingMetrics[0]);
 
-                acc[variant] = latestMetric?.value != null ? latestMetric.value : 'n/a';
+                acc[variant] = latestMetric?.value !== null && latestMetric?.value !== undefined ? latestMetric.value : 'n/a';
               } else {
                 acc[variant] = 'n/a';
               }
@@ -970,7 +973,7 @@ export default function WorkflowTable() {
             sortable: key !== 'action' && !workflowsTable.groupBy.length,
 
             type:
-        typeof (rows[0] as Record<string, any>)[key] === 'number'
+        typeof (rows[0] as Record<string, string | number | boolean | undefined>)[key] === 'number'
           ? 'number'
           : 'string',
           };
@@ -1027,13 +1030,19 @@ export default function WorkflowTable() {
           return base;
         });
 
-      const { filteredRows, filtersCounter } = applyWorkflowFilters(
+      const { filteredRows } = applyWorkflowFilters(
         rows,
         workflowsTable.filters,
         workflowsTable.selectedSpaces,
       );
 
       const showActionColumn = !workflowsTable.groupBy.length || workflowsTable.expandedGroups.length > 0;
+
+      // Only rebuild column definitions (which contain renderCell functions) when the
+      // column field structure actually changes — not on every 30s data poll.
+      const newFieldSignature = columns.map(c => c.field).join(',');
+      const existingFieldSignature = workflowsTable.columns.map(c => c.field).join(',');
+      const columnsChanged = newFieldSignature !== existingFieldSignature || !workflowsTable.initialized;
 
       const visibilityModel = columns.reduce((acc, col) => {
         if (col.field === 'action') {
@@ -1050,9 +1059,7 @@ export default function WorkflowTable() {
           rows,
           filteredRows: filteredRows,
           visibleRows: filteredRows,
-          columns: columns,
-          visibleColumns: columns,
-          columnsVisibilityModel: visibilityModel,
+          ...(columnsChanged ? { columns, visibleColumns: columns, columnsVisibilityModel: visibilityModel } : {}),
           uniqueMetrics: Array.from(uniqueMetrics),
           uniqueParameters: Array.from(uniqueParameters),
           uniqueTasks: Array.from(uniqueTasks),
@@ -1174,7 +1181,7 @@ export default function WorkflowTable() {
       .filter((r) => !r.isGroupSummary)
       .map((r) =>
         exportableCols
-          .map((c) => csvEscape((r as any)[c.field]))
+          .map((c) => csvEscape(r[c.field]))
           .join(',')
       );
 
@@ -1287,7 +1294,7 @@ export default function WorkflowTable() {
             }
             checkboxSelection
             onRowSelectionModelChange={handleSelectionChange}
-            rowSelectionModel={workflowsTable.selectedWorkflows}
+            rowSelectionModel={{ type: 'include', ids: new Set(workflowsTable.selectedWorkflows) }}
             getRowClassName={(params) =>
               selectedTab === 1 && workflowsTable.hoveredWorkflowId && params.id === workflowsTable.hoveredWorkflowId
                 ? 'workflow-hovered-row'
@@ -1308,7 +1315,7 @@ export default function WorkflowTable() {
                   display: 'block',
                   width: '100%',
                   height: '2px',
-                  backgroundColor: theme.palette.primary.main,
+                  backgroundColor: theme => theme.palette.customPrimary.main,
                   position: 'absolute',
                   bottom: 0,
                   left: 0,
@@ -1325,14 +1332,14 @@ export default function WorkflowTable() {
                   display: 'block',
                   width: '100%',
                   height: '2px',
-                  backgroundColor: theme.palette.secondary.dark,
+                  backgroundColor: theme => theme.palette.secondary.dark,
                   position: 'absolute',
                   bottom: 0,
                   left: 0,
                 },
               },
               '& .workflow-hovered-row': {
-                outline: `2px solid ${theme.palette.primary.main}`,
+                outline: theme =>  `2px solid ${theme.palette.primary.main}`,
                 outlineOffset: -2,
               },
             }}

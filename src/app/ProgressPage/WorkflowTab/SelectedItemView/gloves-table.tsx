@@ -2,7 +2,8 @@ import type React from 'react';
 import type { GridColDef, GridRowsProp } from '@mui/x-data-grid';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box, styled, Typography } from '@mui/material';
-import { ArrowDropDown, ArrowDropUp } from '@mui/icons-material';
+import ArrowDropDown from '@mui/icons-material/ArrowDropDown';
+import ArrowDropUp from '@mui/icons-material/ArrowDropUp';
 import type { IEffCostActions, ITableContents } from '../../../../shared/models/plotmodel.model';
 import type { GridRenderCellParams } from '@mui/x-data-grid';
 
@@ -50,7 +51,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     position: 'sticky',
     bottom: 0,
     zIndex: 2,
-    backgroundColor: '#ffffff',
+    backgroundColor: 'background.paper',
   },
   '& .MuiTablePagination-root': {
     overflow: 'visible',
@@ -85,7 +86,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
 }));
 
 const GlovesTable: React.FC<DataTableProps> = ({
-  title,
+  title: _title,
   data,
   eff_cost_actions,
 }) => {
@@ -138,8 +139,8 @@ const GlovesTable: React.FC<DataTableProps> = ({
         return (
           <Box display="flex" alignItems="center" justifyContent="center">
             <Typography variant="body2">{value}</Typography>
-            {isPositive && <ArrowDropUp style={{ color: 'green' }} />}
-            {isNegative && <ArrowDropDown style={{ color: 'red' }} />}
+            {isPositive && <ArrowDropUp sx={{ color: 'success.main' }} />}
+            {isNegative && <ArrowDropDown sx={{ color: 'error.main' }} />}
           </Box>
         );
       },

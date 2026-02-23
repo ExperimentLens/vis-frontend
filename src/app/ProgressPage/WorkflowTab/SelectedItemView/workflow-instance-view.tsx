@@ -80,7 +80,7 @@ const InstanceView = () => {
     id: string;
     data: TestInstance;
 }
-  ): Boolean => {
+  ): boolean => {
     if(point?.data?.predicted !== point?.data?.actual) return true;
 
     return false;
@@ -236,7 +236,7 @@ const InstanceView = () => {
       position: 'sticky',
       bottom: 0,
       zIndex: 2,
-      backgroundColor: '#ffffff',
+      backgroundColor: 'background.paper',
     },
     '& .MuiTablePagination-root': {
       overflow: 'visible',
@@ -406,7 +406,7 @@ const InstanceView = () => {
                     onPaginationModelChange={handlePaginationModelChange}
                     pageSizeOptions={[PAGE_SIZE]}
                     slots={{ noRowsOverlay: CustomNoRowsOverlay }}
-                    rowSelectionModel={point ? [point.id] : shapPoint ? [shapPoint.id] : []}
+                    rowSelectionModel={{ type: 'include', ids: new Set(point ? [point.id] : shapPoint ? [shapPoint.id] : []) }}
                     checkboxSelection={false}
                     disableRowSelectionOnClick={false}
                     sx={{

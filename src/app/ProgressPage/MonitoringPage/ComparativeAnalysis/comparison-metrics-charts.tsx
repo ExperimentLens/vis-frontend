@@ -78,7 +78,7 @@ const ComparisonMetricsCharts: React.FC = () => {
       )
         .filter(m => m !== 'rating')
         .slice(0, 5);
-      
+
       if (initialMetrics.length === 0) return;
 
       dispatch(setComparativeVisibleMetrics(initialMetrics));
@@ -87,7 +87,7 @@ const ComparisonMetricsCharts: React.FC = () => {
         workflowsTable.selectedWorkflows.forEach(workflowId => {
           dispatch(fetchWorkflowMetrics({ experimentId, workflowId, metricNames: initialMetrics }));
         });
-      
+
         previousSelectedRef.current = workflowsTable.selectedWorkflows;
       }
 
@@ -151,7 +151,7 @@ const ComparisonMetricsCharts: React.FC = () => {
   }, [comparativeVisibleMetrics]);
 
   const normalizeTimestamp = (timestamp: number | undefined): string | undefined => {
-    if (timestamp == null) return undefined;
+    if (timestamp === null || timestamp === undefined) return undefined;
     const date = new Date(timestamp);
 
     return isNaN(date.getTime()) ? undefined : date.toISOString();
@@ -239,10 +239,9 @@ const ComparisonMetricsCharts: React.FC = () => {
     if (isMetricPending(metricName)) {
       return (
         <Grid
-          item
-          xs={isMosaic ? 6 : 12}
+          size={{ xs: isMosaic ? 6 : 12 }}
           key={metricName}
-          sx={{ textAlign: 'left', width: '100%' }}
+          sx={{ textAlign: 'left' }}
         >
           <ResponsiveCardTable title={metricName} minHeight={300} showSettings={false}>
             <Loader />
@@ -253,9 +252,9 @@ const ComparisonMetricsCharts: React.FC = () => {
     const isGrouped = workflowsTable.groupBy.length > 0;
 
     const signalListeners = {
-      hover: (_name: string, value: any) => {
+      hover: (_name: string, value: { id?: string | string[] }) => {
         const next =
-          value && typeof value === 'object'
+          value && value.id
             ? (Array.isArray(value.id) ? value.id[0] : value.id) ?? null
             : null;
 
@@ -412,10 +411,9 @@ const ComparisonMetricsCharts: React.FC = () => {
 
     return (
       <Grid
-        item
-        xs={isMosaic ? 6 : 12}
+        size={{ xs: isMosaic ? 6 : 12 }}
         key={metricName}
-        sx={{ textAlign: 'left', width: '100%' }}
+        sx={{ textAlign: 'left' }}
       >
         <ResponsiveCardVegaLite
           spec={chartSpec}

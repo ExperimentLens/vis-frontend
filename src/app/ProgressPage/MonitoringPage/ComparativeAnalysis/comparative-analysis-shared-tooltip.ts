@@ -6,7 +6,7 @@ type SeriesPoint = {
   value: number;
   step?: number | string;
   timestamp?: string;
-  [k: string]: any;
+  [k: string]: unknown;
 };
 
 export function createTooltipHandler(opts: {
@@ -20,17 +20,17 @@ export function createTooltipHandler(opts: {
 }) {
   const { metricName, metricSeries, isLineChart, xField, workflowsData, experimentId, colorMapping = {} } = opts;
 
-  const toSeriesPointLike = (v: Record<string, any>): SeriesPoint => ({
-    id: v.id ?? v.Workflow ?? v.workflow ?? v.wf ?? '',
-    value: v.value ?? v.Value ?? v.val ?? v.metric ?? undefined,
-    step: v.step ?? v.Step,
-    timestamp: v.timestamp ?? v.Timestamp,
+  const toSeriesPointLike = (v: Record<string, unknown>): SeriesPoint => ({
+    id: String(v.id ?? v.Workflow ?? v.workflow ?? v.wf ?? ''),
+    value: Number(v.value ?? v.Value ?? v.val ?? v.metric),
+    step: (v.step ?? v.Step) as number | string | undefined,
+    timestamp: v.timestamp ? String(v.timestamp) : undefined,
     ...v,
   });
 
   return new Handler({
-    sanitize: (v: any) => String(v),
-    formatTooltip: (value: Record<string, any>, sanitize) => {
+    sanitize: (v: unknown) => String(v),
+    formatTooltip: (value: Record<string, unknown>, sanitize) => {
       const raw = toSeriesPointLike(value);
 
       const rows: SeriesPoint[] = !isLineChart
@@ -40,7 +40,7 @@ export function createTooltipHandler(opts: {
       const paramNameSet = new Set<string>();
 
       rows.forEach(row => {
-        const params = workflowsData.filter(workflow => workflow.id === raw.id)[0]?.params ?? [];
+        const params = workflowsData.find(workflow => workflow.id === row.id)?.params ?? [];
 
         params.forEach(p => paramNameSet.add(p.name));
       });
@@ -66,7 +66,7 @@ export function createTooltipHandler(opts: {
             .map(n => `<td style="padding:4px; vertical-align:top;">${sanitize(pmap.get(n) ?? '')}</td>`)
             .join('');
 
-          const valueCell = row.value != null ? sanitize(Number(row.value).toFixed(4)) : '-';
+          const valueCell = row.value !== null ? sanitize(Number(row.value).toFixed(4)) : '-';
           const color = colorMapping[row.id];
 
           return `

@@ -11,13 +11,11 @@ import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import type { IMetric } from '../../../../shared/models/experiment/metric.model';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
-import { IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Popover, Tooltip } from '@mui/material';
-import { SectionHeader } from '../../../../shared/components/responsive-card-table';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import { IconButton, Tooltip } from '@mui/material';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
 import PaletteIcon from '@mui/icons-material/Palette';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
+import SelectionPopover from '../../../../shared/components/selection-popover';
 
 const ParallelCoordinatePlot = () => {
   const { workflows } =
@@ -54,12 +52,9 @@ const ParallelCoordinatePlot = () => {
         workflows.data.filter(workflow => workflow.status !== 'SCHEDULED')
           .reduce((acc: string[], workflow) => {
             const params = workflow.params;
-            let paramNames = [];
 
             if (params) {
-              paramNames = params.map(param => param.name);
-
-              return [...acc, ...paramNames];
+              return [...acc, ...params.map(param => param.name)];
             } else {
               return [...acc];
             }
@@ -145,7 +140,7 @@ const ParallelCoordinatePlot = () => {
       }
     });
 
-    return parallelData.map((item, index) => {
+    return parallelData.map((item) => {
       const newItem = { ...item };
 
       for (const key in newItem) {
@@ -177,127 +172,43 @@ const ParallelCoordinatePlot = () => {
             </IconButton>
           </Tooltip>
         </Box>
-        <Popover
-          id='Parameters'
+        <SelectionPopover
+          id="Parameters"
           open={paramsOpen}
           anchorEl={ParamsanchorEl}
           onClose={handleParamsClose}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          PaperProps={{
-            elevation: 3,
-            sx: {
-              width: 300,
-              maxHeight: 250,
-              overflow: 'hidden',
-              padding: 0,
-              borderRadius: '12px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-              border: '1px solid rgba(0,0,0,0.04)',
-              mt: 1,
-              '& .MuiList-root': {
-                padding: 0,
-              }
-            },
+          title="Parameters"
+          icon={<GridTableRowsIcon fontSize="small" />}
+          options={Array.from(new Set(
+            parallelData.flatMap(item => Object.keys(item))
+              .filter(k => !['workflowId', 'selected', 'rating', ...parallel.options].includes(k))
+          ))}
+          selectedOptions={selectedParams}
+          onToggle={(param) => {
+            const isSelected = selectedParams.includes(param);
+
+            if (isSelected && selectedParams.length === 1) return;
+            const updated = isSelected
+              ? selectedParams.filter(p => p !== param)
+              : [...selectedParams, param];
+
+            handleParamsSelesction(updated);
           }}
-        >
-          <SectionHeader icon={<GridTableRowsIcon fontSize="small" />} title="Parameters" />
-          <List sx={{ width: '100%', py: 0, maxHeight: 200, overflow: 'auto' }}>
-            {Array.from(new Set(parallelData.flatMap(item => Object.keys(item)).filter(k => !['workflowId', 'selected', 'rating', ...parallel.options].includes(k))))
-              .map(param => (
-                <ListItem
-                  key={param}
-                  disablePadding
-                  sx={{ '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.04)' } }}
-                >
-                  <ListItemButton
-                    dense
-                    onClick={() => {
-                      const isSelected = selectedParams.includes(param);
-
-                      let updated: string[];
-
-                      if (isSelected) {
-                        if (selectedParams.length === 1) {
-                          return;
-                        }
-                        updated = selectedParams.filter(paramName => paramName !== param);
-                      } else {
-                        updated = [...selectedParams, param];
-                      }
-
-                      handleParamsSelesction(updated);
-
-                    }}
-                  >
-                    <ListItemIcon>
-                      {parallel.selectedParams?.includes(param) ? (
-                        <CheckBoxIcon color="primary" fontSize="small" />
-                      ) : (
-                        <CheckBoxOutlineBlankIcon fontSize="small" color="action" />
-                      )}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={param}
-                      primaryTypographyProps={{ fontSize: '0.95rem' }}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-          </List>
-        </Popover>
-        <Popover
-          id='ColorBy'
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        />
+        <SelectionPopover
+          id="ColorBy"
           open={colorOpen}
           anchorEl={ColoranchorEl}
           onClose={handleColorClose}
+          title="Color By"
+          icon={<GridTableRowsIcon fontSize="small" />}
+          options={parallel.options}
+          selectedOptions={parallel.selected ? [parallel.selected] : []}
+          onToggle={handleMetricSelection}
+          multiSelect={false}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          PaperProps={{
-            elevation: 3,
-            sx: {
-              width: 300,
-              maxHeight: 250,
-              overflow: 'hidden',
-              padding: 0,
-              borderRadius: '12px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-              border: '1px solid rgba(0,0,0,0.04)',
-              mt: 1,
-              '& .MuiList-root': {
-                padding: 0,
-              }
-            },
-          }}
-        >
-          <SectionHeader icon={<GridTableRowsIcon fontSize="small" />} title="Color By" />
-          <List sx={{ width: '100%', py: 0, maxHeight: 200, overflow: 'auto' }}>
-            {parallel.options.map(feature => (
-              <ListItem
-                key={feature}
-                disablePadding
-                sx={{ '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.04)' } }}
-              >
-                <ListItemButton
-                  dense
-                  onClick={() => {
-                    handleMetricSelection(feature);
-                  }}
-                >
-                  <ListItemIcon>
-                    {feature === parallel.selected ? (
-                      <CheckBoxIcon color="primary" fontSize="small" />
-                    ) : (
-                      <CheckBoxOutlineBlankIcon fontSize="small" color="action" />
-                    )}
-                  </ListItemIcon>
-                  <ListItemText
-                    primary={feature}
-                    primaryTypographyProps={{ fontSize: '0.95rem' }}
-                  />
-                </ListItemButton>
-              </ListItem>
-            ))}
-          </List>
-        </Popover>
+        />
       </Box>
       {
         parallel.options.length > 0 ? (
@@ -309,7 +220,6 @@ const ParallelCoordinatePlot = () => {
               }}
             />
             <ParallelCoordinateVega
-              parallelData={parallelData}
               progressParallel={parallel}
               foldArray={foldArray}
               selectedWorkflows={workflowsTable.selectedWorkflows}

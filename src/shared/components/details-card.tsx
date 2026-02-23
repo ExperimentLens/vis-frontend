@@ -33,14 +33,14 @@ export const DetailsCard = ({
             textTransform: 'uppercase',
             fontWeight: 600,
             letterSpacing: '0.5px',
-            color: '#2a3f5f'
+            color: 'text.primary',
           }}
         >
           {title}
         </Typography>
       }
       sx={{
-        background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+        background: theme => theme.palette.customSurface.cardHeader,
         borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
         padding: '4px 16px',
         height: '40px',
@@ -50,7 +50,7 @@ export const DetailsCard = ({
     />
     <CardContent
       sx={{
-        backgroundColor: '#ffffff',
+        bgcolor: 'customSurface.cardContent',
         py: 2,
         px: 3,
         '&:last-child': {

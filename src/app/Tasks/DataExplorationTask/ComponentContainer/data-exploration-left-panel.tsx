@@ -112,9 +112,9 @@ const LeftPanel = () => {
 
     if (['>', '<', '>=', '<=', '='].includes(operator)) {
       // Handle numeric type filters
-      let parsedValue: number | string = value;
-
       // Parse based on column type
+      let parsedValue: number | string;
+
       if (columnType === 'integer') {
         parsedValue = parseInt(value, 10);
       } else if (columnType === 'double' || columnType === 'float') {

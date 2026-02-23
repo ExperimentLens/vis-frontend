@@ -1,11 +1,10 @@
-import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from '@mui/material';
+import { Accordion, AccordionDetails, AccordionSummary, Box, Typography, useTheme } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import PsychologyAltRoundedIcon from '@mui/icons-material/PsychologyAltRounded';
 import { useEffect, useMemo, useState } from 'react';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
-import theme from '../../../../mui-theme';
 
 import WorkflowDetailsAccordion from './WorkflowDetailsAccordition';
 import ModelInsightsAccordion from './ModelInsightsAccordition';
@@ -24,6 +23,8 @@ export default function WorkflowTreeView() {
   const [workflowExpanded, setWorkflowExpanded] = useState(true);
   const [modelExpanded, setModelExpanded] = useState<boolean>(hasExplainability);
 
+  const theme = useTheme();
+  
   useEffect(() => setModelExpanded(hasExplainability), [hasExplainability]);
 
   if (!tab?.workflowConfiguration) return null;

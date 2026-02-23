@@ -7,9 +7,6 @@ import ResponsiveCardVegaLite from '../../../../shared/components/responsive-car
 import {
   Box,
   FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
   Button,
 } from '@mui/material';
 import InfoMessage from '../../../../shared/components/InfoMessage';

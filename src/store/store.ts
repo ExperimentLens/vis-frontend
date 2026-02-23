@@ -6,13 +6,17 @@ import { workflowPageSlice } from './slices/workflowPageSlice';
 import { progressPageSlice } from './slices/progressPageSlice';
 import { monitoringPageSlice } from './slices/monitorPageSlice';
 import { authSlice } from './slices/authSlice';
+import { experimentHighlightsSlice } from './slices/experimentHighlightsSlice';
+import { uiSlice } from './slices/uiSlice';
 
 export const store = configureStore({
   reducer: {
     workflowPage: workflowPageSlice.reducer,
     progressPage: progressPageSlice.reducer,
     monitorPage: monitoringPageSlice.reducer,
-    auth: authSlice.reducer
+    auth: authSlice.reducer,
+    experimentHighlights: experimentHighlightsSlice.reducer,
+    ui: uiSlice.reducer,
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({

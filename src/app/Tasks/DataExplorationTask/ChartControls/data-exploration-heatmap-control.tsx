@@ -1,16 +1,10 @@
 import {
   Box,
-  MenuItem,
-  Select,
-  InputLabel,
   FormControl,
-  createTheme,
-  ThemeProvider,
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
 import CategoryIcon from '@mui/icons-material/Category';
-import BarChartIcon from '@mui/icons-material/BarChart';
 import FunctionsIcon from '@mui/icons-material/Functions';
 import { AggregationFunction } from '../../../../shared/models/dataexploration.model';
 import SearchableMultiSelect from '../../../../shared/components/searchable-select-multiple';
@@ -82,26 +76,8 @@ const HeatMapControlPanel = () => {
     );
   };
 
-  // Custom theme
-  const theme = createTheme({
-    palette: {
-      primary: { main: '#1976d2' },
-      secondary: { main: '#dc004e' },
-    },
-    typography: {
-      fontFamily: 'Arial',
-      h6: { fontWeight: 600 },
-    },
-    components: {
-      MuiButton: {
-        styleOverrides: { root: { borderRadius: '20px' } },
-      },
-    },
-  });
-
   return (
-    <ThemeProvider theme={theme}>
-      <Box
+    <Box
         sx={{
           display: 'flex',
           gap: '1rem',
@@ -158,7 +134,6 @@ const HeatMapControlPanel = () => {
           />
         </FormControl>
       </Box>
-    </ThemeProvider>
   );
 };
 

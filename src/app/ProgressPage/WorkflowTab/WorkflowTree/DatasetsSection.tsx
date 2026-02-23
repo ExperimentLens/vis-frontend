@@ -1,5 +1,5 @@
-import { Box, Typography } from '@mui/material';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { Box, Typography, useTheme } from '@mui/material';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import InputIcon from '@mui/icons-material/Input';
 import OutputIcon from '@mui/icons-material/Output';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -7,7 +7,6 @@ import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded';
 import DataObjectRoundedIcon from '@mui/icons-material/DataObjectRounded';
 import ImageRoundedIcon from '@mui/icons-material/ImageRounded';
 import InsertDriveFileRoundedIcon from '@mui/icons-material/InsertDriveFileRounded';
-import theme from '../../../../mui-theme';
 import { useMemo } from 'react';
 import { useAppDispatch } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
@@ -21,6 +20,7 @@ type Props = {
 
 export default function DatasetsSection({ taskId, datasets, experimentId, workflowId }: Props) {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
 
   const isSupportedDatasetFormat = (format?: string | null, name?: string | null) => {
     const normalizedFormat = (format ?? '').trim().toLowerCase()
@@ -80,7 +80,7 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
   }, [datasets]);
 
   const renderFolderGroup = (kind: 'input' | 'output', folder: string, dsList: IDataAsset[], folderIndex: number) => (
-    <TreeItem2
+    <TreeItem
       key={`${kind}-folder-${taskId}-${folderIndex}`}
       itemId={`${kind}-folder-${taskId}-${folderIndex}`}
       slotProps={{ content: { style: { paddingTop: 0, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 }, onClick: (e) => e.stopPropagation() } }}
@@ -97,7 +97,7 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
           const itemId = `${kind}-ds-${taskId}-${folder}-${index}`;
 
           return (
-            <TreeItem2
+            <TreeItem
               key={`${kind}-${taskId}-${folder}-${index}`}
               itemId={itemId}
               disabled={!clickable}
@@ -126,7 +126,7 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
           );
         })()
       ))}
-    </TreeItem2>
+    </TreeItem>
   );
 
   const renderFlatList = (kind: 'input' | 'output', list: IDataAsset[]) =>
@@ -136,7 +136,7 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
         const itemId = `${kind}-ds-${taskId}-nofolder-${index}`;
 
         return (
-          <TreeItem2
+          <TreeItem
             key={`${kind}-${taskId}-nofolder-${index}`}
             itemId={itemId}
             disabled={!clickable}
@@ -170,7 +170,7 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
     <>
       {/* Inputs */}
       {datasets.some(d => d.role === 'INPUT') && (
-        <TreeItem2
+        <TreeItem
           itemId={`task-${taskId}-inputs`}
           slotProps={{ content: { style: { paddingTop: 0, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 }, onClick: (e) => e.stopPropagation() } }}
           label={
@@ -184,12 +184,12 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
         >
           {renderFlatList('input', inputGrouped.noFolder)}
           {Object.entries(inputGrouped.folders).map(([folder, dsList], i) => renderFolderGroup('input', folder, dsList, i))}
-        </TreeItem2>
+        </TreeItem>
       )}
 
       {/* Outputs */}
       {datasets.some(d => d.role === 'OUTPUT') && (
-        <TreeItem2
+        <TreeItem
           itemId={`task-${taskId}-outputs`}
           slotProps={{ content: { style: { paddingTop: 0, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 }, onClick: (e) => e.stopPropagation() } }}
           label={
@@ -203,7 +203,7 @@ export default function DatasetsSection({ taskId, datasets, experimentId, workfl
         >
           {renderFlatList('output', outputGrouped.noFolder)}
           {Object.entries(outputGrouped.folders).map(([folder, dsList], i) => renderFolderGroup('output', folder, dsList, i))}
-        </TreeItem2>
+        </TreeItem>
       )}
     </>
   );

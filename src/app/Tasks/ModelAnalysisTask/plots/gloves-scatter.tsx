@@ -14,20 +14,20 @@ import ResponsiveCardVegaLite from '../../../../shared/components/responsive-car
 import SearchableSelect from '../../../../shared/components/searchable-select';
 
 interface DataField {
-  values: any[]
+  values: unknown[]
 }
 
 interface GlovesScatterProps {
-  data1: any
-  data2: any
-  actions: any // Define more specific type if known
-  eff_cost_actions: any
+  data1: Record<string, DataField>
+  data2: { appliedAffectedActions: Record<string, DataField> }
+  actions?: unknown
+  eff_cost_actions?: unknown
 }
 const GlovesScatter = ({
   data1,
   data2,
-  actions,
-  eff_cost_actions,
+  actions: _actions,
+  eff_cost_actions: _eff_cost_actions,
 }: GlovesScatterProps) => {
   // Utility function to filter out unwanted fields for dropdown options only
   const isExcludedField = (field: string) => {
@@ -37,7 +37,7 @@ const GlovesScatter = ({
     return excludedFields.includes(field) || actionPredictionRegex.test(field);
   };
 
-  const getColorOptions = (clusters: {}) => {
+  const getColorOptions = (clusters: Record<string, unknown>) => {
     if (!clusters) return [];
 
     return Object.keys(clusters).filter(field =>
@@ -53,7 +53,7 @@ const GlovesScatter = ({
   const [dimensionalityReduction, setDimensionalityReduction] = useState(false);
 
   // Extract options from the data for dropdowns (excluding certain fields)
-  const getOptions = (clusters: {}) => {
+  const getOptions = (clusters: Record<string, unknown>) => {
     if (!clusters) return [];
 
     return Object.keys(clusters).filter(field => !isExcludedField(field));
@@ -81,7 +81,7 @@ const GlovesScatter = ({
     const result = [];
 
     for (let i = 0; i < length; i++) {
-      const row: { [key: string]: any } = {};
+      const row: { [key: string]: unknown } = {};
 
       keys.forEach(key => {
         row[key] = data[key].values[i];
@@ -94,7 +94,7 @@ const GlovesScatter = ({
 
   // Transform both data sets
 
-  const determineType = (field: string, data: string | any[]) => {
+  const determineType = (field: string, data: Record<string, unknown>[]) => {
     if (!data.length || data[0][field] === undefined) return 'nominal';
 
     return typeof data[0][field] === 'string' ? 'nominal' : 'quantitative';
@@ -364,7 +364,7 @@ const GlovesScatter = ({
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
           {data1 && data2 && (
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <ResponsiveCardVegaLite
                   actions={false}
                   title="Action Selection"
@@ -376,7 +376,7 @@ const GlovesScatter = ({
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <ResponsiveCardVegaLite
                   actions={false}
                   title="Post-Action Selection"

@@ -312,7 +312,7 @@ const ExperimentControls = () => {
                   width: fullScreen ? '100%' : '90vw',
                   height: fullScreen ? '100%' : '90vh',
                   maxWidth: 'unset',
-                  bgcolor: '#ffffff',
+                  bgcolor: 'background.paper',
                   overflow: 'hidden',
                   boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
                 }
@@ -323,7 +323,7 @@ const ExperimentControls = () => {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  background: 'linear-gradient(to right, #f8f9fa, #edf2f7)',
+                  background: theme => theme.palette.customSurface.cardHeader,
                   borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
                   px: 3,
                   py: 1.5,
@@ -334,7 +334,7 @@ const ExperimentControls = () => {
                   component="div"
                   sx={{
                     fontWeight: 600,
-                    color: '#2a3f5f',
+                    color: 'text.primary',
                     letterSpacing: '0.3px',
                   }}
                 >
@@ -371,7 +371,7 @@ const ExperimentControls = () => {
                 sx={{
                   p: 2,
                   borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-                  background: '#f8f9fa',
+                  background: theme => theme.palette.customSurface.footer,
                 }}
               >
                 <Button

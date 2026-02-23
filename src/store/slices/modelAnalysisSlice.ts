@@ -72,7 +72,7 @@ function parseRocCsv(csv: string): {
 // Thunks
 export const fetchAffected = createAsyncThunk(
   'modelAnalysis/fetch_affected',
-  async (payload: fetchAffectedRequest) => {
+  async (_payload: fetchAffectedRequest) => {
     const response = await api.get('/explainability/affected');
 
     return response.data;
@@ -214,7 +214,7 @@ export const modelAnalysisReducers = (builder: ActionReducerMapBuilder<IWorkflow
       const task = getTask(state, action.meta.arg.runId);
 
       if (task) {
-        let rawData: any;
+        let rawData: unknown;
 
         if (typeof action.payload === 'string') {
           const trimmed = action.payload.trim();

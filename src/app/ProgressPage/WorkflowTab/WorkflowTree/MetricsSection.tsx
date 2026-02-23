@@ -1,7 +1,6 @@
-import { Box, Typography } from '@mui/material';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { Box, Typography, useTheme } from '@mui/material';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import BarChartIcon from '@mui/icons-material/BarChart';
-import theme from '../../../../mui-theme';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 
@@ -13,10 +12,11 @@ export default function MetricsSection({ taskId, metrics }: Props) {
   const { workflowSeriesMetrics } = useAppSelector(state => state.workflowPage.tab ?? { workflowSeriesMetrics: { data: [], loading: false, error: null } });
 
   const round2 = (v: number) => Math.round(v * 100) / 100;
+  const theme = useTheme();
 
   return (
     <>
-      <TreeItem2
+      <TreeItem
         itemId={`metrics-header-${taskId}`}
         slotProps={{ content: { style: { pointerEvents: 'none', backgroundColor: 'transparent' } } }}
         label={
@@ -32,7 +32,7 @@ export default function MetricsSection({ taskId, metrics }: Props) {
         const isSeiresMetric = workflowSeriesMetrics.data.some(m => m.name === metric.name && m.seriesMetric.length > 1);
 
         return (
-          <TreeItem2
+          <TreeItem
             key={`${metric.name}-${index}`}
             itemId={`metric-${taskId}-${index}`}
             label={

@@ -12,8 +12,8 @@ const WorkflowParameterDistribution = () => {
   const { workflows } = useAppSelector((state: RootState) => state.progressPage)
   const { tab } = useAppSelector(state => state.workflowPage)
   const selectedParam = tab?.dataTaskTable.selectedItem?.data?.name
-    const theme = useTheme()
-    const isSmallScreen = useMediaQuery(theme.breakpoints.down("xl"))
+  const theme = useTheme()
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("xl"))
   
 
   const getData = (param: string) => {

@@ -59,11 +59,11 @@ const FeatureImportancePlot = (props: IFeatureImportancePlotProps) => {
     }
   }, [isTabInitialized]);
 
-  const hasFeatureImportances = (x: any):x is FeatureImportanceResponse  =>
-    x && Array.isArray(x.featureImportances);
+  const hasFeatureImportances = (x: unknown):x is FeatureImportanceResponse  =>
+    !!x && Array.isArray((x as FeatureImportanceResponse).featureImportances);
 
-  const hasTableContents = (x: any): x is IPlotModel =>
-    x && x.tableContents && x.tableContents.Feature && x.tableContents.Importance;
+  const hasTableContents = (x: unknown): x is IPlotModel =>
+    !!x && !!(x as IPlotModel).tableContents && !!(x as IPlotModel).tableContents.Feature && !!(x as IPlotModel).tableContents.Importance;
 
   const getVegaliteData = () => {
     if (!rawData) return [];

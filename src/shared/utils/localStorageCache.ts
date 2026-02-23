@@ -35,7 +35,7 @@ export function getCache<T>(key: string): T | null {
 
       return null;
     }
-  } catch (e) {
+  } catch {
     localStorage.removeItem(key); // Clean up corrupted
 
     return null;

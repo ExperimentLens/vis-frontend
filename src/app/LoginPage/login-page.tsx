@@ -64,7 +64,13 @@ const LoginPage = () => {
   }, [token, navigate, from]);
 
   return (
-    <div id="error-page">
+    <div
+      id="error-page"
+      style={{
+        backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.default : '#E6E6E6',
+        transition: 'background-color 0.3s',
+      }}
+    >
       <div
         style={{
           display: 'flex',
@@ -74,7 +80,12 @@ const LoginPage = () => {
           flexDirection: 'column',
         }}
       >
-        <img src="/images/extremexp-logo.png" height={130} alt="ExtremeXP Logo" />
+        <img
+          src={theme.palette.mode === 'dark' ? '/images/extremexp-logo-removebg-preview.png' : '/images/extremexp-logo.png'}
+          height={130}
+          alt="ExtremeXP Logo"
+          style={{ backgroundColor: theme.palette.mode === 'dark' ? theme.palette.background.default : '#E6E6E6' }}
+        />
         <div style={{ display: 'flex', flexDirection: 'column', rowGap: 0, textAlign: 'center' }}>
           <h3 style={{ marginBottom: 2 }}>Login to Your Account</h3>
           <p style={{ fontSize: '14px', margin: 0, marginBottom: '2rem', color: theme.palette.error.main, height: '17px' }}>

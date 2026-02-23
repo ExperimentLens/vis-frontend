@@ -29,27 +29,27 @@ const ProgressPage = (props: ProgressPageProps) => {
   );
   const { experimentId } = useParams();
   const dispatch = useAppDispatch();
-  const intervalId = useRef<NodeJS.Timeout | null>(null);
+  const intervalId = useRef<ReturnType<typeof setInterval> | null>(null);
   const { children } = props;
   const location = useLocation();
 
   useEffect(() => {
-  if (!experimentId) return;
+    if (!experimentId) return;
 
-  if (experimentId !== experiment.data?.id) {
-    dispatch(clearExperiment());
-    dispatch(clearWorkflows());
-    dispatch(resetMonitoringPage());
-    dispatch(setIntialization(false));
-  }
-}, [experimentId]);
-
+    if (experimentId !== experiment.data?.id) {
+      dispatch(clearExperiment());
+      dispatch(clearWorkflows());
+      dispatch(resetMonitoringPage());
+      dispatch(setIntialization(false));
+    }
+  }, [experimentId]);
 
   useEffect(() => {
     const pathParts = location.pathname.split('/').filter(Boolean);
 
     if (pathParts.length === 0) {
       dispatch(setMenuOptions({ ...menuOptions, selected: 'experiments' }));
+
       return;
     }
 
@@ -96,9 +96,9 @@ const ProgressPage = (props: ProgressPageProps) => {
 
   useEffect(() => {
     if (workflows.data && workflows.data.length > 0) {
-      workflows.data?.every(workflow => workflow.status === 'COMPLETED' || workflow.status === 'FAILED' || workflow.status === 'KILLED') &&
-        intervalId.current &&
+      if (workflows.data?.every(workflow => workflow.status === 'COMPLETED' || workflow.status === 'FAILED' || workflow.status === 'KILLED') && intervalId.current) {
         clearInterval(intervalId.current);
+      }
     }
   }, [workflows]);
 

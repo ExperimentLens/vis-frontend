@@ -3,15 +3,12 @@ import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { explainabilityQueryDefault } from '../../../../shared/models/tasks/explainability.model';
 import type { IPlotModel } from '../../../../shared/models/plotmodel.model';
-import theme from '../../../../mui-theme';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import {
   Box,
   Button,
   FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
+  useTheme,
 } from '@mui/material';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
@@ -127,6 +124,7 @@ const AlePlot = (props: AlePlotProps) => {
 
   const hasCategoricalBars = !xIsNumeric && yIsNumeric;
 
+  const theme = useTheme();
   const spec = hasCategoricalBars
     ? {
       width: 'container',

@@ -48,14 +48,14 @@ const ColumnSelectionPanel: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         mb: 1.5,
-        color: '#3566b5',
+        color: 'primary.main',
       }}>
         <TableRowsIcon fontSize="small" sx={{ mr: 1 }} />
         <Typography
           variant="body2"
           sx={{
             fontWeight: 600,
-            color: '#1e3a5f',
+            color: 'text.primary',
           }}
         >
           Select columns to display
@@ -66,7 +66,7 @@ const ColumnSelectionPanel: React.FC = () => {
         overflow: 'auto',
         border: '1px solid rgba(0,0,0,0.08)',
         borderRadius: '8px',
-        bgcolor: 'rgba(248,249,250,0.6)',
+        bgcolor: 'action.hover',
       }}>
         <List dense disablePadding>
           {originalColumns.map((column) => (
@@ -85,7 +85,7 @@ const ColumnSelectionPanel: React.FC = () => {
                 sx={{
                   py: 0.5,
                   '&:hover': {
-                    bgcolor: 'rgba(53, 102, 181, 0.04)',
+                    bgcolor: 'action.hover',
                   },
                 }}
               >

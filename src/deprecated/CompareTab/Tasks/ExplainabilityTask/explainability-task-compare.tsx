@@ -137,8 +137,8 @@ const ExplainabilityTaskCompare = (props: IExplainabilityTaskCompare) => {
         >
           {/* <Box sx={{ display: "flex", gap: 4, flexFlow: "wrap" }}> */}
           <Grid container spacing={2}>
-            <Grid container item xs={12} md={12} spacing={2}>
-              <Grid item xs={12} md={6}>
+            <Grid container size={{ xs: 12 }} md={12} spacing={2}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <LinePlot
                   key={`pdp-plot`}
                   plotModel={
@@ -153,7 +153,7 @@ const ExplainabilityTaskCompare = (props: IExplainabilityTaskCompare) => {
                   plotRequestMetadata={plotRequestMetadata}
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{ xs: 12, md: 6 }}>
                 <LinePlot
                   key={`ale-plot`}
                   plotModel={
@@ -169,7 +169,7 @@ const ExplainabilityTaskCompare = (props: IExplainabilityTaskCompare) => {
                 />
               </Grid>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <ContourPlot
                 key={`2dpdp-plot`}
                 plotModel={

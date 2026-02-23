@@ -1,19 +1,19 @@
-import { Box, Typography } from '@mui/material';
-import { TreeItem2 } from '@mui/x-tree-view/TreeItem2';
+import { Box, Typography, useTheme } from '@mui/material';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
-import theme from '../../../../mui-theme';
 import { useAppDispatch } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 
-type Param = { name: string; value: any; task?: string | null };
+type Param = { name: string; value: unknown; task?: string | null };
 type Props = { taskId: string; paramsForTask: Param[]; variantId?: string };
 
 export default function ParametersSection({ taskId, paramsForTask, variantId }: Props) {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
 
   return (
     <>
-      <TreeItem2
+      <TreeItem
         itemId={`parameters-header-${taskId}`}
         slotProps={{ content: { style: { pointerEvents: 'none', backgroundColor: 'transparent' } } }}
         label={
@@ -26,7 +26,7 @@ export default function ParametersSection({ taskId, paramsForTask, variantId }: 
         }
       />
       {paramsForTask.map((param, index) => (
-        <TreeItem2
+        <TreeItem
           key={`${param.name}-${index}`}
           itemId={`param-${taskId}-${index}`}
           label={

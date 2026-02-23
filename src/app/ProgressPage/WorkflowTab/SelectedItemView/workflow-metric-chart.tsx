@@ -2,27 +2,15 @@ import ResponsiveCardVegaLite from '../../../../shared/components/responsive-car
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import type { IMetric } from '../../../../shared/models/experiment/metric.model';
-import { Box, Card, CardContent, createTheme, Divider, Paper, Slider, Typography } from '@mui/material';
+import { Box, Card, CardContent, Divider, Paper, Slider, Typography } from '@mui/material';
 import ArrowDropUpIcon from '@mui/icons-material/ArrowDropUp';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import green from '@mui/material/colors/green';
-import red from '@mui/material/colors/red';
+import { green, red } from '@mui/material/colors';
 import { useParams } from 'react-router-dom';
 import { useMemo } from 'react';
 import { setCache } from '../../../../shared/utils/localStorageCache';
 import { useLocation } from 'react-router-dom';
-import { ThemeProvider } from '@emotion/react';
-
-const theme = createTheme({
-  palette: {
-    primary: { main: '#1976d2' },
-    secondary: { main: '#dc004e' },
-  },
-  typography: {
-    fontFamily: 'Arial',
-    h6: { fontWeight: 600 },
-  },
-});
+import { alpha } from '@mui/material/styles';
 
 interface GroupMetrics {
   value: number;
@@ -81,6 +69,7 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
 
   const renderDiffIcon = () => {
     if (typeof pctVsMean !== 'number' || pctVsMean === 0) return null;
+
     return pctVsMean > 0 ? (
       <ArrowDropUpIcon sx={{ color: green[600], mb: 0.2 }} fontSize="small" />
     ) : (
@@ -159,12 +148,12 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                 Current ({isStepMode ? 'last step' : 'latest'})
               </Typography>
-          
+
               <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
                   {format2(lastVal)}
                 </Typography>
-          
+
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   {renderDiffIcon()}
                   <Typography variant="body2" sx={{ fontWeight: 700, color: pctColor }}>
@@ -177,7 +166,7 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
               </Box>
             </CardContent>
           </Card>
-          
+
           {/* Card 2: Range */}
           <Card
             elevation={0}
@@ -193,12 +182,12 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
                 Range
               </Typography>
-          
+
               <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
                 <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
                   {format2(minVal)} – {format2(maxVal)}
                 </Typography>
-          
+
                 <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
                   span {format2(maxVal - minVal)}
                 </Typography>
@@ -207,7 +196,7 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
           </Card>
         </Box>
       )}
-      <Box sx={{width: '100%'}}>
+      <Box sx={{ width: '100%' }}>
         <ResponsiveCardVegaLite
           spec={chartSpec}
           actions={false}
@@ -520,8 +509,8 @@ export const MetricCards = () => {
                 width: 48,
                 height: 48,
                 borderRadius: '999px',
-                bgcolor: green[50],
-                color: green[700],
+                bgcolor: theme => alpha(theme.palette.success.main, 0.1),
+                color: 'success.dark',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -563,8 +552,7 @@ export const MetricCards = () => {
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
           Comparison Across All Workflows
         </Typography>
-        <ThemeProvider theme={theme}>
-          <Box sx={{ position: 'relative', px: 1, py: 2 }}>
+        <Box sx={{ position: 'relative', px: 1, py: 2 }}>
             {(() => {
               const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 
@@ -609,13 +597,13 @@ export const MetricCards = () => {
                       '& .MuiSlider-rail': {
                         height: 10,
                         borderRadius: 999,
-                        backgroundColor: '#eef1f5',
+                        backgroundColor: theme => theme.palette.customSurface.barTrack,
                         opacity: 1,
                       },
                       '& .MuiSlider-track': {
                         height: 10,
                         borderRadius: 999,
-                        backgroundColor: '#1463ff',
+                        backgroundColor: theme => theme.palette.primary.main,
                         opacity: 0.9,
                         border: 'none',
                       },
@@ -633,7 +621,7 @@ export const MetricCards = () => {
                           top: 16,
                           width: 2,
                           height: 26,
-                          bgcolor: '#111827',
+                          bgcolor: 'text.primary',
                           opacity: 0.35,
                         }}
                       />
@@ -662,7 +650,7 @@ export const MetricCards = () => {
                           top: 16,
                           width: 2,
                           height: 26,
-                          bgcolor: '#1463ff',
+                          bgcolor: 'primary.main',
                         }}
                       />
                       <Box
@@ -673,7 +661,7 @@ export const MetricCards = () => {
                           width: 10,
                           height: 10,
                           borderRadius: 999,
-                          bgcolor: '#1463ff',
+                          bgcolor: 'primary.main',
                           transform: 'translateX(-50%)',
                         }}
                       />
@@ -683,7 +671,6 @@ export const MetricCards = () => {
               );
             })()}
           </Box>
-        </ThemeProvider>
 
         <Divider sx={{ my: 2 }} />
 
@@ -707,10 +694,10 @@ export const MetricCards = () => {
             </CardContent>
           </Card>
 
-          <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', flex: 1, minWidth: 240, bgcolor: '#eef4ff' }}>
+          <Card elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', flex: 1, minWidth: 240, bgcolor: theme => alpha(theme.palette.primary.main, 0.08) }}>
             <CardContent sx={{ p: 2 }}>
               <Typography variant="caption" color="text.secondary">Average</Typography>
-              <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5, color: '#1463ff' }}>{format5(avgValue)}</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 800, mt: 0.5, color: 'primary.main' }}>{format5(avgValue)}</Typography>
               <Typography variant="caption" color="text.secondary">Baseline</Typography>
             </CardContent>
           </Card>

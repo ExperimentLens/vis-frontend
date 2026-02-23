@@ -83,7 +83,7 @@ const WorkflowParameter = () => {
                   borderRadius: 5,
                   backgroundColor: '#f0f0f0',
                   '& .MuiLinearProgress-bar': {
-                    backgroundColor: value === String(selectedParam?.param?.value) ? 'primary' : '#bdbdbd',
+                    backgroundColor: value === String(selectedParam?.param?.value) ? '#3766AF' : '#a2a2a2',
                   },
                 }}
               />

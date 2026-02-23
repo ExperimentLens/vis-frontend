@@ -9,8 +9,8 @@ import LoginPage from './app/LoginPage/login-page';
 // import ProtectedRoute from './protected-route';
 import TokenAuthHandler from './token-auth-handler';
 import ProtectedRoute from './protected-route';
-import GamificationPage from './app/ProgressPage/GamificationPage/gamification-page';
 import ExperimentsLandingPage from './app/ProgressPage/ExperimentsLandingPage/experiments-landing-page';
+import HighlightsPage from './app/ProgressPage/HighlightsPage/highlights-page';
 
 const routes = createBrowserRouter([
   {
@@ -71,6 +71,17 @@ const routes = createBrowserRouter([
       <ProtectedRoute>
         <ProgressPage>
           <WorkflowTab />
+        </ProgressPage>
+      </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/:experimentId/highlights',
+    element: (
+      <ProtectedRoute>
+        <ProgressPage>
+          <HighlightsPage />
         </ProgressPage>
       </ProtectedRoute>
     ),

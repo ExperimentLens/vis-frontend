@@ -2,11 +2,6 @@ import { useEffect } from 'react';
 import {
   Box,
   FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  OutlinedInput,
-  Checkbox,
   Button,
   ButtonGroup,
 } from '@mui/material';
@@ -14,7 +9,6 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
 
 import ShowChartIcon from '@mui/icons-material/ShowChart';
-import type { SelectChangeEvent } from '@mui/material';
 import SearchableSelect from '../../../../shared/components/searchable-select';
 import SearchableMultiSelect from '../../../../shared/components/searchable-select-multiple';
 

@@ -1,5 +1,7 @@
-import { Box, Typography } from '@mui/material';
-import { CheckCircle as CheckCircleIcon, WarningAmberRounded as WarningAmberRoundedIcon, InfoOutlined as InfoOutlinedIcon } from '@mui/icons-material';
+import { Box, Typography, useTheme } from '@mui/material';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import { DetailsCard, DetailsCardItem } from '../../../../shared/components/details-card';
@@ -59,28 +61,31 @@ const getParamStats = (
   };
 };
 
-const StatusIndicator = ({ completed }: {completed: boolean}) => (
-  <Box
-    sx={{
-      display: 'flex',
-      flexDirection: 'row',
-      gap: 1,
-      alignItems: 'center',
-      backgroundColor: completed ? '#e6f4ea' : '#fdecea',
-      padding: '6px 8px',
-      borderRadius: 1,
-    }}
-  >
-    <Typography variant="body1">
-      Status: {completed ? 'completed' : 'not completed'}
-    </Typography>
-    {completed ? (
-      <CheckCircleIcon fontSize="small" color="success" />
-    ) : (
-      <WarningAmberRoundedIcon fontSize="small" color="error" />
-    )}
-  </Box>
-);
+const StatusIndicator = ({ completed }: { completed: boolean }) => {
+  const theme = useTheme();
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'row',
+        gap: 1,
+        alignItems: 'center',
+        backgroundColor: completed ? theme.palette.customSurface.statSuccess : theme.palette.customSurface.statFailure,
+        padding: '6px 8px',
+        borderRadius: 1,
+      }}
+    >
+      <Typography variant="body1">
+        Status: {completed ? 'completed' : 'not completed'}
+      </Typography>
+      {completed ? (
+        <CheckCircleIcon fontSize="small" color="success" />
+      ) : (
+        <WarningAmberRoundedIcon fontSize="small" color="error" />
+      )}
+    </Box>
+  );
+};
 
 const EmptyState = () => (
   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', justifyContent: 'center', height: '100%' }}>

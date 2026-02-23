@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
-import grey from '@mui/material/colors/grey';
+import { grey } from '@mui/material/colors';
 import type { RootState } from '../../store/store';
 import { useAppSelector } from '../../store/store';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -40,16 +40,13 @@ const ProgressPageBar = () => {
               fontWeight: '600',
               '& .MuiChip-label': {
                 fontSize: '1rem',
-              }
+              },
+              color: theme.palette.primary.main,
             }}
           />
           <Box sx={{
             display: 'inline-flex',
             alignItems: 'center',
-            backgroundColor: theme.palette.background.paper,
-            // borderRadius: '16px',
-            // px: 1,
-            // border: `1px solid ${theme.palette.divider}`
           }}>
             <Typography
               variant="body2"
@@ -116,7 +113,7 @@ const ProgressPageBar = () => {
             '& .MuiLinearProgress-bar': {
               background: experiment?.data?.status === 'killed' ?
                 'linear-gradient(90deg, #d17b0f, #b32d00)' :
-                theme => theme.palette.customGradient.main,
+                theme => theme.palette.customGradient.gradient,
             },
           }}
         />

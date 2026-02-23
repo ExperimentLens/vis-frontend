@@ -77,7 +77,7 @@ const ComparisonModelInstance = ({
       const rows = instanceState.data.slice(0, 2000);
       // I build the payload like this to match the single instance UMAP in workflow page
       const payload2d: number[][] = rows.map((row, i) => {
-        const arr = Object.values(row).map((val) => Number.parseFloat(val as any));
+        const arr = Object.values(row).map((val) => Number.parseFloat(String(val)));
 
         // we pass this in the worklfow page UMAP why?
         arr.push(i);
@@ -162,7 +162,7 @@ const ComparisonModelInstance = ({
     // Handle loading and error states
     if (!instanceState || instanceState.loading) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <Loader />
           </ResponsiveCardTable>
@@ -172,7 +172,7 @@ const ComparisonModelInstance = ({
 
     if (instanceState.error) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <InfoMessage
               message={instanceState.error}
@@ -193,7 +193,7 @@ const ComparisonModelInstance = ({
 
     if (!dataRaw) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <InfoMessage
               message={'No instance data available'}
@@ -230,7 +230,7 @@ const ComparisonModelInstance = ({
     if (useUmap) {
       if (!umapState || umapState.loading) {
         return (
-          <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+          <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
             <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
               <Loader />
             </ResponsiveCardTable>
@@ -240,7 +240,7 @@ const ComparisonModelInstance = ({
 
       if (umapState.error) {
         return (
-          <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+          <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
             <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
               <InfoMessage
                 message={umapState.error}
@@ -258,8 +258,8 @@ const ComparisonModelInstance = ({
 
       const combinedPlotData = Array.from({ length: n }, (_, i) => {
         const original = dataRaw[i];
-        const actual = (original as any)?.actual ?? '?';
-        const predicted = (original as any)?.predicted ?? '?';
+        const actual = original.actual ?? '?';
+        const predicted = original.predicted ?? '?';
         const id = hashRow(original);
         const isMisclassified = actual !== predicted;
 
@@ -335,7 +335,7 @@ const ComparisonModelInstance = ({
       };
 
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId} sx={{ textAlign: 'left', width: '100%' }}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId} sx={{ textAlign: 'left' }}>
           <ResponsiveCardVegaLite
             spec={umapSpec}
             actions={false}
@@ -463,10 +463,9 @@ const ComparisonModelInstance = ({
 
     return (
       <Grid
-        item
-        xs={isMosaic ? 6 : 12}
+        size={{ xs: isMosaic ? 6 : 12 }}
         key={runId}
-        sx={{ textAlign: 'left', width: '100%' }}
+        sx={{ textAlign: 'left' }}
       >
         <ResponsiveCardVegaLite
           spec={confusionMatrixSpec}

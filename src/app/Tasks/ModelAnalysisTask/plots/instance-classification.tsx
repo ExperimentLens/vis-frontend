@@ -69,7 +69,7 @@ const ControlPanel = ({
             onChange={value =>
               handleAxisSelection('x')({
                 target: { value },
-              } as any)
+              })
             }
             menuMaxHeight={224}
             menuWidth={250}
@@ -93,7 +93,7 @@ const ControlPanel = ({
             onChange={(value) =>
               handleAxisSelection('y')({
                 target: { value },
-              } as any)
+              })
             }
             menuMaxHeight={224}
             menuWidth={250}
@@ -269,7 +269,7 @@ const InstanceClassification = (props: IInstanceClassification) => {
       if (datum) {
         const { id, ...dataWithoutId } = datum;
         const cleanedData = Object.fromEntries(
-          Object.entries(dataWithoutId).filter(([_, v]) => v !== undefined)
+          Object.entries(dataWithoutId).filter(([_key, v]) => v !== undefined)
         ) as TestInstance;
 
         setPoint({ id, data: cleanedData });

@@ -7,7 +7,7 @@ import { logger } from '../../../../shared/utils/logger';
 import { dataApi } from '../../../api/api';
 
 interface DataField {
-  values: any[]
+  values: unknown[]
 }
 
 interface UmapComponentProps {
@@ -84,7 +84,7 @@ const UmapComponent = ({ data1, data2, colorField, controlPanel: ControlPanel }:
       ]);
 
       setUmapResults({ umap1: response1.data, umap2: response2.data });
-    } catch (err) {
+    } catch {
       setError('Failed to fetch UMAP data');
     } finally {
       setLoading(false);
@@ -170,7 +170,7 @@ const UmapComponent = ({ data1, data2, colorField, controlPanel: ControlPanel }:
   //   createScatterData(umapResults.umap1),
   //   createScatterData(umapResults.umap2),
   // );
-  const predictionSpec = (umapResult: number[][] | null, colorData: any[]) => ({
+  const predictionSpec = (umapResult: number[][] | null, colorData: unknown[]) => ({
 
     width: 450,
     height: 450,
@@ -264,7 +264,7 @@ const UmapComponent = ({ data1, data2, colorField, controlPanel: ControlPanel }:
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {umapResults.umap1 && umapResults.umap2 && (
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <ResponsiveCardVegaLite
               actions={false}
               title="Action Selection"
@@ -276,7 +276,7 @@ const UmapComponent = ({ data1, data2, colorField, controlPanel: ControlPanel }:
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <ResponsiveCardVegaLite
               actions={false}
               title="Post-Action Selection"

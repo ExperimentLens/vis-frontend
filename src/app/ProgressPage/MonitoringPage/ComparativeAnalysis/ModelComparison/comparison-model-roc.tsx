@@ -77,7 +77,7 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
     // Handle loading and error states
     if (!rocState || rocState.loading) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <Loader />
           </ResponsiveCardTable>
@@ -87,7 +87,7 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
 
     if (rocState.error) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <InfoMessage
               message={rocState.error}
@@ -106,7 +106,7 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
 
     if (!dataRaw || !dataRaw.fpr || !dataRaw.tpr) {
       return (
-        <Grid item xs={isMosaic ? 6 : 12} key={runId}>
+        <Grid size={{ xs: isMosaic ? 6 : 12 }} key={runId}>
           <ResponsiveCardTable title={titleNode} minHeight={400} showSettings={false}>
             <InfoMessage
               message={'No roc curve data available'}
@@ -214,10 +214,9 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
 
     return (
       <Grid
-        item
-        xs={isMosaic ? 6 : 12}
+        size={{ xs: isMosaic ? 6 : 12 }}
         key={runId}
-        sx={{ textAlign: 'left', width: '100%' }}
+        sx={{ textAlign: 'left' }}
       >
         <ResponsiveCardVegaLite
           spec={rocSpec}

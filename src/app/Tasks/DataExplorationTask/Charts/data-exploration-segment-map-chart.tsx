@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useTheme } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
 import Loader from '../../../../shared/components/loader';
@@ -11,6 +13,7 @@ const COLOR_PALETTE = [
 ];
 
 const SegmentMapChart = () => {
+  const theme = useTheme();
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -213,7 +216,7 @@ ${segmentBy.length > 0
             left: 0,
             width: '100%',
             height: '100%',
-            backgroundColor: 'rgba(255,255,255,0.7)',
+            backgroundColor: alpha(theme.palette.background.paper, 0.7),
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -232,7 +235,7 @@ ${segmentBy.length > 0
             position: 'absolute',
             top: 10,
             right: 10,
-            background: 'rgba(255, 255, 255, 0.9)',
+            background: alpha(theme.palette.background.paper, 0.9),
             padding: '8px',
             borderRadius: '4px',
             boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
@@ -275,7 +278,7 @@ ${segmentBy.length > 0
                   <span key={index}>
                     <span style={{ fontWeight: 500 }}>{part}</span>
                     {index < arr.length - 1 && (
-                      <span style={{ margin: '0 6px', color: '#999' }}>|</span>
+                      <span style={{ margin: '0 6px', color: theme.palette.text.secondary }}>|</span>
                     )}
                   </span>
                 ))}

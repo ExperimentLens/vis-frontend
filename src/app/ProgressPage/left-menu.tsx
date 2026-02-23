@@ -6,16 +6,22 @@ import {
   ListItemText,
   Paper,
   IconButton,
+  ListItemButton,
 } from '@mui/material';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import ListRoundedIcon from '@mui/icons-material/ListRounded';
 import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
+import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
+import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import type { RootState } from '../../store/store';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import { setMenuOptions } from '../../store/slices/progressPageSlice';
-import ViewInArIcon from '@mui/icons-material/ViewInAr';
+import { toggleThemeMode } from '../../store/slices/uiSlice';
+import { logoutUser } from '../../store/slices/authSlice';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 const LeftMenu = () => {
   const { experimentId } = useParams();
@@ -23,6 +29,7 @@ const LeftMenu = () => {
   const { menuOptions } = useAppSelector(
     (state: RootState) => state.progressPage
   );
+  const themeMode = useAppSelector((state: RootState) => state.ui.themeMode);
   const dispatch = useAppDispatch();
 
   const navItems = [
@@ -156,29 +163,36 @@ const LeftMenu = () => {
               const item = (
                 <ListItem
                   key={path}
-                  component="button"
-                  sx={{
-                    bgcolor: selected ? theme => theme.palette.customBlue.selected : 'transparent',
-                    border: 'none',
-                    cursor: !disabled  ? 'pointer' : '',
-                    borderBottom: '1px solid #ddd',
-                    justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
-                    height: '48px', // 48px is the standard MUI component height
-                    opacity: disabled ? 0.5 : 1,
-                    '&:hover': {
-                      bgcolor: disabled ? 'transparent' : theme => theme.palette.customGrey.main
-                    },
-                  }}
-                  onClick={() => {
-                    if (!to) return;
-                    navigate(to);
-                  }}
-
+                  disablePadding
+                  sx={{ borderBottom: '1px solid #ddd' }}
                 >
-                  {icon}
-                  {!menuOptions.collapsed && (
-                    <ListItemText sx={{ ml: 1.5 }} primary={label} />
-                  )}
+                  <ListItemButton
+                    component={disabled ? 'div' : RouterLink}
+                    to={disabled ? undefined : to}
+                    selected={selected}
+                    sx={{
+                      justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
+                      height: '48px',
+                      opacity: disabled ? 0.5 : 1,
+                      pointerEvents: disabled ? 'none' : 'auto',
+                      '&.Mui-selected': {
+                        bgcolor: theme => theme.palette.customBlue.selected,
+                        '&:hover': {
+                          bgcolor: theme => theme.palette.customBlue.selected,
+                        },
+                      },
+                      '&:hover': {
+                        bgcolor: disabled
+                          ? 'transparent'
+                          : theme => theme.palette.customGrey.main,
+                      },
+                    }}
+                  >
+                    {icon}
+                    {!menuOptions.collapsed && (
+                      <ListItemText sx={{ ml: 1.5 }} primary={label} />
+                    )}
+                  </ListItemButton>
                 </ListItem>
               );
 
@@ -197,21 +211,64 @@ const LeftMenu = () => {
       <Box
         sx={{
           display: 'flex',
-          justifyContent: menuOptions.collapsed ? 'center' : 'flex-end',
-          alignItems: 'center',
+          flexDirection: 'column',
+          alignItems: menuOptions.collapsed ? 'center' : 'flex-end',
           padding: 1,
           marginBottom: 1,
+          gap: 1,
         }}
       >
+        <Tooltip title="Logout" placement="right" arrow>
+          <IconButton
+            onClick={() => {
+              dispatch(logoutUser()).then(() => {
+                navigate('/login', { replace: true });
+              });
+            }}
+            sx={{
+              backgroundColor: theme => theme.palette.customGrey.light,
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              '&:hover': {
+                backgroundColor: theme => theme.palette.error.light,
+                color: '#fff',
+              },
+              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            <LogoutRoundedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={themeMode === 'light' ? 'Dark mode' : 'Light mode'} placement="right" arrow>
+          <IconButton
+            onClick={() => dispatch(toggleThemeMode())}
+            sx={{
+              backgroundColor: theme => theme.palette.customGrey.light,
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              '&:hover': {
+                backgroundColor: theme => theme.palette.customGrey.main,
+              },
+              boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+            }}
+          >
+            {themeMode === 'light'
+              ? <DarkModeRoundedIcon fontSize="small" />
+              : <LightModeRoundedIcon fontSize="small" />
+            }
+          </IconButton>
+        </Tooltip>
         <IconButton
           onClick={() => dispatch(setMenuOptions({ ...menuOptions, collapsed: !menuOptions.collapsed }))}
           sx={{
-            backgroundColor: theme => theme.palette.customGrey.light || '#f5f5f5',
+            backgroundColor: theme => theme.palette.customGrey.light,
             borderRadius: '50%',
             width: '36px',
             height: '36px',
             '&:hover': {
-              backgroundColor: theme => theme.palette.customGrey.main || '#e0e0e0',
+              backgroundColor: theme => theme.palette.customGrey.main,
             },
             boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
           }}
