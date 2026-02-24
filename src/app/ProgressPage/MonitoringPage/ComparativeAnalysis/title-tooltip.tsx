@@ -21,6 +21,14 @@ const TitleTooltip = ({ workflowId }: {workflowId: string}) => {
   if(!workflow) return;
 
   return (
+    <Box
+      sx={{
+        bgcolor: 'background.paper',
+        color: 'text.primary',
+        p: 1,
+        borderRadius: 1,
+      }}
+    >
     <TableContainer sx={{ width: '100%', height: '100%' }}>
       <Table>
         <TableHead>
@@ -49,6 +57,7 @@ const TitleTooltip = ({ workflowId }: {workflowId: string}) => {
         </TableBody>
       </Table>
     </TableContainer>
+    </Box>
   );
 };
 
