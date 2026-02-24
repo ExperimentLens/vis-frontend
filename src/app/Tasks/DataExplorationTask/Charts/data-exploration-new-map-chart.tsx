@@ -4,6 +4,8 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
 import * as L from 'leaflet';
 import Loader from '../../../../shared/components/loader';
+import { useTheme } from '@mui/material/styles';
+
 const COLOR_PALETTE = [
   '#1f77b4', // blue
   '#ff7f0e', // orange
@@ -17,6 +19,7 @@ const MapChart = () => {
   const leafletMapRef = useRef<L.Map | null>(null);
   const markerLayerRef = useRef<L.LayerGroup | null>(null);
   const rendererRef = useRef<L.Renderer | undefined>(undefined);
+  const theme = useTheme();
 
   const isNumericField = (values: string[]): boolean => {
     return values.every(v => !isNaN(parseFloat(v)));
@@ -223,7 +226,7 @@ const MapChart = () => {
           onAdd: function () {
             const div = L.DomUtil.create('div', 'leaflet-legend');
 
-            div.style.background = 'white';
+            div.style.background = theme.palette.background.paper;
             div.style.padding = '8px';
             div.style.borderRadius = '4px';
             div.style.boxShadow = '0 0 6px rgba(0,0,0,0.2)';
