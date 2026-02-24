@@ -15,6 +15,7 @@ const HeatMapChart = () => {
 
   const { tab } = useAppSelector(state => state.workflowPage);
   const experimentId = useAppSelector(state => state.progressPage?.experiment.data?.id || '');
+  const { themeMode } = useAppSelector(state => state.ui);
 
   const meta = tab?.workflowTasks.dataExploration?.metaData;
   const dispatch = useAppDispatch();
@@ -225,7 +226,7 @@ const HeatMapChart = () => {
     const legendControl = new LegendControl({ position: 'topright' });
 
     legendControl.addTo(leafletMapRef.current!);
-  }, [data, lat, lon, filters, radius, weightBy]);
+  }, [data, lat, lon, filters, radius, weightBy, themeMode]);
 
   useEffect(() => {
     setTimeout(() => {
