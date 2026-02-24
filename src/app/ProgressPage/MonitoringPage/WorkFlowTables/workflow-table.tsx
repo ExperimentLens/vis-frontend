@@ -463,6 +463,7 @@ const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
   const { selectedWorkflows, workflowColors, expandedGroups } = useAppSelector(
     (s: RootState) => s.monitorPage.workflowsTable
   );
+  const { selectedTab } = useAppSelector((s: RootState) => s.monitorPage);
 
   if (row.isGroupSummary) {
     const isExpanded = expandedGroups.includes(row.id);
@@ -487,7 +488,7 @@ const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-      <WorkflowColorDot color={color} selected={isSelected} />
+      {selectedTab === 1 && <WorkflowColorDot color={color} selected={isSelected} />}
       <span>{workflowId}</span>
     </Box>
   );
