@@ -64,8 +64,9 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
         slotProps={{
           tooltip: {
             sx: {
-              backgroundColor: '#ffff',
-              maxWidth: '2000px'
+              backgroundColor: 'background.paper',
+              p: 0,
+              maxWidth: 2000
             },
           },
         }}

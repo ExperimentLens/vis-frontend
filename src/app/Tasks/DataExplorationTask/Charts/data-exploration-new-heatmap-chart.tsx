@@ -5,11 +5,13 @@ import { fetchDataExplorationData } from '../../../../store/slices/dataExplorati
 import * as L from 'leaflet';
 import 'leaflet.heat';
 import Loader from '../../../../shared/components/loader';
+import { useTheme } from '@mui/material/styles';
 
 const HeatMapChart = () => {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const heatLayerRef = useRef<L.Layer | null>(null);
+  const theme = useTheme();
 
   const { tab } = useAppSelector(state => state.workflowPage);
   const experimentId = useAppSelector(state => state.progressPage?.experiment.data?.id || '');
@@ -164,7 +166,7 @@ const HeatMapChart = () => {
       onAdd: function () {
         const div = L.DomUtil.create('div', 'leaflet-legend');
 
-        div.style.background = 'white';
+        div.style.background = theme.palette.background.paper;
         div.style.padding = '8px';
         div.style.borderRadius = '4px';
         div.style.boxShadow = '0 0 6px rgba(0,0,0,0.3)';
