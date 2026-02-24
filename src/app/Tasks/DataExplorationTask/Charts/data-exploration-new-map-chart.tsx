@@ -20,6 +20,7 @@ const MapChart = () => {
   const markerLayerRef = useRef<L.LayerGroup | null>(null);
   const rendererRef = useRef<L.Renderer | undefined>(undefined);
   const theme = useTheme();
+  const { themeMode } = useAppSelector(state => state.ui);
 
   const isNumericField = (values: string[]): boolean => {
     return values.every(v => !isNaN(parseFloat(v)));
@@ -298,7 +299,7 @@ const MapChart = () => {
 
       leafletMapRef.current.setView([avgLat, avgLon], 16);
     }
-  }, [data, lat, lon, colorMap, filters]);
+  }, [data, lat, lon, colorMap, filters, themeMode]);
   useEffect(() => {
     setTimeout(() => {
       leafletMapRef.current?.invalidateSize();
