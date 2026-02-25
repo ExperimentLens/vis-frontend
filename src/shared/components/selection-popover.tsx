@@ -42,6 +42,7 @@ export interface SelectionPopoverProps {
   /** Map an option value to a display label. Defaults to the option value itself. */
   getOptionLabel?: (option: string) => string
   id?: string
+  isOptionDisabled?: (option: string) => boolean
 }
 
 /**
@@ -68,6 +69,7 @@ const SelectionPopover = ({
   maxListHeight = 220,
   getOptionLabel,
   id,
+  isOptionDisabled,
 }: SelectionPopoverProps) => {
   const selectedCount = selectedOptions.length;
 
@@ -151,12 +153,14 @@ const SelectionPopover = ({
         {options.map(option => {
           const isSelected = selectedOptions.includes(option);
           const label = getOptionLabel ? getOptionLabel(option) : option;
+          const disabled = isOptionDisabled?.(option) ?? false;
 
           return (
             <ListItem key={option} disablePadding sx={{ mb: 0.375 }}>
               <ListItemButton
                 dense
-                onClick={() => onToggle(option)}
+                onClick={() => !disabled && onToggle(option)}
+                disabled={disabled}
                 sx={{
                   px: 1.5,
                   py: 0.625,
