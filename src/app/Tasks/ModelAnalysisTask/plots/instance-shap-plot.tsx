@@ -4,7 +4,7 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchModelAnalysisExplainabilityPlot } from '../../../../store/slices/explainabilitySlice';
 import { explainabilityQueryDefault } from '../../../../shared/models/tasks/explainability.model';
-import { Box } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import ClosableCardTable from '../../../../shared/components/closable-card-table';
 import type { TestInstance } from '../../../../shared/models/tasks/model-analysis.model';
 import Loader from '../../../../shared/components/loader';
@@ -39,6 +39,10 @@ const InstanceShapPlot = ({ shapPoint, onClose }: ShpaPlotProps) => {
   const plotModel = tab?.workflowTasks.modelAnalysis?.shap;
   const loading = Boolean(plotModel?.loading);
   const error = plotModel?.error as string | undefined;
+  const theme = useTheme();
+  const vegaBg = theme.palette.customSurface.cardContent;
+  const textColor = theme.palette.text.primary;
+  const dividerColor = theme.palette.divider;
 
   const plotWrapRef = useRef<HTMLDivElement | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -158,6 +162,7 @@ const InstanceShapPlot = ({ shapPoint, onClose }: ShpaPlotProps) => {
     return {
       width: containerWidth,
       height: containerHeight,
+      background: vegaBg,
       autosize: { type: 'fit', contains: 'padding', resize: true },
       data: { values },
       transform: [{ calculate: 'abs(datum.SHAP)', as: 'absSHAP' }],
@@ -267,11 +272,23 @@ const InstanceShapPlot = ({ shapPoint, onClose }: ShpaPlotProps) => {
         },
       ],
       config: {
-        axis: { labelLimit: 260 },
-        view: { stroke: null },
+        view: { fill: vegaBg, stroke: null },
+        axis: {
+          labelColor: textColor,
+          titleColor: textColor,
+          gridColor: dividerColor,
+          domainColor: dividerColor,
+          tickColor: dividerColor,
+          labelLimit: 260,
+        },
+        legend: {
+          labelColor: textColor,
+          titleColor: textColor,
+        },
+        title: { color: textColor },
       },
     };
-  }, [values, baseValue, fxValue, xDomain, containerHeight, containerWidth]);
+  }, [values, baseValue, fxValue, xDomain, containerHeight, containerWidth, vegaBg, textColor, dividerColor]);
 
   return (
     <Box sx={{ height: '100%', minHeight: 250, width: '100%' }}>
