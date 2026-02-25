@@ -217,7 +217,7 @@ const InstanceShapPlot = ({ shapPoint, onClose }: ShpaPlotProps) => {
               condition: { test: 'datum.SHAP > 0', value: 6 },
               value: -6,
             },
-            color: { value: '#111' },
+            color: { value: textColor },
           },
         },
 
