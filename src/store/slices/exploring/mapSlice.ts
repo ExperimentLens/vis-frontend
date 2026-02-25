@@ -15,6 +15,7 @@ import ngeohash from 'ngeohash';
 import type { MapLayer } from '../../../shared/models/exploring/dataset.model';
 import type { IDrawnShape } from '../../../shared/models/exploring/drawn-shape.model';
 import { getRectAndFeatureToUse } from '../../../shared/utils/mapUtils';
+import { fetchOpenAipForViewport } from './openAipSlice';
 
 export type ActiveSelection = 'view' | 'drawn' | 'selectedGeohash';
 
@@ -56,7 +57,8 @@ const handleRectUpdate = async (
   dispatch: ThunkDispatch<RootState, unknown, AnyAction>,
   state: RootState,
 ) => {
-  const { zoom, viewRect, selectedGeohash, activeSelection, drawnShape } = state.map;
+  const { zoom, viewRect, selectedGeohash, activeSelection, drawnShape } =
+    state.map;
   const { categoricalFilters, timeRange, dataset } = state.dataset;
   const { groupByCols, measureCol, aggType } = state.chart;
   const { zone } = state.zone;
@@ -290,7 +292,7 @@ export const mapSlice = createSlice({
         zoneFeature: null,
       }).rectToUse;
     },
-  }
+  },
 });
 
 export const mapListeners = (startAppListening: AppStartListening) => {
@@ -299,9 +301,33 @@ export const mapListeners = (startAppListening: AppStartListening) => {
     actionCreator: updateMapBounds,
     effect: async (action, listenerApi) => {
       const { id } = action.payload;
+      const { viewRect, zoom } = listenerApi.getState().map;
+      const coordPrecision = 2;
+      const zoomBucketSize = 2;
+
+      const round = (n: number) => Number(n.toFixed(coordPrecision));
+
+      if (!viewRect) return;
+
+      const minLat = round(viewRect.lat[0]);
+      const maxLat = round(viewRect.lat[1]);
+      const minLon = round(viewRect.lon[0]);
+      const maxLon = round(viewRect.lon[1]);
+
+      const bbox = `${minLon},${minLat},${maxLon},${maxLat}`;
+
+      // Bucket zoom to reduce over-fragmentation of cache keys
+      const zBucketStart = Math.floor(zoom / zoomBucketSize) * zoomBucketSize;
+      const zBucketEnd = zBucketStart + zoomBucketSize - 1;
+      const viewportKey = `bbox:${bbox}|z:${zBucketStart}-${zBucketEnd}|p:${coordPrecision}`;
 
       // Dispatch the updateClusters action
       await listenerApi.dispatch(updateClusters(id));
+
+      // Dispatch the fetchOpenAipForViewport action
+      await listenerApi.dispatch(
+        fetchOpenAipForViewport({ bbox, viewportKey }),
+      );
     },
   });
 

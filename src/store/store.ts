@@ -25,6 +25,7 @@ import { predictionListeners } from './slices/exploring/predictionSlice';
 import { eusomeSlice } from './slices/exploring/eusomeSlice';
 import { eusomeApiListeners } from './slices/exploring/eusomeSlice';
 import { uiListeners, uiSlice } from './slices/exploring/uiSlice';
+import { openAipSlice } from './slices/exploring/openAipSlice';
 
 export const store = configureStore({
   reducer: {
@@ -43,6 +44,7 @@ export const store = configureStore({
     prediction: predictionSlice.reducer,
     eusome: eusomeSlice.reducer,
     ui: uiSlice.reducer,
+    openAip: openAipSlice.reducer,
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
