@@ -30,6 +30,7 @@ import {
 } from '../../../../store/slices/exploring/mapSlice';
 import { LatLngBounds, type LatLngBoundsExpression } from 'leaflet';
 import { MapLegend } from './map-legend';
+import { OpenAipZonesLayer } from './OpenAIP/open-aip-zones-layer';
 
 export interface IMapProps {
   id: string;
@@ -270,7 +271,6 @@ export const Map = (props: IMapProps) => {
         zoomControl={false}
         maxZoom={MAX_ZOOM}
       >
-
         <TileLayer
           attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -467,6 +467,7 @@ export const Map = (props: IMapProps) => {
         ) : null}
         <MapSearch />
         <MapLegend dataset={dataset} />
+        <OpenAipZonesLayer />
       </MapContainer>
     );
   }

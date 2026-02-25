@@ -151,7 +151,7 @@ interface OpenAipState {
 
 const initialState: OpenAipState = {
   enabled: true,
-  showAirports: true,
+  showAirports: false,
   showAirspaces: true,
   enabledAirportTypes: [],
   enabledAirspaceTypes: [],
