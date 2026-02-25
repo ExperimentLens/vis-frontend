@@ -82,6 +82,7 @@ const MapChart = () => {
           },
           columns,
           filters,
+          includeTotalItems: false
           // limit: 0,
         },
         metadata: {

@@ -59,6 +59,7 @@ const SegmentMapChart = () => {
         columns: [lat, lon, ...(segmentBy.length > 0 ? segmentBy : []), orderBy],
         filters,
         limit: 10000,
+        includeTotalItems: false
       },
       metadata: {
         workflowId: tab?.workflowId || '',

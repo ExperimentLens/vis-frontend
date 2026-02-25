@@ -40,6 +40,10 @@ export interface IDataSource {
   fileName: string
   runId: string
   experimentId: string
+  includeSummary?: boolean;     
+  includeTotalItems?: boolean;   
+  detectDatasetType?: boolean;   
+
 }
 
 export interface IDataExplorationQuery {
@@ -50,6 +54,7 @@ export interface IDataExplorationQuery {
   offset?: number
   groupBy?: string[] // Optional, added
   aggregations?: IAggregation[]
+  includeTotalItems?: boolean
 }
 
 export interface IDataExplorationRequest {
@@ -69,6 +74,10 @@ export interface IMetaDataQuery{
   fileName: string
   runId: string
   experimentId: string
+  includeSummary?: boolean;     
+  includeTotalItems?: boolean;  
+  detectDatasetType?: boolean;  
+  
 }
 export interface IMetaDataRequest {
   query: IMetaDataQuery
@@ -138,6 +147,9 @@ export const defaultDataExplorationQuery: IDataExplorationQuery = {
     fileName: '',
     runId: 'dataCache',
     experimentId: 'unknown',
+    includeSummary: false,
+    includeTotalItems: false,
+    detectDatasetType: false
   },
   // limit: 0,
   columns: [],
@@ -145,4 +157,5 @@ export const defaultDataExplorationQuery: IDataExplorationQuery = {
   offset: 0,
   groupBy: [],
   aggregations: [],
+  includeTotalItems: false
 };

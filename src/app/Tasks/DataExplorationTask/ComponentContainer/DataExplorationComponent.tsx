@@ -50,7 +50,10 @@ const DataExplorationComponent = () => {
             sourceType: dataset?.sourceType || '',
             fileName: dataset?.name || ''
             , runId: workflowId || '',
-            experimentId: experimentId || ''
+            experimentId: experimentId || '',
+              includeSummary: false,
+              includeTotalItems: false,
+              detectDatasetType: false
           },
           metadata: {
             workflowId: workflowId,
