@@ -1,10 +1,10 @@
-import type { ViewListener } from 'react-vega';
+import type { ViewListener, VisualizationSpec } from 'react-vega';
 import { Vega } from 'react-vega';
 import { scheme } from 'vega';
 import vegaTooltip from 'vega-tooltip';
 import type { Axis, Item, Scale } from 'vega-typings';
 import type { View } from 'vega';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useTheme } from '@mui/material/styles';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
 
@@ -214,13 +214,8 @@ const ParallelCoordinateVega = ({
       return filled;
     });
 
-  return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-      <Vega
-        actions={false}
-        onNewView={handleNewView}
-        style={{ width: '100%' }}
-        spec={{
+    const spec: VisualizationSpec = useMemo(() => {
+      return {
           height: chartHeight,
           width: chartWidth,
           padding: { top: 15, left: 2, right: 2, bottom: 2 },
@@ -230,8 +225,9 @@ const ParallelCoordinateVega = ({
             axis: {
               labelColor: theme.palette.text.primary,
               titleColor: theme.palette.text.primary,
-              tickColor: theme.palette.text.secondary,
-              domainColor: theme.palette.text.secondary,
+              gridColor: theme.palette.divider,
+              domainColor: theme.palette.divider,
+              tickColor: theme.palette.divider,
             },
             axisY: {
               titleY: -12,
@@ -363,8 +359,17 @@ const ParallelCoordinateVega = ({
                 },
               },
             }] : []),
-          ],
-        }}
+          ]
+      };
+    }, [theme, chartHeight, chartWidth, numericFilteredData, columnNames, progressParallel.selected, selectedWorkflows.length]);
+
+  return (
+    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+      <Vega
+        actions={false}
+        onNewView={handleNewView}
+        style={{ width: '100%' }}
+        spec={spec}
       />
     </div>
   );
