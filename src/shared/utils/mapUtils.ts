@@ -6,6 +6,17 @@ import type { GeoJsonFeature, GeoJsonGeometry, GeoJsonPolygon } from '../models/
 import type { IDrawnShape } from '../models/exploring/drawn-shape.model';
 import type { IRectangle } from '../models/exploring/rectangle.model';
 
+export const COORD_PRECISION = 2;
+export const ZOOM_BUCKET_SIZE = 2;
+export const MIN_ZOOM_FOR_OPENAIP_OVERLAY = 9; // zoom level at which openaip overlay is enabled
+
+export const getZoomBucket = (zoom: number) => {
+  const zBucketStart = Math.floor(zoom / ZOOM_BUCKET_SIZE) * ZOOM_BUCKET_SIZE;
+  const zBucketEnd = zBucketStart + ZOOM_BUCKET_SIZE - 1;
+
+  return { zBucketStart, zBucketEnd };
+};
+
 export const getPolygonBBox = (
   poly: GeoJsonPolygon,
 ): { south: number; west: number; north: number; east: number } | null => {
