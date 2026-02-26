@@ -2,7 +2,7 @@ import { DndContext, closestCenter } from '@dnd-kit/core';
 import type { DragEndEvent, UniqueIdentifier } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Paper, styled } from '@mui/material';
+import { Paper, styled, Tooltip } from '@mui/material';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(1, 2),
@@ -14,6 +14,11 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
   fontFamily: theme.typography.fontFamily,
   color: theme.palette.text.primary,
   boxShadow: 'none',
+  maxWidth: 100,
+  width: '100%',
+  overflow: 'hidden',
+  whiteSpace: 'nowrap',
+  textOverflow: 'ellipsis',
   '&:hover': {
     backgroundColor: theme.palette.action.hover,
     boxShadow: theme.shadows[3],
@@ -28,11 +33,19 @@ const SortableItem = ({ id }: { id: UniqueIdentifier }) => {
     transform: CSS.Translate.toString(transform),
     transition,
   };
+  const label = String(id);
 
   return (
-    <StyledPaper ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {id}
-    </StyledPaper>
+    <Tooltip title={label} arrow placement="top">
+      <StyledPaper
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+      >
+        {label}
+      </StyledPaper>
+    </Tooltip>
   );
 };
 
@@ -56,8 +69,7 @@ const DraggableColumns = ({
       onOrderChange?.(newArray);
     }
   };
-  const minusPercentage = foldArray.current.length > 2 ? 5 : 15;
-  const width = foldArray.current.length / (foldArray.current.length + 1) * 100 - minusPercentage;
+  const width = (foldArray.current.length - 1) / foldArray.current.length * 100;
 
   return (
     <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
