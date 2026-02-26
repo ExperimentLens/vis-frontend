@@ -8,7 +8,7 @@ import type { IRectangle } from '../models/exploring/rectangle.model';
 
 export const COORD_PRECISION = 2;
 export const ZOOM_BUCKET_SIZE = 2;
-export const MIN_ZOOM_FOR_OPENAIP_OVERLAY = 9; // zoom level at which openaip overlay is enabled
+export const MIN_ZOOM_FOR_OPENAIP_OVERLAY = 8; // zoom level at which openaip overlay is enabled
 
 export const getZoomBucket = (zoom: number) => {
   const zBucketStart = Math.floor(zoom / ZOOM_BUCKET_SIZE) * ZOOM_BUCKET_SIZE;

@@ -26,17 +26,28 @@ const coordinatesToLatLngTuples = (
 
 export const OpenAipZonesLayer = () => {
   const { zoom } = useAppSelector(state => state.map);
-  const { enabled, showAirports, showAirspaces, airportsById, airspacesById } =
-    useAppSelector(state => state.openAip);
+  const {
+    enabled,
+    showAirports,
+    showAirspaces,
+    airportsById,
+    airspacesById,
+    enabledAirspaceTypes,
+    enabledAirportTypes,
+  } = useAppSelector(state => state.openAip);
 
   if (!enabled || zoom < MIN_ZOOM_FOR_OPENAIP_OVERLAY) return null;
 
   const visibleAirspaces = showAirspaces
     ? Object.values(airspacesById).filter(
-      airspace => airspace.type !== 0 && airspace.type !== 10,
+      airspace => enabledAirspaceTypes[airspace.type],
     )
     : [];
-  const visibleAirports = showAirports ? Object.values(airportsById) : [];
+  const visibleAirports = showAirports
+    ? Object.values(airportsById).filter(
+      airport => enabledAirportTypes[airport.type],
+    )
+    : [];
 
   return (
     <>

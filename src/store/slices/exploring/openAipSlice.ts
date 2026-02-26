@@ -131,8 +131,8 @@ interface OpenAipState {
   showAirports: boolean;
   showAirspaces: boolean;
 
-  enabledAirportTypes: number[];
-  enabledAirspaceTypes: number[];
+  enabledAirportTypes: boolean[];
+  enabledAirspaceTypes: boolean[];
 
   // normalized entities
   airportsById: Record<string, IOpenAipAirport>;
@@ -153,8 +153,10 @@ const initialState: OpenAipState = {
   enabled: true,
   showAirports: false,
   showAirspaces: true,
-  enabledAirportTypes: [],
-  enabledAirspaceTypes: [],
+  enabledAirportTypes: Array.from({ length: 14 }, _ => true),
+  enabledAirspaceTypes: Array.from({ length: 37 }, (_, i) =>
+    i !== 0 && i !== 10 ? true : false,
+  ), // exclude Other and Flight Information Region
   airportsById: {},
   airspacesById: {},
   viewportIndex: {},
@@ -176,11 +178,13 @@ export const openAipSlice = createSlice({
     setShowAirspaces: (state, action: PayloadAction<boolean>) => {
       state.showAirspaces = action.payload;
     },
-    setEnabledAirportTypes: (state, action: PayloadAction<number[]>) => {
-      state.enabledAirportTypes = action.payload;
+    toggleEnabledAirportType: (state, action: PayloadAction<number>) => {
+      state.enabledAirportTypes[action.payload] =
+        !state.enabledAirportTypes[action.payload];
     },
-    setEnabledAirspaceTypes: (state, action: PayloadAction<number[]>) => {
-      state.enabledAirspaceTypes = action.payload;
+    toggleEnabledAirspaceType: (state, action: PayloadAction<number>) => {
+      state.enabledAirspaceTypes[action.payload] =
+        !state.enabledAirspaceTypes[action.payload];
     },
   },
   extraReducers: builder => {
@@ -227,6 +231,6 @@ export const {
   setEnabled,
   setShowAirports,
   setShowAirspaces,
-  setEnabledAirportTypes,
-  setEnabledAirspaceTypes,
+  toggleEnabledAirportType,
+  toggleEnabledAirspaceType,
 } = openAipSlice.actions;

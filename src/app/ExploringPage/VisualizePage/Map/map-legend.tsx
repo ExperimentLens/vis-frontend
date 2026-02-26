@@ -1,5 +1,8 @@
-import { Box, Typography, useTheme } from '@mui/material';
+import { useState } from 'react';
 import { Zones } from '../Zones/zones';
+import { OpenAipFilter } from './OpenAIP/open-aip-filter';
+import { Layers as LayersIcon } from '@mui/icons-material';
+import { Box, IconButton, Popover, Tooltip, Typography, useTheme } from '@mui/material';
 import type { IDataset } from '../../../../shared/models/exploring/dataset.model';
 
 const legendItems = [
@@ -11,6 +14,18 @@ const legendItems = [
 
 export const MapLegend = ({ dataset }: { dataset: IDataset }) => {
   const theme = useTheme();
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+
+  const handleOpenAipFilter = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseAipFilter = () => {
+    setAnchorEl(null);
+  };
+
+  const open = Boolean(anchorEl);
+  const id = open ? 'aip-filter-popover' : undefined;
 
   return (
     <Box
@@ -31,7 +46,12 @@ export const MapLegend = ({ dataset }: { dataset: IDataset }) => {
       {legendItems.map(item => (
         <Box
           key={item.label}
-          sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 0.5,
+          }}
         >
           <Box
             sx={{
@@ -47,6 +67,36 @@ export const MapLegend = ({ dataset }: { dataset: IDataset }) => {
       <Box sx={{ marginTop: 1, marginBottom: 0.5 }}>
         <Zones dataset={dataset} />
       </Box>
+      <Tooltip title="Airspace Filters" placement="left" arrow>
+        <IconButton aria-describedby={id} onClick={handleOpenAipFilter}>
+          <LayersIcon />
+        </IconButton>
+      </Tooltip>
+      <Popover
+        id={id}
+        open={open}
+        onClose={handleCloseAipFilter}
+        anchorEl={anchorEl}
+        anchorOrigin={{
+          vertical: 'center',
+          horizontal: 'left',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        slotProps={{
+          paper: {
+            sx: {
+              p: 2,
+              width: 300,
+              maxHeight: '50vh',
+            },
+          },
+        }}
+      >
+        <OpenAipFilter />
+      </Popover>
     </Box>
   );
 };
