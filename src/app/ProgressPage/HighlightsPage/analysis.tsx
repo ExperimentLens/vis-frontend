@@ -10,6 +10,7 @@ import {
   Grid,
   LinearProgress,
   Stack,
+  Tooltip,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -22,6 +23,8 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import ResponsiveCardVegaLite from '../../../shared/components/responsive-card-vegalite';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
+import { setCache } from '../../../shared/utils/localStorageCache';
+import { useParams } from 'react-router-dom';
 
 
 interface ClusterCardProps {
@@ -49,6 +52,98 @@ interface DecisionRulesSectionProps {
   rules?: DecisionRule[];
   clusterKey?: string | null;
 }
+
+type TableFilter = { column: string; operator: string; value: string };
+
+const splitAnd = (rule: string): string[] => {
+  // split on " and " outside braces/quotes (handles sets like {'a','b'})
+  const out: string[] = [];
+  let buf = '';
+  let inSingle = false;
+  let inDouble = false;
+  let brace = 0;
+
+  for (let i = 0; i < rule.length; i++) {
+    const ch = rule[i];
+    const token = rule.slice(i, i + 5).toLowerCase(); // " and "
+
+    if (ch === "'" && !inDouble) inSingle = !inSingle;
+    if (ch === '"' && !inSingle) inDouble = !inDouble;
+
+    if (!inSingle && !inDouble) {
+      if (ch === '{') brace++;
+      if (ch === '}') brace = Math.max(0, brace - 1);
+    }
+
+    if (!inSingle && !inDouble && brace === 0 && token === ' and ') {
+      out.push(buf.trim());
+      buf = '';
+      i += 4;
+      continue;
+    }
+
+    buf += ch;
+  }
+
+  if (buf.trim()) out.push(buf.trim());
+  return out;
+};
+
+const stripQuotes = (s: string) => {
+  const t = s.trim();
+  if ((t.startsWith("'") && t.endsWith("'")) || (t.startsWith('"') && t.endsWith('"'))) return t.slice(1, -1);
+  return t;
+};
+
+const parseSet = (raw: string): string[] => {
+  const t = raw.trim();
+  const inner = t.startsWith('{') && t.endsWith('}') ? t.slice(1, -1) : t;
+
+  const vals: string[] = [];
+  let buf = '';
+  let inSingle = false;
+  let inDouble = false;
+
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (ch === "'" && !inDouble) inSingle = !inSingle;
+    if (ch === '"' && !inSingle) inDouble = !inDouble;
+
+    if (ch === ',' && !inSingle && !inDouble) {
+      if (buf.trim()) vals.push(stripQuotes(buf.trim()));
+      buf = '';
+      continue;
+    }
+    buf += ch;
+  }
+  if (buf.trim()) vals.push(stripQuotes(buf.trim()));
+  return vals.filter(Boolean);
+};
+
+export const ruleToFilters = (rule: string): TableFilter[] => {
+  const clauses = splitAnd(rule);
+  const filters: TableFilter[] = [];
+
+  for (const c of clauses) {
+    const inMatch = c.match(/^\s*([A-Za-z_][A-Za-z0-9_.]*)\s+IN\s+(.+)\s*$/i);
+    if (inMatch) {
+      const column = inMatch[1];
+      const values = parseSet(inMatch[2]);
+      filters.push({ column, operator: 'IN', value: values.join(',') });
+      continue;
+    }
+
+    const cmpMatch = c.match(/^\s*([A-Za-z_][A-Za-z0-9_.]*)\s*(>=|<=|!=|=|==|>|<)\s*(.+)\s*$/);
+    if (cmpMatch) {
+      const column = cmpMatch[1];
+      const operator = cmpMatch[2] === '==' ? '=' : cmpMatch[2];
+      const value = stripQuotes(cmpMatch[3]);
+      filters.push({ column, operator, value });
+    }
+  }
+
+  return filters;
+};
 
 const getClusterColorFromKey = (clusterKey: string, theme: Theme) => {
   const colors = [
@@ -118,6 +213,7 @@ const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
 
 const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clusterKey }) => {
   const theme = useTheme();
+  const { experimentId } = useParams<{ experimentId: string }>();
 
   const [showAlternatives, setShowAlternatives] = useState(false);
 
@@ -130,6 +226,18 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
 
   const [primaryRule, ...alternativeRules] = rules;
 
+  const primaryRuleKey = useMemo(
+    () => `ruleFilter-primary-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    []
+  );
+  const alternativeRuleKeys = useMemo(
+    () =>
+      alternativeRules.map(
+        (_, i) =>
+          `ruleFilter-alt-${i}-${Date.now()}-${Math.random().toString(16).slice(2)}`
+      ),
+    [alternativeRules]
+  );  
   return (
 
     <ResponsiveCardTable title={" DECISION RULES"} showSettings={false} showFullScreenButton={false} >
@@ -224,13 +332,28 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                 </Box>
               ))}
             </Stack>
-
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', mt: 0.5 }}
-            >
-              {primaryRule.nWorkflowsInCluster} workflows matched
-            </Typography>
+            <Box>
+              <Tooltip title='View workflows'>
+                <Typography
+                  variant="caption"
+                  color="primary"
+                  sx={{ cursor: 'pointer', textDecoration: 'underline', alignSelf: 'flex-start' }}
+                  component="a"
+                  href={`/${experimentId}/monitoring?tab=0&ruleFilterId=${primaryRuleKey}`}
+                  rel="noopener noreferrer"
+                  onMouseDown={() => {
+                    const filters = ruleToFilters(primaryRule.rule);
+                    setCache(primaryRuleKey, { filters }, 5 * 60 * 1000);
+                  }}
+                  onClick={() => {
+                    const filters = ruleToFilters(primaryRule.rule);
+                    setCache(primaryRuleKey, { filters }, 5 * 60 * 1000);
+                  }}
+                >
+                  {primaryRule.nWorkflowsInCluster} workflows matched
+                </Typography>
+              </Tooltip>
+          </Box>
           </Stack>
         </Card>
 
@@ -251,7 +374,9 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
 
             <Collapse in={showAlternatives}>
               <Stack spacing={2} sx={{ mt: 1 }}>
-                {alternativeRules.map((rule, index) => (
+                {alternativeRules.map((rule, index) => {
+                  const key = alternativeRuleKeys[index];
+                  return (
                   <Card
                     key={index}
                     sx={{
@@ -335,16 +460,32 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                           </Box>
                         ))}
                       </Stack>
-
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'text.secondary', mt: 0.5 }}
-                      >
-                        {rule.nWorkflowsInCluster} workflows matched
-                      </Typography>
+                      <Box>
+                        <Tooltip title='View workflows'>
+                          <Typography
+                            key={index}
+                            variant="caption"
+                            color="primary"
+                            sx={{ cursor: 'pointer', textDecoration: 'underline', alignSelf: 'flex-start' }}
+                            component="a"
+                            href={`/${experimentId}/monitoring?tab=0&ruleFilterId=${key}`}
+                            rel="noopener noreferrer"
+                            onMouseDown={() => {
+                              const filters = ruleToFilters(rule.rule);
+                              setCache(key, { filters }, 5 * 60 * 1000);
+                            }}
+                            onClick={() => {
+                              const filters = ruleToFilters(rule.rule);
+                              setCache(key, { filters }, 5 * 60 * 1000);
+                            }}
+                          >
+                            {rule.nWorkflowsInCluster} workflows matched
+                          </Typography>
+                        </Tooltip>
+                      </Box>
                     </Stack>
                   </Card>
-                ))}
+                )})}
               </Stack>
             </Collapse>
           </Box>

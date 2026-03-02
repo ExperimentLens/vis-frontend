@@ -32,6 +32,7 @@ import ControlPointDuplicateIcon from '@mui/icons-material/ControlPointDuplicate
 import type { IRun } from '../../../../shared/models/experiment/run.model';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
 import SearchableSelect from '../../../../shared/components/searchable-select';
+import { getCache } from '../../../../shared/utils/localStorageCache';
 
 export interface Data {
   [key: string]: string | number | boolean | null | undefined;
@@ -750,6 +751,20 @@ export default function WorkflowTable() {
 
     return { filteredRows, filtersCounter: counter };
   };
+
+    useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ruleFilterId = params.get('ruleFilterId');
+    if (!ruleFilterId) return;
+
+    const cached = getCache(ruleFilterId) as any;
+    const cachedFilters = cached?.filters;
+
+    if (Array.isArray(cachedFilters) && cachedFilters.length > 0) {
+      dispatch(setWorkflowsTable({filters: cachedFilters}));
+    }
+  }, [location.search]);
+
 
   useEffect(() => {
     if(workflowsTable.initialized) {
