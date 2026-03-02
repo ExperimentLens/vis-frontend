@@ -332,7 +332,7 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                 </Box>
               ))}
             </Stack>
-            <Box>
+            <Box sx={{ position: 'relative', display: 'inline-block' }}>
               <Tooltip title='View workflows'>
                 <Typography
                   variant="caption"
@@ -378,7 +378,7 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                   const key = alternativeRuleKeys[index];
                   return (
                   <Card
-                    key={index}
+                    key={key}
                     sx={{
                       p: 2,
                       backgroundColor: theme.palette.background.paper,
@@ -460,7 +460,7 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                           </Box>
                         ))}
                       </Stack>
-                      <Box>
+                      <Box sx={{ position: 'relative', display: 'inline-block' }}>
                         <Tooltip title='View workflows'>
                           <Typography
                             key={index}

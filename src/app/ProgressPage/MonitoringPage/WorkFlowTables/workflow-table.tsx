@@ -508,6 +508,7 @@ export default function WorkflowTable() {
   const { experimentId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const isApplyingCachedFilters = useRef(false);
 
   const dispatch = useAppDispatch();
   const prevGroupByRef = useRef<string[]>([]);
@@ -752,7 +753,7 @@ export default function WorkflowTable() {
     return { filteredRows, filtersCounter: counter };
   };
 
-    useEffect(() => {
+  useEffect(() => {
     const params = new URLSearchParams(location.search);
     const ruleFilterId = params.get('ruleFilterId');
     if (!ruleFilterId) return;
@@ -761,10 +762,33 @@ export default function WorkflowTable() {
     const cachedFilters = cached?.filters;
 
     if (Array.isArray(cachedFilters) && cachedFilters.length > 0) {
+      isApplyingCachedFilters.current = true;
       dispatch(setWorkflowsTable({filters: cachedFilters}));
     }
   }, [location.search]);
 
+  useEffect(() => {
+    if (isApplyingCachedFilters.current && 
+        workflowsTable.filteredRows.length > 0 && 
+        workflowsTable.initialized) {
+        
+      const allWorkflowIds = workflowsTable.filteredRows
+        .filter(row => !row.isGroupSummary)
+        .map(row => row.workflowId);
+        
+      allWorkflowIds.forEach(workflowId => {
+        if (!workflowsTable.selectedWorkflows.includes(workflowId)) {
+          dispatch(toggleWorkflowSelection(workflowId));
+        }
+      });
+
+      dispatch(setWorkflowsTable({ 
+        selectedWorkflows: allWorkflowIds 
+      }));
+
+      isApplyingCachedFilters.current = false;
+    }
+  }, [workflowsTable.filteredRows, workflowsTable.initialized, workflowsTable.selectedWorkflows]);
 
   useEffect(() => {
     if(workflowsTable.initialized) {
