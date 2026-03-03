@@ -1,11 +1,12 @@
-import type { ViewListener } from 'react-vega';
+import type { ViewListener, VisualizationSpec } from 'react-vega';
 import { Vega } from 'react-vega';
 import { scheme } from 'vega';
 import vegaTooltip from 'vega-tooltip';
 import type { Axis, Item, Scale } from 'vega-typings/types';
 import type { View } from 'vega';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
+import { useTheme } from '@mui/material';
 
 interface ParallelCoordinateVegaProps {
   parallelData: ParallelDataItem[]
@@ -40,6 +41,7 @@ const ParallelCoordinateVega = ({
   const [chartHeight, setChartHeight] = useState(window.innerHeight * 0.27);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(0);
+  const theme = useTheme();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -243,18 +245,21 @@ const ParallelCoordinateVega = ({
       return filled;
     });
 
-  return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-      <Vega
-        actions={false}
-        onNewView={handleNewView}
-        style={{ width: '100%' }}
-        spec={{
+    const spec: VisualizationSpec = useMemo(() => {
+      return (
+        {
           height: chartHeight,
           width: chartWidth,
           padding: { top: 15, left: 2, right: 2, bottom: 2 },
           autosize: { type: 'fit', contains: 'padding' }, // Ensure the chart adjusts to container size
           config: {
+            axis: {
+              labelColor: theme.palette.text.primary,
+              titleColor: theme.palette.text.primary,
+              gridColor: theme.palette.divider,
+              domainColor: theme.palette.divider,
+              tickColor: theme.palette.divider,
+            },
             axisY: {
               titleY: -12,
               titleX: 10,
@@ -407,7 +412,17 @@ const ParallelCoordinateVega = ({
               },
             },
           ],
-        }}
+        }
+      );
+    }, [theme, chartHeight, chartWidth, numericFilteredData, columnNames, progressParallel.selected, selectedWorkflows.length]);
+
+  return (
+    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+      <Vega
+        actions={false}
+        onNewView={handleNewView}
+        style={{ width: '100%' }}
+        spec={spec}
       />
     </div>
   );
