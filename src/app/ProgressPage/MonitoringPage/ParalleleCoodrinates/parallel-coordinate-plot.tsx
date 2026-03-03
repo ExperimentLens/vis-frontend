@@ -11,11 +11,16 @@ import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import type { IMetric } from '../../../../shared/models/experiment/metric.model';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
-import { IconButton, Tooltip } from '@mui/material';
+import { IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Popover, Tooltip } from '@mui/material';
+import { SectionHeader } from '../../../../shared/components/responsive-card-table';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
 import PaletteIcon from '@mui/icons-material/Palette';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
 import SelectionPopover from '../../../../shared/components/selection-popover';
+import { getCache } from '../../../../shared/utils/localStorageCache';
+import { useLocation } from 'react-router-dom';
 
 const ParallelCoordinatePlot = () => {
   const { workflows } =
@@ -27,6 +32,20 @@ const ParallelCoordinatePlot = () => {
   const [ColoranchorEl, setColorAnchorEl] = useState<null | HTMLElement>(null);
   const [ParamsanchorEl, setParamsAnchorEl] = useState<null | HTMLElement>(null);
   const selectedParams = parallel?.selectedParams ?? [];
+
+  const location = useLocation();
+
+  const ruleFilterId = useMemo(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('ruleFilterId');
+  }, [location.search]);
+
+  const shapFeatures: string[] = useMemo(() => {
+    if (!ruleFilterId) return [];
+
+    const cached = getCache(ruleFilterId) as any;
+    return cached?.clusterFeatures ?? [];
+  }, [ruleFilterId]);
 
   const dispatch = useAppDispatch();
 
@@ -52,16 +71,40 @@ const ParallelCoordinatePlot = () => {
         workflows.data.filter(workflow => workflow.status !== 'SCHEDULED')
           .reduce((acc: string[], workflow) => {
             const params = workflow.params;
+            let paramNames = [];
 
             if (params) {
-              return [...acc, ...params.map(param => param.name)];
+              paramNames = params.map(param => param.name);
+
+              return [...acc, ...paramNames];
             } else {
               return [...acc];
             }
           }, [] as string[]),
       );
 
-      foldArray.current = Array.from(uniqueParameters);
+      const uniqueMetrics = new Set(
+        workflows.data.filter(workflow => workflow.status !== 'SCHEDULED')
+          .reduce((acc: string[], workflow) => {
+            const metrics = workflow.metrics;
+            let metricNames: string[] = [];
+
+            if(metrics) {
+              metricNames = metrics.map(metric => metric.name);
+
+              return [...acc, ...metricNames];
+            } else {
+              return [...acc];
+            }
+
+          }, [] as string[])
+      );
+
+      const parameterKeys = Array.from(uniqueParameters);
+      const metricKeys = Array.from(uniqueMetrics);
+
+      const allAxes = [...parameterKeys, ...metricKeys];
+
       const data = workflows.data
         .map(workflow => {
           const params = workflow.params;
@@ -89,23 +132,52 @@ const ParallelCoordinatePlot = () => {
       let selected = parallel.selected;
       let options = parallel.options;
 
-      if (parallel.options.length === 0) {
-        options = Array.from(
-          new Set(
-            workflows.data
-              .filter(workflow => workflow.status !== 'SCHEDULED')
-              .reduce((acc: string[], workflow) => {
-                const metrics = workflow.metrics
-                  ? workflow.metrics.filter(metric => metric.name !== 'rating').map((metric: IMetric) => metric.name)
-                  : [];
-
-                return [...acc, ...metrics];
-              }, []),
-          ),
-        );
-        selected = options[0];
+      if (shapFeatures.length > 0) {
+        const validShap = shapFeatures.filter(f => allAxes.includes(f));
+      
+        if (validShap.length > 0) {
+          selected = validShap[0];
+        
+          const remainingShap = validShap.slice(1);
+        
+          const remainingAxes = allAxes.filter(
+            axis =>
+              axis !== selected &&
+              !remainingShap.includes(axis)
+          );
+        
+          const combined = [...remainingShap, ...remainingAxes];
+        
+          foldArray.current = combined.slice(0, 10);
+        
+          options = Array.from(new Set([...options, selected, ...foldArray.current]));
+        }
+      } else {
+        if (parallel.options.length === 0) {
+          options = Array.from(
+            new Set(
+              workflows.data
+                .filter(workflow => workflow.status !== 'SCHEDULED')
+                .reduce((acc: string[], workflow) => {
+                  const metrics = workflow.metrics
+                    ? workflow.metrics
+                        .filter(metric => metric.name !== 'rating')
+                        .map((metric: IMetric) => metric.name)
+                    : [];
+                
+                  return [...acc, ...metrics];
+                }, []),
+            ),
+          );
+        
+          selected = options[0];
+        }
+      
+        foldArray.current = allAxes
+          .filter(name => name !== selected)
+          .slice(0, 10);
       }
-      tooltipArray.current = Object.keys(parallelData.at(0) ?? {}).map(key => ({ field: key }));
+
       dispatch(
         setParallel({
           data,
@@ -118,12 +190,30 @@ const ParallelCoordinatePlot = () => {
   }, [workflows.data]);
 
   const handleMetricSelection = (feature: string) => {
-    dispatch(setParallel({ selected: feature }));
+    const cleanedSelectedParams = (parallel.selectedParams ?? []).filter(
+      (p) => p !== feature,
+    );
+
+    foldArray.current = cleanedSelectedParams;
+
+    dispatch(
+      setParallel({
+        selected: feature,
+        selectedParams: cleanedSelectedParams,
+      }),
+    );
   };
 
   const handleParamsSelesction = (params: string[]) => {
-    foldArray.current = params;
-    dispatch(setParallel({ selectedParams: params }));
+    const metricSet = new Set(parallel.options);
+
+    const ordered = [
+      ...params.filter((p) => !metricSet.has(p)),
+      ...params.filter((p) => metricSet.has(p)),
+    ];
+
+    foldArray.current = ordered;
+    dispatch(setParallel({ selectedParams: ordered }));
   };
 
   const processedData = useMemo(() => {
@@ -140,7 +230,7 @@ const ParallelCoordinatePlot = () => {
       }
     });
 
-    return parallelData.map((item) => {
+    return parallelData.map((item, index) => {
       const newItem = { ...item };
 
       for (const key in newItem) {
@@ -154,6 +244,37 @@ const ParallelCoordinatePlot = () => {
       return newItem;
     }) as (ParallelDataItem & { selected: boolean })[];
   }, [parallelData, workflowsTable.selectedWorkflows]);
+
+  const axisOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          parallelData
+            .flatMap(item => Object.keys(item))
+            .filter(k => !['workflowId', 'selected', 'rating'].includes(k))
+        )
+      ),
+    [parallelData]
+  );
+
+  const onToggleAxis = (param: string) => {
+    // keep your disabled rules here (same as before)
+    if (param === parallel.selected) return;
+
+    const isSelected = selectedParams.includes(param);
+
+    // don't allow removing the last axis
+    if (isSelected && selectedParams.length === 1) return;
+
+    // max 10
+    if (!isSelected && selectedParams.length >= 10) return;
+
+    const updated = isSelected
+      ? selectedParams.filter(p => p !== param)
+      : [...selectedParams, param];
+
+    handleParamsSelesction(updated);
+  };
 
   return (
     <Paper elevation={2} sx={{ height: '100%', width: '100%' }}>
@@ -177,25 +298,18 @@ const ParallelCoordinatePlot = () => {
           open={paramsOpen}
           anchorEl={ParamsanchorEl}
           onClose={handleParamsClose}
-          title="Parameters"
+          title="Axes"
           icon={<GridTableRowsIcon fontSize="small" />}
-          options={Array.from(new Set(
-            parallelData.flatMap(item => Object.keys(item))
-              .filter(k => !['workflowId', 'selected', 'rating', ...parallel.options].includes(k))
-          ))}
+          options={axisOptions}
           selectedOptions={selectedParams}
-          onToggle={(param) => {
-            const isSelected = selectedParams.includes(param);
-
-            if (isSelected && selectedParams.length === 1) return;
-            const updated = isSelected
-              ? selectedParams.filter(p => p !== param)
-              : [...selectedParams, param];
-
-            handleParamsSelesction(updated);
-          }}
+          multiSelect
+          onToggle={onToggleAxis}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        />
+          isOptionDisabled={(param) =>
+              param === parallel.selected ||
+              (!selectedParams.includes(param) && selectedParams.length >= 10)
+            }
+        />        
         <SelectionPopover
           id="ColorBy"
           open={colorOpen}
@@ -208,7 +322,7 @@ const ParallelCoordinatePlot = () => {
           onToggle={handleMetricSelection}
           multiSelect={false}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        />
+        />      
       </Box>
       {
         parallel.options.length > 0 ? (
@@ -218,8 +332,10 @@ const ParallelCoordinatePlot = () => {
               onOrderChange={() => {
                 dispatch(setParallel({ ...parallel }));
               }}
+              metricIds={parallel.options}
             />
             <ParallelCoordinateVega
+              parallelData={parallelData}
               progressParallel={parallel}
               foldArray={foldArray}
               selectedWorkflows={workflowsTable.selectedWorkflows}

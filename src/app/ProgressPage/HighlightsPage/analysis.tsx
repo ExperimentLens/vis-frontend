@@ -217,6 +217,13 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
 
   const [showAlternatives, setShowAlternatives] = useState(false);
 
+  const { experimentHighlights } = useAppSelector(
+    (state: RootState) => state.experimentHighlights
+  );
+
+  const clusterData = clusterKey ? experimentHighlights.data?.clusterInsights?.[clusterKey] : null;
+  const clusterFeatures = clusterData?.highShapFeatures?.features ?? [];
+
   if (!rules || rules.length === 0) return null;
 
   const formatPercent = (value: number) => `${Math.round((value ?? 0) * 100)}%`;
@@ -343,11 +350,11 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                   rel="noopener noreferrer"
                   onMouseDown={() => {
                     const filters = ruleToFilters(primaryRule.rule);
-                    setCache(primaryRuleKey, { filters }, 5 * 60 * 1000);
+                    setCache(primaryRuleKey, { filters, clusterFeatures }, 5 * 60 * 1000);
                   }}
                   onClick={() => {
                     const filters = ruleToFilters(primaryRule.rule);
-                    setCache(primaryRuleKey, { filters }, 5 * 60 * 1000);
+                    setCache(primaryRuleKey, { filters, clusterFeatures }, 5 * 60 * 1000);
                   }}
                 >
                   {primaryRule.nWorkflowsInCluster} workflows matched
@@ -472,11 +479,11 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                             rel="noopener noreferrer"
                             onMouseDown={() => {
                               const filters = ruleToFilters(rule.rule);
-                              setCache(key, { filters }, 5 * 60 * 1000);
+                              setCache(key, { filters, clusterFeatures }, 5 * 60 * 1000);
                             }}
                             onClick={() => {
                               const filters = ruleToFilters(rule.rule);
-                              setCache(key, { filters }, 5 * 60 * 1000);
+                              setCache(key, { filters, clusterFeatures }, 5 * 60 * 1000);
                             }}
                           >
                             {rule.nWorkflowsInCluster} workflows matched
