@@ -133,11 +133,29 @@ const ParallelCoordinatePlot = () => {
       let options = parallel.options;
 
       if (shapFeatures.length > 0) {
-        const validShap = shapFeatures.filter(f => allAxes.includes(f));
-      
+
+        if (parallel.options.length === 0) {
+          options = Array.from(
+            new Set(
+              workflows.data
+                .filter(workflow => workflow.status !== 'SCHEDULED')
+                .reduce((acc: string[], workflow) => {
+                  const metrics = workflow.metrics
+                    ? workflow.metrics
+                        .filter(metric => metric.name !== 'rating')
+                        .map((metric: IMetric) => metric.name)
+                    : [];
+                
+                  return [...acc, ...metrics];
+                }, []),
+            ),
+          );
+        }
+        
+        const validShap = shapFeatures.filter(f => options.includes(f));
+
         if (validShap.length > 0) {
           selected = validShap[0];
-        
           const remainingShap = validShap.slice(1);
         
           const remainingAxes = allAxes.filter(
@@ -149,8 +167,6 @@ const ParallelCoordinatePlot = () => {
           const combined = [...remainingShap, ...remainingAxes];
         
           foldArray.current = combined.slice(0, 10);
-        
-          options = Array.from(new Set([...options, selected, ...foldArray.current]));
         }
       } else {
         if (parallel.options.length === 0) {
