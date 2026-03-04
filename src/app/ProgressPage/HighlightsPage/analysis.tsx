@@ -172,7 +172,7 @@ const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
 
   return (
     <ResponsiveCardVegaLite
-      title="Feature Z-Scores"
+      title="Key Performance Indicators"
       actions={false}
       spec={{
         description: 'Diverging bar chart - cluster mean vs population',
@@ -593,7 +593,7 @@ const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
 
   return (
     <ResponsiveCardVegaLite
-      title="REMOVED FEATURES CORRELATION"
+      title="Secondary KPIs"
       actions={false}
       spec={{
         description: 'Features removed due to strong correlation',
@@ -647,6 +647,17 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
   const proportion = (cluster.metadata?.percentageOfTotal ?? 0) / 100;
   const quality = Number(cluster.modelEvaluation?.modelQualityScore) || 0;
   const features = cluster.highShapFeatures?.features ?? [];
+
+  const getFeatureColor = (feature: string, cluster: ClusterInsight) => {
+    if (!cluster?.distinctFeatures?.featureStatistics?.[feature]) return '#e8e8e8';
+
+    const zScore = cluster.distinctFeatures.featureStatistics[feature].zScore ?? 0;
+
+    if (zScore < -0.5) return '#ff6b6b';
+    if (zScore > 0.5) return '#51cf66';
+    return '#e8e8e8';
+  };
+
 
   return (
     <Grid size={{ xs: 12, sm: 6, md: 4 }} >
@@ -748,7 +759,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
                 }
               >
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  High Impact Features
+                  Representative Metrics
                 </Typography>
               </Button>
 
@@ -756,7 +767,26 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
                 <Stack spacing={1} sx={{ mt: 1, pl: 2 }}>
                   {features.map((feature: string, idx: number) => (
                     <Box key={idx}>
-                      <Chip label={feature} variant="outlined" sx={{ color: 'text.primary', fontWeight: 500 }} />
+                      <Chip 
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box
+                              sx={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                backgroundColor: getFeatureColor(feature, cluster),
+                              }}
+                            />
+                            {feature}
+                          </Box>
+                        }
+                        variant="outlined" 
+                        sx={{ 
+                          color: 'text.primary', 
+                          fontWeight: 500,
+                        }} 
+                      />
                     </Box>
                   ))}
                 </Stack>
