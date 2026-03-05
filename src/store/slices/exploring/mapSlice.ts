@@ -14,7 +14,12 @@ import { updateTimeSeries } from './timeSeriesSlice';
 import ngeohash from 'ngeohash';
 import type { MapLayer } from '../../../shared/models/exploring/dataset.model';
 import type { IDrawnShape } from '../../../shared/models/exploring/drawn-shape.model';
-import { COORD_PRECISION, getRectAndFeatureToUse, getZoomBucket, MIN_ZOOM_FOR_OPENAIP_OVERLAY } from '../../../shared/utils/mapUtils';
+import {
+  COORD_PRECISION,
+  getRectAndFeatureToUse,
+  getZoomBucket,
+  MIN_ZOOM_FOR_OPENAIP_OVERLAY,
+} from '../../../shared/utils/mapUtils';
 import { fetchOpenAipForViewport } from './openAipSlice';
 
 export type ActiveSelection = 'view' | 'drawn' | 'selectedGeohash';
@@ -312,6 +317,7 @@ export const mapListeners = (startAppListening: AppStartListening) => {
       const minLon = round(viewRect.lon[0]);
       const maxLon = round(viewRect.lon[1]);
 
+      const bounds = { minLon, minLat, maxLon, maxLat };
       const bbox = `${minLon},${minLat},${maxLon},${maxLat}`;
 
       // Bucket zoom to reduce over-fragmentation of cache keys
@@ -324,7 +330,7 @@ export const mapListeners = (startAppListening: AppStartListening) => {
       // Dispatch the fetchOpenAipForViewport action if zoom is greater than 10
       if (zoom >= MIN_ZOOM_FOR_OPENAIP_OVERLAY) {
         await listenerApi.dispatch(
-          fetchOpenAipForViewport({ bbox, viewportKey }),
+          fetchOpenAipForViewport({ bounds, viewportKey }),
         );
       }
     },

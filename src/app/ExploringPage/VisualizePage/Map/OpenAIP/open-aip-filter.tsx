@@ -37,6 +37,11 @@ export const OpenAipFilter = () => {
         OpenAipAirspaceTypes.map((type, index) => (
           <Box key={type.label} display="flex" alignItems="center" gap={1}>
             <Checkbox
+              sx={{
+                '&.Mui-checked': {
+                  color: type.color,
+                },
+              }}
               checked={enabledAirspaceTypes[index]}
               onChange={() => handleAirspaceTypeChange(index)}
             />

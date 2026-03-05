@@ -70,7 +70,7 @@ export const fetchAirspacesByBBox = (bbox: string, signal?: AbortSignal) => {
 };
 
 type FetchOpenAipForViewportArg = {
-  bbox: string;
+  bounds: { minLon: number; minLat: number; maxLon: number; maxLat: number };
   viewportKey: ViewportKey;
 };
 
@@ -87,10 +87,11 @@ export const fetchOpenAipForViewport = createAsyncThunk<
   { state: RootState }
 >(
   'openAip/fetchOpenAipForViewport',
-  async ({ bbox, viewportKey }, thunkApi) => {
+  async ({ bounds, viewportKey }, thunkApi) => {
     const state = thunkApi.getState() as RootState;
     const { showAirports, showAirspaces } = state.openAip;
 
+    const bbox = `${bounds.minLon},${bounds.minLat},${bounds.maxLon},${bounds.maxLat}`;
     const airportsPromise = showAirports
       ? fetchAirportsByBBox(bbox, thunkApi.signal)
       : Promise.resolve([] as IOpenAipAirport[]);
@@ -107,21 +108,33 @@ export const fetchOpenAipForViewport = createAsyncThunk<
     return { viewportKey, airports, airspaces, fetchedAt: Date.now() };
   },
   {
-    condition: ({ viewportKey }, { getState }) => {
+    condition: ({ bounds, viewportKey }, { getState }) => {
       const state = getState();
       const openAipState = state.openAip;
 
       if (!openAipState.enabled) return false;
       if (openAipState.loadingByViewport[viewportKey]) return false;
 
-      const existingViewport = openAipState.viewportIndex[viewportKey];
+      const { minLon, minLat, maxLon, maxLat } = bounds;
 
-      if (!existingViewport) return true;
+      for (const viewportKey in openAipState.viewportIndex) {
+        const viewport = openAipState.viewportIndex[viewportKey];
+        const { fetchedBbox } = viewport;
 
-      const isFresh =
-        Date.now() - existingViewport.fetchedAt < openAipState.ttlMs;
-
-      return !isFresh;
+        // Check if bounds are inside previous viewports
+        if (
+          fetchedBbox.minLon <= minLon &&
+          fetchedBbox.maxLon >= maxLon &&
+          fetchedBbox.minLat <= minLat &&
+          fetchedBbox.maxLat >= maxLat
+        ) {
+          if (Date.now() - viewport.fetchedAt < openAipState.ttlMs) {
+            return false; // viewport is still fresh, we don't need to fetch new data
+          } else {
+            return true; // viewport is stale, we need to fetch new data
+          }
+        }
+      }
     },
   },
 );
@@ -141,7 +154,17 @@ interface OpenAipState {
   // spatial index (which IDs belong to which fetched viewport)
   viewportIndex: Record<
     ViewportKey,
-    { airportIds: string[]; airspaceIds: string[]; fetchedAt: number }
+    {
+      fetchedBbox: {
+        minLat: number;
+        maxLat: number;
+        minLon: number;
+        maxLon: number;
+      };
+      airportIds: string[];
+      airspaceIds: string[];
+      fetchedAt: number;
+    }
   >;
 
   loadingByViewport: Record<ViewportKey, boolean>;
@@ -195,11 +218,11 @@ export const openAipSlice = createSlice({
       state.errorByViewport[viewport] = null;
     });
     builder.addCase(fetchOpenAipForViewport.fulfilled, (state, action) => {
-      const viewport = action.meta.arg.viewportKey;
+      const { bounds, viewportKey } = action.meta.arg;
       const { airports, airspaces, fetchedAt } = action.payload;
 
-      state.loadingByViewport[viewport] = false;
-      state.errorByViewport[viewport] = null;
+      state.loadingByViewport[viewportKey] = false;
+      state.errorByViewport[viewportKey] = null;
 
       for (const airport of airports) {
         state.airportsById[airport._id] = airport;
@@ -211,7 +234,8 @@ export const openAipSlice = createSlice({
       const airportIds = [...new Set(airports.map(airport => airport._id))];
       const airspaceIds = [...new Set(airspaces.map(airspace => airspace._id))];
 
-      state.viewportIndex[viewport] = {
+      state.viewportIndex[viewportKey] = {
+        fetchedBbox: bounds,
         airportIds,
         airspaceIds,
         fetchedAt,
