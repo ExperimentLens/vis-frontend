@@ -595,7 +595,7 @@ const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
 
   return (
     <ResponsiveCardVegaLite
-      title="Secondary KPIs"
+      title="Secondary Key Performance Indicators"
       actions={false}
       spec={{
         description: 'Features removed due to strong correlation',
