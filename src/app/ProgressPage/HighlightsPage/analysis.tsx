@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   Chip,
+  CircularProgress,
   Collapse,
   Divider,
   Grid,
@@ -15,6 +16,12 @@ import {
   useTheme,
 } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import BoltIcon from '@mui/icons-material/Bolt';
+import AdjustIcon from '@mui/icons-material/Adjust';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import type { RootState } from '../../../store/store';
 import { useAppSelector } from '../../../store/store';
 import type { ClusterInsight, FeatureStatistic, PcaSpacePoint } from '../../../shared/models/experiment.highlights.model';
@@ -211,6 +218,76 @@ const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
   );
 };
 
+/** Renders rule text with colored logical/math operators */
+const StyledRuleText: React.FC<{ rule: string; color: string }> = ({ rule, color }) => {
+  // Split on keywords: IN, and, >=, <=, !=, >, <, =
+  const parts = rule.split(/(\b(?:IN|and)\b|>=|<=|!=|>|<|=)/gi);
+  return (
+    <Box
+      sx={{
+        fontFamily: 'monospace',
+        fontSize: 14,
+        lineHeight: 1.8,
+        color: 'text.primary',
+        backgroundColor: 'rgba(0,0,0,0.15)',
+        p: 1.5,
+        borderRadius: 1,
+      }}
+    >
+      {parts.map((part, i) => {
+        const isKeyword = /^(IN|and|>=|<=|!=|>|<|=)$/i.test(part);
+        return isKeyword ? (
+          <span key={i} style={{ color, fontWeight: 700 }}>{` ${part} `}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        );
+      })}
+    </Box>
+  );
+};
+
+/** Circular donut metric */
+const CircularMetric: React.FC<{ label: string; value: number; color: string; size?: number }> = ({
+  label, value, color, size = 64,
+}) => {
+  const percent = Math.round((value ?? 0) * 100);
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+        <CircularProgress
+          variant="determinate"
+          value={100}
+          size={size}
+          thickness={3}
+          sx={{ color: 'action.disabledBackground', position: 'absolute' }}
+        />
+        <CircularProgress
+          variant="determinate"
+          value={percent}
+          size={size}
+          thickness={3}
+          sx={{ color }}
+        />
+      </Box>
+      <Typography variant="caption" sx={{ color, fontWeight: 700, mt: 0.5 }}>
+        {percent}%
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{ color: 'text.secondary', letterSpacing: 0.8, textTransform: 'uppercase', fontSize: 10 }}
+      >
+        {label}
+      </Typography>
+    </Box>
+  );
+};
+
+const METRIC_ICONS: Record<string, React.ReactNode> = {
+  F1: <BoltIcon sx={{ fontSize: 14 }} />,
+  PRECISION: <AdjustIcon sx={{ fontSize: 14 }} />,
+  RECALL: <BarChartIcon sx={{ fontSize: 14 }} />,
+};
+
 const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clusterKey }) => {
   const theme = useTheme();
   const { experimentId } = useParams<{ experimentId: string }>();
@@ -247,104 +324,42 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
   );  
   return (
 
-    <ResponsiveCardTable title={" DECISION RULES"} showSettings={false} showFullScreenButton={false} >
+    <ResponsiveCardTable title="Decision Rules" showSettings={false} showFullScreenButton={false} >
     <Box sx={{ mb: 4 }}>
       <Typography
-        variant="subtitle2"
-        sx={{ mb: 1, letterSpacing: 0.6, fontWeight: 700 }}
+        variant="body2"
+        sx={{ mb: 2, color: 'text.secondary' }}
       >
-       
+        Tree-based cluster identification rules
       </Typography>
       <Stack spacing={2}>
-        {/* Primary rule */}
+        {/* Primary rule — "Best Rule" */}
         <Card
           sx={{
-            p: 2,
+            p: 2.5,
             backgroundColor: theme.palette.background.paper,
-            borderRadius: 1,
-            boxShadow: 1,
+            borderRadius: 2,
+            border: `2px dashed ${clusterColor}`,
+            boxShadow: 'none',
           }}
         >
-          <Stack spacing={1.5}>
-            <Typography
-              variant="body2"
-              sx={{
-                fontFamily: 'monospace',
-                color: 'text.primary',
-                fontSize: 13,
-              }}
-            >
-              {primaryRule.rule}
-            </Typography>
-
-            <Stack
-              direction="row"
-              spacing={3}
-              sx={{ mt: 0.5, flexWrap: 'wrap' }}
-            >
-              {[{
-                label: 'F1',
-                value: primaryRule.f1Score,
-              }, {
-                label: 'PRECISION',
-                value: primaryRule.precision,
-              }, {
-                label: 'RECALL',
-                value: primaryRule.recall,
-              }, {
-                label: 'COMBINED',
-                value: primaryRule.combinedScore,
-              }].map(metric => (
-                <Box
-                  key={metric.label}
-                  sx={{
-                    flex: 1,
-                    minWidth: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 0.5,
-                  }}
+          <Stack spacing={2}>
+            {/* Header row */}
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <EmojiEventsOutlinedIcon sx={{ color: clusterColor, fontSize: 20 }} />
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 700, color: clusterColor }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: 'text.secondary',
-                        letterSpacing: 0.8,
-                        minWidth: 70,
-                      }}
-                    >
-                      {metric.label}
-                    </Typography>
-                    <LinearProgress
-                      variant="determinate"
-                      value={(metric.value ?? 0) * 100}
-                      sx={{
-                        flex: 1,
-                        height: 6,
-                        borderRadius: 999,
-                        backgroundColor: theme.palette.action.disabledBackground,
-                        '& .MuiLinearProgress-bar': {
-                          backgroundColor: clusterColor,
-                        },
-                      }}
-                    />
-                    <Typography
-                      variant="caption"
-                      sx={{ minWidth: 40, textAlign: 'right', color: 'text.secondary' }}
-                    >
-                      {formatPercent(metric.value ?? 0)}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
-            </Stack>
-            <Box sx={{ position: 'relative', display: 'inline-block' }}>
-              <Tooltip title='View workflows'>
+                  Best Rule
+                </Typography>
+              </Stack>
+              <Tooltip title="View workflows">
                 <Typography
                   variant="caption"
-                  color="primary"
-                  sx={{ cursor: 'pointer', textDecoration: 'underline', alignSelf: 'flex-start' }}
+                  color="text.secondary"
+                  sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
                   component="a"
                   href={`/${experimentId}/monitoring?tab=0&ruleFilterId=${primaryRuleKey}`}
                   rel="noopener noreferrer"
@@ -360,7 +375,32 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                   {primaryRule.nWorkflowsInCluster} workflows matched
                 </Typography>
               </Tooltip>
-          </Box>
+            </Stack>
+
+            {/* Styled rule text */}
+            <StyledRuleText rule={primaryRule.rule} color={clusterColor} />
+
+            {/* Circular metrics */}
+            <Stack
+              direction="row"
+              spacing={4}
+              justifyContent="center"
+              sx={{ pt: 1 }}
+            >
+              {[
+                { label: 'F1', value: primaryRule.f1Score },
+                { label: 'PRECISION', value: primaryRule.precision },
+                { label: 'RECALL', value: primaryRule.recall },
+                { label: 'COMBINED', value: primaryRule.combinedScore },
+              ].map(metric => (
+                <CircularMetric
+                  key={metric.label}
+                  label={metric.label}
+                  value={metric.value}
+                  color={clusterColor}
+                />
+              ))}
+            </Stack>
           </Stack>
         </Card>
 
@@ -370,13 +410,20 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
             <Button
               size="small"
               onClick={() => setShowAlternatives(prev => !prev)}
+              startIcon={
+                showAlternatives
+                  ? <KeyboardArrowUpIcon fontSize="small" />
+                  : <KeyboardArrowDownIcon fontSize="small" />
+              }
               sx={{
                 textTransform: 'none',
                 px: 0,
-                mt: 1,
+                color: 'text.secondary',
               }}
             >
-              {showAlternatives ? 'Hide Alternative Rules' : `Alternative Rules (${alternativeRules.length})`}
+              {showAlternatives
+                ? `Hide ${alternativeRules.length} Alternative Rule${alternativeRules.length > 1 ? 's' : ''}`
+                : `Show ${alternativeRules.length} Alternative Rule${alternativeRules.length > 1 ? 's' : ''}`}
             </Button>
 
             <Collapse in={showAlternatives}>
@@ -389,91 +436,46 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                     sx={{
                       p: 2,
                       backgroundColor: theme.palette.background.paper,
-                      borderRadius: 1,
+                      borderRadius: 2,
                       boxShadow: 1,
                     }}
                   >
                     <Stack spacing={1.5}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontFamily: 'monospace',
-                          color: 'text.primary',
-                          fontSize: 13,
-                        }}
-                      >
-                        {rule.rule}
-                      </Typography>
+                      {/* Styled rule text */}
+                      <StyledRuleText rule={rule.rule} color={clusterColor} />
 
+                      {/* Compact inline metrics + matched count */}
                       <Stack
                         direction="row"
-                        spacing={3}
-                        sx={{ mt: 0.5, flexWrap: 'wrap' }}
+                        alignItems="center"
+                        justifyContent="space-between"
+                        sx={{ flexWrap: 'wrap', gap: 1 }}
                       >
-                        {[{
-                          label: 'F1',
-                          value: rule.f1Score,
-                        }, {
-                          label: 'PRECISION',
-                          value: rule.precision,
-                        }, {
-                          label: 'RECALL',
-                          value: rule.recall,
-                        }, {
-                          label: 'COMBINED',
-                          value: rule.combinedScore,
-                        }].map(metric => (
-                          <Box
-                            key={metric.label}
-                            sx={{
-                              flex: 1,
-                              minWidth: 0,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.5,
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: 'text.secondary',
-                                  letterSpacing: 0.8,
-                                  minWidth: 70,
-                                }}
-                              >
+                        <Stack direction="row" spacing={2} alignItems="center">
+                          {[
+                            { label: 'F1', value: rule.f1Score },
+                            { label: 'PRECISION', value: rule.precision },
+                            { label: 'RECALL', value: rule.recall },
+                          ].map(metric => (
+                            <Stack key={metric.label} direction="row" alignItems="center" spacing={0.5}>
+                              <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
+                                {METRIC_ICONS[metric.label]}
+                              </Box>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                                 {metric.label}
                               </Typography>
-                              <LinearProgress
-                                variant="determinate"
-                                value={(metric.value ?? 0) * 100}
-                                sx={{
-                                  flex: 1,
-                                  height: 6,
-                                  borderRadius: 999,
-                                  backgroundColor: theme.palette.action.disabledBackground,
-                                  '& .MuiLinearProgress-bar': {
-                                    backgroundColor: clusterColor,
-                                  },
-                                }}
-                              />
-                              <Typography
-                                variant="caption"
-                                sx={{ minWidth: 40, textAlign: 'right', color: 'text.secondary' }}
-                              >
+                              <Typography variant="caption" sx={{ fontWeight: 700 }}>
                                 {formatPercent(metric.value ?? 0)}
                               </Typography>
-                            </Box>
-                          </Box>
-                        ))}
-                      </Stack>
-                      <Box sx={{ position: 'relative', display: 'inline-block' }}>
-                        <Tooltip title='View workflows'>
+                            </Stack>
+                          ))}
+                        </Stack>
+
+                        <Tooltip title="View workflows">
                           <Typography
-                            key={index}
                             variant="caption"
-                            color="primary"
-                            sx={{ cursor: 'pointer', textDecoration: 'underline', alignSelf: 'flex-start' }}
+                            color="text.secondary"
+                            sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
                             component="a"
                             href={`/${experimentId}/monitoring?tab=0&ruleFilterId=${key}`}
                             rel="noopener noreferrer"
@@ -486,10 +488,10 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                               setCache(key, { filters, clusterFeatures }, 5 * 60 * 1000);
                             }}
                           >
-                            {rule.nWorkflowsInCluster} workflows matched
+                            {rule.nWorkflowsInCluster} matched
                           </Typography>
                         </Tooltip>
-                      </Box>
+                      </Stack>
                     </Stack>
                   </Card>
                 )})}
