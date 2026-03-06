@@ -9,7 +9,7 @@ import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
 import { useTheme } from '@mui/material';
 
 interface ParallelCoordinateVegaProps {
-  parallelData: ParallelDataItem[]
+  // parallelData: ParallelDataItem[]
   progressParallel: { selected: string; options: string[] }
   foldArray: React.MutableRefObject<string[]>
   selectedWorkflows: string[]
@@ -32,7 +32,7 @@ function setValuesIfSelectedAndDefault(
 }
 
 const ParallelCoordinateVega = ({
-  parallelData,
+  // parallelData,
   progressParallel,
   foldArray,
   selectedWorkflows,
@@ -49,7 +49,7 @@ const ParallelCoordinateVega = ({
     if (!container) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
+      for (const entry of entries) {
         const { width } = entry.contentRect;
 
         setChartWidth(width);
@@ -235,7 +235,7 @@ const ParallelCoordinateVega = ({
       for (const axis of columnNames) {
         if (
           filled[axis] === '' ||
-        filled[axis] == null ||
+        filled[axis] === null ||
         (typeof filled[axis] === 'number' && Number.isNaN(filled[axis]))
         ) {
           filled[axis] = 'n/a';

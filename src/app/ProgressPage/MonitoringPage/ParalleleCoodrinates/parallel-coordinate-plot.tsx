@@ -11,10 +11,7 @@ import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import type { IMetric } from '../../../../shared/models/experiment/metric.model';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
-import { IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Popover, Tooltip } from '@mui/material';
-import { SectionHeader } from '../../../../shared/components/responsive-card-table';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import { IconButton, Tooltip } from '@mui/material';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
 import PaletteIcon from '@mui/icons-material/Palette';
 import Grid3x3Icon from '@mui/icons-material/Grid3x3';
@@ -28,7 +25,7 @@ const ParallelCoordinatePlot = () => {
   const { parallel, workflowsTable } = useAppSelector((state: RootState) => state.monitorPage);
   const [parallelData, setParallelData] = useState<ParallelDataItem[]>([]);
   const foldArray = useRef<string[]>([]);
-  const tooltipArray = useRef<{ [key: string]: string }[]>([]);
+  // const tooltipArray = useRef<{ [key: string]: string }[]>([]);
   const [ColoranchorEl, setColorAnchorEl] = useState<null | HTMLElement>(null);
   const [ParamsanchorEl, setParamsAnchorEl] = useState<null | HTMLElement>(null);
   const selectedParams = parallel?.selectedParams ?? [];
@@ -351,7 +348,7 @@ const ParallelCoordinatePlot = () => {
               metricIds={parallel.options}
             />
             <ParallelCoordinateVega
-              parallelData={parallelData}
+              // parallelData={parallelData}
               progressParallel={parallel}
               foldArray={foldArray}
               selectedWorkflows={workflowsTable.selectedWorkflows}
