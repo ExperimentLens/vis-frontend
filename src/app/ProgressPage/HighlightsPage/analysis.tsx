@@ -181,6 +181,7 @@ const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
     <ResponsiveCardVegaLite
       title="Key Performance Indicators"
       actions={false}
+      details="Z-Score of each feature in this cluster compared to the overall population. Features with extreme scores (far from zero) are what make this cluster unique."
       spec={{
         description: 'Diverging bar chart - cluster mean vs population',
         mark: { type: 'bar' },
@@ -324,14 +325,8 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
   );  
   return (
 
-    <ResponsiveCardTable title="Decision Rules" showSettings={false} showFullScreenButton={false} >
+    <ResponsiveCardTable title="Decision Rules" showSettings={false} showFullScreenButton={false} details="Tree-based rules that best identify workflows belonging to this cluster. The best rule maximizes a combined score of F1, precision, and recall." >
     <Box sx={{ mb: 4 }}>
-      <Typography
-        variant="body2"
-        sx={{ mb: 2, color: 'text.secondary' }}
-      >
-        Tree-based cluster identification rules
-      </Typography>
       <Stack spacing={2}>
         {/* Primary rule — "Best Rule" */}
         <Card
@@ -583,8 +578,9 @@ const ClusterVsOthersRadar: React.FC<ClusterVsOthersRadarProps> = ({ cluster, cl
 
   return (
     <ResponsiveCardVegaLite
-      title="Cluster vs. Others"
+      title="Feature Comparison Radar"
       actions={false}
+      details="Spider chart comparing the selected cluster's feature means against all other clusters. Values are normalized by the maximum across both groups."
       spec={{
         layer: [
           // Grid polygons
@@ -715,6 +711,7 @@ const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
     <ResponsiveCardVegaLite
       title="Secondary Key Performance Indicators"
       actions={false}
+      details="Features removed due to high correlation with a retained feature. Bar length shows the maximum relationship strength."
       spec={{
         description: 'Features removed due to strong correlation',
         mark: { type: 'bar' },
@@ -965,7 +962,7 @@ const AnalysisGroup: React.FC = () => {
       {clusters.length > 0 && (
         <Box sx={{ mb: 4 }}>
          
-          <ResponsiveCardTable title={"CLUSTER OVERVIEW"} showSettings={false} showFullScreenButton={false} >
+          <ResponsiveCardTable title={"Cluster Overview"} showSettings={false} showFullScreenButton={false} details="Summary cards for each identified cluster. Click a cluster to explore its features, decision rules, and comparisons." >
           <Box
             sx={{
               display: 'flex',
@@ -1001,8 +998,9 @@ const AnalysisGroup: React.FC = () => {
 
           </Typography>
           <ResponsiveCardVegaLite
-            title="CLUSTER DISTRIBUTION"
+            title="Cluster Distribution"
             actions={false}
+            details="PCA projection of all workflows colored by cluster assignment. Each point is a workflow positioned by its first two principal components."
             spec={{
               description: 'PCA projection of workflows colored by cluster',
               mark: { type: 'point', tooltip: true },
