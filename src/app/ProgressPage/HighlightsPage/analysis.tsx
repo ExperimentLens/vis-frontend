@@ -506,66 +506,184 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
   );
 };
 
-const ClusterVsOthersChart: React.FC<ClusterChartProps> = ({ cluster }) => {
+interface ClusterVsOthersRadarProps {
+  cluster?: ClusterInsight;
+  clusterColor?: string;
+  clusterKey?: string;
+}
+
+const ClusterVsOthersRadar: React.FC<ClusterVsOthersRadarProps> = ({ cluster, clusterColor, clusterKey }) => {
+  const theme = useTheme();
+
   if (!cluster?.distinctFeatures?.featureStatistics) return null;
 
   const featureStats = cluster.distinctFeatures.featureStatistics;
-  const comparisonData = Object.entries(featureStats)
-    .map(([featureName, stats]: [string, FeatureStatistic]) => [
-      {
-        feature: featureName,
-        mean: stats.otherClustersMean ?? 0,
-        type: 'others',
-      },
-      {
-        feature: featureName,
-        mean: stats.clusterMean ?? 0,
-        type: 'cluster',
-      },
-    ])
-    .flat();
+  const entries = Object.entries(featureStats);
+  if (entries.length < 3) return null;
 
-  if (comparisonData.length === 0) return null;
+  const n = entries.length;
+  const angleStep = (2 * Math.PI) / n;
+  const startAngle = -Math.PI / 2;
+  const color = clusterColor ?? theme.palette.primary.main;
+  const clusterName = clusterKey !== undefined && clusterKey !== null ? `Cluster ${clusterKey}` : 'This Cluster';
+
+  const rawFeatures = entries.map(([name, stats]: [string, FeatureStatistic], i) => ({
+    name,
+    absCluster: Math.abs(stats.clusterMean ?? 0),
+    absOthers: Math.abs(stats.otherClustersMean ?? 0),
+    rawCluster: stats.clusterMean ?? 0,
+    rawOthers: stats.otherClustersMean ?? 0,
+    index: i,
+  }));
+
+  const maxVal = Math.max(...rawFeatures.flatMap(f => [f.absCluster, f.absOthers]), 0.001);
+
+  // Polygon data — one row per feature per group, with both raw means for tooltip
+  const polygonData = rawFeatures.flatMap(f => {
+    const theta = startAngle + f.index * angleStep;
+    const cNorm = f.absCluster / maxVal;
+    const oNorm = f.absOthers / maxVal;
+    return [
+      { feature: f.name, group: clusterName, x: cNorm * Math.cos(theta), y: cNorm * Math.sin(theta), rawMean: f.rawCluster, clusterMean: f.rawCluster, othersMean: f.rawOthers, order: f.index, sign: f.rawCluster >= 0 ? 'positive' : 'negative' },
+      { feature: f.name, group: 'Others', x: oNorm * Math.cos(theta), y: oNorm * Math.sin(theta), rawMean: f.rawOthers, clusterMean: f.rawCluster, othersMean: f.rawOthers, order: f.index, sign: f.rawOthers >= 0 ? 'positive' : 'negative' },
+    ];
+  });
+
+  // Concentric grid levels
+  const gridLevels = [0.25, 0.5, 0.75, 1.0];
+  const gridData = gridLevels.flatMap(level =>
+    Array.from({ length: n }, (_, i) => ({
+      level: String(level),
+      x: level * Math.cos(startAngle + i * angleStep),
+      y: level * Math.sin(startAngle + i * angleStep),
+      order: i,
+    }))
+  );
+
+  // Spoke lines from center to edge
+  const spokeData = rawFeatures.map(f => {
+    const theta = startAngle + f.index * angleStep;
+    return { x: 0, y: 0, x2: Math.cos(theta), y2: Math.sin(theta) };
+  });
+
+  // Feature labels around the perimeter — split by alignment
+  const labelR = 1.18;
+  const allLabels = rawFeatures.map(f => {
+    const theta = startAngle + f.index * angleStep;
+    const cos = Math.cos(theta);
+    return {
+      feature: f.name.length > 12 ? `${f.name.slice(0, 11)}\u2026` : f.name,
+      x: labelR * Math.cos(theta),
+      y: labelR * Math.sin(theta),
+      align: cos > 0.3 ? 'left' : cos < -0.3 ? 'right' : 'center' as string,
+    };
+  });
+
+  const domain: [number, number] = [-1.4, 1.4];
 
   return (
     <ResponsiveCardVegaLite
       title="Cluster vs. Others"
       actions={false}
       spec={{
-        description: 'Feature means comparison - grouped bar chart',
-        mark: { type: 'bar' },
-        data: { values: comparisonData },
-        encoding: {
-          y: {
-            field: 'feature',
-            type: 'nominal',
-            title: null,
-            axis: { labelFontSize: 11 },
-          },
-          x: {
-            field: 'mean',
-            type: 'quantitative',
-            title: 'Mean Value',
-          },
-          yOffset: {
-            field: 'type',
-            type: 'nominal',
-          },
-          color: {
-            field: 'type',
-            type: 'nominal',
-            scale: {
-              domain: ['others', 'cluster'],
-              range: ['#888888', '#51cf66'],
+        layer: [
+          // Grid polygons
+          {
+            data: { values: gridData },
+            mark: { type: 'line', interpolate: 'linear-closed', strokeDash: [4, 4], stroke: theme.palette.divider, strokeWidth: 0.5 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative', axis: null, scale: { domain } },
+              y: { field: 'y', type: 'quantitative', axis: null, scale: { domain } },
+              detail: { field: 'level', type: 'nominal' },
+              order: { field: 'order', type: 'quantitative' },
             },
-            legend: { title: null },
           },
-          tooltip: [
-            { field: 'feature', type: 'nominal', title: 'Feature' },
-            { field: 'mean', type: 'quantitative', title: 'Mean', format: '.3f' },
-            { field: 'type', type: 'nominal', title: 'Type' },
-          ],
-        },
+          // Spokes
+          {
+            data: { values: spokeData },
+            mark: { type: 'rule', stroke: theme.palette.divider, strokeWidth: 0.5 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              x2: { field: 'x2' },
+              y2: { field: 'y2' },
+            },
+          },
+          // Others filled polygon
+          {
+            data: { values: polygonData.filter(d => d.group === 'Others') },
+            mark: { type: 'line', interpolate: 'linear-closed', fill: '#888888', fillOpacity: 0.12, stroke: '#888888', strokeWidth: 1.5, strokeDash: [6, 3] },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              order: { field: 'order', type: 'quantitative' },
+            },
+          },
+          // Cluster filled polygon
+          {
+            data: { values: polygonData.filter(d => d.group === clusterName) },
+            mark: { type: 'line', interpolate: 'linear-closed', fill: color, fillOpacity: 0.25, stroke: color, strokeWidth: 2 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              order: { field: 'order', type: 'quantitative' },
+            },
+          },
+          // Data points with tooltips
+          {
+            data: { values: polygonData },
+            mark: { type: 'point', filled: true, stroke: '#fff', strokeWidth: 1 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              color: {
+                field: 'group', type: 'nominal',
+                scale: { domain: [clusterName, 'Others'], range: [color, '#888888'] },
+                legend: { orient: 'bottom', title: null },
+              },
+              size: {
+                field: 'group', type: 'nominal',
+                scale: { domain: [clusterName, 'Others'], range: [60, 35] },
+                legend: null,
+              },
+              tooltip: [
+                { field: 'feature', type: 'nominal', title: 'Feature' },
+                { field: 'clusterMean', type: 'quantitative', title: `${clusterName} Mean`, format: '.3f' },
+                { field: 'othersMean', type: 'quantitative', title: 'Others Mean', format: '.3f' },
+              ],
+            },
+          },
+          // Labels — left-aligned (features on the right side)
+          {
+            data: { values: allLabels.filter(l => l.align === 'left') },
+            mark: { type: 'text', fontSize: 11, fill: theme.palette.text.secondary, align: 'left', dx: 4 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              text: { field: 'feature', type: 'nominal' },
+            },
+          },
+          // Labels — right-aligned (features on the left side)
+          {
+            data: { values: allLabels.filter(l => l.align === 'right') },
+            mark: { type: 'text', fontSize: 11, fill: theme.palette.text.secondary, align: 'right', dx: -4 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              text: { field: 'feature', type: 'nominal' },
+            },
+          },
+          // Labels — center-aligned (features at top/bottom)
+          {
+            data: { values: allLabels.filter(l => l.align === 'center') },
+            mark: { type: 'text', fontSize: 11, fill: theme.palette.text.secondary, align: 'center' },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              text: { field: 'feature', type: 'nominal' },
+            },
+          },
+        ],
       }}
     />
   );
@@ -937,7 +1055,10 @@ const AnalysisGroup: React.FC = () => {
           </Grid>
           <Grid size={{ xs: 6 }}>
             <Box>
-              <ClusterVsOthersChart cluster={selectedClusterData ?? undefined} />
+              <ClusterVsOthersRadar
+                cluster={selectedClusterData ?? undefined}
+                clusterColor={getClusterColorFromKey(selectedCluster, theme)}
+              />
             </Box>
           </Grid>
           <Grid size={{ xs: 6 }}>
