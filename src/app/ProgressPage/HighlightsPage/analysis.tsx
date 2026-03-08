@@ -376,7 +376,7 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
             <StyledRuleText rule={primaryRule.rule} color={clusterColor} />
 
             {/* Circular metrics */}
-            <Stack
+            {/* <Stack
               direction="row"
               spacing={4}
               justifyContent="center"
@@ -395,7 +395,7 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                   color={clusterColor}
                 />
               ))}
-            </Stack>
+            </Stack> */}
           </Stack>
         </Card>
 
@@ -446,7 +446,7 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                         justifyContent="space-between"
                         sx={{ flexWrap: 'wrap', gap: 1 }}
                       >
-                        <Stack direction="row" spacing={2} alignItems="center">
+                        {/* <Stack direction="row" spacing={2} alignItems="center">
                           {[
                             { label: 'F1', value: rule.f1Score },
                             { label: 'PRECISION', value: rule.precision },
@@ -464,7 +464,7 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                               </Typography>
                             </Stack>
                           ))}
-                        </Stack>
+                        </Stack> */}
 
                         <Tooltip title="View workflows">
                           <Typography
@@ -483,7 +483,7 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
                               setCache(key, { filters, clusterFeatures }, 5 * 60 * 1000);
                             }}
                           >
-                            {rule.nWorkflowsInCluster} matched
+                            {rule.nWorkflowsInCluster} workflows matched
                           </Typography>
                         </Tooltip>
                       </Stack>
