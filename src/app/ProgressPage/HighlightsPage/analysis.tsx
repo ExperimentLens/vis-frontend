@@ -514,24 +514,34 @@ const ClusterVsOthersRadar: React.FC<ClusterVsOthersRadarProps> = ({ cluster, cl
 
   const featureStats = cluster.distinctFeatures.featureStatistics;
   const entries = Object.entries(featureStats);
-  if (entries.length < 3) return null;
 
-  const n = entries.length;
-  const angleStep = (2 * Math.PI) / n;
+  const MIN_AXES = 6;
+  const axisCount = Math.max(entries.length, MIN_AXES);
+  const angleStep = (2 * Math.PI) / axisCount;
   const startAngle = -Math.PI / 2;
   const color = clusterColor ?? theme.palette.primary.main;
   const clusterName = clusterKey !== undefined && clusterKey !== null ? `Cluster ${clusterKey}` : 'This Cluster';
 
-  const rawFeatures = entries.map(([name, stats]: [string, FeatureStatistic], i) => ({
-    name,
-    absCluster: Math.abs(stats.clusterMean ?? 0),
-    absOthers: Math.abs(stats.otherClustersMean ?? 0),
-    rawCluster: stats.clusterMean ?? 0,
-    rawOthers: stats.otherClustersMean ?? 0,
-    index: i,
-  }));
+  const rawFeatures = [
+    ...entries.map(([name, stats]: [string, FeatureStatistic], i) => ({
+      name,
+      absCluster: Math.abs(stats.clusterMean ?? 0),
+      absOthers: Math.abs(stats.otherClustersMean ?? 0),
+      rawCluster: stats.clusterMean ?? 0,
+      rawOthers: stats.otherClustersMean ?? 0,
+      index: i,
+    })),
+    ...Array.from({ length: Math.max(0, axisCount - entries.length) }, (_, j) => ({
+      name: '',
+      absCluster: 0,
+      absOthers: 0,
+      rawCluster: 0,
+      rawOthers: 0,
+      index: entries.length + j,
+    })),
+  ];
 
-  const maxVal = Math.max(...rawFeatures.flatMap(f => [f.absCluster, f.absOthers]), 0.001);
+  const maxVal = Math.max(0.001, ...rawFeatures.flatMap(f => [f.absCluster, f.absOthers]));
 
   // Polygon data — one row per feature per group, with both raw means for tooltip
   const polygonData = rawFeatures.flatMap(f => {
@@ -547,7 +557,7 @@ const ClusterVsOthersRadar: React.FC<ClusterVsOthersRadarProps> = ({ cluster, cl
   // Concentric grid levels
   const gridLevels = [0.25, 0.5, 0.75, 1.0];
   const gridData = gridLevels.flatMap(level =>
-    Array.from({ length: n }, (_, i) => ({
+    Array.from({ length: axisCount }, (_, i) => ({
       level: String(level),
       x: level * Math.cos(startAngle + i * angleStep),
       y: level * Math.sin(startAngle + i * angleStep),
