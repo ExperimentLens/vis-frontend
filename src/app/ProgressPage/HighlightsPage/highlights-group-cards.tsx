@@ -135,9 +135,7 @@ const ClusterCard = ({
   }, [cluster]);
 
   const sparkValues = metricTiles.map(m => m.mean);
-  const clusterName = cluster?.metadata?.clusterName
-    ? cluster.metadata.clusterName
-    : `Cluster ${name}`;
+  const clusterName = `Cluster ${name}`;
 
   return (
     <Box

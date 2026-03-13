@@ -258,27 +258,13 @@ const initializeTab = ({
 export const fetchWorkflowMetrics = createAsyncThunk(
   'progressPage/fetchWorkflowMetrics',
   async ({ experimentId, workflowId, metricNames }: { experimentId: string; workflowId: string; metricNames: string[] }) => {
+    const requestUrl = `${experimentId}/runs/${workflowId}/metrics-all`;
+    const response = await experimentApi.post<Record<string, IMetric[]>>(requestUrl, metricNames);
 
-    const results = await Promise.allSettled(
-      metricNames.map((name) => {
-        const requestUrl = `${experimentId}/runs/${workflowId}/metrics-all/${name}`;
-
-        return experimentApi.get(requestUrl).then((response) => ({
-          name,
-          data: response.data as IMetric[],
-        }));
-      })
-    );
-
-    const successful = results.filter(
-      (res): res is PromiseFulfilledResult<MetricFetchResult> => res.status === 'fulfilled'
-    );
-
-    if (successful.length === 0) {
-      throw new Error('Failed to fetch all metrics');
-    }
-
-    return successful.map(res => res.value);
+    return Object.entries(response.data).map(([name, data]) => ({
+      name,
+      data,
+    }));
   });
 
 // Reducer exports

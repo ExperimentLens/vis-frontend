@@ -520,11 +520,13 @@ const ClusterVsOthersRadar: React.FC<ClusterVsOthersRadarProps> = ({ cluster, cl
   const angleStep = (2 * Math.PI) / axisCount;
   const startAngle = -Math.PI / 2;
   const color = clusterColor ?? theme.palette.primary.main;
-  const clusterName = cluster?.metadata?.clusterName
-    ? cluster.metadata.clusterName
-    : clusterKey !== undefined && clusterKey !== null
-      ? `Cluster ${clusterKey}`
-      : 'This Cluster';
+  const clusterName = clusterKey !== undefined && clusterKey !== null ? `Cluster ${clusterKey}` : 'This Cluster';
+
+  // const clusterName = cluster?.metadata?.clusterName
+  //   ? cluster.metadata.clusterName
+  //   : clusterKey !== undefined && clusterKey !== null
+  //     ? `Cluster ${clusterKey}`
+  //     : 'This Cluster';
 
   const rawFeatures = [
     ...entries.map(([name, stats]: [string, FeatureStatistic], i) => ({
@@ -818,7 +820,8 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
                 color: getClusterColorFromKey(clusterKey, theme),
               }}
             >
-              {cluster.metadata?.clusterName ?? `Cluster ${clusterKey}`}
+              Cluster {clusterKey}
+              {/* {cluster.metadata?.clusterName ?? `Cluster ${clusterKey}`} */}
             </Typography>
           </Box>
 
