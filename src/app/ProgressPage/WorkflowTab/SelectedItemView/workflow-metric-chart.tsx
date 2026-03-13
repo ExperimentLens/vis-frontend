@@ -380,7 +380,7 @@ export const MetricCards = () => {
       bins[idx].count += 1;
     }
 
-    const youIdx = Math.min(binCount - 1, Math.floor((currentValue - min) / width));
+    const youIdx = Math.min(binCount - 1, Math.max(0, Math.floor((currentValue - min) / width)));
 
     bins[youIdx].isYou = true;
 
