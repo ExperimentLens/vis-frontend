@@ -1062,25 +1062,13 @@ const AnalysisGroup: React.FC = () => {
             }}
           />
         </Box>
-      )}
-      <Typography variant="subtitle2" sx={{ mb: 2, letterSpacing: 0.6, fontWeight: 700 }}>
-        EXPERIMENT GROUPS
-      </Typography>
-      
+      )}  
       {selectedCluster && clusters.length > 0 && (
         <Grid container spacing={2}>
           
           <Grid size={{ xs: 6 }}>
             <Box>
               <FeatureZScoresChart cluster={selectedClusterData ?? undefined} />
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6 }}>
-            <Box>
-              <ClusterVsOthersRadar
-                cluster={selectedClusterData ?? undefined}
-                clusterColor={getClusterColorFromKey(selectedCluster, theme)}
-              />
             </Box>
           </Grid>
           <Grid size={{ xs: 6 }}>
