@@ -342,7 +342,14 @@ const CounterfactualsTable = (props: ITableComponent) => {
     filteredTableContents[Object.keys(filteredTableContents)[0]]?.values
       .length || 0;
 
+  const tableContents = tab?.workflowTasks.modelAnalysis?.counterfactuals?.data?.tableContents || {};
+
   const rows = Array.from({ length: rowCount }, (_, rowIndex) => {
+    // Skip the factual row
+    if (tableContents['Type']?.values[rowIndex] === 'Factual') {
+      return null;
+    }
+
     const row: Record<string, number | string> = { id: rowIndex };
 
     for (const [key, column] of Object.entries(filteredTableContents)) {
@@ -350,7 +357,7 @@ const CounterfactualsTable = (props: ITableComponent) => {
     }
 
     return row;
-  });
+  }).filter((row): row is Record<string, number | string> => row !== null);
 
   return (
     <Box sx={{ height: '100%' }}>

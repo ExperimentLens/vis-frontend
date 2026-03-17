@@ -831,9 +831,10 @@ export default function WorkflowTable() {
 
             // Rename column header if it's a metric and aggregation is applied
             if (isMetric && !isGroupBy) {
+              const baseHeaderName = col.headerName || col.field;
               return {
                 ...col,
-                headerName: col.headerName || col.field,
+                headerName: `${baseHeaderName} (avg)`,
               };
             }
 
