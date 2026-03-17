@@ -168,6 +168,89 @@ const getClusterColorFromKey = (clusterKey: string, theme: Theme) => {
   return colors[index % colors.length];
 };
 
+const generateClusterEllipses = (
+  points: PcaSpacePoint[],
+  stdDevMultiplier: number = 3
+): Array<{ cluster: string; PC_1: number; PC_2: number; order: number }> => {
+  const clusterGroups: Record<string, Array<{ PC_1: number; PC_2: number }>> = {};
+
+  // Group points by cluster
+  for (const point of points) {
+    if (!clusterGroups[point.cluster]) {
+      clusterGroups[point.cluster] = [];
+    }
+    clusterGroups[point.cluster].push({ PC_1: point.PC_1, PC_2: point.PC_2 });
+  }
+
+  const ellipsePoints: Array<{ cluster: string; PC_1: number; PC_2: number; order: number }> = [];
+
+  // Calculate ellipse for each cluster
+  for (const [cluster, clusterPoints] of Object.entries(clusterGroups)) {
+    if (clusterPoints.length < 2) continue;
+
+    // Calculate centroid
+    const centroid = {
+      x: clusterPoints.reduce((sum, p) => sum + p.PC_1, 0) / clusterPoints.length,
+      y: clusterPoints.reduce((sum, p) => sum + p.PC_2, 0) / clusterPoints.length,
+    };
+
+    // Calculate standard deviations
+    let sumSqDevX = 0;
+    let sumSqDevY = 0;
+    let sumProdDev = 0;
+
+    for (const point of clusterPoints) {
+      const dx = point.PC_1 - centroid.x;
+      const dy = point.PC_2 - centroid.y;
+      sumSqDevX += dx * dx;
+      sumSqDevY += dy * dy;
+      sumProdDev += dx * dy;
+    }
+
+    const varX = sumSqDevX / clusterPoints.length;
+    const varY = sumSqDevY / clusterPoints.length;
+    const covar = sumProdDev / clusterPoints.length;
+
+    // Calculate eigenvalues
+    const trace = varX + varY;
+    const det = varX * varY - covar * covar;
+    const discriminant = Math.sqrt(Math.max(0, (trace / 2) ** 2 - det));
+    const lambda1 = trace / 2 + discriminant;
+    const lambda2 = trace / 2 - discriminant;
+
+    // Calculate rotation angle
+    let angle = 0;
+    if (Math.abs(covar) > 1e-6) {
+      angle = Math.atan2(lambda1 - varX, covar);
+    } else if (varX < varY) {
+      angle = Math.PI / 2;
+    }
+
+    // Semi-axes
+    const a = stdDevMultiplier * Math.sqrt(Math.max(lambda1, 0.001));
+    const b = stdDevMultiplier * Math.sqrt(Math.max(lambda2, 0.001));
+
+    // Generate ellipse points
+    const numPoints = 100;
+    for (let i = 0; i <= numPoints; i++) {
+      const theta = (i / numPoints) * 2 * Math.PI;
+      const cosTheta = Math.cos(theta);
+      const sinTheta = Math.sin(theta);
+
+      const x = a * cosTheta;
+      const y = b * sinTheta;
+
+      // Rotate and translate to cluster center
+      const x_rot = x * Math.cos(angle) - y * Math.sin(angle) + centroid.x;
+      const y_rot = x * Math.sin(angle) + y * Math.cos(angle) + centroid.y;
+
+      ellipsePoints.push({ cluster, PC_1: x_rot, PC_2: y_rot, order: i });
+    }
+  }
+
+  return ellipsePoints;
+};
+
 const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
   if (!cluster?.distinctFeatures?.featureStatistics) return null;
 
@@ -1029,38 +1112,50 @@ const AnalysisGroup: React.FC = () => {
             details="PCA projection of all workflows colored by cluster assignment. Each point is a workflow positioned by its first two principal components."
             spec={{
               description: 'PCA projection of workflows colored by cluster',
-              mark: { type: 'point', tooltip: true },
-              // Clone each datum so Vega can annotate rows without
-              // mutating frozen/proxied Redux objects.
-              data: { values: pcaSpace.map(p => ({ ...p })) },
-              encoding: {
-                x: {
-                  field: 'PC_1',
-                  type: 'quantitative',
-                  title: 'PC 1',
-                },
-                y: {
-                  field: 'PC_2',
-                  type: 'quantitative',
-                  title: 'PC 2',
-                },
-                color: {
-                  field: 'cluster',
-                  type: 'nominal',
-                  title: 'Cluster',
-                  legend: { title: 'Cluster' },
-                },
-                tooltip: [
-                  {
-                    field: 'workflowId',
-                    type: 'nominal',
-                    title: 'Workflow ID',
+              layer: [
+                // Background ellipse layer
+                {
+                  data: { values: generateClusterEllipses(pcaSpace) },
+                  mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, stroke: 'currentColor', strokeWidth: 2 },
+                  encoding: {
+                    x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                    y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                    stroke: {
+                      field: 'cluster',
+                      type: 'nominal',
+                      legend: null,
+                    },
+                    strokeDash: { value: [4, 4] },
+                    detail: { field: 'cluster', type: 'nominal' },
+                    order: { field: 'order', type: 'quantitative' },
                   },
-                  { field: 'cluster', type: 'nominal', title: 'Cluster' },
-                  { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
-                  { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
-                ],
-              },
+                },
+                // Foreground points layer
+                {
+                  data: { values: pcaSpace.map(p => ({ ...p })) },
+                  mark: { type: 'point', tooltip: true },
+                  encoding: {
+                    x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                    y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                    color: {
+                      field: 'cluster',
+                      type: 'nominal',
+                      title: 'Cluster',
+                      legend: { title: 'Cluster', orient: 'right' },
+                    },
+                    tooltip: [
+                      {
+                        field: 'workflowId',
+                        type: 'nominal',
+                        title: 'Workflow ID',
+                      },
+                      { field: 'cluster', type: 'nominal', title: 'Cluster' },
+                      { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                      { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                    ],
+                  },
+                },
+              ],
             }}
           />
         </Box>
@@ -1086,36 +1181,62 @@ const AnalysisGroup: React.FC = () => {
                   details="PCA projection of all workflows colored by cluster assignment. Each point is a workflow positioned by its first two principal components."
                   spec={{
                     description: 'PCA projection of workflows colored by cluster',
-                    mark: { type: 'point', tooltip: true },
-                    data: { values: pcaSpace.map(p => ({ ...p })) },
-                    encoding: {
-                      x: {
-                        field: 'PC_1',
-                        type: 'quantitative',
-                        title: 'PC 1',
-                      },
-                      y: {
-                        field: 'PC_2',
-                        type: 'quantitative',
-                        title: 'PC 2',
-                      },
-                      color: {
-                        field: 'cluster',
-                        type: 'nominal',
-                        title: 'Cluster',
-                        legend: { title: 'Cluster' },
-                      },
-                      tooltip: [
-                        {
-                          field: 'workflowId',
-                          type: 'nominal',
-                          title: 'Workflow ID',
+                    layer: [
+                      // Background filled ellipse layer for selected cluster
+                      {
+                        data: { values: generateClusterEllipses(pcaSpace).filter(p => p.cluster === selectedCluster) },
+                        mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, fill: getClusterColorFromKey(selectedCluster, theme) },
+                        encoding: {
+                          x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                          y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                          opacity: { value: 0.1 },
+                          detail: { field: 'cluster', type: 'nominal' },
+                          order: { field: 'order', type: 'quantitative' },
                         },
-                        { field: 'cluster', type: 'nominal', title: 'Cluster' },
-                        { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
-                        { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
-                      ],
-                    },
+                      },
+                      // Dashed line ellipse layer for all clusters
+                      {
+                        data: { values: generateClusterEllipses(pcaSpace) },
+                        mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, stroke: 'currentColor', strokeWidth: 2 },
+                        encoding: {
+                          x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                          y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                          stroke: {
+                            field: 'cluster',
+                            type: 'nominal',
+                            legend: null,
+                          },
+                          strokeDash: { value: [4, 4] },
+                          detail: { field: 'cluster', type: 'nominal' },
+                          order: { field: 'order', type: 'quantitative' },
+                        },
+                      },
+                      // Foreground points layer
+                      {
+                        data: { values: pcaSpace.map(p => ({ ...p })) },
+                        mark: { type: 'point', tooltip: true, size: 20 },
+                        encoding: {
+                          x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                          y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                          color: {
+                            field: 'cluster',
+                            type: 'nominal',
+                            title: 'Cluster',
+                            legend: { title: 'Cluster', orient: 'right' },
+                          },
+                          tooltip: [
+                            {
+                              field: 'workflowId',
+                              type: 'nominal',
+                              title: 'Workflow ID',
+                            },
+                            { field: 'cluster', type: 'nominal', title: 'Cluster' },
+                            { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                            { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                          ],
+                        },
+                      },
+                    ],
                   }}
                 />
               </Box>
