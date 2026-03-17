@@ -9,6 +9,7 @@ import {
   Collapse,
   Divider,
   Grid,
+  IconButton,
   LinearProgress,
   Stack,
   Tooltip,
@@ -22,6 +23,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import BoltIcon from '@mui/icons-material/Bolt';
 import AdjustIcon from '@mui/icons-material/Adjust';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import CloseIcon from '@mui/icons-material/Close';
 import type { RootState } from '../../../store/store';
 import { useAppSelector } from '../../../store/store';
 import type { ClusterInsight, FeatureStatistic, PcaSpacePoint } from '../../../shared/models/experiment.highlights.model';
@@ -1013,7 +1015,7 @@ const AnalysisGroup: React.FC = () => {
           </ResponsiveCardTable>
         </Box>
       )}
-      {pcaSpace.length > 0 && (
+      {pcaSpace.length > 0 && !selectedCluster && (
         <Box sx={{ mb: 3 }}>
           <Typography
             variant="subtitle2"
@@ -1064,26 +1066,82 @@ const AnalysisGroup: React.FC = () => {
         </Box>
       )}  
       {selectedCluster && clusters.length > 0 && (
-        <Grid container spacing={2}>
+        <>
+          <Box sx={{ display: 'flex', alignItems: 'center',alignContent: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: getClusterColorFromKey(selectedCluster, theme) }}>
+              {selectedClusterData?.metadata?.clusterName ?? `Cluster ${selectedCluster}`}
+            </Typography>
+            <IconButton onClick={() => setSelectedCluster(null)} color="primary">
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+          <Divider sx={{ mb: 3 }} />
+          <Grid container spacing={2}>
           
-          <Grid size={{ xs: 6 }}>
-            <Box>
-              <FeatureZScoresChart cluster={selectedClusterData ?? undefined} />
-            </Box>
+            <Grid size={{ xs: 6 }}>
+              <Box>
+                <ResponsiveCardVegaLite
+                  title="Cluster Distribution"
+                  actions={false}
+                  details="PCA projection of all workflows colored by cluster assignment. Each point is a workflow positioned by its first two principal components."
+                  spec={{
+                    description: 'PCA projection of workflows colored by cluster',
+                    mark: { type: 'point', tooltip: true },
+                    data: { values: pcaSpace.map(p => ({ ...p })) },
+                    encoding: {
+                      x: {
+                        field: 'PC_1',
+                        type: 'quantitative',
+                        title: 'PC 1',
+                      },
+                      y: {
+                        field: 'PC_2',
+                        type: 'quantitative',
+                        title: 'PC 2',
+                      },
+                      color: {
+                        field: 'cluster',
+                        type: 'nominal',
+                        title: 'Cluster',
+                        legend: { title: 'Cluster' },
+                      },
+                      tooltip: [
+                        {
+                          field: 'workflowId',
+                          type: 'nominal',
+                          title: 'Workflow ID',
+                        },
+                        { field: 'cluster', type: 'nominal', title: 'Cluster' },
+                        { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                        { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                      ],
+                    },
+                  }}
+                />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
+              <Box>
+                <FeatureZScoresChart cluster={selectedClusterData ?? undefined} />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
+              <Box>
+                <CorrelationAnalysisChart cluster={selectedClusterData ?? undefined} />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
+              <DecisionRulesSection
+                rules={selectedClusterData?.decisionTreeRules}
+                clusterKey={selectedCluster}
+              />
+            </Grid>
           </Grid>
-          <Grid size={{ xs: 6 }}>
-            <Box>
-              <CorrelationAnalysisChart cluster={selectedClusterData ?? undefined} />
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6 }}>
-            <DecisionRulesSection
-              rules={selectedClusterData?.decisionTreeRules}
-              clusterKey={selectedCluster}
-            />
-          </Grid>
-        </Grid>
-        )}
+        </>
+      )}
     </Box>
     
   );
