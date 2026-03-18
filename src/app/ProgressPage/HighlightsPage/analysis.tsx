@@ -169,6 +169,22 @@ const getClusterColorFromKey = (clusterKey: string, theme: Theme) => {
   return colors[index % colors.length];
 };
 
+const generateClusterColorScale = (
+  clusters: Array<{ clusterKey: string; cluster: ClusterInsight }>,
+  theme: Theme
+) => {
+  const domain: string[] = [];
+  const range: string[] = [];
+
+  for (const { clusterKey, cluster } of clusters) {
+    const displayName = cluster.metadata?.clusterName ?? clusterKey;
+    domain.push(displayName);
+    range.push(getClusterColorFromKey(clusterKey, theme));
+  }
+
+  return { domain, range };
+};
+
 const generateClusterEllipses = (
   points: PcaSpacePoint[],
   stdDevMultiplier: number = 3
@@ -1060,6 +1076,11 @@ const AnalysisGroup: React.FC = () => {
     [clusters, selectedCluster]
   );
 
+  const clusterColorScale = useMemo(
+    () => generateClusterColorScale(clusters, theme),
+    [clusters, theme]
+  );
+
   if (!data) return (
     <InfoMessage
       message={'No insights available for this experiment.'}
@@ -1120,15 +1141,18 @@ const AnalysisGroup: React.FC = () => {
               layer: [
                 // Background ellipse layer
                 {
-                  data: { values: generateClusterEllipses(pcaSpace) },
-                  mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, stroke: 'currentColor', strokeWidth: 2 },
+                  data: { values: generateClusterEllipses(pcaSpace).map(e => ({
+                    ...e,
+                    displayClusterName: clusters.find(c => c.clusterKey === e.cluster)?.cluster?.metadata?.clusterName ?? e.cluster,
+                  })) },
+                  mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, strokeWidth: 2 },
                   encoding: {
                     x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
                     y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
                     stroke: {
-                      field: 'cluster',
+                      field: 'displayClusterName',
                       type: 'nominal',
-                      legend: null,
+                      scale: { domain: clusterColorScale.domain, range: clusterColorScale.range },
                     },
                     strokeDash: { value: [4, 4] },
                     detail: { field: 'cluster', type: 'nominal' },
@@ -1137,7 +1161,12 @@ const AnalysisGroup: React.FC = () => {
                 },
                 // Foreground points layer
                 {
-                  data: { values: pcaSpace.map(p => ({ ...p, displayClusterName: clusters.find(c => c.clusterKey === String(p.cluster))?.cluster?.metadata?.clusterName || p.cluster })) },
+                  data: { values: pcaSpace.map(p => {
+                    const clusterKey = String(p.cluster);
+                    const clusterEntry = clusters.find(c => c.clusterKey === clusterKey);
+                    const displayClusterName = clusterEntry?.cluster?.metadata?.clusterName ?? clusterKey;
+                    return { ...p, displayClusterName };
+                  }) },
                   mark: { type: 'point', tooltip: true },
                   encoding: {
                     x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
@@ -1146,6 +1175,7 @@ const AnalysisGroup: React.FC = () => {
                       field: 'displayClusterName',
                       type: 'nominal',
                       title: 'Cluster',
+                      scale: { domain: clusterColorScale.domain, range: clusterColorScale.range },
                       legend: { title: 'Cluster', orient: 'right' },
                     },
                     tooltip: [
@@ -1201,15 +1231,18 @@ const AnalysisGroup: React.FC = () => {
                       },
                       // Dashed line ellipse layer for all clusters
                       {
-                        data: { values: generateClusterEllipses(pcaSpace) },
-                        mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, stroke: 'currentColor', strokeWidth: 2 },
+                        data: { values: generateClusterEllipses(pcaSpace).map(e => ({
+                          ...e,
+                          displayClusterName: clusters.find(c => c.clusterKey === e.cluster)?.cluster?.metadata?.clusterName ?? e.cluster,
+                        })) },
+                        mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, strokeWidth: 2 },
                         encoding: {
                           x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
                           y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
                           stroke: {
-                            field: 'cluster',
+                            field: 'displayClusterName',
                             type: 'nominal',
-                            legend: null,
+                            scale: { domain: clusterColorScale.domain, range: clusterColorScale.range },
                           },
                           strokeDash: { value: [4, 4] },
                           detail: { field: 'cluster', type: 'nominal' },
@@ -1218,7 +1251,12 @@ const AnalysisGroup: React.FC = () => {
                       },
                       // Foreground points layer
                       {
-                        data: { values: pcaSpace.map(p => ({ ...p, displayClusterName: clusters.find(c => c.clusterKey === String(p.cluster))?.cluster?.metadata?.clusterName || p.cluster })) },
+                        data: { values: pcaSpace.map(p => {
+                          const clusterKey = String(p.cluster);
+                          const clusterEntry = clusters.find(c => c.clusterKey === clusterKey);
+                          const displayClusterName = clusterEntry?.cluster?.metadata?.clusterName ?? clusterKey;
+                          return { ...p, displayClusterName };
+                        }) },
                         mark: { type: 'point', tooltip: true, size: 20 },
                         encoding: {
                           x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
@@ -1227,6 +1265,7 @@ const AnalysisGroup: React.FC = () => {
                             field: 'displayClusterName',
                             type: 'nominal',
                             title: 'Cluster',
+                            scale: { domain: clusterColorScale.domain, range: clusterColorScale.range },
                             legend: { title: 'Cluster', orient: 'right' },
                           },
                           tooltip: [
