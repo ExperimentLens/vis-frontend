@@ -1132,13 +1132,13 @@ const AnalysisGroup: React.FC = () => {
                 },
                 // Foreground points layer
                 {
-                  data: { values: pcaSpace.map(p => ({ ...p })) },
+                  data: { values: pcaSpace.map(p => ({ ...p, displayClusterName: clusters.find(c => c.clusterKey === String(p.cluster))?.cluster?.metadata?.clusterName || p.cluster })) },
                   mark: { type: 'point', tooltip: true },
                   encoding: {
                     x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
                     y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
                     color: {
-                      field: 'cluster',
+                      field: 'displayClusterName',
                       type: 'nominal',
                       title: 'Cluster',
                       legend: { title: 'Cluster', orient: 'right' },
@@ -1149,7 +1149,7 @@ const AnalysisGroup: React.FC = () => {
                         type: 'nominal',
                         title: 'Workflow ID',
                       },
-                      { field: 'cluster', type: 'nominal', title: 'Cluster' },
+                      { field: 'displayClusterName', type: 'nominal', title: 'Cluster' },
                       { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
                       { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
                     ],
@@ -1213,13 +1213,13 @@ const AnalysisGroup: React.FC = () => {
                       },
                       // Foreground points layer
                       {
-                        data: { values: pcaSpace.map(p => ({ ...p })) },
+                        data: { values: pcaSpace.map(p => ({ ...p, displayClusterName: clusters.find(c => c.clusterKey === String(p.cluster))?.cluster?.metadata?.clusterName || p.cluster })) },
                         mark: { type: 'point', tooltip: true, size: 20 },
                         encoding: {
                           x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
                           y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
                           color: {
-                            field: 'cluster',
+                            field: 'displayClusterName',
                             type: 'nominal',
                             title: 'Cluster',
                             legend: { title: 'Cluster', orient: 'right' },
@@ -1230,7 +1230,7 @@ const AnalysisGroup: React.FC = () => {
                               type: 'nominal',
                               title: 'Workflow ID',
                             },
-                            { field: 'cluster', type: 'nominal', title: 'Cluster' },
+                            { field: 'displayClusterName', type: 'nominal', title: 'Cluster' },
                             { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
                             { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
                           ],
