@@ -15,6 +15,7 @@ import {
   Tooltip,
   Typography,
   useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
@@ -793,6 +794,8 @@ const ClusterVsOthersRadar: React.FC<ClusterVsOthersRadarProps> = ({ cluster, cl
 
 const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
   const correlation = cluster?.correlationAnalysis;
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('xl'));
 
   if (!correlation || !correlation.removedFeatures || correlation.nRemovedFeatures === 0) {
     return null;
@@ -843,6 +846,8 @@ const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
             title: 'Most related to',
             legend: {
               orient: 'bottom',
+              labelFontSize: 10,
+              columns: isSmallScreen ? 2 : 3,
             },
           },
           tooltip: [
