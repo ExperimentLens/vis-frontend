@@ -135,7 +135,6 @@ const ClusterCard = ({
   }, [cluster]);
 
   const sparkValues = metricTiles.map(m => m.mean);
-
   const clusterName = `Cluster ${name}`;
 
   return (

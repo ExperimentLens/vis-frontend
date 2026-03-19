@@ -134,7 +134,7 @@ const ExperimentControls = () => {
           workflows.data.filter(workflow => workflow.status === 'RUNNING')
             .length;
       const failed = workflows.data.filter(
-        workflow => workflow.status === 'FAILED',
+        workflow => workflow.status === 'FAILED' || workflow.status === 'KILLED',
       ).length;
       const progress = Math.round(((completed + failed) / total) * 100);
 

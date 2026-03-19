@@ -29,6 +29,7 @@ const stringOperators = [
   { id: 'startsWith', label: 'starts with' },
   { id: 'endsWith', label: 'ends with' },
   { id: '=', label: '=' },
+  { id: 'IN', label: 'in' },
 ];
 
 const numberOperators = [
@@ -145,6 +146,17 @@ export default function FilterBar({
         return;
       }
 
+      // For IN operator, we rely on manual comma-separated input and chips,
+      // so we disable dropdown suggestions to allow Enter to submit the full value.
+      if (tempOperator === 'IN') {
+        setSuggestions([]);
+        setShowAvailableColumns(false);
+        setShowAvailableOperators(false);
+        setShowAvailableValues(inputValue.length === 0);
+
+        return;
+      }
+
       if (inputValue.length === 0) {
         setSuggestions([]);
         setShowAvailableColumns(false);
@@ -166,7 +178,7 @@ export default function FilterBar({
       setShowAvailableOperators(false);
       setShowAvailableValues(false);
     }
-  }, [currentStep, inputValue, validColumns, availableOperators, valueSuggestions, tempColumn]);
+  }, [currentStep, inputValue, validColumns, availableOperators, valueSuggestions, tempColumn, tempOperator]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
@@ -332,6 +344,10 @@ export default function FilterBar({
       case FilterStep.OPERATOR:
         return `${tempColumn} (select operator)`;
       case FilterStep.VALUE:
+        if (tempOperator === 'IN') {
+          return `${tempColumn} IN (comma-separated values)`;
+        }
+
         return `${tempColumn} ${tempOperator} (enter value)`;
       default:
         return 'Build a filter query...';
@@ -493,7 +509,11 @@ export default function FilterBar({
               label={val}
               clickable
               onClick={() => {
-                addFilter(val);  // ⬅️ directly add filter on click
+                if (tempOperator === 'IN') {
+                  setInputValue(prev => (prev ? `${prev}, ${val}` : val));
+                } else {
+                  addFilter(val);
+                }
               }}
             />
           ))}
@@ -588,8 +608,9 @@ export default function FilterBar({
       {currentStep !== FilterStep.IDLE && !showAvailableColumns && !showAvailableOperators && (
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
           {currentStep === FilterStep.COLUMN && 'Select a column or type to filter columns (use arrow keys to navigate)'}
-          {currentStep === FilterStep.OPERATOR && 'Select an operator (contains, =, >, <, etc.) - use arrow keys to navigate'}
-          {currentStep === FilterStep.VALUE && 'Enter a value and press Enter to add the filter'}
+          {currentStep === FilterStep.OPERATOR && 'Select an operator (contains, =, >, <, in, etc.) - use arrow keys to navigate'}
+          {currentStep === FilterStep.VALUE && tempOperator !== 'IN' && 'Enter a value and press Enter to add the filter'}
+          {currentStep === FilterStep.VALUE && tempOperator === 'IN' && 'Enter one or more comma-separated values and press Enter to add the filter'}
         </Typography>
       )}
 

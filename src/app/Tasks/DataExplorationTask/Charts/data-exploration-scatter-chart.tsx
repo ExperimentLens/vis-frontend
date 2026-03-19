@@ -216,11 +216,14 @@ const ScatterChart = () => {
             fileName: dataset?.name || '',
             runId: tab?.workflowId || '',
             experimentId: experimentId || ''
+            
 
           },
           columns: cols,
           filters,
-          limit: 10000
+          limit: 10000,
+          includeTotalItems: false
+          
         },
         metadata: {
           workflowId: tab?.workflowId || '',

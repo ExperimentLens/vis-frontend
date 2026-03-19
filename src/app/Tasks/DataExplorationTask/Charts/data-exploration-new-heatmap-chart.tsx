@@ -74,6 +74,7 @@ const HeatMapChart = () => {
           columns,
           filters,
           limit: 10000,
+          includeTotalItems: false
         },
         metadata: {
           workflowId: tab?.workflowId || '',

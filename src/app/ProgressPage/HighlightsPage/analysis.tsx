@@ -5,15 +5,26 @@ import {
   Button,
   Card,
   Chip,
+  CircularProgress,
   Collapse,
   Divider,
   Grid,
+  IconButton,
   LinearProgress,
   Stack,
+  Tooltip,
   Typography,
   useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import BoltIcon from '@mui/icons-material/Bolt';
+import AdjustIcon from '@mui/icons-material/Adjust';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import CloseIcon from '@mui/icons-material/Close';
 import type { RootState } from '../../../store/store';
 import { useAppSelector } from '../../../store/store';
 import type { ClusterInsight, FeatureStatistic, PcaSpacePoint } from '../../../shared/models/experiment.highlights.model';
@@ -22,6 +33,8 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import ResponsiveCardVegaLite from '../../../shared/components/responsive-card-vegalite';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
+import { setCache } from '../../../shared/utils/localStorageCache';
+import { useParams } from 'react-router-dom';
 
 
 interface ClusterCardProps {
@@ -50,6 +63,98 @@ interface DecisionRulesSectionProps {
   clusterKey?: string | null;
 }
 
+type TableFilter = { column: string; operator: string; value: string };
+
+const splitAnd = (rule: string): string[] => {
+  // split on " and " outside braces/quotes (handles sets like {'a','b'})
+  const out: string[] = [];
+  let buf = '';
+  let inSingle = false;
+  let inDouble = false;
+  let brace = 0;
+
+  for (let i = 0; i < rule.length; i++) {
+    const ch = rule[i];
+    const token = rule.slice(i, i + 5).toLowerCase(); // " and "
+
+    if (ch === "'" && !inDouble) inSingle = !inSingle;
+    if (ch === '"' && !inSingle) inDouble = !inDouble;
+
+    if (!inSingle && !inDouble) {
+      if (ch === '{') brace++;
+      if (ch === '}') brace = Math.max(0, brace - 1);
+    }
+
+    if (!inSingle && !inDouble && brace === 0 && token === ' and ') {
+      out.push(buf.trim());
+      buf = '';
+      i += 4;
+      continue;
+    }
+
+    buf += ch;
+  }
+
+  if (buf.trim()) out.push(buf.trim());
+  return out;
+};
+
+const stripQuotes = (s: string) => {
+  const t = s.trim();
+  if ((t.startsWith("'") && t.endsWith("'")) || (t.startsWith('"') && t.endsWith('"'))) return t.slice(1, -1);
+  return t;
+};
+
+const parseSet = (raw: string): string[] => {
+  const t = raw.trim();
+  const inner = t.startsWith('{') && t.endsWith('}') ? t.slice(1, -1) : t;
+
+  const vals: string[] = [];
+  let buf = '';
+  let inSingle = false;
+  let inDouble = false;
+
+  for (let i = 0; i < inner.length; i++) {
+    const ch = inner[i];
+    if (ch === "'" && !inDouble) inSingle = !inSingle;
+    if (ch === '"' && !inSingle) inDouble = !inDouble;
+
+    if (ch === ',' && !inSingle && !inDouble) {
+      if (buf.trim()) vals.push(stripQuotes(buf.trim()));
+      buf = '';
+      continue;
+    }
+    buf += ch;
+  }
+  if (buf.trim()) vals.push(stripQuotes(buf.trim()));
+  return vals.filter(Boolean);
+};
+
+export const ruleToFilters = (rule: string): TableFilter[] => {
+  const clauses = splitAnd(rule);
+  const filters: TableFilter[] = [];
+
+  for (const c of clauses) {
+    const inMatch = c.match(/^\s*([A-Za-z_][A-Za-z0-9_.]*)\s+IN\s+(.+)\s*$/i);
+    if (inMatch) {
+      const column = inMatch[1];
+      const values = parseSet(inMatch[2]);
+      filters.push({ column, operator: 'IN', value: values.join(',') });
+      continue;
+    }
+
+    const cmpMatch = c.match(/^\s*([A-Za-z_][A-Za-z0-9_.]*)\s*(>=|<=|!=|=|==|>|<)\s*(.+)\s*$/);
+    if (cmpMatch) {
+      const column = cmpMatch[1];
+      const operator = cmpMatch[2] === '==' ? '=' : cmpMatch[2];
+      const value = stripQuotes(cmpMatch[3]);
+      filters.push({ column, operator, value });
+    }
+  }
+
+  return filters;
+};
+
 const getClusterColorFromKey = (clusterKey: string, theme: Theme) => {
   const colors = [
     theme.palette.primary.main,
@@ -62,6 +167,105 @@ const getClusterColorFromKey = (clusterKey: string, theme: Theme) => {
   if (Number.isNaN(index)) return theme.palette.primary.main;
 
   return colors[index % colors.length];
+};
+
+const generateClusterColorScale = (
+  clusters: Array<{ clusterKey: string; cluster: ClusterInsight }>,
+  theme: Theme
+) => {
+  const domain: string[] = [];
+  const range: string[] = [];
+
+  for (const { clusterKey, cluster } of clusters) {
+    const displayName = cluster.metadata?.clusterName ?? clusterKey;
+    domain.push(displayName);
+    range.push(getClusterColorFromKey(clusterKey, theme));
+  }
+
+  return { domain, range };
+};
+
+const generateClusterEllipses = (
+  points: PcaSpacePoint[],
+  stdDevMultiplier: number = 3
+): Array<{ cluster: string; PC_1: number; PC_2: number; order: number }> => {
+  const clusterGroups: Record<string, Array<{ PC_1: number; PC_2: number }>> = {};
+
+  // Group points by cluster
+  for (const point of points) {
+    if (!clusterGroups[point.cluster]) {
+      clusterGroups[point.cluster] = [];
+    }
+    clusterGroups[point.cluster].push({ PC_1: point.PC_1, PC_2: point.PC_2 });
+  }
+
+  const ellipsePoints: Array<{ cluster: string; PC_1: number; PC_2: number; order: number }> = [];
+
+  // Calculate ellipse for each cluster
+  for (const [cluster, clusterPoints] of Object.entries(clusterGroups)) {
+    if (clusterPoints.length < 2) continue;
+
+    // Calculate centroid
+    const centroid = {
+      x: clusterPoints.reduce((sum, p) => sum + p.PC_1, 0) / clusterPoints.length,
+      y: clusterPoints.reduce((sum, p) => sum + p.PC_2, 0) / clusterPoints.length,
+    };
+
+    // Calculate standard deviations
+    let sumSqDevX = 0;
+    let sumSqDevY = 0;
+    let sumProdDev = 0;
+
+    for (const point of clusterPoints) {
+      const dx = point.PC_1 - centroid.x;
+      const dy = point.PC_2 - centroid.y;
+      sumSqDevX += dx * dx;
+      sumSqDevY += dy * dy;
+      sumProdDev += dx * dy;
+    }
+
+    const varX = sumSqDevX / clusterPoints.length;
+    const varY = sumSqDevY / clusterPoints.length;
+    const covar = sumProdDev / clusterPoints.length;
+
+    // Calculate eigenvalues
+    const trace = varX + varY;
+    const det = varX * varY - covar * covar;
+    const discriminant = Math.sqrt(Math.max(0, (trace / 2) ** 2 - det));
+    const lambda1 = trace / 2 + discriminant;
+    const lambda2 = trace / 2 - discriminant;
+
+    // Calculate rotation angle
+    let angle = 0;
+    if (Math.abs(covar) > 1e-6) {
+      angle = Math.atan2(lambda1 - varX, covar);
+    } else if (varX < varY) {
+      angle = Math.PI / 2;
+    }
+
+    // Semi-axes
+    const a = stdDevMultiplier * Math.sqrt(Math.max(lambda1, 0.001));
+    const b = stdDevMultiplier * Math.sqrt(Math.max(lambda2, 0.001));
+
+    // Generate ellipse points
+    const numPoints = 100;
+    for (let i = 0; i <= numPoints; i++) {
+      const theta = (i / numPoints) * 2 * Math.PI;
+      const cosTheta = Math.cos(theta);
+      const sinTheta = Math.sin(theta);
+
+      const x = a * cosTheta;
+      const y = b * sinTheta;
+
+      // Rotate and translate to cluster center
+      const x_rot = x * Math.cos(angle) - y * Math.sin(angle) + centroid.x;
+      const y_rot = x * Math.sin(angle) + y * Math.cos(angle) + centroid.y;
+
+      ellipsePoints.push({ cluster, PC_1: x_rot, PC_2: y_rot, order: i });
+    }
+  }
+
+  return ellipsePoints;
 };
 
 const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
@@ -77,8 +281,9 @@ const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
 
   return (
     <ResponsiveCardVegaLite
-      title="Feature Z-Scores"
+      title="Key Performance Indicators"
       actions={false}
+      details="Z-Score of each feature in this cluster compared to the overall population. Features with extreme scores (far from zero) are what make this cluster unique."
       spec={{
         description: 'Diverging bar chart - cluster mean vs population',
         mark: { type: 'bar' },
@@ -116,10 +321,88 @@ const FeatureZScoresChart: React.FC<ClusterChartProps> = ({ cluster }) => {
   );
 };
 
+/** Renders rule text with colored logical/math operators */
+const StyledRuleText: React.FC<{ rule: string; color: string }> = ({ rule, color }) => {
+  // Split on keywords: IN, and, >=, <=, !=, >, <, =
+  const parts = rule.split(/(\b(?:IN|and)\b|>=|<=|!=|>|<|=)/gi);
+  return (
+    <Box
+      sx={{
+        fontFamily: 'monospace',
+        fontSize: 14,
+        lineHeight: 1.8,
+        color: 'text.primary',
+        backgroundColor: 'rgba(0,0,0,0.15)',
+        p: 1.5,
+        borderRadius: 1,
+      }}
+    >
+      {parts.map((part, i) => {
+        const isKeyword = /^(IN|and|>=|<=|!=|>|<|=)$/i.test(part);
+        return isKeyword ? (
+          <span key={i} style={{ color, fontWeight: 700 }}>{` ${part} `}</span>
+        ) : (
+          <span key={i}>{part}</span>
+        );
+      })}
+    </Box>
+  );
+};
+
+/** Circular donut metric */
+const CircularMetric: React.FC<{ label: string; value: number; color: string; size?: number }> = ({
+  label, value, color, size = 64,
+}) => {
+  const percent = Math.round((value ?? 0) * 100);
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+      <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+        <CircularProgress
+          variant="determinate"
+          value={100}
+          size={size}
+          thickness={3}
+          sx={{ color: 'action.disabledBackground', position: 'absolute' }}
+        />
+        <CircularProgress
+          variant="determinate"
+          value={percent}
+          size={size}
+          thickness={3}
+          sx={{ color }}
+        />
+      </Box>
+      <Typography variant="caption" sx={{ color, fontWeight: 700, mt: 0.5 }}>
+        {percent}%
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{ color: 'text.secondary', letterSpacing: 0.8, textTransform: 'uppercase', fontSize: 10 }}
+      >
+        {label}
+      </Typography>
+    </Box>
+  );
+};
+
+const METRIC_ICONS: Record<string, React.ReactNode> = {
+  F1: <BoltIcon sx={{ fontSize: 14 }} />,
+  PRECISION: <AdjustIcon sx={{ fontSize: 14 }} />,
+  RECALL: <BarChartIcon sx={{ fontSize: 14 }} />,
+};
+
 const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clusterKey }) => {
   const theme = useTheme();
+  const { experimentId } = useParams<{ experimentId: string }>();
 
   const [showAlternatives, setShowAlternatives] = useState(false);
+
+  const { experimentHighlights } = useAppSelector(
+    (state: RootState) => state.experimentHighlights
+  );
+
+  const clusterData = clusterKey ? experimentHighlights.data?.clusterInsights?.[clusterKey] : null;
+  const clusterFeatures = clusterData?.highShapFeatures?.features ?? [];
 
   if (!rules || rules.length === 0) return null;
 
@@ -130,107 +413,91 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
 
   const [primaryRule, ...alternativeRules] = rules;
 
+  const primaryRuleKey = useMemo(
+    () => `ruleFilter-primary-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    []
+  );
+  const alternativeRuleKeys = useMemo(
+    () =>
+      alternativeRules.map(
+        (_, i) =>
+          `ruleFilter-alt-${i}-${Date.now()}-${Math.random().toString(16).slice(2)}`
+      ),
+    [alternativeRules]
+  );  
   return (
 
-    <ResponsiveCardTable title={" DECISION RULES"} showSettings={false} showFullScreenButton={false} >
+    <ResponsiveCardTable title="Decision Rules" showSettings={false} showFullScreenButton={false} details="Tree-based rules that best identify workflows belonging to this cluster. The best rule maximizes a combined score of F1, precision, and recall." >
     <Box sx={{ mb: 4 }}>
-      <Typography
-        variant="subtitle2"
-        sx={{ mb: 1, letterSpacing: 0.6, fontWeight: 700 }}
-      >
-       
-      </Typography>
       <Stack spacing={2}>
-        {/* Primary rule */}
+        {/* Primary rule — "Best Rule" */}
         <Card
           sx={{
-            p: 2,
+            p: 2.5,
             backgroundColor: theme.palette.background.paper,
-            borderRadius: 1,
-            boxShadow: 1,
+            borderRadius: 2,
+            border: `2px dashed ${clusterColor}`,
+            boxShadow: 'none',
           }}
         >
-          <Stack spacing={1.5}>
-            <Typography
-              variant="body2"
-              sx={{
-                fontFamily: 'monospace',
-                color: 'text.primary',
-                fontSize: 13,
-              }}
-            >
-              {primaryRule.rule}
-            </Typography>
-
-            <Stack
-              direction="row"
-              spacing={3}
-              sx={{ mt: 0.5, flexWrap: 'wrap' }}
-            >
-              {[{
-                label: 'F1',
-                value: primaryRule.f1Score,
-              }, {
-                label: 'PRECISION',
-                value: primaryRule.precision,
-              }, {
-                label: 'RECALL',
-                value: primaryRule.recall,
-              }, {
-                label: 'COMBINED',
-                value: primaryRule.combinedScore,
-              }].map(metric => (
-                <Box
-                  key={metric.label}
-                  sx={{
-                    flex: 1,
-                    minWidth: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 0.5,
+          <Stack spacing={2}>
+            {/* Header row */}
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <EmojiEventsOutlinedIcon sx={{ color: clusterColor, fontSize: 20 }} />
+                <Typography
+                  variant="subtitle2"
+                  sx={{ fontWeight: 700, color: clusterColor }}
+                >
+                  Best Rule
+                </Typography>
+              </Stack>
+              <Tooltip title="View workflows">
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                  component="a"
+                  href={`/${experimentId}/monitoring?tab=0&ruleFilterId=${primaryRuleKey}`}
+                  rel="noopener noreferrer"
+                  onMouseDown={() => {
+                    const filters = ruleToFilters(primaryRule.rule);
+                    setCache(primaryRuleKey, { filters, clusterFeatures }, 5 * 60 * 1000);
+                  }}
+                  onClick={() => {
+                    const filters = ruleToFilters(primaryRule.rule);
+                    setCache(primaryRuleKey, { filters, clusterFeatures }, 5 * 60 * 1000);
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: 'text.secondary',
-                        letterSpacing: 0.8,
-                        minWidth: 70,
-                      }}
-                    >
-                      {metric.label}
-                    </Typography>
-                    <LinearProgress
-                      variant="determinate"
-                      value={(metric.value ?? 0) * 100}
-                      sx={{
-                        flex: 1,
-                        height: 6,
-                        borderRadius: 999,
-                        backgroundColor: theme.palette.action.disabledBackground,
-                        '& .MuiLinearProgress-bar': {
-                          backgroundColor: clusterColor,
-                        },
-                      }}
-                    />
-                    <Typography
-                      variant="caption"
-                      sx={{ minWidth: 40, textAlign: 'right', color: 'text.secondary' }}
-                    >
-                      {formatPercent(metric.value ?? 0)}
-                    </Typography>
-                  </Box>
-                </Box>
-              ))}
+                  {primaryRule.nWorkflowsInCluster} workflows matched
+                </Typography>
+              </Tooltip>
             </Stack>
 
-            <Typography
-              variant="caption"
-              sx={{ color: 'text.secondary', mt: 0.5 }}
+            {/* Styled rule text */}
+            <StyledRuleText rule={primaryRule.rule} color={clusterColor} />
+
+            {/* Circular metrics */}
+            {/* <Stack
+              direction="row"
+              spacing={4}
+              justifyContent="center"
+              sx={{ pt: 1 }}
             >
-              {primaryRule.nWorkflowsInCluster} workflows matched
-            </Typography>
+              {[
+                { label: 'F1', value: primaryRule.f1Score },
+                { label: 'PRECISION', value: primaryRule.precision },
+                { label: 'RECALL', value: primaryRule.recall },
+                { label: 'COMBINED', value: primaryRule.combinedScore },
+              ].map(metric => (
+                <CircularMetric
+                  key={metric.label}
+                  label={metric.label}
+                  value={metric.value}
+                  color={clusterColor}
+                />
+              ))}
+            </Stack> */}
           </Stack>
         </Card>
 
@@ -240,111 +507,91 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
             <Button
               size="small"
               onClick={() => setShowAlternatives(prev => !prev)}
+              startIcon={
+                showAlternatives
+                  ? <KeyboardArrowUpIcon fontSize="small" />
+                  : <KeyboardArrowDownIcon fontSize="small" />
+              }
               sx={{
                 textTransform: 'none',
                 px: 0,
-                mt: 1,
+                color: 'text.secondary',
               }}
             >
-              {showAlternatives ? 'Hide Alternative Rules' : `Alternative Rules (${alternativeRules.length})`}
+              {showAlternatives
+                ? `Hide ${alternativeRules.length} Alternative Rule${alternativeRules.length > 1 ? 's' : ''}`
+                : `Show ${alternativeRules.length} Alternative Rule${alternativeRules.length > 1 ? 's' : ''}`}
             </Button>
 
             <Collapse in={showAlternatives}>
               <Stack spacing={2} sx={{ mt: 1 }}>
-                {alternativeRules.map((rule, index) => (
+                {alternativeRules.map((rule, index) => {
+                  const key = alternativeRuleKeys[index];
+                  return (
                   <Card
-                    key={index}
+                    key={key}
                     sx={{
                       p: 2,
                       backgroundColor: theme.palette.background.paper,
-                      borderRadius: 1,
+                      borderRadius: 2,
                       boxShadow: 1,
                     }}
                   >
                     <Stack spacing={1.5}>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontFamily: 'monospace',
-                          color: 'text.primary',
-                          fontSize: 13,
-                        }}
-                      >
-                        {rule.rule}
-                      </Typography>
+                      {/* Styled rule text */}
+                      <StyledRuleText rule={rule.rule} color={clusterColor} />
 
+                      {/* Compact inline metrics + matched count */}
                       <Stack
                         direction="row"
-                        spacing={3}
-                        sx={{ mt: 0.5, flexWrap: 'wrap' }}
+                        alignItems="center"
+                        justifyContent="space-between"
+                        sx={{ flexWrap: 'wrap', gap: 1 }}
                       >
-                        {[{
-                          label: 'F1',
-                          value: rule.f1Score,
-                        }, {
-                          label: 'PRECISION',
-                          value: rule.precision,
-                        }, {
-                          label: 'RECALL',
-                          value: rule.recall,
-                        }, {
-                          label: 'COMBINED',
-                          value: rule.combinedScore,
-                        }].map(metric => (
-                          <Box
-                            key={metric.label}
-                            sx={{
-                              flex: 1,
-                              minWidth: 0,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 0.5,
-                            }}
-                          >
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: 'text.secondary',
-                                  letterSpacing: 0.8,
-                                  minWidth: 70,
-                                }}
-                              >
+                        {/* <Stack direction="row" spacing={2} alignItems="center">
+                          {[
+                            { label: 'F1', value: rule.f1Score },
+                            { label: 'PRECISION', value: rule.precision },
+                            { label: 'RECALL', value: rule.recall },
+                          ].map(metric => (
+                            <Stack key={metric.label} direction="row" alignItems="center" spacing={0.5}>
+                              <Box sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center' }}>
+                                {METRIC_ICONS[metric.label]}
+                              </Box>
+                              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                                 {metric.label}
                               </Typography>
-                              <LinearProgress
-                                variant="determinate"
-                                value={(metric.value ?? 0) * 100}
-                                sx={{
-                                  flex: 1,
-                                  height: 6,
-                                  borderRadius: 999,
-                                  backgroundColor: theme.palette.action.disabledBackground,
-                                  '& .MuiLinearProgress-bar': {
-                                    backgroundColor: clusterColor,
-                                  },
-                                }}
-                              />
-                              <Typography
-                                variant="caption"
-                                sx={{ minWidth: 40, textAlign: 'right', color: 'text.secondary' }}
-                              >
+                              <Typography variant="caption" sx={{ fontWeight: 700 }}>
                                 {formatPercent(metric.value ?? 0)}
                               </Typography>
-                            </Box>
-                          </Box>
-                        ))}
-                      </Stack>
+                            </Stack>
+                          ))}
+                        </Stack> */}
 
-                      <Typography
-                        variant="caption"
-                        sx={{ color: 'text.secondary', mt: 0.5 }}
-                      >
-                        {rule.nWorkflowsInCluster} workflows matched
-                      </Typography>
+                        <Tooltip title="View workflows">
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                            component="a"
+                            href={`/${experimentId}/monitoring?tab=0&ruleFilterId=${key}`}
+                            rel="noopener noreferrer"
+                            onMouseDown={() => {
+                              const filters = ruleToFilters(rule.rule);
+                              setCache(key, { filters, clusterFeatures }, 5 * 60 * 1000);
+                            }}
+                            onClick={() => {
+                              const filters = ruleToFilters(rule.rule);
+                              setCache(key, { filters, clusterFeatures }, 5 * 60 * 1000);
+                            }}
+                          >
+                            {rule.nWorkflowsInCluster} workflows matched
+                          </Typography>
+                        </Tooltip>
+                      </Stack>
                     </Stack>
                   </Card>
-                ))}
+                )})}
               </Stack>
             </Collapse>
           </Box>
@@ -356,66 +603,206 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
   );
 };
 
-const ClusterVsOthersChart: React.FC<ClusterChartProps> = ({ cluster }) => {
+interface ClusterVsOthersRadarProps {
+  cluster?: ClusterInsight;
+  clusterColor?: string;
+  clusterKey?: string;
+}
+
+const ClusterVsOthersRadar: React.FC<ClusterVsOthersRadarProps> = ({ cluster, clusterColor, clusterKey }) => {
+  const theme = useTheme();
+
   if (!cluster?.distinctFeatures?.featureStatistics) return null;
 
   const featureStats = cluster.distinctFeatures.featureStatistics;
-  const comparisonData = Object.entries(featureStats)
-    .map(([featureName, stats]: [string, FeatureStatistic]) => [
-      {
-        feature: featureName,
-        mean: stats.otherClustersMean ?? 0,
-        type: 'others',
-      },
-      {
-        feature: featureName,
-        mean: stats.clusterMean ?? 0,
-        type: 'cluster',
-      },
-    ])
-    .flat();
+  const entries = Object.entries(featureStats);
 
-  if (comparisonData.length === 0) return null;
+  const MIN_AXES = 6;
+  const axisCount = Math.max(entries.length, MIN_AXES);
+  const angleStep = (2 * Math.PI) / axisCount;
+  const startAngle = -Math.PI / 2;
+  const color = clusterColor ?? theme.palette.primary.main;
+  // const clusterName = clusterKey !== undefined && clusterKey !== null ? `Cluster ${clusterKey}` : 'This Cluster';
+
+  // const clusterName = cluster?.metadata?.clusterName
+  //   ? cluster.metadata.clusterName
+  //   : clusterKey !== undefined && clusterKey !== null
+  //     ? `Cluster ${clusterKey}`
+  //     : 'This Cluster';
+
+  const clusterName =
+    cluster?.metadata?.clusterName ??
+    (clusterKey !== undefined && clusterKey !== null ? `Cluster ${clusterKey}` : 'This Cluster');
+
+
+  const rawFeatures = [
+    ...entries.map(([name, stats]: [string, FeatureStatistic], i) => ({
+      name,
+      absCluster: Math.abs(stats.clusterMean ?? 0),
+      absOthers: Math.abs(stats.otherClustersMean ?? 0),
+      rawCluster: stats.clusterMean ?? 0,
+      rawOthers: stats.otherClustersMean ?? 0,
+      index: i,
+    })),
+    ...Array.from({ length: Math.max(0, axisCount - entries.length) }, (_, j) => ({
+      name: '',
+      absCluster: 0,
+      absOthers: 0,
+      rawCluster: 0,
+      rawOthers: 0,
+      index: entries.length + j,
+    })),
+  ];
+
+  const maxVal = Math.max(0.001, ...rawFeatures.flatMap(f => [f.absCluster, f.absOthers]));
+
+  // Polygon data — one row per feature per group, with both raw means for tooltip
+  const polygonData = rawFeatures.flatMap(f => {
+    const theta = startAngle + f.index * angleStep;
+    const cNorm = f.absCluster / maxVal;
+    const oNorm = f.absOthers / maxVal;
+    return [
+      { feature: f.name, group: clusterName, x: cNorm * Math.cos(theta), y: cNorm * Math.sin(theta), rawMean: f.rawCluster, clusterMean: f.rawCluster, othersMean: f.rawOthers, order: f.index, sign: f.rawCluster >= 0 ? 'positive' : 'negative' },
+      { feature: f.name, group: 'Others', x: oNorm * Math.cos(theta), y: oNorm * Math.sin(theta), rawMean: f.rawOthers, clusterMean: f.rawCluster, othersMean: f.rawOthers, order: f.index, sign: f.rawOthers >= 0 ? 'positive' : 'negative' },
+    ];
+  });
+
+  // Concentric grid levels
+  const gridLevels = [0.25, 0.5, 0.75, 1.0];
+  const gridData = gridLevels.flatMap(level =>
+    Array.from({ length: axisCount }, (_, i) => ({
+      level: String(level),
+      x: level * Math.cos(startAngle + i * angleStep),
+      y: level * Math.sin(startAngle + i * angleStep),
+      order: i,
+    }))
+  );
+
+  // Spoke lines from center to edge
+  const spokeData = rawFeatures.map(f => {
+    const theta = startAngle + f.index * angleStep;
+    return { x: 0, y: 0, x2: Math.cos(theta), y2: Math.sin(theta) };
+  });
+
+  // Feature labels around the perimeter — split by alignment
+  const labelR = 1.18;
+  const allLabels = rawFeatures.map(f => {
+    const theta = startAngle + f.index * angleStep;
+    const cos = Math.cos(theta);
+    return {
+      feature: f.name.length > 12 ? `${f.name.slice(0, 11)}\u2026` : f.name,
+      x: labelR * Math.cos(theta),
+      y: labelR * Math.sin(theta),
+      align: cos > 0.3 ? 'left' : cos < -0.3 ? 'right' : 'center' as string,
+    };
+  });
+
+  const domain: [number, number] = [-1.4, 1.4];
 
   return (
     <ResponsiveCardVegaLite
-      title="Cluster vs. Others"
+      title="Feature Comparison Radar"
       actions={false}
+      details="Spider chart comparing the selected cluster's feature means against all other clusters. Values are normalized by the maximum across both groups."
       spec={{
-        description: 'Feature means comparison - grouped bar chart',
-        mark: { type: 'bar' },
-        data: { values: comparisonData },
-        encoding: {
-          y: {
-            field: 'feature',
-            type: 'nominal',
-            title: null,
-            axis: { labelFontSize: 11 },
-          },
-          x: {
-            field: 'mean',
-            type: 'quantitative',
-            title: 'Mean Value',
-          },
-          yOffset: {
-            field: 'type',
-            type: 'nominal',
-          },
-          color: {
-            field: 'type',
-            type: 'nominal',
-            scale: {
-              domain: ['others', 'cluster'],
-              range: ['#888888', '#51cf66'],
+        layer: [
+          // Grid polygons
+          {
+            data: { values: gridData },
+            mark: { type: 'line', interpolate: 'linear-closed', strokeDash: [4, 4], stroke: theme.palette.divider, strokeWidth: 0.5 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative', axis: null, scale: { domain } },
+              y: { field: 'y', type: 'quantitative', axis: null, scale: { domain } },
+              detail: { field: 'level', type: 'nominal' },
+              order: { field: 'order', type: 'quantitative' },
             },
-            legend: { title: null },
           },
-          tooltip: [
-            { field: 'feature', type: 'nominal', title: 'Feature' },
-            { field: 'mean', type: 'quantitative', title: 'Mean', format: '.3f' },
-            { field: 'type', type: 'nominal', title: 'Type' },
-          ],
-        },
+          // Spokes
+          {
+            data: { values: spokeData },
+            mark: { type: 'rule', stroke: theme.palette.divider, strokeWidth: 0.5 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              x2: { field: 'x2' },
+              y2: { field: 'y2' },
+            },
+          },
+          // Others filled polygon
+          {
+            data: { values: polygonData.filter(d => d.group === 'Others') },
+            mark: { type: 'line', interpolate: 'linear-closed', fill: '#888888', fillOpacity: 0.12, stroke: '#888888', strokeWidth: 1.5, strokeDash: [6, 3] },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              order: { field: 'order', type: 'quantitative' },
+            },
+          },
+          // Cluster filled polygon
+          {
+            data: { values: polygonData.filter(d => d.group === clusterName) },
+            mark: { type: 'line', interpolate: 'linear-closed', fill: color, fillOpacity: 0.25, stroke: color, strokeWidth: 2 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              order: { field: 'order', type: 'quantitative' },
+            },
+          },
+          // Data points with tooltips
+          {
+            data: { values: polygonData },
+            mark: { type: 'point', filled: true, stroke: '#fff', strokeWidth: 1 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              color: {
+                field: 'group', type: 'nominal',
+                scale: { domain: [clusterName, 'Others'], range: [color, '#888888'] },
+                legend: { orient: 'bottom', title: null },
+              },
+              size: {
+                field: 'group', type: 'nominal',
+                scale: { domain: [clusterName, 'Others'], range: [60, 35] },
+                legend: null,
+              },
+              tooltip: [
+                { field: 'feature', type: 'nominal', title: 'Feature' },
+                { field: 'clusterMean', type: 'quantitative', title: `${clusterName} Mean`, format: '.3f' },
+                { field: 'othersMean', type: 'quantitative', title: 'Others Mean', format: '.3f' },
+              ],
+            },
+          },
+          // Labels — left-aligned (features on the right side)
+          {
+            data: { values: allLabels.filter(l => l.align === 'left') },
+            mark: { type: 'text', fontSize: 11, fill: theme.palette.text.secondary, align: 'left', dx: 4 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              text: { field: 'feature', type: 'nominal' },
+            },
+          },
+          // Labels — right-aligned (features on the left side)
+          {
+            data: { values: allLabels.filter(l => l.align === 'right') },
+            mark: { type: 'text', fontSize: 11, fill: theme.palette.text.secondary, align: 'right', dx: -4 },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              text: { field: 'feature', type: 'nominal' },
+            },
+          },
+          // Labels — center-aligned (features at top/bottom)
+          {
+            data: { values: allLabels.filter(l => l.align === 'center') },
+            mark: { type: 'text', fontSize: 11, fill: theme.palette.text.secondary, align: 'center' },
+            encoding: {
+              x: { field: 'x', type: 'quantitative' },
+              y: { field: 'y', type: 'quantitative' },
+              text: { field: 'feature', type: 'nominal' },
+            },
+          },
+        ],
       }}
     />
   );
@@ -423,6 +810,8 @@ const ClusterVsOthersChart: React.FC<ClusterChartProps> = ({ cluster }) => {
 
 const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
   const correlation = cluster?.correlationAnalysis;
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('xl'));
 
   if (!correlation || !correlation.removedFeatures || correlation.nRemovedFeatures === 0) {
     return null;
@@ -445,8 +834,9 @@ const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
 
   return (
     <ResponsiveCardVegaLite
-      title="REMOVED FEATURES CORRELATION"
+      title="Secondary Key Performance Indicators"
       actions={false}
+      details="Features removed due to high correlation with a retained feature. Bar length shows the maximum relationship strength."
       spec={{
         description: 'Features removed due to strong correlation',
         mark: { type: 'bar' },
@@ -472,6 +862,8 @@ const CorrelationAnalysisChart: React.FC<ClusterChartProps> = ({ cluster }) => {
             title: 'Most related to',
             legend: {
               orient: 'bottom',
+              labelFontSize: 10,
+              columns: isSmallScreen ? 2 : 3,
             },
           },
           tooltip: [
@@ -499,6 +891,18 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
   const proportion = (cluster.metadata?.percentageOfTotal ?? 0) / 100;
   const quality = Number(cluster.modelEvaluation?.modelQualityScore) || 0;
   const features = cluster.highShapFeatures?.features ?? [];
+  const clusterLabel = cluster.metadata?.clusterName ?? `Cluster ${clusterKey}`;
+
+  const getFeatureColor = (feature: string, cluster: ClusterInsight) => {
+    if (!cluster?.distinctFeatures?.featureStatistics?.[feature]) return '#e8e8e8';
+
+    const zScore = cluster.distinctFeatures.featureStatistics[feature].zScore ?? 0;
+
+    if (zScore < -0.5) return '#ff6b6b';
+    if (zScore > 0.5) return '#51cf66';
+    return '#e8e8e8';
+  };
+
 
   return (
     <Grid size={{ xs: 12, sm: 6, md: 4 }} >
@@ -528,7 +932,9 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
                 color: getClusterColorFromKey(clusterKey, theme),
               }}
             >
-              Cluster {clusterKey}
+              {/* Cluster {clusterLabel} */}
+              {clusterLabel}
+              {/* {cluster.metadata?.clusterName ?? `Cluster ${clusterKey}`} */}
             </Typography>
           </Box>
 
@@ -600,7 +1006,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
                 }
               >
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  High Impact Features
+                  Representative Metrics
                 </Typography>
               </Button>
 
@@ -608,7 +1014,26 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
                 <Stack spacing={1} sx={{ mt: 1, pl: 2 }}>
                   {features.map((feature: string, idx: number) => (
                     <Box key={idx}>
-                      <Chip label={feature} variant="outlined" sx={{ color: 'text.primary', fontWeight: 500 }} />
+                      <Chip 
+                        label={
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Box
+                              sx={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                backgroundColor: getFeatureColor(feature, cluster),
+                              }}
+                            />
+                            {feature}
+                          </Box>
+                        }
+                        variant="outlined" 
+                        sx={{ 
+                          color: 'text.primary', 
+                          fontWeight: 500,
+                        }} 
+                      />
                     </Box>
                   ))}
                 </Stack>
@@ -651,6 +1076,11 @@ const AnalysisGroup: React.FC = () => {
     [clusters, selectedCluster]
   );
 
+  const clusterColorScale = useMemo(
+    () => generateClusterColorScale(clusters, theme),
+    [clusters, theme]
+  );
+
   if (!data) return (
     <InfoMessage
       message={'No insights available for this experiment.'}
@@ -667,7 +1097,7 @@ const AnalysisGroup: React.FC = () => {
       {clusters.length > 0 && (
         <Box sx={{ mb: 4 }}>
          
-          <ResponsiveCardTable title={"CLUSTER OVERVIEW"} showSettings={false} showFullScreenButton={false} >
+          <ResponsiveCardTable title={"Cluster Overview"} showSettings={false} showFullScreenButton={false} details="Summary cards for each identified cluster. Click a cluster to explore its features, decision rules, and comparisons." >
           <Box
             sx={{
               display: 'flex',
@@ -694,7 +1124,7 @@ const AnalysisGroup: React.FC = () => {
           </ResponsiveCardTable>
         </Box>
       )}
-      {pcaSpace.length > 0 && (
+      {pcaSpace.length > 0 && !selectedCluster && (
         <Box sx={{ mb: 3 }}>
           <Typography
             variant="subtitle2"
@@ -703,76 +1133,180 @@ const AnalysisGroup: React.FC = () => {
 
           </Typography>
           <ResponsiveCardVegaLite
-            title="CLUSTER DISTRIBUTION"
+            title="Cluster Distribution"
             actions={false}
+            details="PCA projection of all workflows colored by cluster assignment. Each point is a workflow positioned by its first two principal components."
             spec={{
               description: 'PCA projection of workflows colored by cluster',
-              mark: { type: 'point', tooltip: true },
-              // Clone each datum so Vega can annotate rows without
-              // mutating frozen/proxied Redux objects.
-              data: { values: pcaSpace.map(p => ({ ...p })) },
-              encoding: {
-                x: {
-                  field: 'PC_1',
-                  type: 'quantitative',
-                  title: 'PC 1',
-                },
-                y: {
-                  field: 'PC_2',
-                  type: 'quantitative',
-                  title: 'PC 2',
-                },
-                color: {
-                  field: 'cluster',
-                  type: 'nominal',
-                  title: 'Cluster',
-                  legend: { title: 'Cluster' },
-                },
-                tooltip: [
-                  {
-                    field: 'workflowId',
-                    type: 'nominal',
-                    title: 'Workflow ID',
+              layer: [
+                // Background ellipse layer
+                {
+                  data: { values: generateClusterEllipses(pcaSpace).map(e => ({
+                    ...e,
+                    displayClusterName: clusters.find(c => c.clusterKey === e.cluster)?.cluster?.metadata?.clusterName ?? e.cluster,
+                  })) },
+                  mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, strokeWidth: 2 },
+                  encoding: {
+                    x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                    y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                    stroke: {
+                      field: 'displayClusterName',
+                      type: 'nominal',
+                      scale: { domain: clusterColorScale.domain, range: clusterColorScale.range },
+                    },
+                    strokeDash: { value: [4, 4] },
+                    detail: { field: 'cluster', type: 'nominal' },
+                    order: { field: 'order', type: 'quantitative' },
                   },
-                  { field: 'cluster', type: 'nominal', title: 'Cluster' },
-                  { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
-                  { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
-                ],
-              },
+                },
+                // Foreground points layer
+                {
+                  data: { values: pcaSpace.map(p => {
+                    const clusterKey = String(p.cluster);
+                    const clusterEntry = clusters.find(c => c.clusterKey === clusterKey);
+                    const displayClusterName = clusterEntry?.cluster?.metadata?.clusterName ?? clusterKey;
+                    return { ...p, displayClusterName };
+                  }) },
+                  mark: { type: 'point', tooltip: true },
+                  encoding: {
+                    x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                    y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                    color: {
+                      field: 'displayClusterName',
+                      type: 'nominal',
+                      title: 'Cluster',
+                      scale: { domain: clusterColorScale.domain, range: clusterColorScale.range },
+                      legend: { title: 'Cluster', orient: 'right' },
+                    },
+                    tooltip: [
+                      {
+                        field: 'workflowId',
+                        type: 'nominal',
+                        title: 'Workflow ID',
+                      },
+                      { field: 'displayClusterName', type: 'nominal', title: 'Cluster' },
+                      { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                      { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                    ],
+                  },
+                },
+              ],
             }}
           />
         </Box>
-      )}
-      <Typography variant="subtitle2" sx={{ mb: 2, letterSpacing: 0.6, fontWeight: 700 }}>
-        EXPERIMENT GROUPS
-      </Typography>
-      
+      )}  
       {selectedCluster && clusters.length > 0 && (
-        <Grid container spacing={2}>
+        <>
+          <Box sx={{ display: 'flex', alignItems: 'center',alignContent: 'center', justifyContent: 'space-between', mb: 1 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: getClusterColorFromKey(selectedCluster, theme) }}>
+              {selectedClusterData?.metadata?.clusterName ?? `Cluster ${selectedCluster}`}
+            </Typography>
+            <IconButton onClick={() => setSelectedCluster(null)} color="primary">
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
+          <Divider sx={{ mb: 3 }} />
+          <Grid container spacing={2}>
           
-          <Grid size={{ xs: 6 }}>
-            <Box>
-              <FeatureZScoresChart cluster={selectedClusterData ?? undefined} />
-            </Box>
+            <Grid size={{ xs: 6 }}>
+              <Box>
+                <ResponsiveCardVegaLite
+                  title="Cluster Distribution"
+                  actions={false}
+                  details="PCA projection of all workflows colored by cluster assignment. Each point is a workflow positioned by its first two principal components."
+                  spec={{
+                    description: 'PCA projection of workflows colored by cluster',
+                    layer: [
+                      // Background filled ellipse layer for selected cluster
+                      {
+                        data: { values: generateClusterEllipses(pcaSpace).filter(p => p.cluster === selectedCluster) },
+                        mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, fill: getClusterColorFromKey(selectedCluster, theme) },
+                        encoding: {
+                          x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                          y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                          opacity: { value: 0.1 },
+                          detail: { field: 'cluster', type: 'nominal' },
+                          order: { field: 'order', type: 'quantitative' },
+                        },
+                      },
+                      // Dashed line ellipse layer for all clusters
+                      {
+                        data: { values: generateClusterEllipses(pcaSpace).map(e => ({
+                          ...e,
+                          displayClusterName: clusters.find(c => c.clusterKey === e.cluster)?.cluster?.metadata?.clusterName ?? e.cluster,
+                        })) },
+                        mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, strokeWidth: 2 },
+                        encoding: {
+                          x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                          y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                          stroke: {
+                            field: 'displayClusterName',
+                            type: 'nominal',
+                            scale: { domain: clusterColorScale.domain, range: clusterColorScale.range },
+                          },
+                          strokeDash: { value: [4, 4] },
+                          detail: { field: 'cluster', type: 'nominal' },
+                          order: { field: 'order', type: 'quantitative' },
+                        },
+                      },
+                      // Foreground points layer
+                      {
+                        data: { values: pcaSpace.map(p => {
+                          const clusterKey = String(p.cluster);
+                          const clusterEntry = clusters.find(c => c.clusterKey === clusterKey);
+                          const displayClusterName = clusterEntry?.cluster?.metadata?.clusterName ?? clusterKey;
+                          return { ...p, displayClusterName };
+                        }) },
+                        mark: { type: 'point', tooltip: true, size: 20 },
+                        encoding: {
+                          x: { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                          y: { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                          color: {
+                            field: 'displayClusterName',
+                            type: 'nominal',
+                            title: 'Cluster',
+                            scale: { domain: clusterColorScale.domain, range: clusterColorScale.range },
+                            legend: { title: 'Cluster', orient: 'right' },
+                          },
+                          tooltip: [
+                            {
+                              field: 'workflowId',
+                              type: 'nominal',
+                              title: 'Workflow ID',
+                            },
+                            { field: 'displayClusterName', type: 'nominal', title: 'Cluster' },
+                            { field: 'PC_1', type: 'quantitative', title: 'PC 1' },
+                            { field: 'PC_2', type: 'quantitative', title: 'PC 2' },
+                          ],
+                        },
+                      },
+                    ],
+                  }}
+                />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
+              <Box>
+                <FeatureZScoresChart cluster={selectedClusterData ?? undefined} />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
+              <Box>
+                <CorrelationAnalysisChart cluster={selectedClusterData ?? undefined} />
+              </Box>
+            </Grid>
+
+            <Grid size={{ xs: 6 }}>
+              <DecisionRulesSection
+                rules={selectedClusterData?.decisionTreeRules}
+                clusterKey={selectedCluster}
+              />
+            </Grid>
           </Grid>
-          <Grid size={{ xs: 6 }}>
-            <Box>
-              <ClusterVsOthersChart cluster={selectedClusterData ?? undefined} />
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6 }}>
-            <Box>
-              <CorrelationAnalysisChart cluster={selectedClusterData ?? undefined} />
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 6 }}>
-            <DecisionRulesSection
-              rules={selectedClusterData?.decisionTreeRules}
-              clusterKey={selectedCluster}
-            />
-          </Grid>
-        </Grid>
-        )}
+        </>
+      )}
     </Box>
     
   );

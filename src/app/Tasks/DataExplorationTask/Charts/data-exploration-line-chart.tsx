@@ -109,6 +109,8 @@ const LineChart = () => {
           columns: cols,
           filters,
           limit: 10000,
+          includeTotalItems: false
+
         },
         metadata: {
           workflowId: tab?.workflowId || '',

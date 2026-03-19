@@ -1,15 +1,16 @@
-import type { ViewListener } from 'react-vega';
+import type { ViewListener, VisualizationSpec } from 'react-vega';
 import { Vega } from 'react-vega';
 import { scheme } from 'vega';
 import vegaTooltip from 'vega-tooltip';
-import type { Axis, Item, Scale } from 'vega-typings';
+import type { Axis, Item, Scale } from 'vega-typings/types';
 import type { View } from 'vega';
-import { useEffect, useState, useRef } from 'react';
-import { useTheme } from '@mui/material/styles';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import type { ParallelDataItem } from '../../../../shared/types/parallel.types';
+import { useTheme } from '@mui/material';
 
 interface ParallelCoordinateVegaProps {
-  progressParallel: { selected: string }
+  // parallelData: ParallelDataItem[]
+  progressParallel: { selected: string; options: string[] }
   foldArray: React.MutableRefObject<string[]>
   selectedWorkflows: string[]
   processedData: (ParallelDataItem & { selected: boolean })[]
@@ -31,15 +32,16 @@ function setValuesIfSelectedAndDefault(
 }
 
 const ParallelCoordinateVega = ({
+  // parallelData,
   progressParallel,
   foldArray,
   selectedWorkflows,
   processedData
 }: ParallelCoordinateVegaProps) => {
-  const theme = useTheme();
   const [chartHeight, setChartHeight] = useState(window.innerHeight * 0.27);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [chartWidth, setChartWidth] = useState(0);
+  const theme = useTheme();
 
   useEffect(() => {
     const container = containerRef.current;
@@ -100,25 +102,42 @@ const ParallelCoordinateVega = ({
     });
   };
 
-  const columnNames = [...foldArray.current, progressParallel.selected];
+  const getNumericDomain = (col: string) => {
+    const nums = processedData
+      .map(row => Number((row as any)[col]))
+      .filter(v => !Number.isNaN(v));
 
-  // generate scales:
-  const numericValues = processedData
-    .map(d => d[progressParallel.selected])
-    .filter((v): v is number => typeof v === 'number' && !isNaN(v));
+    if (nums.length === 0) return null;
 
-  let selectedLastColumnMin = Math.min(...numericValues);
-  let selectedLastColumnMax = Math.max(...numericValues);
+    let min = Math.min(...nums);
+    let max = Math.max(...nums);
 
-  // fallback to avoid breaking Vega when data is empty
-  const isValidDomain = numericValues.length > 0;
+    if (min === max) {
+      const padding = min === 0 ? 1 : Math.abs(min * 0.5);
 
-  if (isValidDomain && selectedLastColumnMin === selectedLastColumnMax) {
-    const padding = selectedLastColumnMin === 0 ? 1 : Math.abs(selectedLastColumnMin * 0.5);
+      min -= padding;
+      max += padding;
+    }
 
-    selectedLastColumnMin -= padding;
-    selectedLastColumnMax += padding;
-  }
+    return { min, max };
+  };
+
+  const metricSet = new Set(progressParallel.options);
+
+  const columnNames = Array.from(
+    new Set([...foldArray.current, progressParallel.selected])
+  );
+
+  const paramColumns = columnNames.filter(name => !metricSet.has(name));
+  const metricColumns = foldArray.current.filter(name => metricSet.has(name));
+
+  const lastParamName = paramColumns[paramColumns.length - 1] ?? null;
+  const firstMetricName = metricColumns[0] ?? null;
+
+  const selectedDomain = getNumericDomain(progressParallel.selected);
+  const isValidDomain = !!selectedDomain;
+  const selectedMin = selectedDomain?.min ?? 0;
+  const selectedMax = selectedDomain?.max ?? 1;
 
   const generatedScales: Scale[] = [
     {
@@ -137,8 +156,8 @@ const ParallelCoordinateVega = ({
         field: progressParallel.selected,
       },
       ...(isValidDomain && {
-        domainMin: selectedLastColumnMin,
-        domainMax: selectedLastColumnMax,
+        domainMin: selectedMin,
+        domainMax: selectedMax,
       }),
     },
   ];
@@ -151,8 +170,8 @@ const ParallelCoordinateVega = ({
         data: 'mydata',
         field: progressParallel.selected,
       },
-      domainMin: selectedLastColumnMin,
-      domainMax: selectedLastColumnMax,
+      domainMin: selectedMin,
+      domainMax: selectedMax,
       range: [
         scheme('category20')[2],
         scheme('category20')[5],
@@ -160,35 +179,47 @@ const ParallelCoordinateVega = ({
         scheme('category20')[0],
       ],
     });
-  } else {
-    // Fallback so marks that reference this scale don't error when there's no numeric data
-    generatedScales.push({
-      name: 'selectedLastColumnColorScale',
-      type: 'ordinal',
-      domain: [],
-      range: ['#999999'],
-    } as unknown as Scale);
   }
 
-  for (const columnName of foldArray.current) {
-    generatedScales.push({
-      name: columnName,
-      type: 'point',
-      range: 'height',
-      domain: { data: 'mydata', field: columnName },
-      padding: 0.3,
-    });
+  for (const col of foldArray.current) {
+    if (col === progressParallel.selected) continue;
+
+    const domain = getNumericDomain(col);
+
+    if (domain) {
+      generatedScales.push({
+        name: col,
+        type: 'linear',
+        range: 'height',
+        domain: { data: 'mydata', field: col },
+        domainMin: domain.min,
+        domainMax: domain.max,
+      });
+    } else {
+      generatedScales.push({
+        name: col,
+        type: 'point',
+        range: 'height',
+        domain: { data: 'mydata', field: col },
+        padding: 0.3,
+      });
+    }
   }
 
   const generatedAxes: Axis[] = [];
 
   for (const columnName of columnNames) {
+    const numericDomain = getNumericDomain(columnName);
+    const isNumeric = !!numericDomain;
+    const isColorAxis = columnName === progressParallel.selected;
+
     generatedAxes.push({
       orient: 'left',
       scale: columnName,
-      // only show the last column, other columns are shown as draggable objects
-      title: columnName === progressParallel.selected ? columnName : '',
+      title: isColorAxis ? columnName : '',
       offset: { scale: 'ord', value: columnName, mult: -1 },
+      tickCount: isNumeric && !isColorAxis ? 6 : undefined,
+      labelOverlap: true,
     });
   }
   const numericFilteredData = processedData
@@ -199,12 +230,12 @@ const ParallelCoordinateVega = ({
       return !isNaN(val);
     })
     .map((row) => {
-      const filled: ParallelDataItem & { selected: boolean } = { ...row };
+      const filled: any = { ...row };
 
       for (const axis of columnNames) {
         if (
           filled[axis] === '' ||
-        filled[axis] === null || filled[axis] === undefined ||
+        filled[axis] === null ||
         (typeof filled[axis] === 'number' && Number.isNaN(filled[axis]))
         ) {
           filled[axis] = 'n/a';
@@ -214,24 +245,20 @@ const ParallelCoordinateVega = ({
       return filled;
     });
 
-  return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
-      <Vega
-        actions={false}
-        onNewView={handleNewView}
-        style={{ width: '100%' }}
-        spec={{
+    const spec: VisualizationSpec = useMemo(() => {
+      return (
+        {
           height: chartHeight,
           width: chartWidth,
           padding: { top: 15, left: 2, right: 2, bottom: 2 },
           autosize: { type: 'fit', contains: 'padding' }, // Ensure the chart adjusts to container size
-          background: 'transparent',
           config: {
             axis: {
               labelColor: theme.palette.text.primary,
               titleColor: theme.palette.text.primary,
-              tickColor: theme.palette.text.secondary,
-              domainColor: theme.palette.text.secondary,
+              gridColor: theme.palette.divider,
+              domainColor: theme.palette.divider,
+              tickColor: theme.palette.divider,
             },
             axisY: {
               titleY: -12,
@@ -252,18 +279,21 @@ const ParallelCoordinateVega = ({
             },
             {
               name: 'gradientData',
-              ...(isValidDomain
-                ? {
-                  transform: [
-                    {
-                      type: 'sequence',
-                      start: selectedLastColumnMin,
-                      stop: selectedLastColumnMax,
-                      step: (selectedLastColumnMax - selectedLastColumnMin) / 256,
-                    },
-                  ],
-                }
-                : { values: [] }),
+              transform: [
+                {
+                  type: 'sequence',
+                  start: selectedMin,
+                  stop: selectedMax,
+                  step: (selectedMax - selectedMin) / 256,
+                },
+              ],
+            },
+            {
+              name: 'metricsDivider',
+              values:
+                lastParamName && firstMetricName
+                  ? [{ paramAxis: lastParamName, metricAxis: firstMetricName }]
+                  : [],
             },
           ],
           signals: [
@@ -342,9 +372,9 @@ const ParallelCoordinateVega = ({
                 },
               ],
             },
-            ...(isValidDomain ? [{
+            {
               name: 'colourRect',
-              type: 'rect' as const,
+              type: 'rect',
               from: { data: 'gradientData' },
               encode: {
                 enter: {
@@ -362,9 +392,37 @@ const ParallelCoordinateVega = ({
                   },
                 },
               },
-            }] : []),
+            },
+            {
+              name: 'metricsSeparator',
+              type: 'rule',
+              from: { data: 'metricsDivider' },
+              encode: {
+                enter: {
+                  x: {
+                    signal:
+                      '(scale(\'ord\', datum.paramAxis) + scale(\'ord\', datum.metricAxis)) / 2',
+                  },
+                  y: { value: 0 },
+                  y2: { field: { group: 'height' } },
+                  strokeDash: { value: [4, 4] },
+                  strokeWidth: { value: 1 },
+                  strokeOpacity: { value: 0.8 },
+                },
+              },
+            },
           ],
-        }}
+        }
+      );
+    }, [theme, chartHeight, chartWidth, numericFilteredData, columnNames, progressParallel.selected, selectedWorkflows.length]);
+
+  return (
+    <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+      <Vega
+        actions={false}
+        onNewView={handleNewView}
+        style={{ width: '100%' }}
+        spec={spec}
       />
     </div>
   );

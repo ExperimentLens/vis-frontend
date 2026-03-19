@@ -21,6 +21,8 @@ export type ClusterInsight = {
     percentageOfTotal: number;
     medoidWorkflowId: string;
     medoidIndex: number;
+    clusterName?: string;
+    
   };
   featureSelection?: {
     nFeaturesSelected: number;

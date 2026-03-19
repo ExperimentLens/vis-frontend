@@ -32,6 +32,7 @@ import ControlPointDuplicateIcon from '@mui/icons-material/ControlPointDuplicate
 import type { IRun } from '../../../../shared/models/experiment/run.model';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
 import SearchableSelect from '../../../../shared/components/searchable-select';
+import { getCache } from '../../../../shared/utils/localStorageCache';
 
 export interface Data {
   [key: string]: string | number | boolean | null | undefined;
@@ -507,6 +508,7 @@ export default function WorkflowTable() {
   const { experimentId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const isApplyingCachedFilters = useRef(false);
 
   const dispatch = useAppDispatch();
   const prevGroupByRef = useRef<string[]>([]);
@@ -732,6 +734,16 @@ export default function WorkflowTable() {
             return !Number.isNaN(Number(cellValue))
               ? Number(cellValue) <= Number(filterValue)
               : false;
+          case 'IN': {
+            const parts = filter.value
+              .split(',')
+              .map(v => v.trim().toLowerCase())
+              .filter(Boolean);
+
+            if (parts.length === 0) return true;
+
+            return parts.includes(cellValue);
+          }
           default:
             return true;
         }
@@ -740,6 +752,43 @@ export default function WorkflowTable() {
 
     return { filteredRows, filtersCounter: counter };
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ruleFilterId = params.get('ruleFilterId');
+    if (!ruleFilterId) return;
+
+    const cached = getCache(ruleFilterId) as any;
+    const cachedFilters = cached?.filters;
+
+    if (Array.isArray(cachedFilters) && cachedFilters.length > 0) {
+      isApplyingCachedFilters.current = true;
+      dispatch(setWorkflowsTable({filters: cachedFilters}));
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    if (isApplyingCachedFilters.current && 
+        workflowsTable.filteredRows.length > 0 && 
+        workflowsTable.initialized) {
+        
+      const allWorkflowIds = workflowsTable.filteredRows
+        .filter(row => !row.isGroupSummary)
+        .map(row => row.workflowId);
+        
+      allWorkflowIds.forEach(workflowId => {
+        if (!workflowsTable.selectedWorkflows.includes(workflowId)) {
+          dispatch(toggleWorkflowSelection(workflowId));
+        }
+      });
+
+      dispatch(setWorkflowsTable({ 
+        selectedWorkflows: allWorkflowIds 
+      }));
+
+      isApplyingCachedFilters.current = false;
+    }
+  }, [workflowsTable.filteredRows, workflowsTable.initialized, workflowsTable.selectedWorkflows]);
 
   useEffect(() => {
     if(workflowsTable.initialized) {
@@ -782,9 +831,10 @@ export default function WorkflowTable() {
 
             // Rename column header if it's a metric and aggregation is applied
             if (isMetric && !isGroupBy) {
+              const baseHeaderName = col.headerName || col.field;
               return {
                 ...col,
-                headerName: col.headerName || col.field,
+                headerName: `${baseHeaderName} (avg)`,
               };
             }
 

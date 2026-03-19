@@ -60,7 +60,8 @@ const HeatMap = () => {
           aggregations: aggregation,
           filters,
           columns: cols,
-          limit: 10000
+          limit: 10000,
+          includeTotalItems: false
         },
         metadata: {
           workflowId: tab?.workflowId || '',

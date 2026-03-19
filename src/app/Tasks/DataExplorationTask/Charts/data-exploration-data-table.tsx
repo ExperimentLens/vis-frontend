@@ -155,6 +155,7 @@ const TableExpand: React.FC = () => {
                 tab?.workflowTasks.dataExploration?.controlPanel?.filters || [],
               limit: pageSize,
               offset,
+              includeTotalItems: true
             },
             metadata: {
               workflowId: tab?.workflowId || '',

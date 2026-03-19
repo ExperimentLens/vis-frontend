@@ -464,6 +464,16 @@ export default function ScheduleTable() {
               return !Number.isNaN(Number(cellValue))
                 ? Number(cellValue) <= Number(filterValue)
                 : false;
+            case 'IN': {
+              const parts = filter.value
+                .split(',')
+                .map(v => v.trim().toLowerCase())
+                .filter(Boolean);
+
+              if (parts.length === 0) return true;
+
+              return parts.includes(cellValue);
+            }
             default:
               return true;
           }
