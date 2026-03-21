@@ -171,7 +171,7 @@ const ComparisonDataCharts = () => {
               fileName: dataAsset?.name || ''
               , runId: workflowId || '',
               experimentId: experimentId || '',
-              includeSummary: false,
+              includeSummary: true,
               includeTotalItems: false,
               detectDatasetType: true
             },
