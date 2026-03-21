@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import type {
   Node,
   Edge } from '@xyflow/react';
@@ -16,16 +17,19 @@ import '@xyflow/react/dist/style.css';
 import type { ITask } from '../../../shared/models/experiment/task.model';
 import { Tooltip } from '@mui/material';
 import type { IParam } from '../../../shared/models/experiment/param.model';
+import { setSelectedId, setSelectedTask } from '../../../store/slices/workflowPageSlice';
 
 interface IFlowGraphProps {
   workflowSvg: { tasks: ITask[] | undefined; start: number | undefined; end: number | undefined } | null
   params: IParam[] | undefined | null
+  onClose?: () => void
 }
 
 function FlowGraph(props: IFlowGraphProps) {
-  const { workflowSvg, params } = props;
+  const { workflowSvg, params, onClose } = props;
   const flowWrapper = useRef(null);
   const { fitView } = useReactFlow();
+  const dispatch = useDispatch();
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const theme = useTheme();
   const [nodes, setNodes] = useState<Node[]>([]);
@@ -57,13 +61,54 @@ function FlowGraph(props: IFlowGraphProps) {
   };
 
   const interactiveNodeStyle = {
-    cursor: 'default',
+    cursor: 'pointer',
     border: '1px solid orange',
     backgroundColor: theme.palette.background.paper,
   };
 
-  const getNodeSelectState = (_task: ITask) => {
-    return false;
+  const onNodeClick = (_event: React.MouseEvent, node: Node) => {
+    // Only dispatch if the node is selectable and is not a start/end node
+    if (node.id === 'start' || node.id === 'end') {
+      return;
+    }
+
+    const task = workflowSvg?.tasks?.find(t => t.name === node.id);
+    if (!task) return;
+
+    const isSelectable = getNodeSelectState(task);
+    if (!isSelectable) return;
+
+    // Dispatch same actions as WorkflowTree does when clicking a task
+    dispatch(setSelectedId(`task-${task.id}`));
+    dispatch(setSelectedTask({
+      role: 'TASK',
+      task: task.name,
+      taskId: task.id,
+      variant: task.variant,
+    }));
+
+    // Close the dialog
+    if (onClose) {
+      onClose();
+    }
+  };
+
+  const getNodeSelectState = (task: ITask) => {
+    // Enable selection for clickable tasks, disable for locked/blocked tasks
+    if (!workflowSvg?.start || !workflowSvg?.end) {
+      const interactiveTask = workflowSvg?.tasks?.find(
+        t => t.type === 'interactive',
+      );
+
+      if (interactiveTask && !interactiveTask.endTime) {
+        return task.type === 'interactive';
+      } else if (interactiveTask && interactiveTask.endTime) {
+        return task.type === 'read_data' || task.type === 'evaluation';
+      }
+      return false;
+    }
+    // When workflow is completed, all non-special tasks are selectable
+    return task.type !== 'interactive' && task.type !== 'custom' && task.type !== 'explainability';
   };
 
   const getInitialNodeStyle = (
@@ -171,7 +216,7 @@ function FlowGraph(props: IFlowGraphProps) {
               workflowSvg.start,
               workflowSvg.end,
             ),
-            cursor: 'default'
+            cursor: getNodeSelectState(task) ? 'pointer' : 'default'
           },
         };
       });
@@ -262,7 +307,7 @@ function FlowGraph(props: IFlowGraphProps) {
         panOnDrag={true}
         zoomOnScroll={true}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-        // onNodeClick={onNodeClick}
+        onNodeClick={onNodeClick}
         zoomOnPinch={false}
         proOptions={{ hideAttribution: true }}
         fitView={true}
@@ -281,13 +326,14 @@ function FlowGraph(props: IFlowGraphProps) {
 }
 
 function StaticDirectedGraph(props: IFlowGraphProps) {
-  const { workflowSvg, params } = props;
+  const { workflowSvg, params, onClose } = props;
 
   return (
     <ReactFlowProvider>
       <FlowGraph
         workflowSvg={workflowSvg}
         params={params}
+        onClose={onClose}
       />
     </ReactFlowProvider>
   );

@@ -177,7 +177,7 @@ const generateClusterColorScale = (
   const range: string[] = [];
 
   for (const { clusterKey, cluster } of clusters) {
-    const displayName = cluster.metadata?.clusterName ?? clusterKey;
+    const displayName = (cluster.metadata?.clusterName === 'no_name' ? clusterKey : cluster.metadata?.clusterName) ?? clusterKey;
     domain.push(displayName);
     range.push(getClusterColorFromKey(clusterKey, theme));
   }
@@ -631,7 +631,7 @@ const ClusterVsOthersRadar: React.FC<ClusterVsOthersRadarProps> = ({ cluster, cl
   //     : 'This Cluster';
 
   const clusterName =
-    cluster?.metadata?.clusterName ??
+    (cluster?.metadata?.clusterName && cluster.metadata.clusterName !== 'no_name') ? cluster.metadata.clusterName :
     (clusterKey !== undefined && clusterKey !== null ? `Cluster ${clusterKey}` : 'This Cluster');
 
 
@@ -891,7 +891,7 @@ const ClusterCard: React.FC<ClusterCardProps> = ({
   const proportion = (cluster.metadata?.percentageOfTotal ?? 0) / 100;
   const quality = Number(cluster.modelEvaluation?.modelQualityScore) || 0;
   const features = cluster.highShapFeatures?.features ?? [];
-  const clusterLabel = cluster.metadata?.clusterName ?? `Cluster ${clusterKey}`;
+  const clusterLabel = (cluster.metadata?.clusterName === 'no_name' ? `Cluster ${clusterKey}` : cluster.metadata?.clusterName) ?? `Cluster ${clusterKey}`;
 
   const getFeatureColor = (feature: string, cluster: ClusterInsight) => {
     if (!cluster?.distinctFeatures?.featureStatistics?.[feature]) return '#e8e8e8';
@@ -1143,7 +1143,7 @@ const AnalysisGroup: React.FC = () => {
                 {
                   data: { values: generateClusterEllipses(pcaSpace).map(e => ({
                     ...e,
-                    displayClusterName: clusters.find(c => c.clusterKey === e.cluster)?.cluster?.metadata?.clusterName ?? e.cluster,
+                    displayClusterName: (() => { const name = clusters.find(c => c.clusterKey === e.cluster)?.cluster?.metadata?.clusterName; return (name === 'no_name' ? e.cluster : name) ?? e.cluster; })(),
                   })) },
                   mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, strokeWidth: 2 },
                   encoding: {
@@ -1164,7 +1164,8 @@ const AnalysisGroup: React.FC = () => {
                   data: { values: pcaSpace.map(p => {
                     const clusterKey = String(p.cluster);
                     const clusterEntry = clusters.find(c => c.clusterKey === clusterKey);
-                    const displayClusterName = clusterEntry?.cluster?.metadata?.clusterName ?? clusterKey;
+                    const clusterName = clusterEntry?.cluster?.metadata?.clusterName;
+                    const displayClusterName = (clusterName === 'no_name' ? clusterKey : clusterName) ?? clusterKey;
                     return { ...p, displayClusterName };
                   }) },
                   mark: { type: 'point', tooltip: true },
@@ -1199,7 +1200,7 @@ const AnalysisGroup: React.FC = () => {
         <>
           <Box sx={{ display: 'flex', alignItems: 'center',alignContent: 'center', justifyContent: 'space-between', mb: 1 }}>
             <Typography variant="h5" sx={{ fontWeight: 700, color: getClusterColorFromKey(selectedCluster, theme) }}>
-              {selectedClusterData?.metadata?.clusterName ?? `Cluster ${selectedCluster}`}
+              {(selectedClusterData?.metadata?.clusterName === 'no_name' ? `Cluster ${selectedCluster}` : selectedClusterData?.metadata?.clusterName) ?? `Cluster ${selectedCluster}`}
             </Typography>
             <IconButton onClick={() => setSelectedCluster(null)} color="primary">
               <CloseIcon fontSize="small" />
@@ -1233,7 +1234,7 @@ const AnalysisGroup: React.FC = () => {
                       {
                         data: { values: generateClusterEllipses(pcaSpace).map(e => ({
                           ...e,
-                          displayClusterName: clusters.find(c => c.clusterKey === e.cluster)?.cluster?.metadata?.clusterName ?? e.cluster,
+                          displayClusterName: (() => { const name = clusters.find(c => c.clusterKey === e.cluster)?.cluster?.metadata?.clusterName; return (name === 'no_name' ? e.cluster : name) ?? e.cluster; })(),
                         })) },
                         mark: { type: 'line', interpolate: 'linear-closed', tooltip: false, strokeWidth: 2 },
                         encoding: {
@@ -1254,7 +1255,8 @@ const AnalysisGroup: React.FC = () => {
                         data: { values: pcaSpace.map(p => {
                           const clusterKey = String(p.cluster);
                           const clusterEntry = clusters.find(c => c.clusterKey === clusterKey);
-                          const displayClusterName = clusterEntry?.cluster?.metadata?.clusterName ?? clusterKey;
+                          const clusterName = clusterEntry?.cluster?.metadata?.clusterName;
+                          const displayClusterName = (clusterName === 'no_name' ? clusterKey : clusterName) ?? clusterKey;
                           return { ...p, displayClusterName };
                         }) },
                         mark: { type: 'point', tooltip: true, size: 20 },

@@ -364,6 +364,7 @@ const ExperimentControls = () => {
                   <StaticDirectedGraph
                     workflowSvg={tab.workflowSvg.data}
                     params={tab.workflowConfiguration.params}
+                    onClose={handleCloseDiagram}
                   />
                 )}
               </DialogContent>
