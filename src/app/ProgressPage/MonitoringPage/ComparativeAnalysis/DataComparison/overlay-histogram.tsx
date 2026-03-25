@@ -436,7 +436,7 @@ const OverlayHistogram = ({
       $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
       description: `Overlay distribution of ${columnName} across per-workflow datasets`,
       data: { values: rows },
-      mark: { type: 'bar', opacity: 0.65, blend: 'multiply' },
+      mark: { type: 'bar', opacity: 0.65, blend: undefined },
       encoding: {
         x: {
           field: 'binLabel',
