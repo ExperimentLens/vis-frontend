@@ -29,7 +29,12 @@ const SelectedItemViewer = () => {
         selectedTask: null,
       },
   );
+  const { workflowSeriesMetrics } = useAppSelector(state => state.workflowPage.tab ?? { workflowSeriesMetrics: { data: [], loading: false, error: null } });
   const theme = useTheme();
+
+  const isSeriesMetric = workflowSeriesMetrics?.data?.some(
+    m => m.name === selectedItem?.data?.metric?.name && m.seriesMetric.length > 1
+  ) ?? false;
 
   // Enhanced header component for consistency
   const Header = ({ title, icon }: { title: string; icon?: React.ReactNode }) => (
@@ -101,7 +106,7 @@ const SelectedItemViewer = () => {
       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Header
           title={`${selectedItem.data?.metric?.name} Details`}
-          icon={<BarChartIcon color="primary" />}
+          icon={<BarChartIcon color={isSeriesMetric ? "success" : "primary"} />}
         />
         <Box sx={{ px: 3, py: 2, flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ overflow: 'auto', height: '100%' }}>

@@ -82,7 +82,7 @@ const AlePlot = (props: AlePlotProps) => {
     }
   }, [isTabInitialized]);
 
-  const getVegaliteData = (plmodel: IPlotModel | null) => {
+  const getVegaliteData = (plmodel: IPlotModel | null, targetMetric?: string) => {
     if (!plmodel) {
       return {
         data: [] as Array<Record<string, string | number | null>>,
@@ -104,6 +104,7 @@ const AlePlot = (props: AlePlotProps) => {
         return {
           [plmodel.xAxis.axisName]: xIsNumeric ? Number(xVal) : xVal,
           [plmodel.yAxis.axisName]: yIsNumeric ? Number(yVal) : yVal,
+          ...(targetMetric ? { '__targetMetric': targetMetric } : {}),
         };
       },
     );
@@ -116,8 +117,9 @@ const AlePlot = (props: AlePlotProps) => {
     setPendingTargetMetric(selectedTargetMetric);
   }, [selectedFeature, selectedTargetMetric]);
 
+  const isHyperparameterCase = explanation_type === 'hyperparameterExplanation' || explanation_type === 'experimentExplanation';
   const aleData = tab?.workflowTasks.modelAnalysis?.ale?.data || null;
-  const { data: vegaData, xIsNumeric, yIsNumeric } = getVegaliteData(aleData);
+  const { data: vegaData, xIsNumeric, yIsNumeric } = getVegaliteData(aleData, isHyperparameterCase ? pendingTargetMetric : undefined);
 
   const xField = aleData?.xAxis.axisName || 'xAxis default';
   const yField = aleData?.yAxis.axisName || 'yAxis default';
@@ -162,7 +164,12 @@ const AlePlot = (props: AlePlotProps) => {
               },
               scale: { zero: true },
             },
-            color: {
+            color: isHyperparameterCase ? {
+              field: '__targetMetric',
+              type: 'nominal',
+              title: 'Target Metric',
+              legend: null,
+            } : {
               value: theme.palette.primary.main,
             },
             tooltip: [
@@ -176,8 +183,11 @@ const AlePlot = (props: AlePlotProps) => {
                 type: 'quantitative',
                 title: 'Average Predicted Effect',
                 format: '.4f',
-              },
-            ],
+              },              ...(isHyperparameterCase ? [{
+                field: '__targetMetric',
+                type: 'nominal',
+                title: 'Target Metric',
+              }] : []),            ],
           },
         },
       ],
@@ -191,7 +201,7 @@ const AlePlot = (props: AlePlotProps) => {
       mark: xIsNumeric
         ? {
           type: 'line',
-          point: { size: 20, color: theme.palette.primary.main },
+          point: { size: 20, color: isHyperparameterCase ? undefined : theme.palette.primary.main },
         }
         : {
           type: 'bar',
@@ -213,6 +223,14 @@ const AlePlot = (props: AlePlotProps) => {
             }
             : {}),
         },
+        color: isHyperparameterCase ? {
+          field: '__targetMetric',
+          type: 'nominal',
+          title: 'Target Metric',
+          legend: null,
+        } : {
+          value: theme.palette.primary.main,
+        },
         tooltip: [
           {
             field: xField,
@@ -225,6 +243,11 @@ const AlePlot = (props: AlePlotProps) => {
             title: 'Average Predicted Effect',
             ...(yIsNumeric ? { format: '.4f' } : {}),
           },
+          ...(isHyperparameterCase ? [{
+            field: '__targetMetric',
+            type: 'nominal',
+            title: 'Target Metric',
+          }] : []),
         ],
       },
     };

@@ -178,7 +178,7 @@ const Contourplot = (props: IContourplot) => {
   const xDomain = xIsNumeric && xEdges.length >= 2 ? [xEdges[0], xEdges[xEdges.length - 1]] : undefined;
   const yDomain = yIsNumeric && yEdges.length >= 2 ? [yEdges[0], yEdges[yEdges.length - 1]] : undefined;
 
-  const getVegaliteData = (plmodel: IPlotModel | null) => {
+  const getVegaliteData = (plmodel: IPlotModel | null, targetMetric?: string) => {
     if (!plmodel) return [];
 
     const xVals = plmodel.xAxis.axisValues;
@@ -214,6 +214,10 @@ const Contourplot = (props: IContourplot) => {
           row['y1'] = yEdges[yIdx + 1];
         }
 
+        if (targetMetric) {
+          row['__targetMetric'] = targetMetric;
+        }
+
         data.push(row);
       }
     }
@@ -226,7 +230,7 @@ const Contourplot = (props: IContourplot) => {
     height: 'container',
     autosize: { type: 'fit', contains: 'padding', resize: true },
     data: {
-      values: hasInitialized ? getVegaliteData(plotModel?.data || null) : [],
+      values: hasInitialized ? getVegaliteData(plotModel?.data || null, (explanation_type === 'hyperparameterExplanation' || explanation_type === 'experimentExplanation') ? pendingTargetMetric : undefined) : [],
     },
     mark: {
       type: 'rect',
@@ -270,6 +274,11 @@ const Contourplot = (props: IContourplot) => {
         { field: xField, title: xField },
         { field: yField, title: yField },
         { field: zField, title: zField, type: 'quantitative', format: '.4f' },
+        ...(explanation_type === 'hyperparameterExplanation' || explanation_type === 'experimentExplanation' ? [{
+          field: '__targetMetric',
+          type: 'nominal',
+          title: 'Target Metric',
+        }] : []),
       ],
     },
     config: {
