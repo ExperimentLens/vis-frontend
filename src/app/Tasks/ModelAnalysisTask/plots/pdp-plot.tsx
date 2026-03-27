@@ -88,7 +88,7 @@ const PdpPlot = (props: PdpPlotProps) => {
     setPendingTargetMetric(selectedTargetMetric);
   }, [selectedFeature, selectedTargetMetric]);
 
-  const getVegaliteData = (plmodel: IPlotModel | null) => {
+  const getVegaliteData = (plmodel: IPlotModel | null, targetMetric?: string) => {
     if (!plmodel) {
       return { data: [] as Array<Record<string, string | number | null>>, xIsNumeric: false, yIsNumeric: false };
     }
@@ -105,14 +105,16 @@ const PdpPlot = (props: PdpPlotProps) => {
       return {
         [plmodel.xAxis.axisName]: xIsNumeric ? Number(xVal) : xVal,
         [plmodel.yAxis.axisName]: yIsNumeric ? Number(yVal) : yVal,
+        ...(targetMetric ? { '__targetMetric': targetMetric } : {}),
       };
     });
 
     return { data, xIsNumeric, yIsNumeric };
   };
 
+  const isHyperparameterCase = explanation_type === 'hyperparameterExplanation' || explanation_type === 'experimentExplanation';
   const plmodelData = tab?.workflowTasks.modelAnalysis?.pdp?.data || null;
-  const { data: vegaData, xIsNumeric, yIsNumeric } = getVegaliteData(plmodelData);
+  const { data: vegaData, xIsNumeric, yIsNumeric } = getVegaliteData(plmodelData, isHyperparameterCase ? selectedTargetMetric : undefined);
 
   const xField = plmodelData?.xAxis.axisName || 'xAxis default';
   const yField = plmodelData?.yAxis.axisName || 'yAxis default';
@@ -156,7 +158,12 @@ const PdpPlot = (props: PdpPlotProps) => {
               axis: { format: '.4f' },
               scale: { zero: true },
             },
-            color: {
+            color: isHyperparameterCase ? {
+              field: '__targetMetric',
+              type: 'nominal',
+              title: 'Target Metric',
+              legend: null,
+            } : {
               value: theme.palette.primary.main,
             },
             tooltip: [
@@ -171,6 +178,11 @@ const PdpPlot = (props: PdpPlotProps) => {
                 title: 'Average Prediction',
                 format: '.4f',
               },
+              ...(isHyperparameterCase ? [{
+                field: '__targetMetric',
+                type: 'nominal',
+                title: 'Target Metric',
+              }] : []),
             ],
           },
         },
@@ -185,7 +197,7 @@ const PdpPlot = (props: PdpPlotProps) => {
       mark: xIsNumeric
         ? {
           type: 'line',
-          point: { size: 20, color: theme.palette.primary.main },
+          point: { size: 20, color: isHyperparameterCase ? undefined : theme.palette.primary.main },
         }
         : {
           type: 'bar',
@@ -205,6 +217,14 @@ const PdpPlot = (props: PdpPlotProps) => {
             }
             : {}),
         },
+        color: isHyperparameterCase ? {
+          field: '__targetMetric',
+          type: 'nominal',
+          title: 'Target Metric',
+          legend: null,
+        } : {
+          value: theme.palette.primary.main,
+        },
         tooltip: [
           {
             field: xField,
@@ -217,6 +237,11 @@ const PdpPlot = (props: PdpPlotProps) => {
             title: 'Average Predicted Value',
             ...(yIsNumeric ? { format: '.4f' } : {}),
           },
+          ...(isHyperparameterCase ? [{
+            field: '__targetMetric',
+            type: 'nominal',
+            title: 'Target Metric',
+          }] : []),
         ],
       },
     };
