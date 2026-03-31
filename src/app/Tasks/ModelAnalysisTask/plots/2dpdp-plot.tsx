@@ -270,16 +270,18 @@ const Contourplot = (props: IContourplot) => {
         type: 'quantitative',
         legend: { format: '.4f' }
       },
-      tooltip: [
-        { field: xField, title: xField },
-        { field: yField, title: yField },
-        { field: zField, title: zField, type: 'quantitative', format: '.4f' },
-        ...(explanation_type === 'hyperparameterExplanation' || explanation_type === 'experimentExplanation' ? [{
-          field: '__targetMetric',
-          type: 'nominal',
-          title: 'Target Metric',
-        }] : []),
-      ],
+      ...(explanation_type === 'experimentExplanation' ? {} : {
+        tooltip: [
+          { field: xField, title: xField },
+          { field: yField, title: yField },
+          { field: zField, title: zField, type: 'quantitative', format: '.4f' },
+          ...(explanation_type === 'hyperparameterExplanation' || explanation_type === 'experimentExplanation' ? [{
+            field: '__targetMetric',
+            type: 'nominal',
+            title: 'Target Metric',
+          }] : []),
+        ],
+      }),
     },
     config: {
       axis: { grid: true },

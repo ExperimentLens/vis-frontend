@@ -144,6 +144,7 @@ const PdpPlot = (props: PdpPlotProps) => {
         {
           mark: {
             type: 'bar',
+            tooltip: explanation_type === 'experimentExplanation' ? { content: 'data' } : true,
           },
           encoding: {
             x: {
@@ -166,24 +167,26 @@ const PdpPlot = (props: PdpPlotProps) => {
             } : {
               value: theme.palette.primary.main,
             },
-            tooltip: [
-              {
-                field: xField,
-                type: 'ordinal',
-                title: 'Feature Value',
-              },
-              {
-                field: yField,
-                type: 'quantitative',
-                title: 'Average Prediction',
-                format: '.4f',
-              },
-              ...(isHyperparameterCase ? [{
-                field: '__targetMetric',
-                type: 'nominal',
-                title: 'Target Metric',
-              }] : []),
-            ],
+            ...(explanation_type !== 'experimentExplanation' ? {
+              tooltip: [
+                {
+                  field: xField,
+                  type: 'ordinal',
+                  title: 'Feature Value',
+                },
+                {
+                  field: yField,
+                  type: 'quantitative',
+                  title: 'Average Prediction',
+                  format: '.4f',
+                },
+                ...(isHyperparameterCase ? [{
+                  field: '__targetMetric',
+                  type: 'nominal',
+                  title: 'Target Metric',
+                }] : []),
+              ],
+            } : {}),
           },
         },
       ],
@@ -198,9 +201,11 @@ const PdpPlot = (props: PdpPlotProps) => {
         ? {
           type: 'line',
           point: { size: 20, color: isHyperparameterCase ? undefined : theme.palette.primary.main },
+          tooltip: explanation_type === 'experimentExplanation' ? { content: 'data' } : true,
         }
         : {
           type: 'bar',
+          tooltip: explanation_type === 'experimentExplanation' ? { content: 'data' } : true,
         },
       encoding: {
         x: {
@@ -225,24 +230,6 @@ const PdpPlot = (props: PdpPlotProps) => {
         } : {
           value: theme.palette.primary.main,
         },
-        tooltip: [
-          {
-            field: xField,
-            type: xIsNumeric ? 'quantitative' : 'ordinal',
-            title: 'Feature Value',
-          },
-          {
-            field: yField,
-            type: yIsNumeric ? 'quantitative' : 'ordinal',
-            title: 'Average Predicted Value',
-            ...(yIsNumeric ? { format: '.4f' } : {}),
-          },
-          ...(isHyperparameterCase ? [{
-            field: '__targetMetric',
-            type: 'nominal',
-            title: 'Target Metric',
-          }] : []),
-        ],
       },
     };
 

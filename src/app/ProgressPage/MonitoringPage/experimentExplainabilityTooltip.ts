@@ -66,7 +66,8 @@ export const createExperimentExplainabilityTooltipHandler = ({
           key !== 'y' &&
           key !== 'value' &&
           key !== 'Average Predicted Value' &&
-          key !== 'z'
+          key !== 'z' &&
+          key !== '__targetMetric'
         );
 
         if (keys.length > 0) {
@@ -87,6 +88,7 @@ export const createExperimentExplainabilityTooltipHandler = ({
           key !== 'value' &&
           key !== 'Average Predicted Value' &&
           key !== 'z' &&
+          key !== '__targetMetric' &&
           key !== xValue
         );
 
@@ -155,13 +157,14 @@ export const createExperimentExplainabilityTooltipHandler = ({
       const compareLink = experimentId
         ? `/${experimentId}/monitoring?tab=1&compareId=${compareKey}`
         : '#';
-
+      console.log(value['__targetMetric']);
       const header = `
         <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
           ${selectedFeature ? `<div><strong>${sanitize(selectedFeature)}:</strong> ${sanitize(xValue)}</div>` : ''}
           ${selectedFeature2 ? `<div><strong>${sanitize(selectedFeature2)}:</strong> ${sanitize(yValue)}</div>` : ''}
-          ${!selectedFeature2 && yValue ? `<div><strong>${sanitize(yAxisName)}</strong> ${sanitize(yValue)}</div>` : ''}
-          ${zValue ? `<div><strong>Value:</strong> ${sanitize(zValue)}</div>` : ''}
+          ${!selectedFeature2 && yValue ? `<div><strong>${sanitize(yAxisName)}</strong> ${(Number(sanitize(yValue)).toFixed(4))}</div>` : ''}
+          ${zValue ? `<div><strong>Value:</strong> ${Number(sanitize(zValue)).toFixed(4)}</div>` : ''}
+          ${value['__targetMetric'] ? `<div><strong>Target Metric:</strong> ${sanitize(String(value['__targetMetric']))}</div>` : ''}
         </div>
       `;
 
