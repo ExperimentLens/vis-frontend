@@ -537,7 +537,7 @@ export const MetricCards = () => {
       </Box>
 
       {distributionSpec && (
-        <Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 2 }}>
+        <div>
           <ResponsiveCardVegaLite
             spec={distributionSpec}
             actions={false}
@@ -545,7 +545,7 @@ export const MetricCards = () => {
             maxHeight={320}
             isStatic={false}
           />
-        </Paper>
+        </div>
       )}
 
       <Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 2 }}>

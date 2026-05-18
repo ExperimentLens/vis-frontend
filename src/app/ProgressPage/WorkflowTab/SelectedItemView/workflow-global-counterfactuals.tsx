@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SelectChangeEvent } from '@mui/material';
 import {
   Button,
@@ -10,7 +10,16 @@ import {
   OutlinedInput,
   Tooltip,
   Divider,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Chip,
+  Stack,
+  Typography,
 } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import TuneIcon from '@mui/icons-material/Tune';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import GlovesScatter from '../../../Tasks/ModelAnalysisTask/plots/gloves-scatter';
 import GlovesMetricSummary from './gloves-metric-summary';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -42,6 +51,7 @@ const CGlanceExecution = () => {
   const dispatch = useAppDispatch();
 
   const hasFetchedOnce = useRef(false);
+  const [configExpanded, setConfigExpanded] = useState(true);
 
   useEffect(() => {
     if (
@@ -110,6 +120,7 @@ const CGlanceExecution = () => {
 
   const fetchData = async () => {
     try {
+      setConfigExpanded(false);
       // Dispatch global_counterfactuals
       await dispatch(
         fetchModelAnalysisExplainabilityPlot({
@@ -147,124 +158,166 @@ const CGlanceExecution = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Box container to arrange elements side by side */}
-      <Box
+      <Accordion
+        expanded={configExpanded}
+        onChange={(_e, expanded) => setConfigExpanded(expanded)}
+        disableGutters
+        elevation={0}
         sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          gap: 2,
-          px: 2,
-          py: 1
+          border: theme => `1px solid ${theme.palette.divider}`,
+          borderRadius: '12px',
+          mx: 2,
+          mt: 1,
+          '&:before': { display: 'none' },
+          backgroundColor: 'background.paper',
         }}
       >
-        {/* GCF Size Dropdown */}
-        <Box flex={1}>
-          <FormControl fullWidth>
-            <Tooltip
-              title="The number of actions to be generated in the end of the algorithm"
-              style={{ width: '100%' }}
-            >
-              <InputLabel id="gcf-size-select-label">
-                  Number of CounterFactual Actions
-              </InputLabel>
-            </Tooltip>
-            <Select
-              MenuProps={{
-                PaperProps: { style: { maxHeight: 224, width: 250 } },
-              }}
-              labelId="gcf-size-select-label"
-              input={
-                <OutlinedInput label="Number of CounterFactual Actions" />
-              }
-              value={gcfSize}
-              onChange={(event: SelectChangeEvent<number | string>) =>
-                dispatch(setGcfSize(Number(event.target.value)))
-              }
-            >
-              {Array.from({ length: 10 }, (_, i) => i + 1).map(value => (
-                <MenuItem key={value} value={value}>
-                  {value}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* CF Method Dropdown */}
-        <Box flex={1}>
-          <FormControl fullWidth>
-            <Tooltip
-              title="Methods that generate candidate counterfactual explanations"
-              style={{ width: '100%' }}
-            >
-              <InputLabel id="cf-method-select-label">
-                  Local Counterfactual Method
-              </InputLabel>
-            </Tooltip>
-            <Select
-              labelId="cf-method-select-label"
-              input={<OutlinedInput label="Local Counterfactual Method" />}
-              value={cfMethod}
-              onChange={e => dispatch(setCfMethod(e.target.value as string))}
-              MenuProps={{
-                PaperProps: { style: { maxHeight: 224, width: 250 } },
-              }}
-            >
-              {availableCfMethods.map(method => (
-                <MenuItem key={method} value={method}>
-                  {method}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Action Strategy Dropdown */}
-        <Box flex={1}>
-          <FormControl fullWidth>
-            <Tooltip
-              title="Different strategies for selecting the best actions from the generated counterfactuals based on different criteria"
-              style={{ width: '100%' }}
-            >
-              <InputLabel id="action-choice-strategy-select-label">
-                  Action Choice Strategy
-              </InputLabel>
-            </Tooltip>
-            <Select
-              MenuProps={{
-                PaperProps: { style: { maxHeight: 224, width: 250 } },
-              }}
-              labelId="action-choice-strategy-select-label"
-              input={<OutlinedInput label="Action Choice Strategy" />}
-              value={actionChoiceStrategy}
-              onChange={e =>
-                dispatch(setActionChoiceStrategy(e.target.value as string))
-              }
-            >
-              {availableActionStrategies.map(strategy => (
-                <MenuItem key={strategy} value={strategy}>
-                  {strategy}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Box>
-
-        {/* Run Button */}
-        <Box>
-          <Button variant="contained" onClick={fetchData} color="primary">
+        <AccordionSummary
+          expandIcon={<ExpandMoreIcon />}
+          sx={{
+            px: 2,
+            '& .MuiAccordionSummary-content': {
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2,
+              my: 0.5,
+            },
+          }}
+        >
+          <Stack direction="row" alignItems="center" gap={1.5} flexWrap="wrap" sx={{ flex: 1, minWidth: 0 }}>
+            <Stack direction="row" alignItems="center" gap={1}>
+              <TuneIcon fontSize="small" color="primary" />
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Configuration
+              </Typography>
+            </Stack>
+            {!configExpanded && (
+              <Stack direction="row" gap={0.75} flexWrap="wrap">
+                <Chip size="small" label={`Actions: ${gcfSize ?? '—'}`} variant="outlined" />
+                <Chip size="small" label={`Method: ${cfMethod ?? '—'}`} variant="outlined" />
+                <Chip size="small" label={`Strategy: ${actionChoiceStrategy ?? '—'}`} variant="outlined" />
+              </Stack>
+            )}
+          </Stack>
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            startIcon={<PlayArrowIcon />}
+            onClick={(e) => {
+              e.stopPropagation();
+              fetchData();
+            }}
+            sx={{ mr: 1 }}
+          >
             Run
           </Button>
-        </Box>
-      </Box>
+        </AccordionSummary>
+        <AccordionDetails sx={{ px: 2, pb: 2, pt: 0 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              alignItems: { xs: 'stretch', md: 'center' },
+              gap: 2,
+            }}
+          >
+            <Box flex={1}>
+              <FormControl fullWidth size="small">
+                <Tooltip
+                  title="The number of actions to be generated in the end of the algorithm"
+                  style={{ width: '100%' }}
+                >
+                  <InputLabel id="gcf-size-select-label">
+                    Number of CounterFactual Actions
+                  </InputLabel>
+                </Tooltip>
+                <Select
+                  MenuProps={{
+                    PaperProps: { style: { maxHeight: 224, width: 250 } },
+                  }}
+                  labelId="gcf-size-select-label"
+                  input={<OutlinedInput label="Number of CounterFactual Actions" />}
+                  value={gcfSize}
+                  onChange={(event: SelectChangeEvent<number | string>) =>
+                    dispatch(setGcfSize(Number(event.target.value)))
+                  }
+                >
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map(value => (
+                    <MenuItem key={value} value={value}>
+                      {value}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box flex={1}>
+              <FormControl fullWidth size="small">
+                <Tooltip
+                  title="Methods that generate candidate counterfactual explanations"
+                  style={{ width: '100%' }}
+                >
+                  <InputLabel id="cf-method-select-label">
+                    Local Counterfactual Method
+                  </InputLabel>
+                </Tooltip>
+                <Select
+                  labelId="cf-method-select-label"
+                  input={<OutlinedInput label="Local Counterfactual Method" />}
+                  value={cfMethod}
+                  onChange={e => dispatch(setCfMethod(e.target.value as string))}
+                  MenuProps={{
+                    PaperProps: { style: { maxHeight: 224, width: 250 } },
+                  }}
+                >
+                  {availableCfMethods.map(method => (
+                    <MenuItem key={method} value={method}>
+                      {method}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+
+            <Box flex={1}>
+              <FormControl fullWidth size="small">
+                <Tooltip
+                  title="Different strategies for selecting the best actions from the generated counterfactuals based on different criteria"
+                  style={{ width: '100%' }}
+                >
+                  <InputLabel id="action-choice-strategy-select-label">
+                    Action Choice Strategy
+                  </InputLabel>
+                </Tooltip>
+                <Select
+                  MenuProps={{
+                    PaperProps: { style: { maxHeight: 224, width: 250 } },
+                  }}
+                  labelId="action-choice-strategy-select-label"
+                  input={<OutlinedInput label="Action Choice Strategy" />}
+                  value={actionChoiceStrategy}
+                  onChange={e =>
+                    dispatch(setActionChoiceStrategy(e.target.value as string))
+                  }
+                >
+                  {availableActionStrategies.map(strategy => (
+                    <MenuItem key={strategy} value={strategy}>
+                      {strategy}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
+          </Box>
+        </AccordionDetails>
+      </Accordion>
 
       <Divider
         sx={{
-          my: 0.5,
-          borderBottomWidth: 2,
-          borderColor: 'grey.300',
+          my: 1,
+          borderBottomWidth: 1,
+          borderColor: 'divider',
         }}
       />
       <Box sx={{ flexGrow: 1, p: 1 }}>

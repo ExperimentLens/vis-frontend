@@ -268,6 +268,7 @@ const Contourplot = (props: IContourplot) => {
       color: {
         field: zField,
         type: 'quantitative',
+        title: (explanation_type === 'hyperparameterExplanation' || explanation_type === 'experimentExplanation') ? pendingTargetMetric : zField,
         legend: { format: '.4f' }
       },
       ...(explanation_type === 'experimentExplanation' ? {} : {

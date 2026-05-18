@@ -11,6 +11,7 @@ import TokenAuthHandler from './token-auth-handler';
 import ProtectedRoute from './protected-route';
 import ExperimentsLandingPage from './app/ProgressPage/ExperimentsLandingPage/experiments-landing-page';
 import HighlightsPage from './app/ProgressPage/HighlightsPage/highlights-page';
+import LLMObservabilityPage from './app/ProgressPage/LLMObservabilityPage/llm-observability-page';
 
 const routes = createBrowserRouter([
   {
@@ -21,20 +22,20 @@ const routes = createBrowserRouter([
   {
     path: '/',
     element: (
-      <ProtectedRoute>
+      // <ProtectedRoute>
         <ProgressPage>
           <ExperimentsLandingPage />
         </ProgressPage>
-      </ProtectedRoute>
+      // </ProtectedRoute>
     ),
     errorElement: <ErrorPage />
   },
   {
     path: '/:experimentId',
     element: (
-      <ProtectedRoute>
+      // <ProtectedRoute>
         <ProgressPageLoading />
-      </ProtectedRoute>
+      // </ProtectedRoute>
     ),
     errorElement: <ErrorPage />
   },
@@ -46,11 +47,11 @@ const routes = createBrowserRouter([
   {
     path: '/:experimentId/monitoring',
     element: (
-      <ProtectedRoute>
+      // <ProtectedRoute>
         <ProgressPage>
           <MonitoringPage />
         </ProgressPage>
-      </ProtectedRoute>
+      // </ProtectedRoute>
     ),
     errorElement: <ErrorPage />
   },
@@ -68,22 +69,33 @@ const routes = createBrowserRouter([
   {
     path: '/:experimentId/workflow',
     element: (
-      <ProtectedRoute>
+      // <ProtectedRoute>
         <ProgressPage>
           <WorkflowTab />
         </ProgressPage>
-      </ProtectedRoute>
+      // </ProtectedRoute>
     ),
     errorElement: <ErrorPage />
   },
   {
     path: '/:experimentId/highlights',
     element: (
-      <ProtectedRoute>
+      // <ProtectedRoute>
         <ProgressPage>
           <HighlightsPage />
         </ProgressPage>
-      </ProtectedRoute>
+      // </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/:experimentId/llm-observability',
+    element: (
+      // <ProtectedRoute>
+        <ProgressPage>
+          <LLMObservabilityPage />
+        </ProgressPage>
+      // </ProtectedRoute>
     ),
     errorElement: <ErrorPage />
   },
