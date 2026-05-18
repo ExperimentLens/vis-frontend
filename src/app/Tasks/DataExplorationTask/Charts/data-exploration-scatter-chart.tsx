@@ -63,6 +63,15 @@ const getColumnType = (columnType: string, fieldName?: string) => {
   }
 };
 
+const getScatterQueryLimit = (isSmallScreen: boolean, yAxisCount: number): number => {
+  const base = isSmallScreen ? 7500 : 12000;
+  const penaltyPerMetric = isSmallScreen ? 1200 : 1800;
+  const minLimit = isSmallScreen ? 3500 : 6000;
+  const computed = base - Math.max(0, yAxisCount - 1) * penaltyPerMetric;
+
+  return Math.max(minLimit, computed);
+};
+
 const getSingleScatterSpec = ({
   data,
   xAxis,
@@ -190,6 +199,8 @@ const ScatterChart = () => {
     const datasetId =
       tab?.dataTaskTable.selectedItem?.data?.dataset?.source || '';
     const dataset = tab?.dataTaskTable.selectedItem?.data?.dataset;
+    const yAxisCount = Array.isArray(yAxis) ? yAxis.length : 0;
+    const queryLimit = getScatterQueryLimit(isSmallScreen, yAxisCount);
 
     const cols = Array.from(
       new Set(
@@ -221,7 +232,7 @@ const ScatterChart = () => {
           },
           columns: cols,
           filters,
-          limit: 10000,
+          limit: queryLimit,
           includeTotalItems: false
           
         },
@@ -237,6 +248,7 @@ const ScatterChart = () => {
     tab?.workflowTasks.dataExploration?.controlPanel.filters,
     tab?.dataTaskTable.selectedItem?.data?.dataset?.source,
     tab?.workflowTasks.dataExploration?.controlPanel.colorBy,
+    isSmallScreen,
   ]);
 
   const hasData = Array.isArray(chartData) && chartData.length > 0;

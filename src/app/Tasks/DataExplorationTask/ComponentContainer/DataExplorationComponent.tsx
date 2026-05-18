@@ -147,8 +147,8 @@ const DataExplorationComponent = () => {
           runId: workflowId || '',
           experimentId: experimentId || '',
           includeSummary: false,
-          includeTotalItems: false,
-          detectDatasetType: false,
+          includeTotalItems: true,
+          detectDatasetType: true,
         },
         metadata: { workflowId, queryCase: 'metaData' },
       }),
@@ -276,6 +276,7 @@ const DataExplorationComponent = () => {
 
   const datasetType = meta?.data?.datasetType ?? 'TABULAR';
   const cols = meta?.data?.originalColumns?.length ?? 0;
+  const rows = meta?.data?.totalItems ?? 0;
   const isMetaLoading = !!meta?.loading && !meta?.data;
 
   const summaryBanner = (
@@ -319,6 +320,12 @@ const DataExplorationComponent = () => {
         <MetaChip
           icon={<ViewColumnRoundedIcon sx={{ fontSize: 14 }} />}
           label={`${cols} cols`}
+          loading={isMetaLoading}
+          width={68}
+        />
+        <MetaChip
+          icon={<ViewColumnRoundedIcon sx={{ fontSize: 14 }} />}
+          label={`${rows} rows`}
           loading={isMetaLoading}
           width={68}
         />

@@ -68,6 +68,15 @@ const coerceIfNumericLike = (v: unknown): unknown => {
   return Number.isFinite(parsed) ? parsed : v;
 };
 
+const getLineQueryLimit = (isSmallScreen: boolean, yAxisCount: number): number => {
+  const base = isSmallScreen ? 8000 : 14000;
+  const penaltyPerMetric = isSmallScreen ? 1200 : 1800;
+  const minLimit = isSmallScreen ? 4000 : 7000;
+  const computed = base - Math.max(0, yAxisCount - 1) * penaltyPerMetric;
+
+  return Math.max(minLimit, computed);
+};
+
 const LineChart = () => {
   const { tab } = useAppSelector(state => state.workflowPage);
   const experimentId = useAppSelector(state => state.progressPage?.experiment.data?.id || '');
@@ -83,6 +92,8 @@ const LineChart = () => {
     const filters = tab?.workflowTasks.dataExploration?.controlPanel.filters;
     const datasetId = tab?.dataTaskTable.selectedItem?.data?.dataset?.source || '';
     const dataset = tab?.dataTaskTable.selectedItem?.data?.dataset;
+    const yAxisCount = Array.isArray(yAxis) ? yAxis.length : 0;
+    const queryLimit = getLineQueryLimit(isSmallScreen, yAxisCount);
 
     const cols = Array.from(
       new Set(
@@ -108,7 +119,7 @@ const LineChart = () => {
           },
           columns: cols,
           filters,
-          limit: 10000,
+          limit: queryLimit,
           includeTotalItems: false
 
         },
@@ -124,6 +135,7 @@ const LineChart = () => {
     tab?.workflowTasks.dataExploration?.controlPanel.filters,
     tab?.dataTaskTable.selectedItem?.data?.dataset?.source,
     tab?.workflowId,
+    isSmallScreen,
   ]);
 
   const chartData = (tab?.workflowTasks.dataExploration?.lineChart?.data?.data as LineChartDataRow[]) ?? [];

@@ -5,6 +5,7 @@ import { fetchDataExplorationData } from '../../../../store/slices/dataExplorati
 import * as L from 'leaflet';
 import Loader from '../../../../shared/components/loader';
 import { useTheme } from '@mui/material/styles';
+import { useMediaQuery } from '@mui/material';
 
 const COLOR_PALETTE = [
   '#1f77b4', // blue
@@ -14,12 +15,18 @@ const COLOR_PALETTE = [
   '#9467bd', // purple
 ];
 
+const getMapQueryLimit = (isSmallScreen: boolean, hasColorDimension: boolean): number => {
+  const base = isSmallScreen ? 8000 : 15000;
+  return hasColorDimension ? Math.floor(base * 0.8) : base;
+};
+
 const MapChart = () => {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMapRef = useRef<L.Map | null>(null);
   const markerLayerRef = useRef<L.LayerGroup | null>(null);
   const rendererRef = useRef<L.Renderer | undefined>(undefined);
   const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('lg'));
   const { themeMode } = useAppSelector(state => state.ui);
 
   const isNumericField = (values: string[]): boolean => {
@@ -64,6 +71,8 @@ const MapChart = () => {
     if (!datasetId || !lat || !lon || meta?.source !== tab?.dataTaskTable.selectedItem?.data?.dataset?.source) return;
 
     const columns = [lat, lon];
+    const hasColorDimension = !!(colorByMap && colorByMap !== 'None');
+    const queryLimit = getMapQueryLimit(isSmallScreen, hasColorDimension);
 
     if (colorByMap && colorByMap !== 'None') {
       columns.push(colorByMap);
@@ -82,8 +91,8 @@ const MapChart = () => {
           },
           columns,
           filters,
-          includeTotalItems: false
-          // limit: 0,
+          limit: queryLimit,
+          includeTotalItems: false,
         },
         metadata: {
           workflowId: tab?.workflowId || '',
@@ -97,6 +106,7 @@ const MapChart = () => {
     tab?.dataTaskTable.selectedItem?.data?.dataset?.source,
     colorByMap,
     filters,
+    isSmallScreen,
   ]);
 
   // Initialize map
