@@ -350,7 +350,7 @@ const StyledRuleText: React.FC<{ rule: string; color: string }> = ({ rule, color
 };
 
 /** Circular donut metric */
-const CircularMetric: React.FC<{ label: string; value: number; color: string; size?: number }> = ({
+const _CircularMetric: React.FC<{ label: string; value: number; color: string; size?: number }> = ({
   label, value, color, size = 64,
 }) => {
   const percent = Math.round((value ?? 0) * 100);
@@ -385,7 +385,7 @@ const CircularMetric: React.FC<{ label: string; value: number; color: string; si
   );
 };
 
-const METRIC_ICONS: Record<string, React.ReactNode> = {
+const _METRIC_ICONS: Record<string, React.ReactNode> = {
   F1: <BoltIcon sx={{ fontSize: 14 }} />,
   PRECISION: <AdjustIcon sx={{ fontSize: 14 }} />,
   RECALL: <BarChartIcon sx={{ fontSize: 14 }} />,
@@ -404,14 +404,13 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
   const clusterData = clusterKey ? experimentHighlights.data?.clusterInsights?.[clusterKey] : null;
   const clusterFeatures = clusterData?.highShapFeatures?.features ?? [];
 
-  if (!rules || rules.length === 0) return null;
-
-  const formatPercent = (value: number) => `${Math.round((value ?? 0) * 100)}%`;
+  const _formatPercent = (value: number) => `${Math.round((value ?? 0) * 100)}%`;
   const clusterColor = clusterKey
     ? getClusterColorFromKey(clusterKey, theme)
     : theme.palette.primary.main;
 
-  const [primaryRule, ...alternativeRules] = rules;
+  const safeRules = rules ?? [];
+  const [primaryRule, ...alternativeRules] = safeRules;
 
   const primaryRuleKey = useMemo(
     () => `ruleFilter-primary-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -425,6 +424,9 @@ const DecisionRulesSection: React.FC<DecisionRulesSectionProps> = ({ rules, clus
       ),
     [alternativeRules]
   );  
+
+  if (!rules || rules.length === 0) return null;
+
   return (
 
     <ResponsiveCardTable title="Decision Rules" showSettings={false} showFullScreenButton={false} details="Tree-based rules that best identify workflows belonging to this cluster. The best rule maximizes a combined score of F1, precision, and recall." >
@@ -609,6 +611,7 @@ interface ClusterVsOthersRadarProps {
   clusterKey?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ClusterVsOthersRadar: React.FC<ClusterVsOthersRadarProps> = ({ cluster, clusterColor, clusterKey }) => {
   const theme = useTheme();
 

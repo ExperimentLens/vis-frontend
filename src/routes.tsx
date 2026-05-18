@@ -8,7 +8,6 @@ import ProgressPageLoading from './app/ProgressPage/progress-page-loading';
 import LoginPage from './app/LoginPage/login-page';
 // import ProtectedRoute from './protected-route';
 import TokenAuthHandler from './token-auth-handler';
-import ProtectedRoute from './protected-route';
 import ExperimentsLandingPage from './app/ProgressPage/ExperimentsLandingPage/experiments-landing-page';
 import HighlightsPage from './app/ProgressPage/HighlightsPage/highlights-page';
 import LLMObservabilityPage from './app/ProgressPage/LLMObservabilityPage/llm-observability-page';

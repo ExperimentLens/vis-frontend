@@ -40,7 +40,7 @@ const ParallelCoordinatePlot = () => {
   const shapFeatures: string[] = useMemo(() => {
     if (!ruleFilterId) return [];
 
-    const cached = getCache(ruleFilterId) as any;
+    const cached = getCache(ruleFilterId) as { clusterFeatures?: string[] } | null;
     return cached?.clusterFeatures ?? [];
   }, [ruleFilterId]);
 
@@ -243,7 +243,7 @@ const ParallelCoordinatePlot = () => {
       }
     });
 
-    return parallelData.map((item, index) => {
+    return parallelData.map((item, _index) => {
       const newItem = { ...item };
 
       for (const key in newItem) {

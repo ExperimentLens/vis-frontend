@@ -758,7 +758,7 @@ export default function WorkflowTable() {
     const ruleFilterId = params.get('ruleFilterId');
     if (!ruleFilterId) return;
 
-    const cached = getCache(ruleFilterId) as any;
+    const cached = getCache(ruleFilterId) as { filters?: unknown[] } | null;
     const cachedFilters = cached?.filters;
 
     if (Array.isArray(cachedFilters) && cachedFilters.length > 0) {

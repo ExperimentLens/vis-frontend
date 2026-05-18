@@ -157,7 +157,6 @@ export const createExperimentExplainabilityTooltipHandler = ({
       const compareLink = experimentId
         ? `/${experimentId}/monitoring?tab=1&compareId=${compareKey}`
         : '#';
-      console.log(value['__targetMetric']);
       const header = `
         <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
           ${selectedFeature ? `<div><strong>${sanitize(selectedFeature)}:</strong> ${sanitize(xValue)}</div>` : ''}

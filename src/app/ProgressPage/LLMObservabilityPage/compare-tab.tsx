@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import { MOCK_RUN_SUMMARIES } from './mock-data';
 
-const numericColor = (value: number, theme: any, invert = false) => {
+const numericColor = (value: number, theme: ReturnType<typeof useTheme>, invert = false) => {
   // Map 0..1 → red..green (or inverted for latency-style metrics).
   const v = invert ? 1 - value : value;
   if (v >= 0.75) return theme.palette.success.main;

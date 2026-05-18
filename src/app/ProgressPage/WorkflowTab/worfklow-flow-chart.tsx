@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useAppDispatch } from '../../../store/store';
 import type {
   Node,
   Edge } from '@xyflow/react';
@@ -29,7 +29,7 @@ function FlowGraph(props: IFlowGraphProps) {
   const { workflowSvg, params, onClose } = props;
   const flowWrapper = useRef(null);
   const { fitView } = useReactFlow();
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const theme = useTheme();
   const [nodes, setNodes] = useState<Node[]>([]);

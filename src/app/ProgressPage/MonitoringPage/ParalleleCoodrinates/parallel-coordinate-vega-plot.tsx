@@ -104,7 +104,7 @@ const ParallelCoordinateVega = ({
 
   const getNumericDomain = (col: string) => {
     const nums = processedData
-      .map(row => Number((row as any)[col]))
+      .map(row => Number((row as ParallelDataItem)[col]))
       .filter(v => !Number.isNaN(v));
 
     if (nums.length === 0) return null;
@@ -230,7 +230,7 @@ const ParallelCoordinateVega = ({
       return !isNaN(val);
     })
     .map((row) => {
-      const filled: any = { ...row };
+      const filled: ParallelDataItem = { ...row };
 
       for (const axis of columnNames) {
         if (
