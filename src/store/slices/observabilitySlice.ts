@@ -29,12 +29,12 @@ const initialState: ObservabilityState = {
     },
 };
 
-export const getTraces = createAsyncThunk<TracesResponse, { projectId: string; sessionId?: string }>(
+export const getTraces = createAsyncThunk<TracesResponse, { projectId: string; sessionId?: string; userId?: string; }>(
     'observability/getTraces',
-    async ({ projectId, sessionId }, { rejectWithValue }) => {
+    async ({ projectId, sessionId, userId }, { rejectWithValue }) => {
         try {
             const response = await api.get('/observability/traces', {
-                params: { projectId, sessionId },
+                params: { projectId, sessionId, userId },
             });
             return response.data;
         } catch (error: any) {
