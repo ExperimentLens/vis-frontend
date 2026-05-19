@@ -8,6 +8,7 @@ import { monitoringPageSlice } from './slices/monitorPageSlice';
 import { authSlice } from './slices/authSlice';
 import { experimentHighlightsSlice } from './slices/experimentHighlightsSlice';
 import { uiSlice } from './slices/uiSlice';
+import observabilityReducer from './slices/observabilitySlice';
 
 export const store = configureStore({
   reducer: {
@@ -17,6 +18,7 @@ export const store = configureStore({
     auth: authSlice.reducer,
     experimentHighlights: experimentHighlightsSlice.reducer,
     ui: uiSlice.reducer,
+    observability: observabilityReducer,
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({
