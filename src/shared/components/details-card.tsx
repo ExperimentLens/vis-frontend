@@ -12,27 +12,22 @@ export const DetailsCard = ({
   children,
   minWidth = '20%'
 }: DetailsCardProps) => (
-  <Card sx={{
-    minWidth,
-    boxShadow: '0 4px 20px rgba(0,0,0,0.09)',
-    height: '100%',
-    borderRadius: '12px',
-    border: '1px solid rgba(0, 0, 0, 0.06)',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    '&:hover': {
-      boxShadow: '0 6px 25px rgba(0,0,0,0.12)',
-      transform: 'translateY(-2px)'
-    }
-  }}>
+  <Card
+    elevation={0}
+    sx={{
+      minWidth,
+      boxShadow: 'none',
+      height: '100%',
+      borderRadius: 2,
+      border: theme => `1px solid ${theme.palette.customGrey.main}`,
+    }}
+  >
     <CardHeader
       title={
         <Typography
-          variant="overline"
+          variant="subtitle1"
           sx={{
-            padding: '4px 8px',
-            textTransform: 'uppercase',
-            fontWeight: 600,
-            letterSpacing: '0.5px',
+            fontWeight: 700,
             color: 'text.primary',
           }}
         >
@@ -41,22 +36,22 @@ export const DetailsCard = ({
       }
       sx={{
         background: theme => theme.palette.customSurface.cardHeader,
-        borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-        padding: '4px 16px',
+        borderBottom: theme => `1px solid ${theme.palette.divider}`,
+        padding: '6px 12px',
         height: '40px',
-        borderTopLeftRadius: '12px',
-        borderTopRightRadius: '12px',
+        borderTopLeftRadius: 8,
+        borderTopRightRadius: 8,
       }}
     />
     <CardContent
       sx={{
         bgcolor: 'customSurface.cardContent',
-        py: 2,
-        px: 3,
+        py: 1.5,
+        px: 2,
         '&:last-child': {
-          paddingBottom: 3
+          paddingBottom: 2
         },
-        borderRadius: '0 0 12px 12px'
+        borderRadius: '0 0 8px 8px'
       }}
     >
       <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -74,11 +69,11 @@ interface DetailsCardItemProps {
 export const DetailsCardItem = ({ label, value }: DetailsCardItemProps) => (
   <Box>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-      <Typography variant="body1" sx={{ fontWeight: 500 }}>
+      <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.secondary' }}>
         {label}:
       </Typography>
       <Box sx={{ flexGrow: 1 }}>{value}</Box>
     </Box>
-    <Divider sx={{ mt: 1 }} />
+    <Divider sx={{ mt: 1, opacity: 0.6 }} />
   </Box>
 );

@@ -154,6 +154,9 @@ const ProgressPage = (props: ProgressPageProps) => {
                 overflow: 'hidden', // Prevent overflow
                 width: '100%',
                 boxSizing: 'border-box',
+                bgcolor: theme => theme.palette.mode === 'dark'
+                  ? theme.palette.background.default
+                  : theme.palette.customGrey.light,
               }}
             >
               {children}

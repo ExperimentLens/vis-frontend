@@ -82,15 +82,15 @@ const SelectionPopover = ({
       anchorOrigin={anchorOrigin}
       transformOrigin={transformOrigin}
       PaperProps={{
-        elevation: 3,
+        elevation: 0,
         sx: {
           width,
           overflow: 'hidden',
           padding: 0,
-          borderRadius: '14px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)',
-          border: '1px solid rgba(0,0,0,0.05)',
-          mt: 0.75,
+          borderRadius: 2,
+          boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
+          border: theme => `1px solid ${theme.palette.customGrey.main}`,
+          mt: 0.5,
         },
       }}
     >
@@ -100,21 +100,21 @@ const SelectionPopover = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-          px: 2,
-          py: 1.25,
+          borderBottom: theme => `1px solid ${theme.palette.divider}`,
+          px: 1.5,
+          py: 0.75,
           background: theme => theme.palette.customSurface.sectionHeader,
-          borderTopLeftRadius: '14px',
-          borderTopRightRadius: '14px',
+          borderTopLeftRadius: 8,
+          borderTopRightRadius: 8,
         }}
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ color: 'primary.main', mr: 1.5, display: 'flex', alignItems: 'center' }}>
+          <Box sx={{ color: 'text.secondary', mr: 1, display: 'flex', alignItems: 'center' }}>
             {icon}
           </Box>
           <Typography
             variant="subtitle2"
-            sx={{ fontWeight: 600, color: 'text.primary', letterSpacing: '0.3px' }}
+            sx={{ fontWeight: 600, color: 'text.primary' }}
           >
             {title}
           </Typography>
@@ -126,10 +126,10 @@ const SelectionPopover = ({
             size="small"
             color="primary"
             sx={{
-              height: 20,
-              fontSize: '0.7rem',
+              height: 18,
+              fontSize: '0.65rem',
               fontWeight: 700,
-              '& .MuiChip-label': { px: 1 },
+              '& .MuiChip-label': { px: 0.75 },
             }}
           />
         )}
@@ -139,7 +139,7 @@ const SelectionPopover = ({
       <List
         sx={{
           width: '100%',
-          py: 0.75,
+          py: 0.5,
           maxHeight: maxListHeight,
           overflowY: 'auto',
           '&::-webkit-scrollbar': { width: 4 },
@@ -156,14 +156,14 @@ const SelectionPopover = ({
           const disabled = isOptionDisabled?.(option) ?? false;
 
           return (
-            <ListItem key={option} disablePadding sx={{ mb: 0.375 }}>
+            <ListItem key={option} disablePadding sx={{ mb: 0.25 }}>
               <ListItemButton
                 dense
                 onClick={() => !disabled && onToggle(option)}
                 disabled={disabled}
                 sx={{
-                  px: 1.5,
-                  py: 0.625,
+                  px: 1,
+                  py: 0.5,
                   mx: 0.5,
                   borderRadius: 1.5,
                   transition: 'background-color 0.15s ease',
@@ -177,26 +177,26 @@ const SelectionPopover = ({
                   },
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 34 }}>
+                <ListItemIcon sx={{ minWidth: 28 }}>
                   {multiSelect ? (
                     isSelected ? (
-                      <CheckBoxIcon color="primary" fontSize="small" />
+                      <CheckBoxIcon color="primary" sx={{ fontSize: 16 }} />
                     ) : (
-                      <CheckBoxOutlineBlankIcon fontSize="small" color="action" />
+                      <CheckBoxOutlineBlankIcon color="action" sx={{ fontSize: 16 }} />
                     )
                   ) : (
                     isSelected ? (
-                      <RadioButtonCheckedIcon color="primary" fontSize="small" />
+                      <RadioButtonCheckedIcon color="primary" sx={{ fontSize: 16 }} />
                     ) : (
-                      <RadioButtonUncheckedIcon fontSize="small" color="action" />
+                      <RadioButtonUncheckedIcon color="action" sx={{ fontSize: 16 }} />
                     )
                   )}
                 </ListItemIcon>
                 <ListItemText
                   primary={label}
                   primaryTypographyProps={{
-                    fontSize: '0.875rem',
-                    fontWeight: isSelected ? 500 : 400,
+                    fontSize: '0.8rem',
+                    fontWeight: isSelected ? 600 : 500,
                     color: isSelected ? 'text.primary' : 'text.secondary',
                     noWrap: true,
                   }}
@@ -211,11 +211,11 @@ const SelectionPopover = ({
       {onClear && selectedCount > 0 && (
         <Box
           sx={{
-            px: 1.5,
-            py: 0.75,
+            px: 1,
+            py: 0.5,
             display: 'flex',
             justifyContent: 'center',
-            borderTop: '1px solid rgba(0, 0, 0, 0.07)',
+            borderTop: theme => `1px solid ${theme.palette.divider}`,
             background: theme => theme.palette.customSurface.footer,
           }}
         >
@@ -224,8 +224,8 @@ const SelectionPopover = ({
             variant="text"
             color="primary"
             size="small"
-            startIcon={<ClearAllIcon fontSize="small" />}
-            sx={{ fontSize: '0.75rem', fontWeight: 500, borderRadius: 1.5 }}
+            startIcon={<ClearAllIcon sx={{ fontSize: 14 }} />}
+            sx={{ fontSize: '0.7rem', fontWeight: 600, textTransform: 'none', borderRadius: 1.5 }}
           >
             {clearLabel}
           </Button>

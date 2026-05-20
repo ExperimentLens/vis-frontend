@@ -85,16 +85,16 @@ const HeatMapControlPanel = () => {
         }}
       >
         {/* Group By Selection */}
-        <FormControl fullWidth>
+        <FormControl fullWidth size="small">
           <SearchableMultiSelect
             labelId="group-by-heat-label"
             inputLabel={
-              <Box display="flex" alignItems="center" gap={1}>
-                <CategoryIcon fontSize="small" />
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <CategoryIcon sx={{ fontSize: 14 }} />
                 Group By (Category)
               </Box>
             }
-            label="Group By (Category)-----"
+            label="Group By (Category)"
             value={
               tab?.workflowTasks.dataExploration?.controlPanel.barGroupByHeat || []
             }
@@ -115,16 +115,16 @@ const HeatMapControlPanel = () => {
             menuWidth={250}
           />
         </FormControl>
-        <FormControl fullWidth>
+        <FormControl fullWidth size="small">
           <SearchableSelect
             labelId="measure-agg-heat-label"
             inputLabel={
-              <Box display="flex" alignItems="center" gap={1}>
-                <FunctionsIcon fontSize="small" />
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <FunctionsIcon sx={{ fontSize: 14 }} />
                 Measure + Aggregation
               </Box>
             }
-            label="Measure + Aggregation-----"
+            label="Measure + Aggregation"
             value={selectedMeasureAggValue}
             options={measureAggOptions}
             getOptionLabel={getOptionLabel}

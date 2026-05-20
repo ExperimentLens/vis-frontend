@@ -5,12 +5,9 @@ import {
   CardHeader,
   IconButton,
   Menu,
-  MenuItem,
   Typography,
   Divider,
   Tooltip,
-  ListItemIcon,
-  ListItemText,
   Fade,
   Button,
   Dialog,
@@ -20,6 +17,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import CompactMenuItem from './compact-menu-item';
 import CloseIcon from '@mui/icons-material/Close';
 import type React from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -55,32 +53,31 @@ const SectionHeader = ({
       display: 'flex',
       alignItems: 'center',
       borderBottom: theme => `1px solid ${theme.palette.divider}`,
-      px: 2,
-      py: 1.5,
+      px: 1.5,
+      py: 1,
       background: theme => theme.palette.customSurface.sectionHeader,
-      borderTopLeftRadius: '10px',
-      borderTopRightRadius: '10px',
-      margin: 0, // Ensure no margin
-      width: '100%', // Full width
+      borderTopLeftRadius: 8,
+      borderTopRightRadius: 8,
+      margin: 0,
+      width: '100%',
     }}
   >
     <Box sx={{
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      color: 'primary.main',
-      mr: 1.5
+      color: 'text.secondary',
+      mr: 1
     }}>
       {icon}
     </Box>
     <Typography
-      variant="subtitle1"
+      variant="subtitle2"
       sx={{
         display: 'flex',
         alignItems: 'center',
         fontWeight: 600,
         color: 'text.primary',
-        letterSpacing: '0.3px',
       }}
     >
       {title}
@@ -240,31 +237,36 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
 
   return (
     <>
-      <Card sx={{
-        maxWidth: maxWidth,
-        mx: 'auto',
-        mb: 1,
-        boxShadow: '0 4px 20px rgba(0,0,0,0.09)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: '12px',
-        border: '1px solid rgba(0, 0, 0, 0.06)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      }}>
+      <Card
+        elevation={0}
+        sx={{
+          maxWidth: maxWidth,
+          mx: 'auto',
+          mb: 1,
+          boxShadow: 'none',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 2,
+          border: theme => `1px solid ${theme.palette.customGrey.main}`,
+        }}
+      >
         <CardHeader
           action={
             <>
-              <IconButton aria-label="settings" onClick={handleMenuClick} sx={{
-                position: 'relative',
-                '& svg': {
-                  zIndex: 1,
+              <IconButton
+                aria-label="settings"
+                onClick={handleMenuClick}
+                size="small"
+                sx={{
                   position: 'relative',
-                },
-              }}
+                  '& svg': {
+                    zIndex: 1,
+                    position: 'relative',
+                  },
+                }}
               >
-                {/* <MoreVertIcon /> */}
-                <SettingsIcon />
+                <SettingsIcon fontSize="small" />
               </IconButton>
               <Menu
                 anchorEl={anchorEl}
@@ -312,36 +314,26 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
                   </>
                 )}
                 {/* Quick Actions */}
-                <Box sx={{ py: 1 }}>
-                  <MenuItem onClick={handleDownloadChart} sx={{ py: 1.5 }}>
-                    <ListItemIcon>
-                      <DownloadIcon fontSize="small" color="primary" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Download as PNG"
-                      secondary="Save chart as image"
-                      primaryTypographyProps={{ fontWeight: 500 }}
-                      secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                    />
-                  </MenuItem>
-
-                  <MenuItem onClick={handleDownloadData} sx={{ py: 1.5 }}>
-                    <ListItemIcon>
-                      <CodeIcon fontSize="small" color="primary" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Download Data as JSON"
-                      secondary="Export chart's underlying data"
-                      primaryTypographyProps={{ fontWeight: 500 }}
-                      secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                    />
-                  </MenuItem>
+                <Box sx={{ py: 0.5 }}>
+                  <CompactMenuItem
+                    onClick={handleDownloadChart}
+                    icon={<DownloadIcon fontSize="small" />}
+                    primary="Download as PNG"
+                    secondary="Save chart as image"
+                  />
+                  <CompactMenuItem
+                    onClick={handleDownloadData}
+                    icon={<CodeIcon fontSize="small" />}
+                    primary="Download Data as JSON"
+                    secondary="Export chart's underlying data"
+                  />
                 </Box>
               </Menu>
               <Tooltip title="Fullscreen">
                 <IconButton
                   aria-label="fullscreen"
                   onClick={handleFullScreen}
+                  size="small"
                   sx={{
                     mr: 0.5,
                     '& svg': {
@@ -350,34 +342,30 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
                     },
                   }}
                 >
-                  <FullscreenIcon />
+                  <FullscreenIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             </>
           }
           title={
             <Typography
-              variant="overline"
+              variant="subtitle1"
               sx={{
-                padding: '4px 8px',
-                textTransform: 'uppercase',
-                fontWeight: 600,
-                letterSpacing: '0.5px',
-                color: 'text.primary'
+                fontWeight: 700,
+                color: 'text.primary',
               }}
             >
               {title}
             </Typography>
           }
-          // subheader="September 14, 2016"
           sx={{
             background: theme => theme.palette.customSurface.cardHeader,
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-            padding: '4px 16px',
+            borderBottom: theme => `1px solid ${theme.palette.divider}`,
+            padding: '6px 12px',
             height: '40px',
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px',
-            flexShrink: 0, // Prevent header from shrinking
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8,
+            flexShrink: 0,
           }}
         />
         <CardContent sx={{
@@ -387,7 +375,7 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
           '&:last-child': {
             paddingBottom: 3
           },
-          borderRadius: '0 0 12px 12px',
+          borderRadius: '0 0 8px 8px',
           display: 'flex',
           flexGrow: 1, // Allow content to grow
           overflow: 'auto', // Only make the content scrollable
@@ -428,13 +416,13 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
         TransitionProps={{ timeout: 400 }}
         PaperProps={{
           sx: {
-            borderRadius: fullScreen ? 0 : '12px',
+            borderRadius: fullScreen ? 0 : 2,
             width: fullScreen ? '100%' : '90vw',
             height: fullScreen ? '100%' : '90vh',
             maxWidth: 'unset',
             bgcolor: 'background.paper',
             overflow: 'hidden',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
           }
         }}
       >
@@ -442,15 +430,14 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          background: theme => theme.palette.customSurface.cardHeader,
-          borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-          px: 3,
-          py: 1.5,
+          bgcolor: 'background.paper',
+          borderBottom: theme => `1px solid ${theme.palette.divider}`,
+          px: 2,
+          py: 1,
         }}>
-          <Typography variant="h6" component="div" sx={{
-            fontWeight: 600,
+          <Typography variant="subtitle1" component="div" sx={{
+            fontWeight: 700,
             color: 'text.primary',
-            letterSpacing: '0.3px',
           }}>
             {title}
           </Typography>
@@ -460,6 +447,7 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
                 <IconButton
                   aria-label="settings"
                   onClick={handleFullscreenMenuClick}
+                  size="small"
                   sx={{
                     mr: 1,
                     '& svg': {
@@ -468,7 +456,7 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
                     },
                   }}
                 >
-                  <SettingsIcon />
+                  <SettingsIcon fontSize="small" />
                 </IconButton>
                 <Menu
                   anchorEl={fullscreenAnchorEl}
@@ -517,21 +505,23 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
               color="inherit"
               onClick={handleCloseFullscreen}
               aria-label="close"
+              size="small"
             >
-              <CloseIcon />
+              <CloseIcon fontSize="small" />
             </IconButton>
           </Box>
         </DialogTitle>
         <DialogContent dividers sx={{
-          p: 4,
+          p: 1.5,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           height: '100%',
           overflow: 'hidden',
+          bgcolor: 'background.paper',
         }}>
           {!showInfoMessage ? (
-            <Box ref={mapRef} style={{ width: fullScreen ? window.innerWidth * 0.9 : window.innerWidth * 0.8,
+            <Box ref={mapRef} style={{ width: fullScreen ? window.innerWidth * 0.94 : window.innerWidth * 0.87,
               height: fullScreen ? window.innerHeight * 0.7 : window.innerHeight * 0.7 }} />
           ) : (
             <Box sx={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -540,17 +530,16 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
           )}
         </DialogContent>
         <DialogActions sx={{
-          px: 3,
-          py: 2,
-          borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-          background: theme => theme.palette.customSurface.footer,
+          px: 2,
+          py: 1.5,
+          borderTop: theme => `1px solid ${theme.palette.divider}`,
+          bgcolor: 'background.paper',
         }}>
           <Button
             onClick={handleDownloadChart}
-            startIcon={<DownloadIcon />}
+            startIcon={<DownloadIcon fontSize="small" />}
             variant="outlined"
             color="primary"
-            size="small"
           >
             Download as PNG
           </Button>
@@ -558,7 +547,6 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
             onClick={handleCloseFullscreen}
             color="primary"
             variant="contained"
-            size="small"
           >
             Close
           </Button>

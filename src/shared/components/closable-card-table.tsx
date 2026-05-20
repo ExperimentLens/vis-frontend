@@ -54,28 +54,28 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
 
   return (
     <Card
+      elevation={0}
       sx={{
         maxWidth: maxWidth,
         mx: 'auto',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.09)',
+        boxShadow: 'none',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        borderRadius: '12px',
-        border: '1px solid rgba(0, 0, 0, 0.06)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        borderRadius: 2,
+        border: theme => `1px solid ${theme.palette.customGrey.main}`,
       }}
     >
       <CardHeader
         action={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
             {controlPanel && (
               <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 1.5,
-                  mr: 1,
+                  gap: 1,
+                  mr: 0.5,
                 }}
               >
                 {controlPanel}
@@ -87,10 +87,9 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
             {showDownloadButton && onDownload && (
               <Button
                 onClick={handleDownload}
-                startIcon={<DownloadIcon />}
+                startIcon={<DownloadIcon fontSize="small" />}
                 variant="outlined"
                 color="primary"
-                size="small"
               >
                 {downloadLabel}
               </Button>
@@ -101,21 +100,19 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
               color="inherit"
               onClick={onClose}
               aria-label="close"
-              sx={{ mr: 1 }}
+              size="small"
+              sx={{ mr: 0.5 }}
             >
-              <CloseIcon />
+              <CloseIcon fontSize="small" />
             </IconButton>
           </Box>
         }
         title={
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
             <Typography
-              variant="overline"
+              variant="subtitle1"
               sx={{
-                padding: '4px 0px',
-                textTransform: 'uppercase',
-                fontWeight: 600,
-                letterSpacing: '0.5px',
+                fontWeight: 700,
                 color: 'text.primary',
               }}
             >
@@ -124,7 +121,7 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
             {details && (
               <Tooltip title={details}>
                 <InfoOutlinedIcon
-                  sx={{ fontSize: 16, color: 'grey.600', cursor: 'default' }}
+                  sx={{ fontSize: 14, color: 'text.secondary', cursor: 'default' }}
                 />
               </Tooltip>
             )}
@@ -132,11 +129,11 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
         }
         sx={{
           background: theme => theme.palette.customSurface.cardHeader,
-          borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-          padding: '8px 16px',
-          minHeight: '48px',
-          borderTopLeftRadius: '12px',
-          borderTopRightRadius: '12px',
+          borderBottom: theme => `1px solid ${theme.palette.divider}`,
+          padding: '6px 12px',
+          minHeight: '44px',
+          borderTopLeftRadius: 8,
+          borderTopRightRadius: 8,
         }}
       />
       <CardContent
@@ -146,7 +143,7 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
           '&:last-child': {
             paddingBottom: noPadding ? 0 : 3,
           },
-          borderRadius: '0 0 12px 12px',
+          borderRadius: '0 0 8px 8px',
           flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',

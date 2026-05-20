@@ -1,4 +1,4 @@
-import { Box, Tab, Tabs, Paper } from '@mui/material';
+import { Box, Tab, Tabs, Paper, Stack, Chip, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useRef } from 'react';
 import ParallelCoordinatePlot from './ParalleleCoodrinates/parallel-coordinate-plot';
@@ -7,9 +7,15 @@ import ScheduleTable from './WorkFlowTables/schedule-table';
 import type { RootState } from '../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../store/store';
 import { Resizable } from 're-resizable';
-import { bulkToggleWorkflowSelection, setSelectedTab, setVisibleTable } from '../../../store/slices/monitorPageSlice';
+import {
+  bulkToggleWorkflowSelection,
+  setSelectedTab,
+  setVisibleTable,
+} from '../../../store/slices/monitorPageSlice';
 import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
-import { useTheme } from '@mui/material/styles';
+import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
+import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
+import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import { getCache } from '../../../shared/utils/localStorageCache';
 import { useLocation } from 'react-router-dom';
 import ComparativeAnalysis from './ComparativeAnalysis/comparative-analysis';
@@ -20,7 +26,7 @@ const MonitoringPage = () => {
   const { visibleTable, selectedTab, workflowsTable } = useAppSelector(
     (state: RootState) => state.monitorPage,
   );
-  const { workflows } = useAppSelector((state: RootState) =>  state.progressPage);
+  const { workflows } = useAppSelector((state: RootState) => state.progressPage);
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const theme = useTheme();
@@ -41,6 +47,8 @@ const MonitoringPage = () => {
       !dataAssets?.some((asset: IDataAsset) => asset.name === 'model.pt');
   }, [workflows]);
 
+  const numSelected = workflowsTable.selectedWorkflows.length;
+
   useEffect(() => {
     if (compareId) {
       const parsed = getCache<{ workflowIds: string[] }>(compareId);
@@ -55,7 +63,6 @@ const MonitoringPage = () => {
     }
   }, [compareId, tabParam]);
 
-  // Apply toggleWorkflowSelection only after workflowsTable is loaded
   useEffect(() => {
     if (
       workflowsTable.initialized &&
@@ -63,17 +70,17 @@ const MonitoringPage = () => {
       compareWorkflowsRef.current.length > 0
     ) {
       dispatch(bulkToggleWorkflowSelection(compareWorkflowsRef.current));
-      compareWorkflowsRef.current = null; // avoid rerunning
+      compareWorkflowsRef.current = null;
     }
   }, [workflowsTable.initialized]);
 
   return (
     <>
-      {/* Sticky Header with Tabs */}
+      {/* Sticky Header: tabs + inline KPI strip */}
       <Box
         sx={{
           borderColor: theme => theme.palette.customGrey.main,
-          borderBottomWidth: 2,
+          borderBottomWidth: 1,
           borderBottomStyle: 'solid',
           width: '100%',
           px: 2,
@@ -81,7 +88,7 @@ const MonitoringPage = () => {
       >
         <Tabs
           value={selectedTab}
-          onChange={(event, newValue) => {
+          onChange={(_event, newValue) => {
             const searchParams = new URLSearchParams(location.search);
 
             searchParams.delete('compareId');
@@ -95,12 +102,36 @@ const MonitoringPage = () => {
               dispatch(setVisibleTable('workflows'));
             }
           }}
-
-          // aria-label="tab menu"
+          sx={{ '& .MuiTab-root': { gap: 0.5, px: 1.5 } }}
         >
-          <Tab label="OVERVIEW" />
-          <Tab label="COMPARATIVE ANALYSIS" />
-          <Tab label="EXPLAINABILITY" disabled={!hasExplainability}/>
+          <Tab
+            icon={<DashboardRoundedIcon fontSize="small" />}
+            iconPosition="start"
+            label="Overview"
+          />
+          <Tab
+            icon={<CompareArrowsRoundedIcon fontSize="small" />}
+            iconPosition="start"
+            label={
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <span>Compare</span>
+                {numSelected > 0 && (
+                  <Chip
+                    size="small"
+                    color="primary"
+                    label={`${numSelected} selected`}
+                    sx={{ height: 18, fontSize: '0.7rem', fontWeight: 700 }}
+                  />
+                )}
+              </Stack>
+            }
+          />
+          <Tab
+            icon={<LightbulbOutlinedIcon fontSize="small" />}
+            iconPosition="start"
+            label="Explainability"
+            disabled={!hasExplainability}
+          />
         </Tabs>
       </Box>
       <Box
@@ -109,13 +140,14 @@ const MonitoringPage = () => {
           flexDirection: 'column',
           rowGap: 1,
           height: '100%',
-          overflow: 'auto', // enables scrolling when table minHeight is applied in the overview page
-          px: 2
+          overflow: 'auto',
+          px: 2,
+          py: 2,
         }}
       >
         {selectedTab === 0 && (
-          <Box sx={{ height: '98%' }}>
-            <Box sx={{ height: '60%', minHeight: '350px', paddingBottom: 1 }}>
+          <Box sx={{ height: '98%', display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ height: '60%', minHeight: '350px' }}>
               {visibleTable === 'workflows' ? (
                 <WorkflowTable />
               ) : (
@@ -159,8 +191,8 @@ const MonitoringPage = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: '16px',  // Fixed width for handle area
-                  right: '-16px',  // Position handle to overlap both components
+                  width: '16px',
+                  right: '-16px',
                   zIndex: 10,
                 }
               }}
@@ -183,7 +215,7 @@ const MonitoringPage = () => {
             >
               <WorkflowTable />
             </Resizable>
-            <Paper elevation={2} sx={{ flex: 1, overflow: 'auto', height: '100%', ml: '8px' }}>
+            <Paper elevation={0} variant="outlined" sx={{ flex: 1, overflow: 'auto', height: '100%', ml: '8px', borderRadius: 2 }}>
               <ComparativeAnalysis />
             </Paper>
           </Box>

@@ -1,4 +1,5 @@
-import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Popover, Switch, Tooltip, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, Menu, Popover, Switch, Tooltip, Typography } from '@mui/material';
+import CompactMenuItem from '../../../../shared/components/compact-menu-item';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
@@ -130,9 +131,9 @@ const ComparativeAnalysisControls = ()=> {
         display="flex"
         alignItems="center"
         sx={{
-          px: 2,
-          height: 56,
-          minHeight: 56,
+          px: 1.5,
+          height: 48,
+          minHeight: 48,
           flexWrap: { xs: 'wrap', lg: 'nowrap' },
           overflowX: 'auto',
         }}
@@ -140,8 +141,8 @@ const ComparativeAnalysisControls = ()=> {
         {selectedComparisonTab === 0 && (
           <Box>
             <Tooltip title="Select Metrics">
-              <IconButton onClick={handleOpenMetricsMenu}>
-                <ViewColumnIcon />
+              <IconButton onClick={handleOpenMetricsMenu} size="small">
+                <ViewColumnIcon fontSize="small" />
               </IconButton>
             </Tooltip>
             <SelectionPopover
@@ -165,51 +166,50 @@ const ComparativeAnalysisControls = ()=> {
           </Box>
         )}
         {selectedComparisonTab === 1 ? (
-          <Box display="flex" flexWrap="wrap" gap={1}>
-            {options1.map(option => (
-              <Chip
-                key={option.label}
-                label={option.name}
-                icon={option.icon}
-                clickable
-                size="small"
-                sx={{
-                  height: 35,
-                  px: 2,
-                  borderRadius: 2,
-                  fontWeight: 500,
-                  background:
-                      selectedModelComparisonChart === option.label
-                        ? undefined
-                        : theme => theme.palette.customGrey.light,
-                  '& .MuiChip-icon': {
-                    fontSize: 25,
-                    marginLeft: 0,
-                    marginRight: 0.1,
-                  },
-                  '& .MuiChip-label': {
-                    whiteSpace: 'pre-line',
-                    textAlign: 'left',
-                    lineHeight: 1.2,
-                  },
-                }}
-                color={selectedModelComparisonChart === option.label ? 'primary' : 'default'}
-                variant={selectedModelComparisonChart === option.label ? 'filled' : 'outlined'}
-                onClick={() => dispatch(setSelectedModelComparisonChart(option.label))}
-              />
-            ))}
+          <Box display="flex" flexWrap="wrap" gap={0.75}>
+            {options1.map(option => {
+              const isSelected = selectedModelComparisonChart === option.label;
+
+              return (
+                <Chip
+                  key={option.label}
+                  label={option.name.replace('\n', ' ')}
+                  icon={option.icon}
+                  clickable
+                  size="small"
+                  sx={{
+                    height: 28,
+                    px: 1,
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    fontSize: '0.75rem',
+                    background: isSelected
+                      ? undefined
+                      : theme => theme.palette.customGrey.light,
+                    '& .MuiChip-icon': {
+                      fontSize: 16,
+                      marginLeft: 0.25,
+                      marginRight: -0.5,
+                    },
+                  }}
+                  color={isSelected ? 'primary' : 'default'}
+                  variant={isSelected ? 'filled' : 'outlined'}
+                  onClick={() => dispatch(setSelectedModelComparisonChart(option.label))}
+                />
+              );
+            })}
           </Box>
         ) : selectedComparisonTab === 2 && workflowsTable.selectedWorkflows.length > 0 && (
           <>
             <Box display="flex" flexWrap="wrap" gap={0.2}>
               <Tooltip title="Select Dataset">
-                <IconButton onClick={datasetSelectorClicked}>
-                  <FilterListIcon />
+                <IconButton onClick={datasetSelectorClicked} size="small">
+                  <FilterListIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
               <Tooltip title="Columns">
-                <IconButton onClick={handleOpen}>
-                  <ViewColumnIcon />
+                <IconButton onClick={handleOpen} size="small">
+                  <ViewColumnIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
 
@@ -231,8 +231,9 @@ const ComparativeAnalysisControls = ()=> {
                 sx: {
                   width: '550px',
                   p: 2,
-                  borderRadius: 1,
-                  boxShadow: 3
+                  borderRadius: 2,
+                  border: theme => `1px solid ${theme.palette.customGrey.main}`,
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
                 }
               }}
             >
@@ -275,7 +276,7 @@ const ComparativeAnalysisControls = ()=> {
               size="small"
               variant="outlined"
               aria-label="data comparison view mode"
-              sx={{ height: '30px' }}
+              sx={{ height: '28px' }}
             >
               <Tooltip title="Distribution Plots">
                 <Button
@@ -283,8 +284,9 @@ const ComparativeAnalysisControls = ()=> {
                   color="primary"
                   onClick={() => dispatch(setDataComparisonViewMode('overlay'))}
                   disabled={!selectedDataset}
+                  sx={{ minWidth: 'auto', px: 1 }}
                 >
-                  <BarChartIcon />
+                  <BarChartIcon fontSize="small" />
                 </Button>
               </Tooltip>
               <Tooltip title="Box Plots">
@@ -293,8 +295,9 @@ const ComparativeAnalysisControls = ()=> {
                   color="primary"
                   onClick={() => dispatch(setDataComparisonViewMode('boxplot'))}
                   disabled={!selectedDataset}
+                  sx={{ minWidth: 'auto', px: 1 }}
                 >
-                  <CandlestickChartIcon />
+                  <CandlestickChartIcon fontSize="small" />
                 </Button>
               </Tooltip>
             </ButtonGroup>
@@ -310,41 +313,41 @@ const ComparativeAnalysisControls = ()=> {
                 />
               }
               label="Misclassified"
-              sx={{ ml: 0.5 }}
+              sx={{ ml: 0.5, '& .MuiFormControlLabel-label': { fontSize: '0.8rem', fontWeight: 600 } }}
             />
           )}
 
           {selectedComparisonTab !== 2 && (
-            <ButtonGroup variant="contained" aria-label="view mode" sx={{ height: '25px' }}>
+            <ButtonGroup variant="contained" aria-label="view mode" size="small" sx={{ height: '28px' }}>
               <Button
                 variant={isMosaic ? 'contained' : 'outlined'}
                 disabled={selectedComparisonTab === 2}
                 color="primary"
                 onClick={() => dispatch(setIsMosaic(true))}
               >
-                  Mosaic
+                Mosaic
               </Button>
               <Button
                 variant={!isMosaic ? 'contained' : 'outlined'}
                 color="primary"
                 onClick={() => dispatch(setIsMosaic(false))}
               >
-                  Stacked
+                Stacked
               </Button>
             </ButtonGroup>
           )}
-          {/* create a shared popo over component in order to avoid copy pasting */}
           {selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
             <>
               <IconButton
                 aria-label="settings"
                 onClick={handleCmMenuClick}
+                size="small"
                 sx={{
                   position: 'relative',
                   '& svg': { zIndex: 1, position: 'relative' },
                 }}
               >
-                <SettingsIcon />
+                <SettingsIcon fontSize="small" />
               </IconButton>
               <Menu
                 anchorEl={cmSortAnchorEl}
@@ -353,14 +356,14 @@ const ComparativeAnalysisControls = ()=> {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 PaperProps={{
-                  elevation: 3,
+                  elevation: 0,
                   sx: {
                     width: 320,
                     maxHeight: 500,
                     padding: 0,
-                    borderRadius: '12px',
+                    borderRadius: 2,
                     boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                    border: '1px solid rgba(0,0,0,0.04)',
+                    border: theme => `1px solid ${theme.palette.customGrey.main}`,
                     mt: 0,
                   },
                 }}
@@ -394,12 +397,13 @@ const ComparativeAnalysisControls = ()=> {
               <IconButton
                 aria-label="settings"
                 onClick={handleRocMenuClick}
+                size="small"
                 sx={{
                   position: 'relative',
                   '& svg': { zIndex: 1, position: 'relative' },
                 }}
               >
-                <SettingsIcon />
+                <SettingsIcon fontSize="small" />
               </IconButton>
               <Menu
                 anchorEl={rocSortAnchorEl}
@@ -408,14 +412,14 @@ const ComparativeAnalysisControls = ()=> {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 PaperProps={{
-                  elevation: 3,
+                  elevation: 0,
                   sx: {
                     width: 320,
                     maxHeight: 500,
                     padding: 0,
-                    borderRadius: '12px',
+                    borderRadius: 2,
                     boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                    border: '1px solid rgba(0,0,0,0.04)',
+                    border: theme => `1px solid ${theme.palette.customGrey.main}`,
                     mt: 0,
                   },
                 }}
@@ -449,12 +453,13 @@ const ComparativeAnalysisControls = ()=> {
               <IconButton
                 aria-label="settings"
                 onClick={handleMenuClick}
+                size="small"
                 sx={{
                   position: 'relative',
                   '& svg': { zIndex: 1, position: 'relative' },
                 }}
               >
-                <SettingsIcon />
+                <SettingsIcon fontSize="small" />
               </IconButton>
 
               <Menu
@@ -464,14 +469,14 @@ const ComparativeAnalysisControls = ()=> {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 PaperProps={{
-                  elevation: 3,
+                  elevation: 0,
                   sx: {
                     width: 320,
                     maxHeight: 500,
                     padding: 0,
-                    borderRadius: '12px',
+                    borderRadius: 2,
                     boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                    border: '1px solid rgba(0,0,0,0.04)',
+                    border: theme => `1px solid ${theme.palette.customGrey.main}`,
                     mt: 0,
                   },
                 }}
@@ -481,19 +486,18 @@ const ComparativeAnalysisControls = ()=> {
                   icon={<SettingsSuggestIcon fontSize="small" />}
                   title="Control Options"
                 />
-                <Box sx={{ mt: 2 }} />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, px: 1.5 }}>
-
-                  <FormControl fullWidth>
+                <Box sx={{ mt: 1.5 }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, px: 1.5 }}>
+                  <FormControl fullWidth size="small">
                     <SearchableSelect
                       labelId="x-axis-select-label"
                       inputLabel={
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <ShowChartIcon fontSize="small" />
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <ShowChartIcon sx={{ fontSize: 14 }} />
                           X-Axis
                         </Box>
                       }
-                      label="X-Axis-----"
+                      label="X-Axis"
                       value={xAxisOption}
                       options={options.filter(option => option !== yAxisOption)}
                       onChange={value =>
@@ -507,16 +511,16 @@ const ComparativeAnalysisControls = ()=> {
                     />
                   </FormControl>
 
-                  <FormControl fullWidth>
+                  <FormControl fullWidth size="small">
                     <SearchableSelect
                       labelId="y-axis-select-label"
                       inputLabel={
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <ShowChartIcon fontSize="small" />
+                        <Box display="flex" alignItems="center" gap={0.5}>
+                          <ShowChartIcon sx={{ fontSize: 14 }} />
                           Y-Axis
                         </Box>
                       }
-                      label="Y-Axis-----"
+                      label="Y-Axis"
                       value={yAxisOption}
                       options={options.filter(option => option !== xAxisOption)}
                       onChange={value =>
@@ -529,12 +533,12 @@ const ComparativeAnalysisControls = ()=> {
                       menuWidth={250}
                     />
                   </FormControl>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 500 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
                       UMAP
                     </Typography>
-
                     <Switch
+                      size="small"
                       checked={comparativeModelInstanceControlPanel.useUmap}
                       onChange={(e) =>
                         dispatch(
@@ -546,29 +550,17 @@ const ComparativeAnalysisControls = ()=> {
                   </Box>
                 </Box>
                 <Divider sx={{ mt: 1, opacity: 0.6 }} />
-                <Box sx={{ py: 1 }}>
-                  <MenuItem  sx={{ py: 1.5 }}>
-                    <ListItemIcon>
-                      <DownloadIcon fontSize="small" color="primary" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Download as PNG"
-                      secondary="Save chart as image"
-                      primaryTypographyProps={{ fontWeight: 500 }}
-                      secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                    />
-                  </MenuItem>
-                  <MenuItem  sx={{ py: 1.5 }}>
-                    <ListItemIcon>
-                      <CodeIcon fontSize="small" color="primary" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary="Download Data as JSON"
-                      secondary="Export chart's underlying data"
-                      primaryTypographyProps={{ fontWeight: 500 }}
-                      secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                    />
-                  </MenuItem>
+                <Box sx={{ py: 0.5 }}>
+                  <CompactMenuItem
+                    icon={<DownloadIcon fontSize="small" />}
+                    primary="Download as PNG"
+                    secondary="Save chart as image"
+                  />
+                  <CompactMenuItem
+                    icon={<CodeIcon fontSize="small" />}
+                    primary="Download Data as JSON"
+                    secondary="Export chart's underlying data"
+                  />
                 </Box>
 
               </Menu>
@@ -579,9 +571,9 @@ const ComparativeAnalysisControls = ()=> {
 
       <Divider
         sx={{
-          my: 0.5,
-          borderBottomWidth: 2,
-          borderColor: 'grey.300',
+          my: 0,
+          borderBottomWidth: 1,
+          borderColor: theme => theme.palette.customGrey.main,
         }}
       />
     </>

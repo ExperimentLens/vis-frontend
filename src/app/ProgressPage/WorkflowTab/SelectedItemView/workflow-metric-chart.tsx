@@ -130,9 +130,9 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
   };
 
   return (
-    <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 1, minHeight: 0 }}>
       {showSeriesCards && (
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', flexShrink: 0 }}>
           {/* Card 1: Current + % vs mean */}
           <Card
             elevation={0}
@@ -141,25 +141,25 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
               border: '1px solid',
               borderColor: 'divider',
               flex: 1,
-              minWidth: 260,
+              minWidth: 200,
             }}
           >
-            <CardContent sx={{ p: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+            <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
                 Current ({isStepMode ? 'last step' : 'latest'})
               </Typography>
 
-              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
                   {format2(lastVal)}
                 </Typography>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
                   {renderDiffIcon()}
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: pctColor }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: pctColor }}>
                     {pctText}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="caption" color="text.secondary">
                     vs mean
                   </Typography>
                 </Box>
@@ -175,20 +175,20 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
               border: '1px solid',
               borderColor: 'divider',
               flex: 1,
-              minWidth: 260,
+              minWidth: 200,
             }}
           >
-            <CardContent sx={{ p: 2 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+            <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
                 Range
               </Typography>
 
-              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 2 }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 1 }}>
+                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
                   {format2(minVal)} – {format2(maxVal)}
                 </Typography>
 
-                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 600 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   span {format2(maxVal - minVal)}
                 </Typography>
               </Box>
@@ -196,13 +196,14 @@ export const MetricLineChart = ({ metrics }: {metrics: GroupMetrics[]}) => {
           </Card>
         </Box>
       )}
-      <Box sx={{ width: '100%' }}>
+      <Box sx={{ width: '100%', flexGrow: 1, minHeight: 0 }}>
         <ResponsiveCardVegaLite
           spec={chartSpec}
           actions={false}
           title={metrics[0].task ? `${metrics[0].task}／${metrics[0].metricName}` : metrics[0].metricName}
-          maxHeight={500}
-          isStatic={false}
+          maxHeight={2000}
+          aspectRatio={2.5}
+          isStatic={true}
         />
       </Box>
     </Box>
@@ -245,7 +246,8 @@ export const WorkflowMetricChart = () => {
           flexDirection: 'column',
           rowGap: 1,
           height: '100%',
-          overflow: 'auto', // enables scrolling when table minHeight is applied in the overview page
+          minHeight: 0,
+          overflow: 'hidden',
         }}
       >
         <MetricLineChart metrics={metrics} />
@@ -473,9 +475,9 @@ export const MetricCards = () => {
           <Typography variant="overline" color="text.secondary">
             Single Value Metric
           </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          {/* <Typography variant="h5" sx={{ fontWeight: 700 }}>
             {metricData?.metric?.name ?? 'Metric'}
-          </Typography>
+          </Typography> */}
         </Box>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           {timestampText}

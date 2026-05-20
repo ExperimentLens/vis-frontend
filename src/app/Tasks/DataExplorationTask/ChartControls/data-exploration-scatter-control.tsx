@@ -110,16 +110,16 @@ const ScatterChartControlPanel = () => {
           }}
         >
           {/* X-Axis Selector */}
-          <FormControl fullWidth>
+          <FormControl fullWidth size="small">
             <SearchableSelect
               labelId="x-axis-select-label"
               inputLabel={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <ShowChartIcon fontSize="small" />
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  <ShowChartIcon sx={{ fontSize: 14 }} />
                   X-Axis
                 </Box>
               }
-              label="X-Axis-----"
+              label="X-Axis"
               value={xAxis?.name || ''}
               options={columns.map(col => col.name)}
               onChange={(value) => handleXAxisChange({ target: { value } })}
@@ -130,16 +130,16 @@ const ScatterChartControlPanel = () => {
           </FormControl>
 
           {/* Y-Axis Multi-Selector */}
-          <FormControl fullWidth>
+          <FormControl fullWidth size="small">
             <SearchableMultiSelect
               labelId="y-axis-multi-select-label"
               inputLabel={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <ShowChartIcon fontSize="small" />
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  <ShowChartIcon sx={{ fontSize: 14 }} />
                   Y-Axis
                 </Box>
               }
-              label="Y-Axis-----"
+              label="Y-Axis"
               value={yAxis.map(col => col.name)}
               options={columns.map(col => col.name)}
               onChange={(selected) => {
@@ -162,16 +162,16 @@ const ScatterChartControlPanel = () => {
             mt: 2,
           }}
         >
-          <FormControl fullWidth sx={{ flex: 1 }} >
+          <FormControl fullWidth size="small" sx={{ flex: 1 }}>
             <SearchableSelect
               labelId="color-by-select-label"
               inputLabel={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <PaletteIcon fontSize="small" />
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  <PaletteIcon sx={{ fontSize: 14 }} />
                   Color By
                 </Box>
               }
-              label="Color By-----"
+              label="Color By"
               value={colorBy?.name || ''}
               options={columns.map(col => col.name)}
               onChange={value =>
@@ -184,11 +184,11 @@ const ScatterChartControlPanel = () => {
               disabled={tab?.workflowTasks.dataExploration?.controlPanel.umap}
             />
           </FormControl>
-          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, gap: 0.5 }}>
             <Typography
               variant="caption"
               sx={{
-                fontWeight: 500,
+                fontWeight: 600,
                 color: tab?.workflowTasks.dataExploration?.controlPanel.umap
                   ? 'primary.main'
                   : 'text.secondary'
@@ -199,6 +199,7 @@ const ScatterChartControlPanel = () => {
             <Tooltip title={tooltipTitle} disableHoverListener={!isDisabled}>
               <span>
                 <Switch
+                  size="small"
                   disabled={isDisabled}
                   checked={tab?.workflowTasks.dataExploration?.controlPanel.umap}
                   onChange={() =>

@@ -1,6 +1,35 @@
 // Import necessary modules
 import { grey, blue } from '@mui/material/colors';
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+import type { CSSProperties } from 'react';
+
+// Custom typography variants (additive — used like <Typography variant="cardTitle">)
+declare module '@mui/material/styles' {
+  interface TypographyVariants {
+    cardTitle: CSSProperties;
+    statValue: CSSProperties;
+    statLabel: CSSProperties;
+    captionLabel: CSSProperties;
+    mono: CSSProperties;
+  }
+  interface TypographyVariantsOptions {
+    cardTitle?: CSSProperties;
+    statValue?: CSSProperties;
+    statLabel?: CSSProperties;
+    captionLabel?: CSSProperties;
+    mono?: CSSProperties;
+  }
+}
+
+declare module '@mui/material/Typography' {
+  interface TypographyPropsVariantOverrides {
+    cardTitle: true;
+    statValue: true;
+    statLabel: true;
+    captionLabel: true;
+    mono: true;
+  }
+}
 
 // Extend the existing palette interface to include custom properties
 declare module '@mui/material/styles' {
@@ -140,6 +169,31 @@ export const createAppTheme = (mode: ThemeMode) => {
       allVariants: {
         color: isDark ? '#FFFFFF' : '#0E1021',
       },
+      // Compact-UI vocabulary — use these instead of inline sx for repeated patterns.
+      cardTitle: {
+        fontSize: '1rem',
+        fontWeight: 700,
+        lineHeight: 1.4,
+      },
+      statValue: {
+        fontSize: '0.85rem',
+        fontWeight: 700,
+        lineHeight: 1.2,
+      },
+      statLabel: {
+        fontSize: '0.7rem',
+        fontWeight: 600,
+      },
+      captionLabel: {
+        fontSize: '0.7rem',
+        fontWeight: 600,
+        textTransform: 'uppercase',
+        letterSpacing: '0.4px',
+      },
+      mono: {
+        fontFamily: '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace',
+        fontWeight: 700,
+      },
     },
     components: {
       MuiCssBaseline: {
@@ -148,14 +202,14 @@ export const createAppTheme = (mode: ThemeMode) => {
             // Firefox
             scrollbarWidth: 'thin',
           },
-        
+
           body: {
             // Firefox
             scrollbarColor: isDark
               ? `${grey[700]} ${grey[900]}`
               : `${grey[500]} ${grey[100]}`,
           },
-        
+
           // Chrome / Edge / Safari
           '*::-webkit-scrollbar': {
             width: 10,
@@ -172,6 +226,40 @@ export const createAppTheme = (mode: ThemeMode) => {
           '*::-webkit-scrollbar-thumb:hover': {
             backgroundColor: isDark ? grey[600] : grey[500],
           },
+        },
+      },
+      // Global defaults that match our compact-UI patterns.
+      // Anything you set explicitly on a component still wins.
+      MuiButton: {
+        defaultProps: { size: 'small' },
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            fontWeight: 600,
+          },
+        },
+      },
+      MuiIconButton: {
+        defaultProps: { size: 'small' },
+      },
+      MuiTabs: {
+        styleOverrides: {
+          root: { minHeight: 40 },
+        },
+      },
+      MuiTab: {
+        styleOverrides: {
+          root: {
+            textTransform: 'none',
+            fontWeight: 600,
+            fontSize: '0.85rem',
+            minHeight: 40,
+          },
+        },
+      },
+      MuiChip: {
+        styleOverrides: {
+          root: { fontWeight: 600 },
         },
       },
     },

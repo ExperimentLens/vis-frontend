@@ -105,16 +105,16 @@ const LineChartControlPanel = () => {
           }}
         >
           {/* X-Axis Selector */}
-          <FormControl fullWidth>
+          <FormControl fullWidth size="small">
             <SearchableSelect
               labelId="x-axis-select-label"
               inputLabel={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <ShowChartIcon fontSize="small" />
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  <ShowChartIcon sx={{ fontSize: 14 }} />
                   X-Axis
                 </Box>
               }
-              label='X-Axis-----'
+              label="X-Axis"
               value={xAxis?.name || ''}
               options={xAxisOptions}
               onChange={handleXAxisChange}
@@ -122,19 +122,21 @@ const LineChartControlPanel = () => {
           </FormControl>
 
           {/* Y-Axis Multi-Selector */}
-          <SearchableMultiSelect
-            labelId="y-axis-multi-select-label"
-            inputLabel={
-              <Box display="flex" alignItems="center" gap={1}>
-                <ShowChartIcon fontSize="small" />
-                Y-Axis
-              </Box>
-            }
-            label="Y-Axis-----"
-            value={yAxis.map(col => col.name)}
-            options={yAxisOptions}
-            onChange={handleYAxisChange}
-          />
+          <FormControl fullWidth size="small">
+            <SearchableMultiSelect
+              labelId="y-axis-multi-select-label"
+              inputLabel={
+                <Box display="flex" alignItems="center" gap={0.5}>
+                  <ShowChartIcon sx={{ fontSize: 14 }} />
+                  Y-Axis
+                </Box>
+              }
+              label="Y-Axis"
+              value={yAxis.map(col => col.name)}
+              options={yAxisOptions}
+              onChange={handleYAxisChange}
+            />
+          </FormControl>
         </Box>
         <Box
           sx={{
@@ -148,7 +150,8 @@ const LineChartControlPanel = () => {
           <ButtonGroup
             variant="contained"
             aria-label="view mode"
-            sx={{ height: '36px' }}
+            size="small"
+            sx={{ height: '28px' }}
             fullWidth
           >
             <Button
@@ -160,7 +163,6 @@ const LineChartControlPanel = () => {
             <Button
               color={viewMode === 'stacked' ? 'primary' : 'inherit'}
               onClick={() => dispatch(setControls({ viewMode: 'stacked' }))}
-              //  disabled={yAxis.length < 2}
             >
               Stacked
             </Button>

@@ -52,35 +52,48 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
   };
 
   return (
-    <FormControl fullWidth>
-      <InputLabel id={labelId}>{inputLabel}</InputLabel>
+    <FormControl fullWidth size="small">
+      <InputLabel id={labelId} sx={{ fontSize: '0.8rem' }}>{inputLabel}</InputLabel>
       <Select
         labelId={labelId}
         value={value}
         disabled={disabled}
         onChange={handleChange}
         label={label}
+        size="small"
+        sx={{
+          fontSize: '0.8rem',
+          '& .MuiSelect-select': { py: 0.75 },
+        }}
         MenuProps={{
           PaperProps: {
             style: { maxHeight: menuMaxHeight, width: menuWidth },
             sx: {
+              borderRadius: 2,
+              border: theme => `1px solid ${theme.palette.customGrey.main}`,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
+              '& .MuiMenuItem-root': {
+                fontSize: '0.8rem',
+                py: 0.5,
+                minHeight: 0,
+              },
               '& .MuiMenuItem-root:hover': {
                 backgroundColor: 'action.selected',
               },
             },
-
           },
           MenuListProps: {
             autoFocusItem: false,
+            dense: true,
           },
         }}
         onClose={() => setSearch('')}
       >
-        <ListSubheader sx={{ p: 1 }}>
+        <ListSubheader sx={{ p: 0.75 }}>
           <TextField
             size="small"
             autoFocus
-            placeholder="Search..."
+            placeholder="Search…"
             fullWidth
             value={search}
             onChange={e => {
@@ -89,10 +102,11 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
             onKeyDown={e => {
               e.stopPropagation();
             }}
+            sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.75 } }}
             InputProps={{
               startAdornment: (
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <SearchIcon fontSize="small" sx={{ opacity: 0.6 }} />
+                <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>
+                  <SearchIcon fontSize="small" sx={{ opacity: 0.6, fontSize: 16 }} />
                 </Box>
               ),
               endAdornment: (
@@ -110,7 +124,7 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
                       '&:hover': { opacity: 1 },
                     }}
                   >
-                    <CloseIcon fontSize="small" />
+                    <CloseIcon fontSize="small" sx={{ fontSize: 16 }} />
                   </Box>
                 ) : null
               ),
@@ -118,13 +132,13 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
           />
         </ListSubheader>
         {filteredOptions.map(option => (
-          <MenuItem key={option} value={option}>
+          <MenuItem key={option} value={option} dense>
             {optionToLabel(option)}
           </MenuItem>
         ))}
         {filteredOptions.length === 0 && (
-          <MenuItem disabled sx={{ opacity: 0.6, fontStyle: 'italic' }}>
-              No results found
+          <MenuItem disabled dense sx={{ opacity: 0.6, fontStyle: 'italic' }}>
+            No results found
           </MenuItem>
         )}
       </Select>

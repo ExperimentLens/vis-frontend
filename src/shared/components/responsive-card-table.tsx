@@ -6,12 +6,9 @@ import {
   CardContent,
   IconButton,
   Menu,
-  MenuItem,
   Typography,
   Divider,
   Tooltip,
-  ListItemIcon,
-  ListItemText,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -21,6 +18,7 @@ import {
   useTheme,
   useMediaQuery,
 } from '@mui/material';
+import CompactMenuItem from './compact-menu-item';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -60,12 +58,12 @@ export const SectionHeader = ({
     sx={{
       display: 'flex',
       alignItems: 'center',
-      borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-      px: 2,
-      py: 1.5,
+      borderBottom: theme => `1px solid ${theme.palette.divider}`,
+      px: 1.5,
+      py: 1,
       background: theme => theme.palette.customSurface.sectionHeader,
-      borderTopLeftRadius: '10px',
-      borderTopRightRadius: '10px',
+      borderTopLeftRadius: 8,
+      borderTopRightRadius: 8,
       margin: 0,
       width: '100%',
     }}
@@ -75,20 +73,19 @@ export const SectionHeader = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: 'primary.main',
-        mr: 1.5,
+        color: 'text.secondary',
+        mr: 1,
       }}
     >
       {icon}
     </Box>
     <Typography
-      variant="subtitle1"
+      variant="subtitle2"
       sx={{
         display: 'flex',
         alignItems: 'center',
         fontWeight: 600,
         color: 'text.primary',
-        letterSpacing: '0.3px',
       }}
     >
       {title}
@@ -202,18 +199,18 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
   return (
     <>
       <Card
+        elevation={0}
         sx={{
           maxWidth: maxWidth,
           minHeight: minHeight,
           maxHeight: maxHeight,
           mx: 'auto',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.09)',
+          boxShadow: 'none',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          borderRadius: '12px',
-          border: '1px solid rgba(0, 0, 0, 0.06)',
-          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+          borderRadius: 2,
+          border: theme => `1px solid ${theme.palette.customGrey.main}`,
         }}
       >
         <Box
@@ -223,12 +220,12 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             background: theme => theme.palette.customSurface.cardHeader,
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-            padding: '4px 16px',
+            borderBottom: theme => `1px solid ${theme.palette.divider}`,
+            padding: '6px 12px',
             height: shouldShowControlsInHeader ? 'auto' : '40px',
             minHeight: '40px',
-            borderTopLeftRadius: '12px',
-            borderTopRightRadius: '12px',
+            borderTopLeftRadius: 8,
+            borderTopRightRadius: 8,
           }}
         >
           {/* Title with truncation */}
@@ -236,20 +233,18 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 1,
+              gap: 0.75,
               minWidth: 0,  // allow truncation inside flex
               flex: 1,
             }}
           >
             <Typography
-              variant="overline"
+              variant="subtitle1"
               sx={{
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
+                fontWeight: 700,
                 color: 'text.primary',
                 maxWidth: '100%',
                 flexShrink: 1,
@@ -260,7 +255,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
             {details && (
               <Tooltip title={details}>
                 <InfoOutlinedIcon
-                  sx={{ fontSize: 16, color: 'grey.600', cursor: 'default' }}
+                  sx={{ fontSize: 14, color: 'text.secondary', cursor: 'default' }}
                 />
               </Tooltip>
             )}
@@ -275,8 +270,8 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                 {controlPanel}
                 {showDownloadButton && onDownload && (
                   <Tooltip title={downloadLabel}>
-                    <IconButton aria-label="download" onClick={onDownload}>
-                      <DownloadIcon />
+                    <IconButton aria-label="download" onClick={onDownload} size="small">
+                      <DownloadIcon fontSize="small" />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -288,12 +283,13 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                 <IconButton
                   aria-label="settings"
                   onClick={handleMenuClick}
+                  size="small"
                   sx={{
                     position: 'relative',
                     '& svg': { zIndex: 1, position: 'relative' },
                   }}
                 >
-                  <SettingsIcon />
+                  <SettingsIcon fontSize="small" />
                 </IconButton>
                 <Menu
                   anchorEl={anchorEl}
@@ -364,17 +360,12 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                     }}
                   >
                     {showDownloadButton && onDownload && (!shouldShowControlsInHeader) && (
-                      <MenuItem onClick={handleDownload} sx={{ py: 1.5 }}>
-                        <ListItemIcon>
-                          <DownloadIcon fontSize="small" color="primary" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={downloadLabel}
-                          secondary={downloadSecondaryText}
-                          primaryTypographyProps={{ fontWeight: 500 }}
-                          secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                        />
-                      </MenuItem>
+                      <CompactMenuItem
+                        onClick={handleDownload}
+                        icon={<DownloadIcon fontSize="small" />}
+                        primary={downloadLabel}
+                        secondary={downloadSecondaryText}
+                      />
                     )}
 
                     {additionalMenuItems}
@@ -388,6 +379,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                 <IconButton
                   aria-label="fullscreen"
                   onClick={handleFullScreen}
+                  size="small"
                   sx={{
                     mr: 0.5,
                     '& svg': {
@@ -396,7 +388,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                     },
                   }}
                 >
-                  <FullscreenIcon />
+                  <FullscreenIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
@@ -409,7 +401,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
             '&:last-child': {
               paddingBottom: noPadding ? 0 : 3,
             },
-            borderRadius: '0 0 12px 12px',
+            borderRadius: '0 0 8px 8px',
             flexGrow: 1, // Allow content to grow and fill space
             display: 'flex', // Enable flexbox
             flexDirection: 'column', // Stack children vertically
@@ -431,13 +423,13 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
           TransitionProps={{ timeout: 400 }}
           PaperProps={{
             sx: {
-              borderRadius: fullScreen ? 0 : '12px',
+              borderRadius: fullScreen ? 0 : 2,
               width: fullScreen ? '100%' : '90vw',
               height: fullScreen ? '100%' : '90vh',
               maxWidth: 'unset',
               bgcolor: 'background.paper',
               overflow: 'hidden',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
             },
           }}
         >
@@ -446,20 +438,19 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              background: theme => theme.palette.customSurface.cardHeader,
-              borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-              px: 3,
-              py: 1.5,
+              bgcolor: 'background.paper',
+              borderBottom: theme => `1px solid ${theme.palette.divider}`,
+              px: 2,
+              py: 1,
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
               <Typography
-                variant="h6"
+                variant="subtitle1"
                 component="div"
                 sx={{
-                  fontWeight: 600,
+                  fontWeight: 700,
                   color: 'text.primary',
-                  letterSpacing: '0.3px',
                 }}
               >
                 {title}
@@ -467,7 +458,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
               {details && (
                 <Tooltip title={details}>
                   <InfoOutlinedIcon
-                    sx={{ fontSize: 20, color: 'grey.600', cursor: 'default' }}
+                    sx={{ fontSize: 16, color: 'text.secondary', cursor: 'default' }}
                   />
                 </Tooltip>
               )}
@@ -478,6 +469,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                   <IconButton
                     aria-label="settings"
                     onClick={handleFullscreenMenuClick}
+                    size="small"
                     sx={{
                       mr: 1,
                       '& svg': {
@@ -486,7 +478,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                       },
                     }}
                   >
-                    <SettingsIcon />
+                    <SettingsIcon fontSize="small" />
                   </IconButton>
                   <Menu
                     anchorEl={fullscreenAnchorEl}
@@ -554,6 +546,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                     <Tooltip title={details}>
                       <IconButton
                         aria-label="details"
+                        size="small"
                         sx={{
                           mr: 0.5,
                           '& svg': {
@@ -565,7 +558,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                           },
                         }}
                       >
-                        <InfoOutlinedIcon />
+                        <InfoOutlinedIcon fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   )}
@@ -576,20 +569,22 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                 color="inherit"
                 onClick={handleCloseFullscreen}
                 aria-label="close"
+                size="small"
               >
-                <CloseIcon />
+                <CloseIcon fontSize="small" />
               </IconButton>
             </Box>
           </DialogTitle>
           <DialogContent
             dividers
             sx={{
-              p: noPadding ? 0 : 4,
+              p: noPadding ? 0 : 1.5,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               height: '100%',
               overflow: 'hidden',
+              bgcolor: 'background.paper',
             }}
           >
             {children}
@@ -597,8 +592,8 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
           <DialogActions
             sx={{
               p: 2,
-              borderTop: '1px solid rgba(0, 0, 0, 0.08)',
-              background: theme => theme.palette.customSurface.footer,
+              borderTop: theme => `1px solid ${theme.palette.divider}`,
+              bgcolor: 'background.paper',
             }}
           >
             {onDownload && showDownloadButton && (

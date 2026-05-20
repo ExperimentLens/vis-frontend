@@ -79,16 +79,16 @@ const BarChartControlPanel = () => {
   return (
     <Box sx={{ display: 'flex', gap: '1rem', flexDirection: 'column' }}>
       {/* Group By */}
-      <FormControl fullWidth>
+      <FormControl fullWidth size="small">
         <SearchableSelect
           labelId="group-by-category-label"
           inputLabel={
-            <Box display="flex" alignItems="center" gap={1}>
-              <CategoryIcon fontSize="small" />
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <CategoryIcon sx={{ fontSize: 14 }} />
               Group By (Category)
             </Box>
           }
-          label="Group By (Category) ----"
+          label="Group By (Category)"
           value={
             tab?.workflowTasks.dataExploration?.controlPanel.barGroupBy?.[0] || ''
           }
@@ -100,26 +100,28 @@ const BarChartControlPanel = () => {
       </FormControl>
 
       {/* Measure + Aggregations (searchable multi select) */}
-      <SearchableMultiSelect
-        labelId="measure-agg-multi-select-label"
-        inputLabel={
-          <Box display="flex" alignItems="center" gap={1}>
-            <FunctionsIcon fontSize="small" />
-            Measure + Aggregations
-          </Box>
-        }
-        label="Measure + Aggregations ----"
-        value={selectedMeasureAggValues}
-        options={measureAggOptions}
-        getOptionLabel={getOptionLabel}
-        onChange={handleMeasureAggChange}
-        menuMaxHeight={240}
-        menuWidth={360}
-      />
+      <FormControl fullWidth size="small">
+        <SearchableMultiSelect
+          labelId="measure-agg-multi-select-label"
+          inputLabel={
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <FunctionsIcon sx={{ fontSize: 14 }} />
+              Measure + Aggregations
+            </Box>
+          }
+          label="Measure + Aggregations"
+          value={selectedMeasureAggValues}
+          options={measureAggOptions}
+          getOptionLabel={getOptionLabel}
+          onChange={handleMeasureAggChange}
+          menuMaxHeight={240}
+          menuWidth={360}
+        />
+      </FormControl>
 
       {/* View mode */}
       <Box sx={{ mt: 1, display: 'flex', gap: '1rem', flexDirection: 'row', width: '100%' }}>
-        <ButtonGroup variant="contained" aria-label="view mode" sx={{ height: '36px' }} fullWidth>
+        <ButtonGroup variant="contained" aria-label="view mode" size="small" sx={{ height: '28px' }} fullWidth>
           <Button
             color={viewMode === 'overlay' ? 'primary' : 'inherit'}
             onClick={() => dispatch(setControls({ viewMode: 'overlay' }))}
