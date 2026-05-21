@@ -295,7 +295,17 @@ const ExperimentControls = () => {
               <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0, gap: 0.25 }}>
                 {/* Top row: workflow id, live dot, status pill, view diagram */}
                 <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-                  <Typography variant="captionLabel">
+                  <Typography variant="mono"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: '0.95rem',
+                      color: theme.palette.text.primary,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: 280,
+                      lineHeight: 1.2,
+                    }}>
                     Workflow
                   </Typography>
                   <Typography

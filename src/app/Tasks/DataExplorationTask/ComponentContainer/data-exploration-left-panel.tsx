@@ -207,73 +207,51 @@ const LeftPanel = () => {
   };
 
   return (
-    <Box sx={{
-      display: 'flex',
-      justifyContent: 'space-between', // This pushes content to opposite ends
-      width: '100%'
-    }}>
-      {/* Left side components */}
-      <Stack direction="row" spacing={1}>
-        {/* <ColumnsPanel/> */}
-        <Tooltip title="Filters">
-          <IconButton onClick={handleOpenFilter}>
-            <Badge
-              badgeContent={activeFilters.length}
-              color="primary"
-              invisible={activeFilters.length === 0}
-              sx={{ m: 0.5 }}
-            >
-              <FilterListIcon color="primary" fontSize="medium" />
-            </Badge>
-          </IconButton>
-        </Tooltip>
-        <Popover
-          id="filter-popover"
-          open={isFilterOpen}
-          anchorEl={anchorEl}
-          onClose={() => setFilterOpen(false)}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-          }}
-          PaperProps={{
-            sx: {
-              width: '550px',
-              p: 2,
-              borderRadius: '12px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-              border: '1px solid rgba(0,0,0,0.04)',
-            }
-          }}
-        >
-          <Box sx={{ mb: 1 }}>
-            {activeFilters.length > 0 ? (
-              <Box sx={{ mb: 1, p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
-                <Typography variant="subtitle2" color="primary">
-                  {activeFilters.length} active filter{activeFilters.length !== 1 ? 's' : ''}
-                </Typography>
-              </Box>
-            ) : null}
+    <Stack direction="row" spacing={0.75} alignItems="center">
+      <Tooltip title="Filters">
+        <IconButton onClick={handleOpenFilter} size="small">
+          <Badge
+            badgeContent={activeFilters.length}
+            color="primary"
+            invisible={activeFilters.length === 0}
+          >
+            <FilterListIcon color="primary" fontSize="small" />
+          </Badge>
+        </IconButton>
+      </Tooltip>
+      <Popover
+        id="filter-popover"
+        open={isFilterOpen}
+        anchorEl={anchorEl}
+        onClose={() => setFilterOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+        PaperProps={{
+          sx: {
+            width: 380,
+            p: 1.25,
+            borderRadius: 1.5,
+            boxShadow: 2,
+          }
+        }}
+      >
+        {activeFilters.length > 0 && (
+          <Box sx={{ mb: 0.75 }}>
+            <Typography variant="subtitle2" color="primary">
+              {activeFilters.length} active filter{activeFilters.length !== 1 ? 's' : ''}
+            </Typography>
           </Box>
-          <FilterBar
-            columns={formattedColumns}
-            filters={formattedFilters}
-            onFilterChange={handleFilterChange}
-            onAddFilter={handleAddFilter}
-            onRemoveFilter={handleRemoveFilter}
-          />
-        </Popover>
-      </Stack>
-
-      {/* Right side component */}
-      <Box>
-        <ChartButtonGroup />
-      </Box>
-    </Box>
+        )}
+        <FilterBar
+          columns={formattedColumns}
+          filters={formattedFilters}
+          onFilterChange={handleFilterChange}
+          onAddFilter={handleAddFilter}
+          onRemoveFilter={handleRemoveFilter}
+        />
+      </Popover>
+      <ChartButtonGroup />
+    </Stack>
   );
 };
 

@@ -362,8 +362,8 @@ const LineChart = () => {
             controlPanel={<LineChartControlPanel />}
             infoMessage={info}
             showInfoMessage={true}
-            maxHeight={isSmallScreen ? undefined : 500}
-            aspectRatio={isSmallScreen ? 2.8 : 1.8}
+            maxHeight={isSmallScreen ? undefined : 900}
+            aspectRatio={isSmallScreen ? 2.4 : 1.5}
           />
         ) : displayMode === 'overlay' ? (
           <ResponsiveCardVegaLite
@@ -375,8 +375,8 @@ const LineChart = () => {
             title="Line Chart"
             actions={false}
             controlPanel={<LineChartControlPanel />}
-            maxHeight={500}
-            aspectRatio={isSmallScreen ? 2.8 : 1.8}
+            maxHeight={900}
+            aspectRatio={isSmallScreen ? 2.4 : 1.5}
             loading={tab?.workflowTasks.dataExploration?.lineChart?.loading || tab?.workflowTasks.dataExploration?.metaData?.loading}
           />
         ) : (

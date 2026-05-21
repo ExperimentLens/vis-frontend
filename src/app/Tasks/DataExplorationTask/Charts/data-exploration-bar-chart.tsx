@@ -287,8 +287,8 @@ const BarChart = () => {
           spec={specification}
           actions={false}
           title={'Bar Chart'}
-          maxHeight={500}
-          aspectRatio={isSmallScreen ? 2.8 : 1.8}
+          maxHeight={900}
+          aspectRatio={isSmallScreen ? 2.4 : 1.5}
           controlPanel={<BarChartControlPanel />}
           infoMessage={info}
           showInfoMessage={

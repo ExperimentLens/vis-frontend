@@ -314,8 +314,8 @@ const ScatterChart = () => {
             controlPanel={<ScatterChartControlPanel />}
             infoMessage={info}
             showInfoMessage={true}
-            maxHeight={isSmallScreen ? undefined : 500}
-            aspectRatio={isSmallScreen ? 2.8 : 1.8}
+            maxHeight={isSmallScreen ? undefined : 900}
+            aspectRatio={isSmallScreen ? 2.4 : 1.5}
           />
         ) : effectiveDisplayMode === 'overlay' ? (
           <ResponsiveCardVegaLite
@@ -331,8 +331,8 @@ const ScatterChart = () => {
             blinkOnStart={false}
             infoMessage={info}
             showInfoMessage={false}
-            maxHeight={500}
-            aspectRatio={isSmallScreen ? 2.8 : 1.8}
+            maxHeight={900}
+            aspectRatio={isSmallScreen ? 2.4 : 1.5}
             loading={
               tab?.workflowTasks.dataExploration?.scatterChart?.loading ||
               tab?.workflowTasks.dataExploration?.metaData?.loading

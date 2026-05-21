@@ -39,15 +39,6 @@ import PlaceRoundedIcon from '@mui/icons-material/PlaceRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import TableRowsIcon from '@mui/icons-material/TableRows';
 
-const chartLabels: Record<string, string> = {
-  datatable: 'Table',
-  line: 'Line Chart',
-  bar: 'Bar Chart',
-  heatmap: 'Heatmap',
-  scatter: 'Scatter Plot',
-  map: 'Map',
-};
-
 interface MetaChipProps {
   icon?: React.ReactNode;
   label: React.ReactNode;
@@ -235,72 +226,79 @@ const DataExplorationComponent = () => {
         borderColor: theme.palette.customGrey.main,
       }}
     >
-      <Stack
-        direction="row"
-        spacing={1.25}
-        alignItems="center"
-        divider={<Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />}
-        sx={{ flexWrap: 'wrap', rowGap: 0.5 }}
-      >
-        <Tooltip title={selectedDataset} arrow>
-          <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
-            <StorageRoundedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-            <Typography
-              variant="mono"
-              sx={{
-                fontWeight: 700,
-                fontSize: '0.85rem',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                maxWidth: 320,
-              }}
-            >
-              {dataset?.name || selectedDataset}
-            </Typography>
-          </Stack>
-        </Tooltip>
-
-        <MetaChip
-          icon={<ViewColumnRoundedIcon sx={{ fontSize: 14 }} />}
-          label={`${cols} cols`}
-          loading={isMetaLoading}
-          width={68}
-        />
-        <MetaChip
-          icon={<TableRowsIcon sx={{ fontSize: 14 }} />}
-          label={`${rows} rows`}
-          loading={isMetaLoading}
-          width={68}
-        />
-        {dataset?.format && (
-          <MetaChip
-            icon={<InsertDriveFileOutlinedIcon sx={{ fontSize: 14 }} />}
-            label={dataset.format.toUpperCase()}
-          />
-        )}
-        {/* <MetaChip label={datasetType.replace(/_/g, ' ')} tone="primary" /> */}
-
-        {hasTime && (
-          <Tooltip title={`Time column: ${meta?.data?.timeColumn?.join(', ')}`} arrow>
-            <Box sx={{ display: 'inline-flex' }}>
-              <MetaChip
-                icon={<AccessTimeRoundedIcon sx={{ fontSize: 14 }} />}
-                label="Temporal"
-                tone="info"
-              />
-            </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', rowGap: 0.5 }}>
+        <Stack
+          direction="row"
+          spacing={1.25}
+          alignItems="center"
+          divider={<Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />}
+          sx={{ flexWrap: 'wrap', rowGap: 0.5, flex: 1, minWidth: 0 }}
+        >
+          <Tooltip title={selectedDataset} arrow>
+            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
+              <StorageRoundedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+              <Typography
+                variant="mono"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: 320,
+                }}
+              >
+                {dataset?.name || selectedDataset}
+              </Typography>
+            </Stack>
           </Tooltip>
-        )}
-        {hasLatLon && (
-          <MetaChip
-            icon={<PlaceRoundedIcon sx={{ fontSize: 14 }} />}
-            label="Geo"
-            tone="success"
-          />
-        )}
 
-      </Stack>
+          <MetaChip
+            icon={<ViewColumnRoundedIcon sx={{ fontSize: 14 }} />}
+            label={`${cols} cols`}
+            loading={isMetaLoading}
+            width={68}
+          />
+          <MetaChip
+            icon={<TableRowsIcon sx={{ fontSize: 14 }} />}
+            label={`${rows} rows`}
+            loading={isMetaLoading}
+            width={68}
+          />
+          {dataset?.format && (
+            <MetaChip
+              icon={<InsertDriveFileOutlinedIcon sx={{ fontSize: 14 }} />}
+              label={dataset.format.toUpperCase()}
+            />
+          )}
+
+          {hasTime && (
+            <Tooltip title={`Time column: ${meta?.data?.timeColumn?.join(', ')}`} arrow>
+              <Box sx={{ display: 'inline-flex' }}>
+                <MetaChip
+                  icon={<AccessTimeRoundedIcon sx={{ fontSize: 14 }} />}
+                  label="Temporal"
+                  tone="info"
+                />
+              </Box>
+            </Tooltip>
+          )}
+          {hasLatLon && (
+            <MetaChip
+              icon={<PlaceRoundedIcon sx={{ fontSize: 14 }} />}
+              label="Geo"
+              tone="success"
+            />
+          )}
+        </Stack>
+
+        {!isImage && (
+          <>
+            <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+            <LeftPanel />
+          </>
+        )}
+      </Box>
     </Paper>
   );
 
@@ -345,7 +343,6 @@ const DataExplorationComponent = () => {
       }}
     >
       {summaryBanner}
-      <LeftPanel />
       <Paper
         ref={cardRef}
         elevation={1}
