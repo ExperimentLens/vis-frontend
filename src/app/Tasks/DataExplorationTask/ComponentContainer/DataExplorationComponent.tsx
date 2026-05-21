@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   Box,
   Paper,
@@ -13,7 +13,6 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import type { Theme } from '@mui/material/styles';
 import {
   dataExplorationDefault,
 } from '../../../../shared/models/tasks/data-exploration-task.model';
@@ -38,17 +37,7 @@ import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutl
 import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import PlaceRoundedIcon from '@mui/icons-material/PlaceRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import KeyboardRoundedIcon from '@mui/icons-material/KeyboardRounded';
 import TableRowsIcon from '@mui/icons-material/TableRows';
-
-const chartShortcuts: Record<string, string> = {
-  '1': 'datatable',
-  '2': 'line',
-  '3': 'bar',
-  '4': 'heatmap',
-  '5': 'scatter',
-  '6': 'map',
-};
 
 const chartLabels: Record<string, string> = {
   datatable: 'Table',
@@ -57,18 +46,6 @@ const chartLabels: Record<string, string> = {
   heatmap: 'Heatmap',
   scatter: 'Scatter Plot',
   map: 'Map',
-};
-
-const chartTypeAccent = (type: string, theme: Theme) => {
-  switch (type) {
-    case 'datatable': return theme.palette.primary.main;
-    case 'line':      return theme.palette.info.main;
-    case 'bar':       return theme.palette.secondary.main;
-    case 'heatmap':   return theme.palette.warning.main;
-    case 'scatter':   return theme.palette.success.main;
-    case 'map':       return '#8b5cf6';
-    default:          return theme.palette.divider;
-  }
 };
 
 interface MetaChipProps {
@@ -165,42 +142,8 @@ const DataExplorationComponent = () => {
     if (cardRef.current) cardRef.current.scrollTop = 0;
   }, [chartType]);
 
-  const stringColumnsCount = useMemo(
-    () => (meta?.data?.originalColumns ?? []).filter(c => c.type === 'STRING').length,
-    [meta?.data?.originalColumns],
-  );
-  const hasBarGroupBy = (tab?.workflowTasks.dataExploration?.controlPanel?.barGroupBy?.length ?? 0) > 0;
   const hasLatLon = !!meta?.data?.hasLatLonColumns;
   const hasTime = (meta?.data?.timeColumn?.length ?? 0) > 0;
-
-  const isShortcutEnabled = (target: string) => {
-    if (target === 'bar') return hasBarGroupBy;
-    if (target === 'heatmap') return stringColumnsCount >= 2;
-    if (target === 'map') return hasLatLon;
-    return true;
-  };
-
-  // Number-key shortcuts to switch chart types — ignored when typing in inputs.
-  useEffect(() => {
-    if (isImage) return;
-    const handler = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement | null;
-      const tag = el?.tagName;
-      if (
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        tag === 'SELECT' ||
-        el?.isContentEditable
-      ) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const target = chartShortcuts[e.key];
-      if (!target) return;
-      if (!isShortcutEnabled(target)) return;
-      dispatch(setControls({ chartType: target }));
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [hasBarGroupBy, stringColumnsCount, hasLatLon, isImage]);
 
   if (!selectedDataset)
     return (
@@ -357,62 +300,6 @@ const DataExplorationComponent = () => {
           />
         )}
 
-        <Box sx={{ ml: 'auto !important', display: 'flex', alignItems: 'center', gap: 1 }}>
-          {!isImage && chartType && (
-            <Tooltip
-              arrow
-              title={
-                <Box sx={{ p: 0.5 }}>
-                  <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 0.5 }}>
-                    Keyboard shortcuts
-                  </Typography>
-                  {Object.entries(chartShortcuts).map(([key, target]) => (
-                    <Typography
-                      key={key}
-                      variant="caption"
-                      sx={{ display: 'block', opacity: isShortcutEnabled(target) ? 1 : 0.5 }}
-                    >
-                      <Box
-                        component="span"
-                        sx={{
-                          display: 'inline-block',
-                          minWidth: 18,
-                          textAlign: 'center',
-                          mr: 0.75,
-                          px: 0.5,
-                          borderRadius: 0.5,
-                          fontFamily: 'monospace',
-                          bgcolor: 'rgba(255,255,255,0.18)',
-                        }}
-                      >
-                        {key}
-                      </Box>
-                      {chartLabels[target]}
-                    </Typography>
-                  ))}
-                </Box>
-              }
-            >
-              <Box sx={{ display: 'inline-flex' }}>
-                <KeyboardRoundedIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-              </Box>
-            </Tooltip>
-          )}
-          {!isImage && chartType && (
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-              Viewing as{' '}
-              <Box
-                component="span"
-                sx={{
-                  color: chartTypeAccent(chartType, theme),
-                  fontWeight: 700,
-                }}
-              >
-                {chartLabels[chartType] ?? chartType}
-              </Box>
-            </Typography>
-          )}
-        </Box>
       </Stack>
     </Paper>
   );
@@ -468,8 +355,6 @@ const DataExplorationComponent = () => {
           height: '100%',
           width: '100%',
           position: 'relative',
-          borderTop: `3px solid ${chartTypeAccent(chartType, theme)}`,
-          transition: 'border-color 0.3s ease',
         }}
       >
         <Fade key={chartType || 'empty'} in timeout={250}>
