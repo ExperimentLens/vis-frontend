@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
-import { Box, Typography, Chip, LinearProgress } from '@mui/material';
+import { Box, Typography, LinearProgress } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import { setCache } from '../../../../shared/utils/localStorageCache';
 import { DetailsCard, DetailsCardItem } from '../../../../shared/components/details-card';

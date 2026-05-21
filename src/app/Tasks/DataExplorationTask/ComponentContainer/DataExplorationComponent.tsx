@@ -39,6 +39,7 @@ import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import PlaceRoundedIcon from '@mui/icons-material/PlaceRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import KeyboardRoundedIcon from '@mui/icons-material/KeyboardRounded';
+import TableRowsIcon from '@mui/icons-material/TableRows';
 
 const chartShortcuts: Record<string, string> = {
   '1': 'datatable',
@@ -274,7 +275,7 @@ const DataExplorationComponent = () => {
       </Box>
     );
 
-  const datasetType = meta?.data?.datasetType ?? 'TABULAR';
+  // const datasetType = meta?.data?.datasetType ?? 'TABULAR';
   const cols = meta?.data?.originalColumns?.length ?? 0;
   const rows = meta?.data?.totalItems ?? 0;
   const isMetaLoading = !!meta?.loading && !meta?.data;
@@ -324,7 +325,7 @@ const DataExplorationComponent = () => {
           width={68}
         />
         <MetaChip
-          icon={<ViewColumnRoundedIcon sx={{ fontSize: 14 }} />}
+          icon={<TableRowsIcon sx={{ fontSize: 14 }} />}
           label={`${rows} rows`}
           loading={isMetaLoading}
           width={68}
@@ -335,7 +336,7 @@ const DataExplorationComponent = () => {
             label={dataset.format.toUpperCase()}
           />
         )}
-        <MetaChip label={datasetType.replace(/_/g, ' ')} tone="primary" />
+        {/* <MetaChip label={datasetType.replace(/_/g, ' ')} tone="primary" /> */}
 
         {hasTime && (
           <Tooltip title={`Time column: ${meta?.data?.timeColumn?.join(', ')}`} arrow>
