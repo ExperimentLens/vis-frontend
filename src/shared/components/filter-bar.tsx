@@ -423,8 +423,8 @@ export default function FilterBar({
     const hasMore = validColumns.length > 5;
 
     return (
-      <Box sx={{ mt: 2 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+      <Box sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
           Available Columns
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -466,8 +466,8 @@ export default function FilterBar({
     if (!showAvailableOperators) return null;
 
     return (
-      <Box sx={{ mt: 2 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+      <Box sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
           Available Operators for {tempColumn}
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -497,8 +497,8 @@ export default function FilterBar({
     const hasMore = allValues.length > 10;
 
     return (
-      <Box sx={{ mt: 2 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+      <Box sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
           Available values for {tempColumn}
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
@@ -614,11 +614,11 @@ export default function FilterBar({
         </Typography>
       )}
 
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ my: 1.25 }} />
 
       {/* Active filters */}
-      <Box sx={{ mt: 2 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+      <Box sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
           Active Filters
         </Typography>
 

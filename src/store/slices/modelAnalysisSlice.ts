@@ -79,12 +79,51 @@ export const fetchAffected = createAsyncThunk(
   }
 );
 
+// Default: ask the server to stratified-sample by confusion cell so the UMAP
+// shows a representative slice of the test set (every cell of the confusion
+// matrix gets coverage, misclassifications aren't drowned out by correct rows).
+// Pass `misclassifiedOnly: true` to deep-dive errors only.
 export const getLabelTestInstances = createAsyncThunk(
   'modelAnalysis/get_test_instances',
-  async ({ experimentId, runId, offset = 0, limit = 1000 }: { experimentId: string; runId: string; offset?: number; limit?: number }, { rejectWithValue }) => {
+  async (
+    {
+      experimentId,
+      runId,
+      strategy = 'stratified',
+      perCell = 100,
+      maxRows = 2000,
+      misclassifiedOnly = false,
+      offset,
+      limit,
+    }: {
+      experimentId: string;
+      runId: string;
+      strategy?: 'first' | 'stratified';
+      perCell?: number;
+      maxRows?: number;
+      misclassifiedOnly?: boolean;
+      offset?: number;
+      limit?: number;
+    },
+    { rejectWithValue },
+  ) => {
     try {
+      const params: Record<string, string | number | boolean> = {};
+      if (misclassifiedOnly) {
+        params.misclassifiedOnly = true;
+        params.maxRows = maxRows;
+      } else if (strategy === 'stratified') {
+        params.strategy = 'stratified';
+        params.perCell = perCell;
+        params.maxRows = maxRows;
+      } else {
+        params.strategy = 'first';
+        if (offset !== undefined) params.offset = offset;
+        if (limit !== undefined) params.limit = limit;
+      }
+
       const response = await experimentApi.get(`${experimentId}/runs/${runId}/evaluation/test-instances`, {
-        params: { offset, limit },
+        params,
       });
 
       return response.data;

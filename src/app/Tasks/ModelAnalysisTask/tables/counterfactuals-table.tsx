@@ -365,8 +365,8 @@ const CounterfactualsTable = (props: ITableComponent) => {
         details={ tab?.workflowTasks.modelAnalysis?.counterfactuals?.data?.plotDescr}
         title={
           activeTab === 0
-            ? 'feature Counterfactual Explanations'
-            : 'hyperparameters Counterfactual Explanations'
+            ? 'Feature Counterfactual Explanations'
+            : 'Hyperparameters Counterfactual Explanations'
         }
         controlPanel={
           <ControlPanel
@@ -474,8 +474,8 @@ const ControlPanel = ({
           },
         }}
       >
-        <Tab label="Features" disabled={counterfactuals?.loading} />
-        <Tab label="Hyperparameters" disabled={counterfactuals?.loading} />
+        <Tab label="FEATURES" disabled={counterfactuals?.loading} />
+        <Tab label="HYPERPARAMETERS" disabled={counterfactuals?.loading} />
       </Tabs>
     </Box>
   );

@@ -1,7 +1,6 @@
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import Typography from '@mui/material/Typography';
 import DraggableColumns from './draggable-columns';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -290,22 +289,31 @@ const ParallelCoordinatePlot = () => {
   };
 
   return (
-    <Paper elevation={2} sx={{ height: '100%', width: '100%' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '10%' }}>
-        <Typography/>
-        <Box sx={{ display: 'flex', alignItems: 'center', px: 1.5 }}>
-          <Tooltip title="Parameters">
-            <IconButton onClick={handleParamsOpen}>
-              <Grid3x3Icon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Color By">
-            <IconButton onClick={handleColorOpen}>
-              <PaletteIcon />
-            </IconButton>
-          </Tooltip>
-        </Box>
+    <Paper
+      elevation={0}
+      variant="outlined"
+      sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          alignItems: 'center',
+          height: 36,
+          flex: '0 0 auto',
+          px: 0.5,
+        }}
+      >
+        <Tooltip title="Parameters">
+          <IconButton onClick={handleParamsOpen}>
+            <Grid3x3Icon />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Color By">
+          <IconButton onClick={handleColorOpen}>
+            <PaletteIcon />
+          </IconButton>
+        </Tooltip>
         <SelectionPopover
           id="Parameters"
           open={paramsOpen}
@@ -339,7 +347,7 @@ const ParallelCoordinatePlot = () => {
       </Box>
       {
         parallel.options.length > 0 ? (
-          <Box sx={{ width: '99%', px: 1, position: 'relative' }}>
+          <Box sx={{ flex: 1, minHeight: 0, width: '100%', px: 1, position: 'relative' }}>
             <DraggableColumns
               foldArray={foldArray}
               onOrderChange={() => {
@@ -348,7 +356,6 @@ const ParallelCoordinatePlot = () => {
               metricIds={parallel.options}
             />
             <ParallelCoordinateVega
-              // parallelData={parallelData}
               progressParallel={parallel}
               foldArray={foldArray}
               selectedWorkflows={workflowsTable.selectedWorkflows}
@@ -356,7 +363,7 @@ const ParallelCoordinatePlot = () => {
             ></ParallelCoordinateVega>
           </Box>
         ) : (
-          <Box sx={{ width: '100%', height: '90%' }}>
+          <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
             <InfoMessage
               message="No Metric Data Available."
               type="info"

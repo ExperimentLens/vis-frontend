@@ -211,15 +211,18 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
 
   return (
     <Toolbar
+      variant="dense"
       sx={{
-        minHeight: 48,
-        height: 48,
+        minHeight: 44,
+        height: 44,
         '@media (min-width:600px)': {
-          minHeight: 48,
-          height: 48,
+          minHeight: 44,
+          height: 44,
         },
-        pl: { sm: 2 },
-        pr: { xs: 1, sm: 1 },
+        flex: '0 0 auto',
+        gap: 1,
+        px: 1.5,
+        borderBottom: theme => `1px solid ${theme.palette.divider}`,
         ...(numSelected > 0 &&
           selectedTab !== 1 && {
           bgcolor: theme =>
@@ -232,77 +235,51 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
     >
       {numSelected > 0 && selectedTab !== 1 ? (
         <Typography
-          sx={{ flex: '1 1 60%' }}
+          sx={{ flex: '1 1 auto' }}
           color="inherit"
-          variant="subtitle1"
+          variant="subtitle2"
           component="div"
         >
           {numSelected} selected
         </Typography>
       ) : (
         selectedTab !== 1 && (
-          <Tooltip title="" sx={{ width: '15%' }}>
-            <Stack spacing={1} direction="row">
-              <Button
-                size="medium"
-                variant={
-                  visibleTable === 'workflows' ? 'contained' : 'outlined'
-                }
-                sx={{
-                  padding: 1,
-                  margin: 2,
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  borderRadius: 4,
-                }}
-                onClick={() => dispatch(setVisibleTable('workflows'))}
-              >
-                Completed
-              </Button>
-              <Button
-                size="small"
-                variant={
-                  visibleTable === 'scheduled' ? 'contained' : 'outlined'
-                }
-                sx={{
-                  padding: 1,
-                  margin: 2,
-                  fontSize: '11px',
-                  fontWeight: 'bold',
-                  borderRadius: 4,
-                }}
-                onClick={() => dispatch(setVisibleTable('scheduled'))}
-              >
-                Scheduled
-              </Button>
-            </Stack>
-          </Tooltip>
+          <Stack spacing={0.75} direction="row" sx={{ flex: '0 0 auto' }}>
+            <Button
+              size="small"
+              variant={visibleTable === 'workflows' ? 'contained' : 'outlined'}
+              sx={{ borderRadius: 1, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}
+              onClick={() => dispatch(setVisibleTable('workflows'))}
+            >
+              Completed
+            </Button>
+            <Button
+              size="small"
+              variant={visibleTable === 'scheduled' ? 'contained' : 'outlined'}
+              sx={{ borderRadius: 1, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}
+              onClick={() => dispatch(setVisibleTable('scheduled'))}
+            >
+              Scheduled
+            </Button>
+          </Stack>
         )
       )}
       {numSelected > 0 && selectedTab !== 1 ? (
-        <Tooltip title="">
-          <Button
-            sx={{ padding: 1, margin: 2 }}
-            size="small"
-            variant="contained"
-            disabled={numSelected < 2 && tableName === 'Workflow Execution'}
-            style={{ fontSize: '11px' }}
-            onClick={handleClickedFunction('compare-completed')}
-          >
-            {actionButtonName}
-          </Button>
-        </Tooltip>
-      ) : (
-        <Box
-          sx={{
-            width: selectedTab !== 1 ? '85%' : '100%',
-            display: 'flex',
-            alignItems: 'center',
-            flexDirection: 'row',
-            pl: 1,
-          }}
+        <Button
+          size="small"
+          variant="contained"
+          disabled={numSelected < 2 && tableName === 'Workflow Execution'}
+          sx={{ ml: 'auto', borderRadius: 1, fontWeight: 600 }}
+          onClick={handleClickedFunction('compare-completed')}
         >
-          <Box sx={{ gap: 0.2, marginLeft: 'auto' }}>
+          {actionButtonName}
+        </Button>
+      ) : (
+        <Stack
+          direction="row"
+          alignItems="center"
+          sx={{ flex: 1, justifyContent: 'flex-end' }}
+        >
             {/* <Tooltip title='Create new workflow'>
               <IconButton onClick={handleCreateWorkflowOpen}>
                 <AddIcon />
@@ -366,19 +343,14 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
               onClose={handleCreateWokrkflowClose}
               anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
               PaperProps={{
-                elevation: 3,
+                elevation: 2,
                 sx: {
                   width: 300,
-                  maxHeight: 300,
+                  maxHeight: 320,
                   overflow: 'hidden',
-                  padding: 0,
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                  border: '1px solid rgba(0,0,0,0.04)',
-                  mt: 1,
-                  '& .MuiList-root': {
-                    padding: 0,
-                  }
+                  borderRadius: 1.5,
+                  mt: 0.5,
+                  '& .MuiList-root': { padding: 0 },
                 },
               }}
             >
@@ -388,12 +360,12 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
                 component="form"
                 onSubmit={handleSubmit}
                 sx={{
-                  p: 2,
+                  p: 1.5,
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 2,
+                  gap: 1.25,
                   overflow: 'auto',
-                  maxHeight: 200
+                  maxHeight: 240,
                 }}
               >
                 <TextField
@@ -488,8 +460,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
               clearLabel="Clear Grouping"
               anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
             />
-          </Box>
-        </Box>
+        </Stack>
       )}
     </Toolbar>
   );

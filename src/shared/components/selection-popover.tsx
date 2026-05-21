@@ -1,9 +1,11 @@
 import type React from 'react';
+import { useMemo, useState } from 'react';
 import {
   alpha,
   Box,
   Button,
   Chip,
+  InputAdornment,
   List,
   ListItem,
   ListItemButton,
@@ -11,6 +13,8 @@ import {
   ListItemText,
   Popover,
   type PopoverOrigin,
+  TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
@@ -18,6 +22,8 @@ import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
+import SearchIcon from '@mui/icons-material/Search';
+import CloseIcon from '@mui/icons-material/Close';
 
 export interface SelectionPopoverProps {
   open: boolean
@@ -43,6 +49,9 @@ export interface SelectionPopoverProps {
   getOptionLabel?: (option: string) => string
   id?: string
   isOptionDisabled?: (option: string) => boolean
+  /** When true, renders a search field above the list that filters options by substring. */
+  searchable?: boolean
+  searchPlaceholder?: string
 }
 
 /**
@@ -65,20 +74,37 @@ const SelectionPopover = ({
   multiSelect = true,
   anchorOrigin = { vertical: 'bottom', horizontal: 'left' },
   transformOrigin,
-  width = 280,
-  maxListHeight = 220,
+  width = 220,
+  maxListHeight = 240,
   getOptionLabel,
   id,
   isOptionDisabled,
+  searchable = false,
+  searchPlaceholder = 'Search…',
 }: SelectionPopoverProps) => {
   const selectedCount = selectedOptions.length;
+  const [search, setSearch] = useState('');
+
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !search.trim()) return options;
+    const q = search.toLowerCase();
+
+    return options.filter(opt => {
+      const label = getOptionLabel ? getOptionLabel(opt) : opt;
+
+      return label.toLowerCase().includes(q);
+    });
+  }, [options, search, searchable, getOptionLabel]);
 
   return (
     <Popover
       id={id}
       open={open}
       anchorEl={anchorEl}
-      onClose={onClose}
+      onClose={() => {
+        setSearch('');
+        onClose();
+      }}
       anchorOrigin={anchorOrigin}
       transformOrigin={transformOrigin}
       PaperProps={{
@@ -135,6 +161,46 @@ const SelectionPopover = ({
         )}
       </Box>
 
+      {/* ── Optional search ── */}
+      {searchable && (
+        <Box sx={{ px: 1, pt: 0.75, pb: 0.5 }}>
+          <TextField
+            autoFocus
+            size="small"
+            fullWidth
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={searchPlaceholder}
+            onKeyDown={(e) => e.stopPropagation()}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start" sx={{ ml: 0.25, mr: 0 }}>
+                  <SearchIcon sx={{ fontSize: 16, opacity: 0.6 }} />
+                </InputAdornment>
+              ),
+              endAdornment: search ? (
+                <InputAdornment position="end">
+                  <Box
+                    onClick={() => setSearch('')}
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      cursor: 'pointer',
+                      opacity: 0.6,
+                      '&:hover': { opacity: 1 },
+                    }}
+                  >
+                    <CloseIcon sx={{ fontSize: 14 }} />
+                  </Box>
+                </InputAdornment>
+              ) : null,
+              sx: { fontSize: '0.8rem', py: 0 },
+            }}
+            sx={{ '& .MuiInputBase-input': { py: 0.5, fontSize: '0.8rem' } }}
+          />
+        </Box>
+      )}
+
       {/* ── Items list ── */}
       <List
         sx={{
@@ -150,7 +216,17 @@ const SelectionPopover = ({
           },
         }}
       >
-        {options.map(option => {
+        {searchable && filteredOptions.length === 0 && (
+          <Box sx={{ px: 1.5, py: 1 }}>
+            <Typography
+              variant="caption"
+              sx={{ fontStyle: 'italic', color: 'text.secondary' }}
+            >
+              No results
+            </Typography>
+          </Box>
+        )}
+        {filteredOptions.map(option => {
           const isSelected = selectedOptions.includes(option);
           const label = getOptionLabel ? getOptionLabel(option) : option;
           const disabled = isOptionDisabled?.(option) ?? false;
@@ -192,15 +268,17 @@ const SelectionPopover = ({
                     )
                   )}
                 </ListItemIcon>
-                <ListItemText
-                  primary={label}
-                  primaryTypographyProps={{
-                    fontSize: '0.8rem',
-                    fontWeight: isSelected ? 600 : 500,
-                    color: isSelected ? 'text.primary' : 'text.secondary',
-                    noWrap: true,
-                  }}
-                />
+                <Tooltip title={label} placement="right" enterDelay={500}>
+                  <ListItemText
+                    primary={label}
+                    primaryTypographyProps={{
+                      fontSize: '0.8rem',
+                      fontWeight: isSelected ? 600 : 500,
+                      color: isSelected ? 'text.primary' : 'text.secondary',
+                      noWrap: true,
+                    }}
+                  />
+                </Tooltip>
               </ListItemButton>
             </ListItem>
           );

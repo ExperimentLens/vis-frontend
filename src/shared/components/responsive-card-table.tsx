@@ -59,11 +59,11 @@ export const SectionHeader = ({
       display: 'flex',
       alignItems: 'center',
       borderBottom: theme => `1px solid ${theme.palette.divider}`,
-      px: 1.5,
-      py: 1,
+      px: 1.25,
+      py: 0.5,
       background: theme => theme.palette.customSurface.sectionHeader,
-      borderTopLeftRadius: 8,
-      borderTopRightRadius: 8,
+      borderTopLeftRadius: 6,
+      borderTopRightRadius: 6,
       margin: 0,
       width: '100%',
     }}
@@ -304,23 +304,19 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                     horizontal: 'right',
                   }}
                   PaperProps={{
-                    elevation: 3,
+                    elevation: 2,
                     sx: {
-                      width: 320,
-                      maxHeight: 500,
-                      overflowY: 'hidden', // Change this to hidden
-                      overflowX: 'hidden',
-                      padding: 0,
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                      border: '1px solid rgba(0,0,0,0.04)',
-                      mt: 1,
+                      width: 240,
+                      maxHeight: 380,
+                      overflow: 'hidden',
+                      borderRadius: 1.5,
+                      mt: 0.5,
                       '& .MuiMenu-list': {
                         padding: 0,
                         display: 'flex',
                         flexDirection: 'column',
                         height: '100%',
-                        maxHeight: 500,
+                        maxHeight: 380,
                       },
                     },
                   }}
@@ -341,22 +337,22 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                     <>
                       <Box
                         sx={{
-                          p: 2,
+                          p: 1.25,
                           overflowY: 'auto',
                           flexGrow: 1,
                         }}
                       >
                         {controlPanel}
                       </Box>
-                      <Divider sx={{ mt: 1, opacity: 0.6 }} />
+                      <Divider sx={{ opacity: 0.6 }} />
                     </>
                   )}
                   <Box
                     sx={{
-                      py: controlPanel && !shouldShowControlsInHeader ? 0.5 : 1,
+                      py: controlPanel && !shouldShowControlsInHeader ? 0.25 : 0.5,
                       borderTop: controlPanel && !shouldShowControlsInHeader
                         ? 'none'
-                        : '1px solid rgba(0,0,0,0.08)',
+                        : theme => `1px solid ${theme.palette.divider}`,
                     }}
                   >
                     {showDownloadButton && onDownload && (!shouldShowControlsInHeader) && (
@@ -493,23 +489,19 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                       horizontal: 'right',
                     }}
                     PaperProps={{
-                      elevation: 3,
+                      elevation: 2,
                       sx: {
-                        width: 320,
-                        maxHeight: 500,
-                        overflowY: 'hidden',
-                        overflowX: 'hidden',
-                        padding: 0,
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                        border: '1px solid rgba(0,0,0,0.04)',
-                        mt: 1,
+                        width: 240,
+                        maxHeight: 380,
+                        overflow: 'hidden',
+                        borderRadius: 1.5,
+                        mt: 0.5,
                         '& .MuiMenu-list': {
                           padding: 0,
                           display: 'flex',
                           flexDirection: 'column',
                           height: '100%',
-                          maxHeight: 500,
+                          maxHeight: 380,
                         },
                       },
                     }}
@@ -528,7 +520,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                     />
                     <Box
                       sx={{
-                        p: 2,
+                        p: 1.25,
                         overflowY: 'auto',
                         flexGrow: 1,
                       }}
@@ -537,8 +529,8 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                     </Box>
                     {additionalMenuItems && (
                       <>
-                        <Divider sx={{ mt: 1, opacity: 0.6 }} />
-                        <Box sx={{ py: 0.5 }}>{additionalMenuItems}</Box>
+                        <Divider sx={{ opacity: 0.6 }} />
+                        <Box sx={{ py: 0.25 }}>{additionalMenuItems}</Box>
                       </>
                     )}
                   </Menu>

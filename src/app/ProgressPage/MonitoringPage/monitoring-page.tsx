@@ -1,4 +1,4 @@
-import { Box, Tab, Tabs, Paper, Stack, Chip, useTheme } from '@mui/material';
+import { Box, Tab, Tabs, Paper, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useMemo, useRef } from 'react';
 import ParallelCoordinatePlot from './ParalleleCoodrinates/parallel-coordinate-plot';
@@ -46,8 +46,6 @@ const MonitoringPage = () => {
     return tasks.some(t => typeof t.name === 'string' && /explainability/i.test(t.name)) &&
       !dataAssets?.some((asset: IDataAsset) => asset.name === 'model.pt');
   }, [workflows]);
-
-  const numSelected = workflowsTable.selectedWorkflows.length;
 
   useEffect(() => {
     if (compareId) {
@@ -102,7 +100,17 @@ const MonitoringPage = () => {
               dispatch(setVisibleTable('workflows'));
             }
           }}
-          sx={{ '& .MuiTab-root': { gap: 0.5, px: 1.5 } }}
+          sx={{
+            minHeight: 44,
+            '& .MuiTab-root': {
+              gap: 0.5,
+              px: 1.5,
+              minHeight: 44,
+              fontSize: '0.95rem',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px',
+            },
+          }}
         >
           <Tab
             icon={<DashboardRoundedIcon fontSize="small" />}
@@ -112,19 +120,7 @@ const MonitoringPage = () => {
           <Tab
             icon={<CompareArrowsRoundedIcon fontSize="small" />}
             iconPosition="start"
-            label={
-              <Stack direction="row" alignItems="center" spacing={0.75}>
-                <span>Compare</span>
-                {numSelected > 0 && (
-                  <Chip
-                    size="small"
-                    color="primary"
-                    label={`${numSelected} selected`}
-                    sx={{ height: 18, fontSize: '0.7rem', fontWeight: 700 }}
-                  />
-                )}
-              </Stack>
-            }
+            label="Compare"
           />
           <Tab
             icon={<LightbulbOutlinedIcon fontSize="small" />}
@@ -138,23 +134,24 @@ const MonitoringPage = () => {
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          rowGap: 1,
-          height: '100%',
+          flex: 1,
+          minHeight: 0,
           overflow: 'auto',
-          px: 2,
-          py: 2,
+          px: 1.5,
+          pt: 0,
+          pb: 1.5,
         }}
       >
         {selectedTab === 0 && (
-          <Box sx={{ height: '98%', display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <Box sx={{ height: '60%', minHeight: '350px' }}>
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+            <Box sx={{ flex: '0 0 60%', minHeight: 320 }}>
               {visibleTable === 'workflows' ? (
                 <WorkflowTable />
               ) : (
                 <ScheduleTable />
               )}
             </Box>
-            <Box sx={{ height: '40%', minHeight: '250px' }}>
+            <Box sx={{ flex: 1, minHeight: 220 }}>
               <ParallelCoordinatePlot />
             </Box>
           </Box>
@@ -162,9 +159,10 @@ const MonitoringPage = () => {
         {selectedTab === 1 && (
           <Box
             sx={{
-              height: '99%',
+              flex: 1,
+              minHeight: 0,
               display: 'flex',
-              gap: 1,
+              gap: 1.5,
             }}
           >
             <Resizable
@@ -215,7 +213,7 @@ const MonitoringPage = () => {
             >
               <WorkflowTable />
             </Resizable>
-            <Paper elevation={0} variant="outlined" sx={{ flex: 1, overflow: 'auto', height: '100%', ml: '8px', borderRadius: 2 }}>
+            <Paper elevation={0} variant="outlined" sx={{ flex: 1, overflow: 'auto', height: '100%', borderRadius: 1.5 }}>
               <ComparativeAnalysis />
             </Paper>
           </Box>

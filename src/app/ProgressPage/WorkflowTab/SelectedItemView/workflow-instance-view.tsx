@@ -272,14 +272,18 @@ const InstanceView = () => {
 
   useEffect(() => {
     if (tab) {
+      // Default: stratified sample so every confusion cell is represented.
+      // When the user toggles "misclassified only", refetch with that flag so
+      // we get every error (not just the slice already in the stratified sample).
       dispatch(
         getLabelTestInstances({
           experimentId: experimentId || '',
           runId: tab?.workflowId,
+          misclassifiedOnly: showMisclassifiedOnly,
         }),
       );
     }
-  }, [isTabInitialized]);
+  }, [isTabInitialized, showMisclassifiedOnly]);
 
   const hashRow = (row: TestInstance): string => {
     const stringified = JSON.stringify(row, Object.keys(row).sort());

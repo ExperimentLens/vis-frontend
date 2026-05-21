@@ -6,6 +6,7 @@ import {
   Select,
   ListSubheader,
   TextField,
+  Tooltip,
   Box,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
@@ -131,11 +132,28 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
             }}
           />
         </ListSubheader>
-        {filteredOptions.map(option => (
-          <MenuItem key={option} value={option} dense>
-            {optionToLabel(option)}
-          </MenuItem>
-        ))}
+        {filteredOptions.map(option => {
+          const optionLabel = optionToLabel(option);
+
+          return (
+            <MenuItem key={option} value={option} dense>
+              <Tooltip title={optionLabel} placement="right" enterDelay={500}>
+                <Box
+                  component="span"
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {optionLabel}
+                </Box>
+              </Tooltip>
+            </MenuItem>
+          );
+        })}
         {filteredOptions.length === 0 && (
           <MenuItem disabled dense sx={{ opacity: 0.6, fontStyle: 'italic' }}>
             No results found

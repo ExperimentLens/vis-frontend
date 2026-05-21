@@ -543,51 +543,53 @@ export default function ScheduleTable() {
   }, [scheduledTable.rows]);
 
   return (
-    <Box sx={{ height: '100%' }} >
-      <Paper sx={{ height: '100%', width: '100%', mb: 2 }} elevation={2}>
-        <Box >
-          <ToolBarWorkflow
-            key="scheduled-toolbar"
-            filterNumbers={scheduledTable.filtersCounter}
-            filterClickedFunction={filterClicked}
-            actionButtonName="Cancel selected workflows"
-            numSelected={scheduledTable.selectedWorkflows.length}
-            tableName={'Scheduled Workflows'}
-            handleClickedFunction={removeSelected}
-            showFilterButton={true}
-            showSpaceButton={scheduledTable.rows.some(row => row.space && row.space.trim() !== '')}
-            spaceOptions={Array.from(
-              new Set(
-                scheduledTable.rows
-                  .map(row => row?.space?.trim())
-                  .filter((space): space is string => Boolean(space && space !== ''))
-              )
-            )}
-          />
-        </Box>
-        <Popover
-          id={'Filters'}
-          open={isFilterOpen}
-          anchorEl={anchorEl}
-          onClose={() => setFilterOpen(false)}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-        >
-          <Box sx={{ p: 2 }}>
-            <FilterBar
-              columns={scheduledTable.columns}
-              filters={scheduledTable.filters}
-              onFilterChange={handleFilterChange}
-              onAddFilter={handleAddFilter}
-              onRemoveFilter={handleRemoveFilter}
-              valueSuggestions={valueSuggestions}
-            />
-          </Box>
-        </Popover>
+    <Paper
+      elevation={0}
+      variant="outlined"
+      sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' }}
+    >
+      <ToolBarWorkflow
+        key="scheduled-toolbar"
+        filterNumbers={scheduledTable.filtersCounter}
+        filterClickedFunction={filterClicked}
+        actionButtonName="Cancel selected workflows"
+        numSelected={scheduledTable.selectedWorkflows.length}
+        tableName={'Scheduled Workflows'}
+        handleClickedFunction={removeSelected}
+        showFilterButton={true}
+        showSpaceButton={scheduledTable.rows.some(row => row.space && row.space.trim() !== '')}
+        spaceOptions={Array.from(
+          new Set(
+            scheduledTable.rows
+              .map(row => row?.space?.trim())
+              .filter((space): space is string => Boolean(space && space !== ''))
+          )
+        )}
+      />
+      <Popover
+        id={'Filters'}
+        open={isFilterOpen}
+        anchorEl={anchorEl}
+        onClose={() => setFilterOpen(false)}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        PaperProps={{
+          sx: { p: 1.5, borderRadius: 1.5, boxShadow: 2 },
+        }}
+      >
+        <FilterBar
+          columns={scheduledTable.columns}
+          filters={scheduledTable.filters}
+          onFilterChange={handleFilterChange}
+          onAddFilter={handleAddFilter}
+          onRemoveFilter={handleRemoveFilter}
+          valueSuggestions={valueSuggestions}
+        />
+      </Popover>
 
-        <div style={{ height: 'calc(100% - 48px)', width: '100%' }}>
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
           <StyledDataGrid
             disableVirtualization
             disableColumnMenu
@@ -682,8 +684,7 @@ export default function ScheduleTable() {
               }
             ]}
           />
-        </div>
-      </Paper>
-    </Box>
+      </Box>
+    </Paper>
   );
 }

@@ -1,20 +1,20 @@
-import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, Menu, Popover, Switch, Tooltip, Typography } from '@mui/material';
+import { Box, Button, ButtonGroup, Checkbox, Chip, Divider, FormControl, FormControlLabel, IconButton, Menu, Switch, Tooltip, Typography } from '@mui/material';
 import CompactMenuItem from '../../../../shared/components/compact-menu-item';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
+import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedDataset, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
 import WindowRoundedIcon from '@mui/icons-material/WindowRounded';
 import RoundedCornerRoundedIcon from '@mui/icons-material/RoundedCornerRounded';
 import BlurLinearIcon from '@mui/icons-material/BlurLinear';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import DownloadIcon from '@mui/icons-material/Download';
 import CodeIcon from '@mui/icons-material/Code';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import DatasetSelectorBar from './DataComparison/comparative-data-selector-bar';
+import StorageIcon from '@mui/icons-material/Storage';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
 import SearchableSelect from '../../../../shared/components/searchable-select';
@@ -52,6 +52,27 @@ const ComparativeAnalysisControls = ()=> {
   );
   const commonColumns = dataAssetsControlPanel?.commonColumns ?? [];
   const selectedColumns = dataAssetsControlPanel?.selectedColumns ?? [];
+
+  const datasetNames = useMemo(
+    () =>
+      Object.entries(commonDataAssets)
+        .filter(([, entries]) =>
+          Array.isArray(entries) &&
+          entries.length > 0 &&
+          entries.every(({ dataAsset }) => {
+            const rawFormat = (dataAsset as { format?: unknown } | null | undefined)?.format;
+
+            if (typeof rawFormat !== 'string') return false;
+
+            const normalized = rawFormat.trim().toLowerCase()
+              .replace(/^\./, '');
+
+            return normalized === 'csv' || normalized === 'parquet';
+          })
+        )
+        .map(([name]) => name),
+    [commonDataAssets]
+  );
 
   const showDataComparisonViewModeToggle = (() => {
     if (selectedComparisonTab !== 2) return false;
@@ -214,31 +235,29 @@ const ComparativeAnalysisControls = ()=> {
               </Tooltip>
 
             </Box>
-            <Popover
-              id={'Datasets'}
+            <SelectionPopover
+              id="Datasets"
               open={isDatasetSelectorOpen}
               anchorEl={datasetAnchorEl}
               onClose={() => setDatasetAnchorEl(null)}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
+              title="Datasets"
+              icon={<StorageIcon fontSize="small" />}
+              options={datasetNames}
+              selectedOptions={selectedDataset ? [selectedDataset] : []}
+              onToggle={(name) => {
+                dispatch(setSelectedDataset(name === selectedDataset ? null : name));
+                setDatasetAnchorEl(null);
               }}
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'left',
+              onClear={() => {
+                dispatch(setSelectedDataset(null));
+                setDatasetAnchorEl(null);
               }}
-              PaperProps={{
-                sx: {
-                  width: '550px',
-                  p: 2,
-                  borderRadius: 2,
-                  border: theme => `1px solid ${theme.palette.customGrey.main}`,
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                }
-              }}
-            >
-              <DatasetSelectorBar />
-            </Popover>
+              clearLabel="Clear Dataset"
+              multiSelect={false}
+              searchable
+              searchPlaceholder="Search datasets…"
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            />
             <SelectionPopover
               id="Columns"
               open={open}
@@ -325,14 +344,14 @@ const ComparativeAnalysisControls = ()=> {
                 color="primary"
                 onClick={() => dispatch(setIsMosaic(true))}
               >
-                Mosaic
+                MOSAIC
               </Button>
               <Button
                 variant={!isMosaic ? 'contained' : 'outlined'}
                 color="primary"
                 onClick={() => dispatch(setIsMosaic(false))}
               >
-                Stacked
+                STACKED
               </Button>
             </ButtonGroup>
           )}
@@ -356,24 +375,21 @@ const ComparativeAnalysisControls = ()=> {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 PaperProps={{
-                  elevation: 0,
+                  elevation: 2,
                   sx: {
-                    width: 320,
-                    maxHeight: 500,
-                    padding: 0,
-                    borderRadius: 2,
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                    border: theme => `1px solid ${theme.palette.customGrey.main}`,
-                    mt: 0,
+                    width: 240,
+                    maxHeight: 380,
+                    overflow: 'hidden',
+                    borderRadius: 1.5,
+                    mt: 0.5,
                   },
                 }}
-                MenuListProps={{ sx: { pt: 0 } }}
+                MenuListProps={{ sx: { pt: 0, pb: 0 } }}
               >
                 <SectionHeader
                   icon={<SettingsSuggestIcon fontSize="small" />}
                   title="Control Options"
                 />
-                <Box sx={{ mt: 2 }} />
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -386,7 +402,15 @@ const ComparativeAnalysisControls = ()=> {
                     />
                   }
                   label="Sort by F1"
-                  sx={{ ml: 0.5 }}
+                  sx={{
+                    ml: 1,
+                    my: 0.5,
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: 'text.primary',
+                    },
+                  }}
                 />
               </Menu>
             </>
@@ -412,24 +436,21 @@ const ComparativeAnalysisControls = ()=> {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 PaperProps={{
-                  elevation: 0,
+                  elevation: 2,
                   sx: {
-                    width: 320,
-                    maxHeight: 500,
-                    padding: 0,
-                    borderRadius: 2,
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                    border: theme => `1px solid ${theme.palette.customGrey.main}`,
-                    mt: 0,
+                    width: 240,
+                    maxHeight: 380,
+                    overflow: 'hidden',
+                    borderRadius: 1.5,
+                    mt: 0.5,
                   },
                 }}
-                MenuListProps={{ sx: { pt: 0 } }}
+                MenuListProps={{ sx: { pt: 0, pb: 0 } }}
               >
                 <SectionHeader
                   icon={<SettingsSuggestIcon fontSize="small" />}
                   title="Control Options"
                 />
-                <Box sx={{ mt: 2 }} />
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -442,7 +463,15 @@ const ComparativeAnalysisControls = ()=> {
                     />
                   }
                   label="Sort by AUC"
-                  sx={{ ml: 0.5 }}
+                  sx={{
+                    ml: 1,
+                    my: 0.5,
+                    '& .MuiFormControlLabel-label': {
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                      color: 'text.primary',
+                    },
+                  }}
                 />
               </Menu>
             </>
@@ -469,25 +498,22 @@ const ComparativeAnalysisControls = ()=> {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 PaperProps={{
-                  elevation: 0,
+                  elevation: 2,
                   sx: {
-                    width: 320,
-                    maxHeight: 500,
-                    padding: 0,
-                    borderRadius: 2,
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                    border: theme => `1px solid ${theme.palette.customGrey.main}`,
-                    mt: 0,
+                    width: 260,
+                    maxHeight: 380,
+                    overflow: 'hidden',
+                    borderRadius: 1.5,
+                    mt: 0.5,
                   },
                 }}
-                MenuListProps={{ sx: { pt: 0 } }}
+                MenuListProps={{ sx: { pt: 0, pb: 0 } }}
               >
                 <SectionHeader
                   icon={<SettingsSuggestIcon fontSize="small" />}
                   title="Control Options"
                 />
-                <Box sx={{ mt: 1.5 }} />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25, px: 1.5 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.75, px: 1.25, pt: 1.25, pb: 0.5 }}>
                   <FormControl fullWidth size="small">
                     <SearchableSelect
                       labelId="x-axis-select-label"
@@ -507,7 +533,7 @@ const ComparativeAnalysisControls = ()=> {
                       }
                       disabled={comparativeModelInstanceControlPanel.useUmap}
                       menuMaxHeight={224}
-                      menuWidth={250}
+                      menuWidth={236}
                     />
                   </FormControl>
 
@@ -530,7 +556,7 @@ const ComparativeAnalysisControls = ()=> {
                       }
                       disabled={comparativeModelInstanceControlPanel.useUmap}
                       menuMaxHeight={224}
-                      menuWidth={250}
+                      menuWidth={236}
                     />
                   </FormControl>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -549,7 +575,7 @@ const ComparativeAnalysisControls = ()=> {
                     />
                   </Box>
                 </Box>
-                <Divider sx={{ mt: 1, opacity: 0.6 }} />
+                <Divider sx={{ opacity: 0.6 }} />
                 <Box sx={{ py: 0.5 }}>
                   <CompactMenuItem
                     icon={<DownloadIcon fontSize="small" />}
@@ -562,7 +588,6 @@ const ComparativeAnalysisControls = ()=> {
                     secondary="Export chart's underlying data"
                   />
                 </Box>
-
               </Menu>
             </>
           )}

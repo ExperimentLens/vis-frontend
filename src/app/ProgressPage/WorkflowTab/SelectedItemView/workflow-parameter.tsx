@@ -59,7 +59,7 @@ const WorkflowParameter = () => {
         value={
           <>
             {selectedParam?.param?.task}
-            { selectedParam?.variant && <Chip size="small" color="primary" label={selectedParam?.variant} sx={{ ml: 1 }} />}
+            {/* { selectedParam?.variant && <Chip size="small" color="primary" label={selectedParam?.variant} sx={{ ml: 1 }} />} */}
           </>
         }
       />

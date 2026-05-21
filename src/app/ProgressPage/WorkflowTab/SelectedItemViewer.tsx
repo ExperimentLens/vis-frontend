@@ -18,6 +18,8 @@ import PermDataSettingIcon from '@mui/icons-material/PermDataSetting';
 import InsightsIcon from '@mui/icons-material/Insights';
 import FeatureExplainability from './SelectedItemView/workflow-feature-explainability';
 import TravelExploreIcon from '@mui/icons-material/TravelExplore';
+import CommitIcon from '@mui/icons-material/Commit';
+
 
 import CGlanceExecution from './SelectedItemView/workflow-global-counterfactuals';
 
@@ -58,7 +60,7 @@ const SelectedItemViewer = () => {
       <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
         <Header
           title={`${selectedTask?.variant || selectedTask?.task} Overview`}
-          icon={<AssessmentIcon color="primary" />}
+          icon={<CommitIcon color="primary" />}
         />
         <Box sx={{ px: 3, py: 2, flexGrow: 1, overflow: 'auto' }}>
           <WorkflowTaskOverview />

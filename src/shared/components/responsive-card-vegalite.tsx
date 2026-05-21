@@ -832,20 +832,14 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
                     horizontal: 'right',
                   }}
                   PaperProps={{
-                    elevation: 3,
+                    elevation: 2,
                     sx: {
-                      width: 320,
-                      maxHeight: 500,
-                      overflowY: 'hidden',
-                      overflowX: 'hidden',
-                      padding: 0,
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                      border: '1px solid rgba(0,0,0,0.04)',
-                      mt: 1,
-                      '& .MuiMenu-list': {
-                        padding: 0,
-                      },
+                      width: 240,
+                      maxHeight: 380,
+                      overflow: 'hidden',
+                      borderRadius: 1.5,
+                      mt: 0.5,
+                      '& .MuiMenu-list': { padding: 0 },
                     },
                   }}
                   MenuListProps={{
@@ -861,16 +855,16 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
                   <Box
                     sx={{
                       overflowY: 'auto',
-                      maxHeight: 400,
+                      maxHeight: 320,
                     }}
                   >
                     {controlPanel && (
                       <>
-                        <Box sx={{ p: 2 }}>{controlPanel}</Box>
-                        <Divider sx={{ mt: 1, opacity: 0.6 }} />
+                        <Box sx={{ p: 1.25 }}>{controlPanel}</Box>
+                        <Divider sx={{ opacity: 0.6 }} />
                       </>
                     )}
-                    <Box sx={{ py: 1 }}>
+                    <Box sx={{ py: 0.5 }}>
                       {enableSorting && (
                         <CompactMenuItem
                           onClick={() => handleSortChange(sortDirection === 'none' ? 'descending' :
@@ -1061,20 +1055,14 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
                     horizontal: 'right',
                   }}
                   PaperProps={{
-                    elevation: 3,
+                    elevation: 2,
                     sx: {
-                      width: 320,
-                      maxHeight: 500,
-                      overflowY: 'hidden',
-                      overflowX: 'hidden',
-                      padding: 0,
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                      border: '1px solid rgba(0,0,0,0.04)',
-                      mt: 1,
-                      '& .MuiMenu-list': {
-                        padding: 0,
-                      },
+                      width: 240,
+                      maxHeight: 380,
+                      overflow: 'hidden',
+                      borderRadius: 1.5,
+                      mt: 0.5,
+                      '& .MuiMenu-list': { padding: 0 },
                     },
                   }}
                   MenuListProps={{
@@ -1090,13 +1078,13 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
                   <Box
                     sx={{
                       overflowY: 'auto',
-                      maxHeight: 400,
+                      maxHeight: 320,
                     }}
                   >
                     {controlPanel && (
                       <>
-                        <Box sx={{ p: 2 }}>{controlPanel}</Box>
-                        <Divider sx={{ mt: 1, opacity: 0.6 }} />
+                        <Box sx={{ p: 1.25 }}>{controlPanel}</Box>
+                        <Divider sx={{ opacity: 0.6 }} />
                       </>
                     )}
 

@@ -5,7 +5,7 @@ import InfoMessage from '../../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useEffect } from 'react';
-import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
+import { fetchAggregateData } from '../../../../store/slices/dataExplorationSlice';
 import { vegaScaleOrUndefined } from '../../../../shared/utils/chartColorScales';
 
 // Assuming dataExploration is passed as a prop or obtained from elsewhere
@@ -48,24 +48,22 @@ const BarChart = () => {
     ) {
       return; // Don't dispatch if missing dataset, groupBy, or aggregation
     }
+    // Server-side GROUP BY: response size is bounded by groupBy cardinality,
+    // so no row cap is needed.
     dispatch(
-      fetchDataExplorationData({
+      fetchAggregateData({
         query: {
           dataSource: {
             source: datasetId,
             format: dataset?.format || '',
             sourceType: dataset?.sourceType || '',
-            fileName: dataset?.name || ''
-            , runId: tab?.workflowId || '',
-            experimentId: experimentId || ''
-
+            fileName: dataset?.name || '',
+            runId: tab?.workflowId || '',
+            experimentId: experimentId || '',
           },
           groupBy,
           aggregations: aggregation,
           filters,
-          columns: cols,
-          limit: 10000,
-          includeTotalItems: false
         },
         metadata: {
           workflowId: tab?.workflowId || '',

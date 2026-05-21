@@ -234,19 +234,14 @@ const WorkflowActions = memo((props: {
         onClose={handleCreateWokrkflowClose}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
         PaperProps={{
-          elevation: 3,
+          elevation: 2,
           sx: {
             width: 300,
-            maxHeight: 300,
+            maxHeight: 320,
             overflow: 'hidden',
-            padding: 0,
-            borderRadius: '12px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-            border: '1px solid rgba(0,0,0,0.04)',
-            mt: 1,
-            '& .MuiList-root': {
-              padding: 0,
-            }
+            borderRadius: 1.5,
+            mt: 0.5,
+            '& .MuiList-root': { padding: 0 },
           },
         }}
       >
@@ -258,21 +253,19 @@ const WorkflowActions = memo((props: {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'auto',
-            maxHeight: 200
+            maxHeight: 240,
           }}
         >
           <Box
             sx={{
-              p: 2,
+              p: 1.5,
               flex: 1,
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              gap: 2,
+              gap: 1.25,
             }}
           >
-
             <TextField
               fullWidth
               size="small"
@@ -304,12 +297,11 @@ const WorkflowActions = memo((props: {
           </Box>
           <Box
             sx={{
-              p: 1,
-              borderTop: '1px solid rgba(0,0,0,0.08)',
-              backgroundColor: 'background.paper',
-              bottom: 0,
+              px: 1.5,
+              py: 1,
+              borderTop: theme => `1px solid ${theme.palette.divider}`,
               display: 'flex',
-              justifyContent: 'center',
+              justifyContent: 'flex-end',
             }}
           >
             <Button
@@ -317,7 +309,7 @@ const WorkflowActions = memo((props: {
               variant="contained"
               disabled={!workflowName.trim()}
             >
-                  Create
+              Create
             </Button>
           </Box>
         </Box>
@@ -1242,63 +1234,64 @@ export default function WorkflowTable() {
   };
 
   return (
-    <Box sx={{ height: '100%' }}>
-      <Paper elevation={2} sx={{ height: '100%', width: '100%', mb: 2 }}>
-        <Box >
-          <ToolbarWorkflow
-            key="workflows-toolbar"
-            actionButtonName="Compare selected workflows"
-            tableName="Workflow Execution"
-            numSelected={workflowsTable.selectedWorkflows.length}
-            filterNumbers={workflowsTable.filtersCounter}
-            filterClickedFunction={filterClicked}
-            handleClickedFunction={handleLaunchCompletedTab}
-            groupByOptions={Array.from(new Set([...workflowsTable.uniqueTasks, ...workflowsTable.uniqueParameters]))}
-            showFilterButton={true}
-            showSpaceButton={workflowsTable.rows.some(row => row.space && row.space.trim() !== '')}
-            spaceOptions={Array.from(
-              new Set(
-                workflowsTable.rows
-                  .map(row => row?.space?.trim())
-                  .filter((space): space is string => Boolean(space && space !== ''))
-              )
-            )}
-            onDownloadCsv={workflowsTable.groupBy.length === 0 ? handleDownloadCsv : undefined}
-          />
-        </Box>
-        <Popover
-          id={'Filters'}
-          open={isFilterOpen}
-          anchorEl={anchorEl}
-          onClose={() => setFilterOpen(false)}
-          anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          PaperProps={{
-            sx: {
-              width: '550px',
-              p: 2,
-              borderRadius: 1,
-              boxShadow: 3
-            }
-          }}
-        >
-          <FilterBar
-            columns={workflowsTable.columns}
-            filters={workflowsTable.filters}
-            onFilterChange={handleFilterChange}
-            onAddFilter={handleAddFilter}
-            onRemoveFilter={handleRemoveFilter}
-            valueSuggestions={valueSuggestions}
-          />
-        </Popover>
+    <Paper
+      elevation={0}
+      variant="outlined"
+      sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' }}
+    >
+      <ToolbarWorkflow
+        key="workflows-toolbar"
+        actionButtonName="Compare selected workflows"
+        tableName="Workflow Execution"
+        numSelected={workflowsTable.selectedWorkflows.length}
+        filterNumbers={workflowsTable.filtersCounter}
+        filterClickedFunction={filterClicked}
+        handleClickedFunction={handleLaunchCompletedTab}
+        groupByOptions={Array.from(new Set([...workflowsTable.uniqueTasks, ...workflowsTable.uniqueParameters]))}
+        showFilterButton={true}
+        showSpaceButton={workflowsTable.rows.some(row => row.space && row.space.trim() !== '')}
+        spaceOptions={Array.from(
+          new Set(
+            workflowsTable.rows
+              .map(row => row?.space?.trim())
+              .filter((space): space is string => Boolean(space && space !== ''))
+          )
+        )}
+        onDownloadCsv={workflowsTable.groupBy.length === 0 ? handleDownloadCsv : undefined}
+      />
+      <Popover
+        id={'Filters'}
+        open={isFilterOpen}
+        anchorEl={anchorEl}
+        onClose={() => setFilterOpen(false)}
+        anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+        PaperProps={{
+          sx: {
+            width: 380,
+            p: 1.25,
+            borderRadius: 1.5,
+            boxShadow: 2,
+          }
+        }}
+      >
+        <FilterBar
+          columns={workflowsTable.columns}
+          filters={workflowsTable.filters}
+          onFilterChange={handleFilterChange}
+          onAddFilter={handleAddFilter}
+          onRemoveFilter={handleRemoveFilter}
+          valueSuggestions={valueSuggestions}
+        />
+      </Popover>
 
-        <div style={{ height: 'calc(100% - 48px)', width: '100%' }}>
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
           <StyledDataGrid
             className={selectedTab === 0 ? 'status-sticky-mode' : undefined}
             disableVirtualization
@@ -1454,8 +1447,7 @@ export default function WorkflowTable() {
               }
             ]}
           />
-        </div>
-      </Paper>
-    </Box>
+        </Box>
+    </Paper>
   );
 }

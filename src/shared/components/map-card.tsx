@@ -281,36 +281,25 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
                   horizontal: 'right',
                 }}
                 PaperProps={{
-                  elevation: 3,
+                  elevation: 2,
                   sx: {
-                    width: 320,
-                    maxHeight: 500,
-                    overflowY: 'hidden',
-                    overflowX: 'hidden',
-                    padding: 0,
-                    borderRadius: '12px',
-                    boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                    border: '1px solid rgba(0,0,0,0.04)',
-                    mt: 1, // Add small margin to top
-                    '& .MuiMenu-list': {
-                      padding: 0, // Remove default padding
-                    },
+                    width: 240,
+                    maxHeight: 380,
+                    overflow: 'hidden',
+                    borderRadius: 1.5,
+                    mt: 0.5,
+                    '& .MuiMenu-list': { padding: 0 },
                   },
                 }}
-                MenuListProps={{
-                  sx: {
-                    padding: 0, // Remove padding from MenuList
-                  }
-                }}
+                MenuListProps={{ sx: { padding: 0 } }}
               >
                 <SectionHeader icon={<SettingsSuggestIcon fontSize="small" />} title="Chart Options" />
-                {/* Advanced Controls Divider */}
                 {controlPanel && (
                   <>
-                    <Box sx={{ p: 2 }}>
+                    <Box sx={{ p: 1.25 }}>
                       {controlPanel}
                     </Box>
-                    <Divider sx={{ mt: 1, opacity: 0.6 }} />
+                    <Divider sx={{ opacity: 0.6 }} />
                   </>
                 )}
                 {/* Quick Actions */}
@@ -471,30 +460,20 @@ const ResponsiveMapCard: React.FC<ResponsiveMapCardProps> = ({
                     horizontal: 'right',
                   }}
                   PaperProps={{
-                    elevation: 3,
+                    elevation: 2,
                     sx: {
-                      width: 320,
-                      maxHeight: 500,
-                      overflowY: 'hidden',
-                      overflowX: 'hidden',
-                      padding: 0,
-                      borderRadius: '12px',
-                      boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-                      border: '1px solid rgba(0,0,0,0.04)',
-                      mt: 1,
-                      '& .MuiMenu-list': {
-                        padding: 0,
-                      },
+                      width: 240,
+                      maxHeight: 380,
+                      overflow: 'hidden',
+                      borderRadius: 1.5,
+                      mt: 0.5,
+                      '& .MuiMenu-list': { padding: 0 },
                     },
                   }}
-                  MenuListProps={{
-                    sx: {
-                      padding: 0,
-                    }
-                  }}
+                  MenuListProps={{ sx: { padding: 0 } }}
                 >
                   <SectionHeader icon={<SettingsSuggestIcon fontSize="small" />} title="Chart Options" />
-                  <Box sx={{ p: 2 }}>
+                  <Box sx={{ p: 1.25 }}>
                     {controlPanel}
                   </Box>
                 </Menu>

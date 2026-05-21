@@ -139,6 +139,127 @@ export interface IFilter {
   value: number | string;
 }
 
+// ---------------------------------------------------------------------------
+// Aggregate / Downsample / Histogram — server-pushdown endpoints
+// ---------------------------------------------------------------------------
+
+export interface IAggregateQuery {
+  dataSource: IDataSource;
+  groupBy?: string[];
+  aggregations?: IAggregation[];
+  filters?: IFilter[];
+  limit?: number;
+}
+
+export interface IAggregateRequest {
+  query: IAggregateQuery;
+  metadata: {
+    workflowId: string;
+    queryCase: string;
+  };
+}
+
+export interface IDownsampleQuery {
+  dataSource: IDataSource;
+  xColumn: string;
+  yColumns: string[];
+  filters?: IFilter[];
+  buckets?: number;
+}
+
+export interface IDownsampleRequest {
+  query: IDownsampleQuery;
+  metadata: {
+    workflowId: string;
+    queryCase: string;
+  };
+}
+
+export interface IDownsampleResponse {
+  xColumn: string;
+  yColumns: string[];
+  buckets: number;
+  totalRows: number;
+  // Stringified JSON: [{ bucket, x_first, x_last, <y>_min, <y>_max, x_at_<y>_min, x_at_<y>_max, ... }]
+  data: unknown;
+}
+
+export interface IHistogramQuery {
+  dataSource: IDataSource;
+  column: string;
+  filters?: IFilter[];
+  buckets?: number;
+}
+
+export interface IHistogramRequest {
+  query: IHistogramQuery;
+  metadata: {
+    workflowId: string;
+    queryCase: string;
+  };
+}
+
+export interface IHistogramResponse {
+  column: string;
+  min: number;
+  max: number;
+  buckets: number;
+  totalCount: number;
+  nullCount: number;
+  // Stringified JSON: [{ bucket, bin_lo, bin_hi, count }]
+  data: unknown;
+}
+
+// Scatter: reservoir sample (raw points, capped) and 2D rectangular bin (density).
+
+export interface IScatterSampleQuery {
+  dataSource: IDataSource;
+  xColumn: string;
+  yColumn: string;
+  colorColumn?: string;
+  filters?: IFilter[];
+  sampleSize?: number;
+}
+
+export interface IScatterSampleRequest {
+  query: IScatterSampleQuery;
+  metadata: {
+    workflowId: string;
+    queryCase: string;
+  };
+}
+
+export interface IScatterBinQuery {
+  dataSource: IDataSource;
+  xColumn: string;
+  yColumn: string;
+  filters?: IFilter[];
+  xBuckets?: number;
+  yBuckets?: number;
+}
+
+export interface IScatterBinRequest {
+  query: IScatterBinQuery;
+  metadata: {
+    workflowId: string;
+    queryCase: string;
+  };
+}
+
+export interface IScatterBinResponse {
+  xColumn: string;
+  yColumn: string;
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
+  xBuckets: number;
+  yBuckets: number;
+  totalCount: number;
+  // Stringified JSON: [{ x_bin, y_bin, x_lo, x_hi, y_lo, y_hi, count }]
+  data: unknown;
+}
+
 export const defaultDataExplorationQuery: IDataExplorationQuery = {
   dataSource: {
     source: '',
