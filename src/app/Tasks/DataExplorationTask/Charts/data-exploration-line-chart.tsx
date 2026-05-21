@@ -6,13 +6,7 @@ import ResponsiveCardVegaLite from '../../../../shared/components/responsive-car
 import LineChartControlPanel from '../ChartControls/data-exploration-line-control';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import { fetchDataExplorationData, fetchDownsampleData } from '../../../../store/slices/dataExplorationSlice';
-
-// Below this row count we fetch raw rows; above it we ask the server to
-// M4-downsample so the chart stays smooth without truncating peaks.
-const DOWNSAMPLE_THRESHOLD = 5000;
-// Target bucket count; M4 emits up to 4 points per bucket per y column.
-const DOWNSAMPLE_BUCKETS = 500;
+import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
 import type { VisualColumn } from '../../../../shared/models/dataexploration.model';
 import { vegaScaleOrUndefined } from '../../../../shared/utils/chartColorScales';
 
@@ -74,15 +68,6 @@ const coerceIfNumericLike = (v: unknown): unknown => {
   return Number.isFinite(parsed) ? parsed : v;
 };
 
-const getLineQueryLimit = (isSmallScreen: boolean, yAxisCount: number): number => {
-  const base = isSmallScreen ? 8000 : 14000;
-  const penaltyPerMetric = isSmallScreen ? 1200 : 1800;
-  const minLimit = isSmallScreen ? 4000 : 7000;
-  const computed = base - Math.max(0, yAxisCount - 1) * penaltyPerMetric;
-
-  return Math.max(minLimit, computed);
-};
-
 const LineChart = () => {
   const { tab } = useAppSelector(state => state.workflowPage);
   const experimentId = useAppSelector(state => state.progressPage?.experiment.data?.id || '');
@@ -98,9 +83,6 @@ const LineChart = () => {
     const filters = tab?.workflowTasks.dataExploration?.controlPanel.filters;
     const datasetId = tab?.dataTaskTable.selectedItem?.data?.dataset?.source || '';
     const dataset = tab?.dataTaskTable.selectedItem?.data?.dataset;
-    const yAxisCount = Array.isArray(yAxis) ? yAxis.length : 0;
-    const queryLimit = getLineQueryLimit(isSmallScreen, yAxisCount);
-    const totalItems = meta?.data?.totalItems ?? 0;
 
     const cols = Array.from(
       new Set(
@@ -113,45 +95,20 @@ const LineChart = () => {
 
     if (!datasetId || !xAxis || !yAxis?.length || meta?.source !== tab?.dataTaskTable.selectedItem?.data?.dataset?.source) return;
 
-    const dataSource = {
-      source: datasetId,
-      format: dataset?.format || '',
-      sourceType: dataset?.sourceType || '',
-      fileName: dataset?.name || '',
-      runId: tab?.workflowId || '',
-      experimentId: experimentId || '',
-    };
-
-    // For large datasets, ask the server to M4-downsample. Works for multi-Y too:
-    // the expander emits one row per (bucket, y) with that y populated, and the
-    // chart render skips longData entries where the y value is undefined.
-    if (totalItems > DOWNSAMPLE_THRESHOLD) {
-      dispatch(
-        fetchDownsampleData({
-          query: {
-            dataSource,
-            xColumn: xAxis.name,
-            yColumns: yAxis.map(y => y.name),
-            filters,
-            buckets: DOWNSAMPLE_BUCKETS,
-          },
-          metadata: {
-            workflowId: tab?.workflowId || '',
-            queryCase: 'lineChart',
-          },
-        })
-      );
-      return;
-    }
-
     dispatch(
       fetchDataExplorationData({
         query: {
-          dataSource,
+          dataSource: {
+            source: datasetId,
+            format: dataset?.format || '',
+            sourceType: dataset?.sourceType || '',
+            fileName: dataset?.name || ''
+            , runId: tab?.workflowId || ''
+            , experimentId: experimentId || ''
+          },
           columns: cols,
           filters,
-          limit: queryLimit,
-          includeTotalItems: false,
+          limit: 10000,
         },
         metadata: {
           workflowId: tab?.workflowId || '',
@@ -165,8 +122,6 @@ const LineChart = () => {
     tab?.workflowTasks.dataExploration?.controlPanel.filters,
     tab?.dataTaskTable.selectedItem?.data?.dataset?.source,
     tab?.workflowId,
-    isSmallScreen,
-    meta?.data?.totalItems,
   ]);
 
   const chartData = (tab?.workflowTasks.dataExploration?.lineChart?.data?.data as LineChartDataRow[]) ?? [];
@@ -198,25 +153,20 @@ const LineChart = () => {
     const xTypeForEncoding: 'quantitative' | 'temporal' | 'ordinal' =
       (xIsNumericLike ? 'quantitative' : xMetaType);
 
-    // Build long data and coerce numeric-like for X and each Y.
-    // Skip rows where this Y value is missing — happens after M4 downsampling
-    // where each emitted row only populates one of the multiple Y columns.
+    // Build long data and coerce numeric-like for X and each Y
     const longData: LineChartDataRow[] = [];
 
     data.forEach(row => {
       const xVal = xIsNumericLike ? coerceIfNumericLike(row[xField]) : row[xField];
 
       yAxis.forEach(y => {
-        const raw = row[y.name];
-        if (raw === undefined || raw === null) return;
-
         const yMetaType = getColumnType(y.type, y.name);
-        const yIsNumericLike = yMetaType !== 'temporal' && isNumericLikeValue(raw);
+        const yIsNumericLike = yMetaType !== 'temporal' && isNumericLikeValue(row[y.name]);
 
         longData.push({
           [xField]: xVal,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          value: yIsNumericLike ? coerceIfNumericLike(raw) as number : (raw as any),
+          value: yIsNumericLike ? coerceIfNumericLike(row[y.name]) as number : (row[y.name] as any),
           variable: y.name,
         });
       });
@@ -286,18 +236,15 @@ const LineChart = () => {
     const yTypeForEncoding: 'quantitative' | 'temporal' | 'ordinal' =
       (yIsNumericLike ? 'quantitative' : yMetaType);
 
-    // Filter rows where this Y is missing (multi-Y M4 emits one Y per row),
-    // then coerce values where needed.
-    const values = cloneDeep(data)
-      .filter(row => row[yField] !== undefined && row[yField] !== null)
-      .map(row => {
-        const copy = { ...row };
+    // Coerce values where needed
+    const values = cloneDeep(data).map(row => {
+      const copy = { ...row };
 
-        if (xIsNumericLike) copy[xField] = coerceIfNumericLike(copy[xField]) as number;
-        if (yIsNumericLike) copy[yField] = coerceIfNumericLike(copy[yField]) as number;
+      if (xIsNumericLike) copy[xField] = coerceIfNumericLike(copy[xField]) as number;
+      if (yIsNumericLike) copy[yField] = coerceIfNumericLike(copy[yField]) as number;
 
-        return copy;
-      });
+      return copy;
+    });
 
     // needed in order to have color encoding even for single line
     const valuesWithColumn = values.map(row => ({ ...row, column: yField }));

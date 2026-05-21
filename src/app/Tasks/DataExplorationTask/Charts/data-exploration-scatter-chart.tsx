@@ -8,18 +8,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import ScatterChartControlPanel from '../ChartControls/data-exploration-scatter-control';
 import Uchart from './data-exploration-u-chart';
 import type { VisualColumn } from '../../../../shared/models/dataexploration.model';
-import {
-  fetchDataExplorationData,
-  fetchScatterBin,
-  fetchScatterSample,
-} from '../../../../store/slices/dataExplorationSlice';
-
-// Tier thresholds: below LOW, fetch raw rows; between LOW and HIGH, sample;
-// above HIGH, switch to density binning so the response stays small.
-const SCATTER_SAMPLE_THRESHOLD = 5000;
-const SCATTER_BIN_THRESHOLD = 50000;
-const SCATTER_SAMPLE_SIZE = 5000;
-const SCATTER_BIN_AXIS = 60;
+import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
 
 type ScatterChartDataRow = Record<string, number | string | Date | null>;
 
@@ -72,15 +61,6 @@ const getColumnType = (columnType: string, fieldName?: string) => {
     default:
       return 'nominal';
   }
-};
-
-const getScatterQueryLimit = (isSmallScreen: boolean, yAxisCount: number): number => {
-  const base = isSmallScreen ? 7500 : 12000;
-  const penaltyPerMetric = isSmallScreen ? 1200 : 1800;
-  const minLimit = isSmallScreen ? 3500 : 6000;
-  const computed = base - Math.max(0, yAxisCount - 1) * penaltyPerMetric;
-
-  return Math.max(minLimit, computed);
 };
 
 const getSingleScatterSpec = ({
@@ -210,9 +190,6 @@ const ScatterChart = () => {
     const datasetId =
       tab?.dataTaskTable.selectedItem?.data?.dataset?.source || '';
     const dataset = tab?.dataTaskTable.selectedItem?.data?.dataset;
-    const yAxisCount = Array.isArray(yAxis) ? yAxis.length : 0;
-    const queryLimit = getScatterQueryLimit(isSmallScreen, yAxisCount);
-    const totalItems = meta?.data?.totalItems ?? 0;
 
     const cols = Array.from(
       new Set(
@@ -229,65 +206,21 @@ const ScatterChart = () => {
 
     if (!datasetId || !xAxis || !yAxis?.length || meta?.source !== tab?.dataTaskTable.selectedItem?.data?.dataset?.source) return;
 
-    const dataSource = {
-      source: datasetId,
-      format: dataset?.format || '',
-      sourceType: dataset?.sourceType || '',
-      fileName: dataset?.name || '',
-      runId: tab?.workflowId || '',
-      experimentId: experimentId || '',
-    };
-
-    // Multi-Y scatter is rendered as separate per-Y charts (stacked mode); the
-    // sample/bin endpoints handle one (x,y) pair at a time, so for multi-Y we
-    // fall back to the raw fetch. Single-Y is the common heavy case anyway.
-    const useSample = yAxisCount === 1
-      && totalItems > SCATTER_SAMPLE_THRESHOLD
-      && totalItems <= SCATTER_BIN_THRESHOLD;
-    const useBin = yAxisCount === 1 && totalItems > SCATTER_BIN_THRESHOLD;
-
-    if (useBin && xAxis && yAxis?.[0]) {
-      dispatch(
-        fetchScatterBin({
-          query: {
-            dataSource,
-            xColumn: xAxis.name,
-            yColumn: yAxis[0].name,
-            filters,
-            xBuckets: SCATTER_BIN_AXIS,
-            yBuckets: SCATTER_BIN_AXIS,
-          },
-          metadata: { workflowId: tab?.workflowId || '', queryCase: 'scatterChart' },
-        }),
-      );
-      return;
-    }
-
-    if (useSample && xAxis && yAxis?.[0]) {
-      dispatch(
-        fetchScatterSample({
-          query: {
-            dataSource,
-            xColumn: xAxis.name,
-            yColumn: yAxis[0].name,
-            colorColumn: colorBy?.name && colorBy.name.trim() !== '' ? colorBy.name : undefined,
-            filters,
-            sampleSize: SCATTER_SAMPLE_SIZE,
-          },
-          metadata: { workflowId: tab?.workflowId || '', queryCase: 'scatterChart' },
-        }),
-      );
-      return;
-    }
-
     dispatch(
       fetchDataExplorationData({
         query: {
-          dataSource,
+          dataSource: {
+            source: datasetId,
+            format: dataset?.format || '',
+            sourceType: dataset?.sourceType || '',
+            fileName: dataset?.name || '',
+            runId: tab?.workflowId || '',
+            experimentId: experimentId || ''
+
+          },
           columns: cols,
           filters,
-          limit: queryLimit,
-          includeTotalItems: false,
+          limit: 10000
         },
         metadata: {
           workflowId: tab?.workflowId || '',
@@ -301,8 +234,6 @@ const ScatterChart = () => {
     tab?.workflowTasks.dataExploration?.controlPanel.filters,
     tab?.dataTaskTable.selectedItem?.data?.dataset?.source,
     tab?.workflowTasks.dataExploration?.controlPanel.colorBy,
-    isSmallScreen,
-    meta?.data?.totalItems,
   ]);
 
   const hasData = Array.isArray(chartData) && chartData.length > 0;
@@ -328,48 +259,6 @@ const ScatterChart = () => {
       fullHeight
     />
   );
-
-  // Detect a bin response by its marker columns (x_lo/x_hi/y_lo/y_hi/count
-  // are emitted by /api/data/scatter/bin). When present, render a heatmap
-  // instead of individual points so a 10M-row scatter stays readable.
-  const binColumns = tab?.workflowTasks.dataExploration?.scatterChart?.data?.columns;
-  const isBinned = Array.isArray(binColumns)
-    && binColumns.some(c => c.name === 'x_lo')
-    && binColumns.some(c => c.name === 'count');
-
-  const getBinnedScatterSpec = ({
-    data,
-    xAxis,
-    y,
-  }: {
-    data: ScatterChartDataRow[];
-    xAxis: VisualColumn;
-    y: VisualColumn;
-  }) => ({
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-    data: { values: data },
-    mark: { type: 'rect' },
-    encoding: {
-      x: { field: 'x_lo', type: 'quantitative', axis: { title: xAxis.name } },
-      x2: { field: 'x_hi' },
-      y: { field: 'y_lo', type: 'quantitative', axis: { title: y.name } },
-      y2: { field: 'y_hi' },
-      color: {
-        field: 'count',
-        type: 'quantitative',
-        title: 'count',
-        scale: { scheme: 'viridis', type: 'sqrt' },
-        legend: { orient: 'right' },
-      },
-      tooltip: [
-        { field: 'x_lo', type: 'quantitative', title: `${xAxis.name} (lo)` },
-        { field: 'x_hi', type: 'quantitative', title: `${xAxis.name} (hi)` },
-        { field: 'y_lo', type: 'quantitative', title: `${y.name} (lo)` },
-        { field: 'y_hi', type: 'quantitative', title: `${y.name} (hi)` },
-        { field: 'count', type: 'quantitative', title: 'count' },
-      ],
-    },
-  });
 
   const getStackedScatterSpec = ({
     data,
@@ -430,19 +319,13 @@ const ScatterChart = () => {
           />
         ) : effectiveDisplayMode === 'overlay' ? (
           <ResponsiveCardVegaLite
-            spec={isBinned
-              ? getBinnedScatterSpec({
-                data: Array.isArray(chartData) ? chartData : [],
-                xAxis: xAxis as VisualColumn,
-                y: (yAxis as VisualColumn[])[0],
-              })
-              : getSingleScatterSpec({
-                data: Array.isArray(chartData) ? chartData : [],
-                xAxis: xAxis as VisualColumn,
-                y: (yAxis as VisualColumn[])[0],
-                colorBy: colorBy as VisualColumn,
-              })}
-            title={isBinned ? 'Scatter Chart (Density)' : 'Scatter Chart'}
+            spec={getSingleScatterSpec({
+              data: Array.isArray(chartData) ? chartData : [],
+              xAxis: xAxis as VisualColumn,
+              y: (yAxis as VisualColumn[])[0],
+              colorBy: colorBy as VisualColumn,
+            })}
+            title="Scatter Chart"
             actions={false}
             controlPanel={<ScatterChartControlPanel />}
             blinkOnStart={false}
