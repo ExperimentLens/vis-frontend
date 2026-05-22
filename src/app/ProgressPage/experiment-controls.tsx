@@ -56,7 +56,9 @@ const ExperimentControls = () => {
 
   const isRunning = workflowStatus === 'RUNNING';
   const isPaused = experiment?.data?.status === 'paused';
-  const isKilled = experiment?.data?.status === 'killed';
+  const isKilled = workflowId
+    ? workflowStatus === 'KILLED' || workflowStatus === 'FAILED'
+    : experiment?.data?.status === 'killed' || experiment?.data?.status === 'failed';
   const isComplete = progressBar.progress === 100;
 
   // Tick every second while a workflow is actively running so duration updates live.
