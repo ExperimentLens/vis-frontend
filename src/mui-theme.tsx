@@ -251,8 +251,6 @@ export const createAppTheme = (mode: ThemeMode) => {
         styleOverrides: {
           root: {
             textTransform: 'none',
-            fontWeight: 600,
-            fontSize: '0.85rem',
             minHeight: 40,
           },
         },

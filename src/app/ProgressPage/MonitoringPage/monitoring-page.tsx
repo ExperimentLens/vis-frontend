@@ -106,9 +106,7 @@ const MonitoringPage = () => {
               gap: 0.5,
               px: 1.5,
               minHeight: 44,
-              fontSize: '0.95rem',
               textTransform: 'uppercase',
-              letterSpacing: '0.5px',
             },
           }}
         >

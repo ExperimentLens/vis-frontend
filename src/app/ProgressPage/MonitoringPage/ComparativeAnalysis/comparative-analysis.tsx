@@ -49,7 +49,7 @@ const ComparativeAnalysis = () => {
           borderBottomWidth: 1,
           borderBottomStyle: 'solid',
           width: '100%',
-          px: 1.5,
+          pr: 1.5,
         }}
       >
         <Box

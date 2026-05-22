@@ -248,7 +248,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
             <Button
               size="small"
               variant={visibleTable === 'workflows' ? 'contained' : 'outlined'}
-              sx={{ borderRadius: 1, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}
+              sx={{ borderRadius: 1, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}
               onClick={() => dispatch(setVisibleTable('workflows'))}
             >
               Completed
@@ -256,7 +256,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
             <Button
               size="small"
               variant={visibleTable === 'scheduled' ? 'contained' : 'outlined'}
-              sx={{ borderRadius: 1, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}
+              sx={{ borderRadius: 1, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}
               onClick={() => dispatch(setVisibleTable('scheduled'))}
             >
               Scheduled
@@ -269,7 +269,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
           size="small"
           variant="contained"
           disabled={numSelected < 2 && tableName === 'Workflow Execution'}
-          sx={{ ml: 'auto', borderRadius: 1, fontWeight: 600 }}
+          sx={{ ml: 'auto', borderRadius: 1, fontWeight: 600, fontSize: '11px', textTransform: 'uppercase' }}
           onClick={handleClickedFunction('compare-completed')}
         >
           {actionButtonName}
