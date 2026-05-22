@@ -179,7 +179,7 @@ const LeftMenu = () => {
                     selected={selected}
                     sx={{
                       justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
-                      height: '48px',
+                      height: '44px',
                       opacity: disabled ? 0.5 : 1,
                       pointerEvents: disabled ? 'none' : 'auto',
                       '&.Mui-selected': {

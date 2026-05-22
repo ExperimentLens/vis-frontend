@@ -26,15 +26,15 @@ const InlineStat = ({ dotColor, value, label, total, tooltip }: InlineStatProps)
       {dotColor && (
         <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: dotColor, flexShrink: 0 }} />
       )}
-      <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', lineHeight: 1.2 }}>
+      <Typography variant="body2" sx={{ color: 'text.primary', lineHeight: 1.2 }}>
         {value}
         {typeof total === 'number' && (
-          <Typography component="span" variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, ml: 0.25 }}>
+          <Typography component="span" variant="caption" sx={{ color: 'text.secondary', ml: 0.25 }}>
             /{total}
           </Typography>
         )}
       </Typography>
-      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
         {label}
       </Typography>
     </Stack>
