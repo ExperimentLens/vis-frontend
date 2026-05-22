@@ -120,7 +120,7 @@ const LeftMenu = () => {
               padding: 1,
               height: '64px', // Fixed height to match experiment controls
               boxSizing: 'border-box',
-              borderBottom: '1px solid #ddd',
+              borderBottom: '2px solid #ddd',
             }}
           >
             <Box
@@ -146,7 +146,7 @@ const LeftMenu = () => {
               padding: 1,
               height: '64px', // Fixed height to match experiment controls
               boxSizing: 'border-box',
-              borderBottom: '1px solid #ddd',
+              borderBottom: '2px solid #ddd',
             }}
           >
             <Box
