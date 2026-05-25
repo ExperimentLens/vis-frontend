@@ -485,7 +485,7 @@ const ExperimentControls = () => {
                   maxWidth: 'unset',
                   bgcolor: 'background.paper',
                   overflow: 'hidden',
-                  boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+                  boxShadow: theme => theme.customShadows.popover,
                 },
               }}
             >

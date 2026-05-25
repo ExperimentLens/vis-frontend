@@ -243,7 +243,8 @@ const Histogram = ({ columnName, dataset, workflowId, color }: IHistogramProps) 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '1px solid #eee',
+            border: '1px solid',
+            borderColor: 'divider',
           }}
         >
           <Loader />
@@ -256,7 +257,8 @@ const Histogram = ({ columnName, dataset, workflowId, color }: IHistogramProps) 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            border: '1px solid #eee',
+            border: '1px solid',
+            borderColor: 'divider',
           }}
         >
           <InfoMessage

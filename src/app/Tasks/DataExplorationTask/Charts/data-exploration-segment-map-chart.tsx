@@ -239,7 +239,7 @@ ${segmentBy.length > 0
             background: alpha(theme.palette.background.paper, 0.9),
             padding: '8px',
             borderRadius: '4px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+            boxShadow: theme.customShadows.popover,
             maxHeight: '200px',
             maxWidth: '400px',
             overflowY: 'auto',

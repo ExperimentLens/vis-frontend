@@ -39,7 +39,7 @@ export default function WorkflowTreeView() {
       >
         <AccordionSummary
           onClick={(e) => e.stopPropagation()}
-          sx={{ borderBottom: '1px solid #ccc', pointerEvents: 'none' }}
+          sx={{ borderBottom: '1px solid', borderColor: 'divider', pointerEvents: 'none' }}
         >
           <Box
             sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%', pointerEvents: 'auto', cursor: 'default' }}
@@ -71,7 +71,7 @@ export default function WorkflowTreeView() {
         <AccordionSummary
           disabled={!hasExplainability}
           onClick={(e) => e.stopPropagation()}
-          sx={{ borderBottom: '1px solid #ccc', pointerEvents: 'none' }}
+          sx={{ borderBottom: '1px solid', borderColor: 'divider', pointerEvents: 'none' }}
         >
           <Box
             sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%', pointerEvents: 'auto', cursor: 'default' }}

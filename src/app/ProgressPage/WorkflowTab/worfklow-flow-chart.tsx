@@ -62,7 +62,7 @@ function FlowGraph(props: IFlowGraphProps) {
 
   const interactiveNodeStyle = {
     cursor: 'pointer',
-    border: '1px solid orange',
+    border: `1px solid ${theme.palette.warning.main}`,
     backgroundColor: theme.palette.background.paper,
   };
 

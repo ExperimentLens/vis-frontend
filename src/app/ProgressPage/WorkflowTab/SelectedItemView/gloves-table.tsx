@@ -74,14 +74,14 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     right: 0,
     zIndex: 999,
     backgroundColor: theme.palette.customGrey.main,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
   },
   '& .MuiDataGrid-cell[data-field="action"]': {
     position: 'sticky',
     right: 0,
     zIndex: 999,
     backgroundColor: theme.palette.customGrey.light,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
   },
 }));
 

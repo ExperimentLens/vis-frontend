@@ -17,6 +17,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import CompactMenuItem from './compact-menu-item';
+import { SectionHeader } from './responsive-card-table';
 import { cardSurfaceSx, cardHeaderSx } from '../styles/card-surface';
 import CloseIcon from '@mui/icons-material/Close';
 import type React from 'react';
@@ -54,52 +55,6 @@ interface ResponsiveCardVegaLiteProps {
   initialSortDirection?: 'ascending' | 'descending' | 'none';
   signalListeners?: Parameters<typeof VegaLite>[0]['signalListeners'];
 }
-const SectionHeader = ({
-  icon,
-  title,
-}: {
-  icon: React.ReactNode
-  title: string
-}) => (
-  <Box
-    sx={{
-      display: 'flex',
-      alignItems: 'center',
-      borderBottom: theme => `1px solid ${theme.palette.divider}`,
-      px: 1.5,
-      py: 1,
-      background: theme => theme.palette.customSurface.sectionHeader,
-      borderTopLeftRadius: 8,
-      borderTopRightRadius: 8,
-      margin: 0,
-      width: '100%',
-    }}
-  >
-    <Box
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'text.secondary',
-        mr: 1,
-      }}
-    >
-      {icon}
-    </Box>
-    <Typography
-      variant="subtitle2"
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        fontWeight: 600,
-        color: 'text.primary',
-      }}
-    >
-      {title}
-    </Typography>
-  </Box>
-);
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type VLSpec = Record<string, any>;
 

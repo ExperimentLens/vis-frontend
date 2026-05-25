@@ -353,8 +353,8 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
               overflow: 'hidden',
               padding: 0,
               borderRadius: '12px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-              border: '1px solid rgba(0,0,0,0.04)',
+              boxShadow: theme => theme.customShadows.popover,
+              border: theme => `1px solid ${theme.palette.divider}`,
               mt: 1,
             },
           }}
