@@ -137,13 +137,12 @@ const EvaluationTab = () => {
                   }}
                 >
                   <Typography
-                    variant="body2"
+                    variant="bodyCompact"
                     sx={{
                       fontWeight: 600,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      fontSize: '0.78rem',
                     }}
                     title={row.question}
                   >

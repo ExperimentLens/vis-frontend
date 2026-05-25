@@ -12,6 +12,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { MOCK_RUN_SUMMARIES } from './mock-data';
+import { cardSurfaceSx } from '../../../shared/styles/card-surface';
 
 const numericColor = (value: number, theme: ReturnType<typeof useTheme>, invert = false) => {
   // Map 0..1 → red..green (or inverted for latency-style metrics).
@@ -60,7 +61,7 @@ const CompareTab = () => {
 
   return (
     <Stack spacing={1.5} sx={{ height: '100%', minHeight: 0, overflow: 'auto' }}>
-      <Paper variant="outlined" sx={{ p: 2 }}>
+      <Paper sx={[cardSurfaceSx(), { p: 2 }]}>
         <Stack direction="row" alignItems="center" spacing={1.5}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>

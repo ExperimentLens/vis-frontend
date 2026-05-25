@@ -275,7 +275,7 @@ const TracesTab = () => {
                     score: {doc.score.toFixed(2)}
                   </Typography>
                 </Stack>
-                <Typography variant="body2" sx={{ fontSize: '0.8rem' }}>
+                <Typography variant="bodyCompact">
                   {doc.text}
                 </Typography>
               </Paper>
@@ -360,7 +360,7 @@ const TracesTab = () => {
                   >
                     {String(a.value)}
                   </Box>
-                  <Typography variant="body2" sx={{ fontSize: '0.78rem', color: 'text.secondary' }}>
+                  <Typography variant="bodyCompact" sx={{ color: 'text.secondary' }}>
                     {a.rationale}
                   </Typography>
                 </Stack>
@@ -420,14 +420,11 @@ const KVRow = ({ label, value, highlight }: { label: string; value: string; high
   return (
     <Stack direction="row" spacing={1.5} alignItems="flex-start">
       <Typography
-        variant="caption"
+        variant="captionLabel"
         sx={{
           minWidth: 110,
           color: 'text.secondary',
-          textTransform: 'uppercase',
           fontWeight: 700,
-          fontSize: '0.65rem',
-          letterSpacing: '0.4px',
           pt: 0.25,
         }}
       >

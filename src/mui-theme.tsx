@@ -9,6 +9,8 @@ declare module '@mui/material/styles' {
   interface TypographyVariants {
     cardTitle: CSSProperties;
     statValue: CSSProperties;
+    bodyCompact: CSSProperties;
+    bodySm: CSSProperties;
     statLabel: CSSProperties;
     captionLabel: CSSProperties;
     mono: CSSProperties;
@@ -16,6 +18,8 @@ declare module '@mui/material/styles' {
   interface TypographyVariantsOptions {
     cardTitle?: CSSProperties;
     statValue?: CSSProperties;
+    bodyCompact?: CSSProperties;
+    bodySm?: CSSProperties;
     statLabel?: CSSProperties;
     captionLabel?: CSSProperties;
     mono?: CSSProperties;
@@ -26,6 +30,8 @@ declare module '@mui/material/Typography' {
   interface TypographyPropsVariantOverrides {
     cardTitle: true;
     statValue: true;
+    bodyCompact: true;
+    bodySm: true;
     statLabel: true;
     captionLabel: true;
     mono: true;
@@ -253,6 +259,18 @@ export const createAppTheme = (mode: ThemeMode) => {
         fontWeight: 700,
         lineHeight: 1.2,
       },
+      // Compact body sizes. These are size-only tokens (no fontWeight) so they
+      // rationalize the spread of inline sizes without ever changing weight —
+      // set fontWeight via sx where emphasis is needed. bodyCompact (0.8rem) is
+      // the app's workhorse body size; bodySm (0.75rem) is dense secondary text.
+      bodyCompact: {
+        fontSize: '0.8rem',
+        lineHeight: 1.4,
+      },
+      bodySm: {
+        fontSize: '0.75rem',
+        lineHeight: 1.35,
+      },
       statLabel: {
         fontSize: '0.7rem',
         fontWeight: 600,
@@ -342,6 +360,24 @@ export const createAppTheme = (mode: ThemeMode) => {
       MuiChip: {
         styleOverrides: {
           root: { fontWeight: 600 },
+        },
+      },
+      // Compact form-control sizing. The app deliberately runs dense forms, so
+      // make 0.8rem the default for inputs, selects, menu items and field
+      // labels instead of repeating `fontSize: '0.8rem'` on every control.
+      MuiInputBase: {
+        styleOverrides: {
+          input: { fontSize: '0.8rem' },
+        },
+      },
+      MuiInputLabel: {
+        styleOverrides: {
+          root: { fontSize: '0.8rem' },
+        },
+      },
+      MuiMenuItem: {
+        styleOverrides: {
+          root: { fontSize: '0.8rem' },
         },
       },
       MuiPaper: {

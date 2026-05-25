@@ -9,6 +9,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { MOCK_PROMPT_TEMPLATES, MOCK_RUN_SUMMARIES } from './mock-data';
+import { cardSurfaceSx } from '../../../shared/styles/card-surface';
 
 const PromptsTab = () => {
   const theme = useTheme();
@@ -116,12 +117,10 @@ const PromptCard = ({
   const theme = useTheme();
   return (
     <Paper
-      variant="outlined"
-      sx={{
-        flex: 1,
-        p: 1.5,
-        borderTop: `3px solid ${color}`,
-      }}
+      sx={[
+        cardSurfaceSx({ accent: color }),
+        { flex: 1, p: 1.5 },
+      ]}
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
         <Box

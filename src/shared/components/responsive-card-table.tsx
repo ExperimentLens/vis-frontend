@@ -45,6 +45,10 @@ interface ResponsiveCardTableProps {
   details?: string | null
   showControlsInHeader?: boolean
   showSettings?: boolean;
+  /** Label for the settings/controls section header (defaults to "Options"). */
+  optionsLabel?: string
+  /** Icon for the settings/controls section header. */
+  optionsIcon?: React.ReactNode
 
 }
 
@@ -112,6 +116,8 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
   details = null,
   showControlsInHeader = false,
   showSettings = true,
+  optionsLabel = 'Options',
+  optionsIcon = <SettingsSuggestIcon fontSize="small" />,
 
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -328,8 +334,8 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                   }}
                 >
                   <SectionHeader
-                    icon={<SettingsSuggestIcon fontSize="small" />}
-                    title="Options"
+                    icon={optionsIcon}
+                    title={optionsLabel}
                   />
                   {controlPanel && (!shouldShowControlsInHeader) && (
                     <>
@@ -514,8 +520,8 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                     }}
                   >
                     <SectionHeader
-                      icon={<SettingsSuggestIcon fontSize="small" />}
-                      title="Options"
+                      icon={optionsIcon}
+                      title={optionsLabel}
                     />
                     <Box
                       sx={{

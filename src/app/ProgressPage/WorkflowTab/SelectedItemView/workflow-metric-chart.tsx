@@ -1,4 +1,5 @@
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
+import { cardSurfaceSx } from '../../../../shared/styles/card-surface';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import type { IMetric } from '../../../../shared/models/experiment/metric.model';
@@ -550,7 +551,7 @@ export const MetricCards = () => {
         </div>
       )}
 
-      <Paper elevation={0} sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', p: 2 }}>
+      <Paper elevation={0} sx={[cardSurfaceSx(), { p: 2 }]}>
         <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1 }}>
           Comparison Across All Workflows
         </Typography>

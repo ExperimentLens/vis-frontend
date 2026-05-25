@@ -54,7 +54,7 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
 
   return (
     <FormControl fullWidth size="small">
-      <InputLabel id={labelId} sx={{ fontSize: '0.8rem' }}>{inputLabel}</InputLabel>
+      <InputLabel id={labelId}>{inputLabel}</InputLabel>
       <Select
         labelId={labelId}
         value={value}
@@ -63,7 +63,6 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
         label={label}
         size="small"
         sx={{
-          fontSize: '0.8rem',
           '& .MuiSelect-select': { py: 0.75 },
         }}
         MenuProps={{
@@ -74,7 +73,6 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
               border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
               boxShadow: theme => theme.customShadows.popover,
               '& .MuiMenuItem-root': {
-                fontSize: '0.8rem',
                 py: 0.5,
                 minHeight: 0,
               },
@@ -103,7 +101,7 @@ const SearchableSelect: React.FC<SearchableSingleSelectProps> = ({
             onKeyDown={e => {
               e.stopPropagation();
             }}
-            sx={{ '& .MuiInputBase-input': { fontSize: '0.8rem', py: 0.75 } }}
+            sx={{ '& .MuiInputBase-input': { py: 0.75 } }}
             InputProps={{
               startAdornment: (
                 <Box sx={{ display: 'flex', alignItems: 'center', mr: 0.5 }}>

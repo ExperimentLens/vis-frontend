@@ -374,7 +374,7 @@ const ExperimentControls = () => {
                   {taskLength > 0 && (
                     <Tooltip title={`${completedTasks} of ${taskLength} tasks complete`} arrow>
                       <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
-                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
+                        <Typography variant="statLabel" sx={{ whiteSpace: 'nowrap' }}>
                           {completedTasks}/{taskLength} tasks
                         </Typography>
                         <Box sx={{ width: 56 }}>
@@ -400,7 +400,7 @@ const ExperimentControls = () => {
                     <Tooltip title={workflow?.endTime ? 'Total duration' : 'Elapsed time'} arrow>
                       <Stack direction="row" spacing={0.5} alignItems="center">
                         <TimerOutlinedIcon sx={{ fontSize: 14 }} />
-                        <Typography variant="caption" sx={{ fontWeight: 600, fontSize: '0.7rem' }}>
+                        <Typography variant="statLabel">
                           {duration}
                         </Typography>
                       </Stack>

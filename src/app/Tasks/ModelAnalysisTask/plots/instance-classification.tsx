@@ -1,9 +1,8 @@
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useState } from 'react';
-import { Switch, useMediaQuery, useTheme } from '@mui/material';
+import { useMediaQuery, useTheme } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import InstanceClassificationUmap from './instance-classification-umap';
@@ -16,6 +15,8 @@ import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import { getClassColorMap } from '../../../../shared/utils/colorUtils';
 import SearchableSelect from '../../../../shared/components/searchable-select';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
+import ControlSection from '../../../../shared/components/control-section';
 
 interface ControlPanelProps {
   xAxisOption: string
@@ -101,25 +102,17 @@ const ControlPanel = ({
         </FormControl>
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2 }}>
-
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: 500,
-
-          }}
-        >
-                UMAP
-        </Typography>
-
-        <Switch
-          checked={useUmap}
-          onChange={(e) => setUseUmap(e.target.checked)}
-          color="primary"
+      <ControlSection label="Projection" icon={<ShowChartIcon fontSize="small" />}>
+        <SegmentedToggle
+          aria-label="projection mode"
+          value={useUmap ? 'umap' : 'features'}
+          onChange={(v) => setUseUmap(v === 'umap')}
+          options={[
+            { value: 'features', label: 'Features' },
+            { value: 'umap', label: 'UMAP' },
+          ]}
         />
-
-      </Box>
+      </ControlSection>
 
     </>
   );
