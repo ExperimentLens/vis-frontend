@@ -9,7 +9,7 @@ import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import { fetchComparativeRocCurve } from '../../../../../store/slices/monitorPageSlice';
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import TitleTooltip from '../title-tooltip';
+import WorkflowInfoTooltip from '../workflow-info-tooltip';
 
 const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
   const { workflowsTable, comparativeModelRocCurve } = useAppSelector(
@@ -56,7 +56,7 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
   const renderCharts = orderedWorkflowIds.map((runId) => {
     const rocState = comparativeModelRocCurve[runId];
 
-    const titleTooltip = <TitleTooltip workflowId={runId} />;
+    const titleTooltip = <WorkflowInfoTooltip workflowId={runId} />;
 
     const titleNode = (
       <Tooltip
@@ -64,9 +64,10 @@ const ComparisonModelRoc = ({ isMosaic }: {isMosaic: boolean}) => {
         slotProps={{
           tooltip: {
             sx: {
-              backgroundColor: 'background.paper',
+              backgroundColor: 'transparent',
               p: 0,
-              maxWidth: 2000
+              maxWidth: 'none',
+              boxShadow: 'none',
             },
           },
         }}

@@ -62,13 +62,16 @@ const LeftMenu = () => {
 
   return (
     <Paper
-      elevation={2}
+      elevation={3}
       sx={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         position: 'relative',
+        borderRight: theme => `1px solid ${theme.palette.divider}`,
+        borderRadius: 0,
+        zIndex: theme => theme.zIndex.appBar,
       }}
     >
       <Box>
@@ -120,7 +123,7 @@ const LeftMenu = () => {
               padding: 1,
               height: '64px', // Fixed height to match experiment controls
               boxSizing: 'border-box',
-              borderBottom: '2px solid #ddd',
+              borderBottom: theme => `1px solid ${theme.palette.divider}`,
             }}
           >
             <Box
@@ -146,7 +149,7 @@ const LeftMenu = () => {
               padding: 1,
               height: '64px', // Fixed height to match experiment controls
               boxSizing: 'border-box',
-              borderBottom: '2px solid #ddd',
+              borderBottom: theme => `1px solid ${theme.palette.divider}`,
             }}
           >
             <Box
@@ -168,22 +171,29 @@ const LeftMenu = () => {
               const selected = menuOptions.selected === path;
               const disabled = !to;
               const item = (
-                <ListItem
-                  key={path}
-                  disablePadding
-                  sx={{ borderBottom: '1px solid #ddd' }}
-                >
+                <ListItem key={path} disablePadding>
                   <ListItemButton
                     component={disabled ? 'div' : RouterLink}
                     to={disabled ? undefined : to}
                     selected={selected}
                     sx={{
                       justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
-                      height: '44px',
+                      height: '46px',
                       opacity: disabled ? 0.5 : 1,
                       pointerEvents: disabled ? 'none' : 'auto',
+                      // Accent stripe reserved on every item so selection
+                      // doesn't shift the icon; only colored when active.
+                      borderLeft: '3px solid transparent',
+                      color: 'text.secondary',
+                      '& .MuiListItemIcon-root, & svg': {
+                        color: 'inherit',
+                        transition: theme => theme.transitions.create('color', { duration: 160 }),
+                      },
                       '&.Mui-selected': {
+                        borderLeftColor: theme => theme.palette.primary.main,
                         bgcolor: theme => theme.palette.customBlue.selected,
+                        color: theme => theme.palette.primary.main,
+                        '& .MuiListItemText-primary': { fontWeight: 700 },
                         '&:hover': {
                           bgcolor: theme => theme.palette.customBlue.selected,
                         },
@@ -191,7 +201,7 @@ const LeftMenu = () => {
                       '&:hover': {
                         bgcolor: disabled
                           ? 'transparent'
-                          : theme => theme.palette.customGrey.main,
+                          : theme => theme.palette.action.hover,
                       },
                     }}
                   >
@@ -240,6 +250,8 @@ const LeftMenu = () => {
               '&:hover': {
                 backgroundColor: theme => theme.palette.error.light,
                 color: '#fff',
+                transform: 'translateY(-1px)',
+                boxShadow: theme => theme.customShadows.cardHover,
               },
               boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
             }}
@@ -257,6 +269,8 @@ const LeftMenu = () => {
               height: '36px',
               '&:hover': {
                 backgroundColor: theme => theme.palette.customGrey.main,
+                transform: 'translateY(-1px)',
+                boxShadow: theme => theme.customShadows.cardHover,
               },
               boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
             }}
@@ -277,7 +291,9 @@ const LeftMenu = () => {
             '&:hover': {
               backgroundColor: theme => theme.palette.customGrey.main,
             },
-            boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+            boxShadow: theme => theme.customShadows.card,
+            transition: theme =>
+              theme.transitions.create(['transform', 'box-shadow', 'background-color'], { duration: 160 }),
           }}
         >
           {menuOptions.collapsed ?

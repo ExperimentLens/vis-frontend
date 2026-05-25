@@ -5,9 +5,6 @@ import {
   Select,
   OutlinedInput,
   MenuItem,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
   Slider,
   Typography,
 } from '@mui/material';
@@ -19,6 +16,8 @@ import TrackChangesIcon from '@mui/icons-material/TrackChanges';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import SearchableSelect from '../../../../shared/components/searchable-select';
 import SearchableMultiSelect from '../../../../shared/components/searchable-select-multiple';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
+import ControlSection from '../../../../shared/components/control-section';
 
 const MapControls = () => {
   const dispatch = useAppDispatch();
@@ -63,29 +62,14 @@ const MapControls = () => {
 
   return (
     <Box display="flex" flexDirection="column" gap={2}>
-      <FormControl size="small">
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <TravelExploreIcon fontSize="small" />{' '}
-          {/* Replace or conditionally render icons if needed */}
-          <span style={{ fontSize: 14, fontWeight: 600 }}>{'Map Type'}</span>
-        </Box>
-        <RadioGroup
-          row
-          aria-labelledby="type-label"
-          name="maptpe"
-          value={mapType}
-          onChange={e => handleChange('mapType', e.target.value)}
-        >
-          {options.map(({ value, label }) => (
-            <FormControlLabel
-              key={value}
-              value={value}
-              control={<Radio size="small" />}
-              label={<span style={{ fontSize: 12 }}>{label}</span>}
-            />
-          ))}
-        </RadioGroup>
-      </FormControl>
+      <ControlSection label="Map Type" icon={<TravelExploreIcon fontSize="small" />}>
+        <SegmentedToggle
+          aria-label="map type"
+          value={mapType ?? ''}
+          onChange={(v) => handleChange('mapType', v)}
+          options={options}
+        />
+      </ControlSection>
       {/* <Box display="flex" gap={2}>
         <FormControl fullWidth>
           <InputLabel>Latitude</InputLabel>

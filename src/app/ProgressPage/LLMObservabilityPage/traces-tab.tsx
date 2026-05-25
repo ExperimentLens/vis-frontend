@@ -7,14 +7,13 @@ import {
   Chip,
   TextField,
   InputAdornment,
-  ToggleButtonGroup,
-  ToggleButton,
   Divider,
   Tooltip,
   alpha,
   useTheme,
   IconButton,
 } from '@mui/material';
+import SegmentedToggle from '../../../shared/components/segmented-toggle';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
@@ -121,18 +120,17 @@ const TracesTab = () => {
             }}
             sx={{ mb: 1 }}
           />
-          <ToggleButtonGroup
-            size="small"
-            exclusive
-            value={statusFilter}
-            onChange={(_, v) => v && setStatusFilter(v)}
+          <SegmentedToggle
             fullWidth
-            sx={{ '& .MuiToggleButton-root': { fontSize: '0.7rem', py: 0.25 } }}
-          >
-            <ToggleButton value="all">All ({MOCK_TRACES.length})</ToggleButton>
-            <ToggleButton value="ok">OK</ToggleButton>
-            <ToggleButton value="error">Errors</ToggleButton>
-          </ToggleButtonGroup>
+            aria-label="trace status filter"
+            value={statusFilter}
+            onChange={(v) => setStatusFilter(v as 'all' | 'ok' | 'error')}
+            options={[
+              { value: 'all', label: `All (${MOCK_TRACES.length})` },
+              { value: 'ok', label: 'OK' },
+              { value: 'error', label: 'Errors' },
+            ]}
+          />
         </Box>
 
         <Box sx={{ flex: 1, overflow: 'auto' }}>

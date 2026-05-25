@@ -1,8 +1,10 @@
 
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect } from 'react';
-import { Box, FormControl, InputLabel, MenuItem, Select, Switch, Typography, useMediaQuery, useTheme } from '@mui/material';
+import { useMediaQuery, useTheme } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
+import ControlSection from '../../../../shared/components/control-section';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import Loader from '../../../../shared/components/loader';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -28,97 +30,19 @@ interface ControlPanelProps {
   setUseUmap: Dispatch<SetStateAction<boolean>>
 }
 
-const ControlPanel = ({
-  xAxisOption,
-  yAxisOption,
-  setXAxisOption,
-  setYAxisOption,
-  options,
-  plotData,
-  useUmap,
-  setUseUmap
-}: ControlPanelProps) => {
-  const handleAxisSelection =
-    (axis: 'x' | 'y') => (e: { target: { value: string } }) => {
-      if (axis === 'x') setXAxisOption(e.target.value);
-      else setYAxisOption(e.target.value);
-    };
-
+const ControlPanel = ({ useUmap, setUseUmap }: ControlPanelProps) => {
   return (
-    <>
-      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, px: 1.5 }}>
-        {/* X-Axis Selector */}
-        <FormControl fullWidth disabled>
-          <InputLabel id="x-axis-select-label">
-            <Box display="flex" alignItems="center" gap={1}>
-              <ShowChartIcon fontSize="small" />
-              X-Axis
-            </Box>
-          </InputLabel>
-          <Select
-            labelId="x-axis-select-label"
-            label="X-Axis-----"
-            disabled={plotData?.loading || !plotData?.data}
-            value={xAxisOption}
-            onChange={handleAxisSelection('x')}
-            MenuProps={{
-              PaperProps: { style: { maxHeight: 224, width: 250 } },
-            }}
-          >
-            {options
-              .filter(option => option !== yAxisOption)
-              .map((feature, idx) => (
-                <MenuItem key={`xAxis-${feature}-${idx}`} value={feature}>
-                  {feature}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
-        <FormControl fullWidth disabled>
-          <InputLabel id="y-axis-select-label">
-            <Box display="flex" alignItems="center" gap={1}>
-              <ShowChartIcon fontSize="small" />
-              Y-Axis
-            </Box>
-          </InputLabel>
-          <Select
-            labelId="y-axis-select-label"
-            label="Y-Axis-----"
-            disabled={plotData?.loading || !plotData?.data}
-            value={xAxisOption}
-            onChange={handleAxisSelection('y')}
-            MenuProps={{
-              PaperProps: { style: { maxHeight: 224, width: 250 } },
-            }}
-          >
-            {options
-              .filter(option => option !== yAxisOption)
-              .map((feature, idx) => (
-                <MenuItem key={`xAxis-${feature}-${idx}`} value={feature}>
-                  {feature}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
-      </Box>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.2 }}>
-        <Typography
-          variant="caption"
-          sx={{
-            fontWeight: 500,
-
-          }}
-        >
-          UMAP
-        </Typography>
-
-        <Switch
-          checked={useUmap}
-          onChange={(e) => setUseUmap(e.target.checked)}
-          color="primary"
-        />
-      </Box>
-    </>
+    <ControlSection label="Projection" icon={<ShowChartIcon fontSize="small" />}>
+      <SegmentedToggle
+        aria-label="projection mode"
+        value={useUmap ? 'umap' : 'features'}
+        onChange={(v) => setUseUmap(v === 'umap')}
+        options={[
+          { value: 'features', label: 'Features' },
+          { value: 'umap', label: 'UMAP' },
+        ]}
+      />
+    </ControlSection>
   );
 };
 

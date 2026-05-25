@@ -24,7 +24,7 @@ const SummaryTable = ({ dataset, workflowId, title, scrollRef }: SummaryTablePro
   return (
     <Box sx={{ width: '100%' }}>
       {title && (
-        <Typography variant="h6" gutterBottom sx={{ pl: 2 }}>
+        <Typography variant="subtitle1" gutterBottom sx={{ pl: 2, fontWeight: 700 }}>
           {title}
         </Typography>
       )}

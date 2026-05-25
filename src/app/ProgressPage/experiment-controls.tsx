@@ -81,7 +81,7 @@ const ExperimentControls = () => {
   const statusStyle = useMemo(() => {
     switch (workflowStatus) {
       case 'COMPLETED':
-        return { color: theme.palette.success.main, label: 'Completed', icon: <CheckCircleIcon sx={{ fontSize: 14 }} /> };
+        return { color: theme.palette.success.main, label: 'COMPLETED', icon: <CheckCircleIcon sx={{ fontSize: 14 }} /> };
       case 'FAILED':
         return { color: theme.palette.error.main, label: 'Failed', icon: <ErrorIcon sx={{ fontSize: 14 }} /> };
       case 'KILLED':
@@ -93,7 +93,7 @@ const ExperimentControls = () => {
       case 'STOPPED':
         return { color: theme.palette.warning.main, label: 'Stopped', icon: <StopRoundedIcon sx={{ fontSize: 14 }} /> };
       case 'SCHEDULED':
-        return { color: theme.palette.info.main, label: 'Scheduled', icon: <ScheduleRoundedIcon sx={{ fontSize: 14 }} /> };
+        return { color: theme.palette.info.main, label: 'SCHEDULED', icon: <ScheduleRoundedIcon sx={{ fontSize: 14 }} /> };
       default:
         return { color: theme.palette.text.secondary, label: workflowStatus ?? 'Unknown', icon: null };
     }

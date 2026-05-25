@@ -4,12 +4,10 @@ import {
   alpha,
   Box,
   Button,
-  Chip,
   InputAdornment,
   List,
   ListItem,
   ListItemButton,
-  ListItemIcon,
   ListItemText,
   Popover,
   type PopoverOrigin,
@@ -17,10 +15,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
-import RadioButtonCheckedIcon from '@mui/icons-material/RadioButtonChecked';
-import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
+import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
@@ -30,7 +25,8 @@ export interface SelectionPopoverProps {
   anchorEl: HTMLElement | null
   onClose: () => void
   title: string
-  icon: React.ReactNode
+  /** @deprecated No longer rendered — the header is icon-free for a cleaner look. */
+  icon?: React.ReactNode
   options: string[]
   selectedOptions: string[]
   onToggle: (option: string) => void
@@ -65,13 +61,11 @@ const SelectionPopover = ({
   anchorEl,
   onClose,
   title,
-  icon,
   options,
   selectedOptions,
   onToggle,
   onClear,
   clearLabel = 'Clear Selection',
-  multiSelect = true,
   anchorOrigin = { vertical: 'bottom', horizontal: 'left' },
   transformOrigin,
   width = 220,
@@ -114,8 +108,8 @@ const SelectionPopover = ({
           overflow: 'hidden',
           padding: 0,
           borderRadius: 2,
-          boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
-          border: theme => `1px solid ${theme.palette.customGrey.main}`,
+          boxShadow: theme => theme.customShadows.popover,
+          border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
           mt: 0.5,
         },
       }}
@@ -126,38 +120,27 @@ const SelectionPopover = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: 1,
           borderBottom: theme => `1px solid ${theme.palette.divider}`,
           px: 1.5,
-          py: 0.75,
+          py: 1,
           background: theme => theme.palette.customSurface.sectionHeader,
-          borderTopLeftRadius: 8,
-          borderTopRightRadius: 8,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <Box sx={{ color: 'text.secondary', mr: 1, display: 'flex', alignItems: 'center' }}>
-            {icon}
-          </Box>
-          <Typography
-            variant="subtitle2"
-            sx={{ fontWeight: 600, color: 'text.primary' }}
-          >
-            {title}
-          </Typography>
-        </Box>
+        <Typography
+          variant="subtitle2"
+          sx={{ fontWeight: 700, color: 'text.primary' }}
+        >
+          {title}
+        </Typography>
 
         {selectedCount > 0 && (
-          <Chip
-            label={selectedCount}
-            size="small"
-            color="primary"
-            sx={{
-              height: 18,
-              fontSize: '0.65rem',
-              fontWeight: 700,
-              '& .MuiChip-label': { px: 0.75 },
-            }}
-          />
+          <Typography
+            variant="caption"
+            sx={{ color: 'text.secondary', fontWeight: 600, flexShrink: 0 }}
+          >
+            {selectedCount} selected
+          </Typography>
         )}
       </Box>
 
@@ -238,47 +221,43 @@ const SelectionPopover = ({
                 onClick={() => !disabled && onToggle(option)}
                 disabled={disabled}
                 sx={{
-                  px: 1,
-                  py: 0.5,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 1.25,
+                  py: 0.6,
                   mx: 0.5,
                   borderRadius: 1.5,
-                  transition: 'background-color 0.15s ease',
+                  transition: 'background-color 0.15s ease, color 0.15s ease',
                   bgcolor: isSelected
-                    ? theme => alpha(theme.palette.primary.main, 0.08)
+                    ? theme => alpha(theme.palette.primary.main, 0.1)
                     : 'transparent',
                   '&:hover': {
                     bgcolor: isSelected
-                      ? theme => alpha(theme.palette.primary.main, 0.13)
-                      : theme => alpha(theme.palette.primary.main, 0.04),
+                      ? theme => alpha(theme.palette.primary.main, 0.16)
+                      : theme => theme.palette.action.hover,
                   },
                 }}
               >
-                <ListItemIcon sx={{ minWidth: 28 }}>
-                  {multiSelect ? (
-                    isSelected ? (
-                      <CheckBoxIcon color="primary" sx={{ fontSize: 16 }} />
-                    ) : (
-                      <CheckBoxOutlineBlankIcon color="action" sx={{ fontSize: 16 }} />
-                    )
-                  ) : (
-                    isSelected ? (
-                      <RadioButtonCheckedIcon color="primary" sx={{ fontSize: 16 }} />
-                    ) : (
-                      <RadioButtonUncheckedIcon color="action" sx={{ fontSize: 16 }} />
-                    )
-                  )}
-                </ListItemIcon>
                 <Tooltip title={label} placement="right" enterDelay={500}>
                   <ListItemText
                     primary={label}
-                    primaryTypographyProps={{
-                      fontSize: '0.8rem',
-                      fontWeight: isSelected ? 600 : 500,
-                      color: isSelected ? 'text.primary' : 'text.secondary',
-                      noWrap: true,
+                    sx={{ my: 0 }}
+                    slotProps={{
+                      primary: {
+                        fontSize: '0.8rem',
+                        fontWeight: isSelected ? 600 : 500,
+                        color: isSelected ? 'primary.main' : 'text.secondary',
+                        noWrap: true,
+                      },
                     }}
                   />
                 </Tooltip>
+                {isSelected && (
+                  <CheckRoundedIcon
+                    sx={{ fontSize: 16, color: 'primary.main', flexShrink: 0 }}
+                  />
+                )}
               </ListItemButton>
             </ListItem>
           );

@@ -19,6 +19,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import CompactMenuItem from './compact-menu-item';
+import { cardSurfaceSx, cardHeaderSx } from '../styles/card-surface';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -200,33 +201,28 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
     <>
       <Card
         elevation={0}
-        sx={{
-          maxWidth: maxWidth,
-          minHeight: minHeight,
-          maxHeight: maxHeight,
-          mx: 'auto',
-          boxShadow: 'none',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: 2,
-          border: theme => `1px solid ${theme.palette.customGrey.main}`,
-        }}
+        sx={[
+          cardSurfaceSx(),
+          {
+            maxWidth: maxWidth,
+            minHeight: minHeight,
+            maxHeight: maxHeight,
+            mx: 'auto',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        ]}
       >
         <Box
           ref={cardHeaderRef}
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: theme => theme.palette.customSurface.cardHeader,
-            borderBottom: theme => `1px solid ${theme.palette.divider}`,
-            padding: '6px 12px',
-            height: shouldShowControlsInHeader ? 'auto' : '40px',
-            minHeight: '40px',
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-          }}
+          sx={[
+            cardHeaderSx(),
+            {
+              justifyContent: 'space-between',
+              height: shouldShowControlsInHeader ? 'auto' : 44,
+            },
+          ]}
         >
           {/* Title with truncation */}
           <Box
@@ -239,7 +235,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
             }}
           >
             <Typography
-              variant="subtitle1"
+              variant="subtitle2"
               sx={{
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
@@ -304,13 +300,15 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                     horizontal: 'right',
                   }}
                   PaperProps={{
-                    elevation: 2,
+                    elevation: 0,
                     sx: {
                       width: 240,
                       maxHeight: 380,
                       overflow: 'hidden',
-                      borderRadius: 1.5,
+                      borderRadius: 2,
                       mt: 0.5,
+                      boxShadow: theme => theme.customShadows.popover,
+                      border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
                       '& .MuiMenu-list': {
                         padding: 0,
                         display: 'flex',
@@ -397,7 +395,6 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
             '&:last-child': {
               paddingBottom: noPadding ? 0 : 3,
             },
-            borderRadius: '0 0 8px 8px',
             flexGrow: 1, // Allow content to grow and fill space
             display: 'flex', // Enable flexbox
             flexDirection: 'column', // Stack children vertically
@@ -489,13 +486,15 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
                       horizontal: 'right',
                     }}
                     PaperProps={{
-                      elevation: 2,
+                      elevation: 0,
                       sx: {
                         width: 240,
                         maxHeight: 380,
                         overflow: 'hidden',
-                        borderRadius: 1.5,
+                        borderRadius: 2,
                         mt: 0.5,
+                        boxShadow: theme => theme.customShadows.popover,
+                        border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
                         '& .MuiMenu-list': {
                           padding: 0,
                           display: 'flex',

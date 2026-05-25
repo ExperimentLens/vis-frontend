@@ -269,9 +269,14 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
           slots={{ toolbar: ExperimentsTableToolbar }}
           sx={{
             border: 'none',
+            '--DataGrid-rowBorderColor': (theme) => theme.palette.divider,
+            '--DataGrid-containerBackground': (theme) => theme.palette.customGrey.main,
 
             '& .MuiDataGrid-scrollbarFiller': {
               backgroundColor: (theme) => theme.palette.customGrey.main,
+            },
+            '& .MuiDataGrid-columnHeaders': {
+              borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
             },
             '& .MuiDataGrid-columnHeader': {
               backgroundColor: (theme) => theme.palette.customGrey.main,
@@ -279,6 +284,16 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
             '& .MuiDataGrid-columnHeaderTitle': {
               whiteSpace: 'nowrap',
               overflow: 'visible',
+              fontWeight: 700,
+            },
+            '& .MuiDataGrid-columnSeparator': {
+              color: 'transparent',
+            },
+            '& .MuiDataGrid-cell': {
+              fontSize: '0.8rem',
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: (theme) => theme.palette.action.hover,
             },
 
             '& .MuiDataGrid-columnHeader[data-field="action"]': {
@@ -286,14 +301,14 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
               right: 0,
               zIndex: 1000,
               backgroundColor: (theme) => theme.palette.customGrey.main,
-              borderLeft: '1px solid #ddd',
+              borderLeft: (theme) => `1px solid ${theme.palette.divider}`,
             },
             '& .MuiDataGrid-cell[data-field="action"]': {
               position: 'sticky',
               right: 0,
               zIndex: 999,
               backgroundColor: (theme) => theme.palette.customGrey.light,
-              borderLeft: '1px solid #ddd',
+              borderLeft: (theme) => `1px solid ${theme.palette.divider}`,
             },
 
             '& .MuiDataGrid-columnHeader[data-field="status"]': {
@@ -301,14 +316,14 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
               right: ACTION_COL_WIDTH,
               zIndex: 999,
               backgroundColor: (theme) => theme.palette.customGrey.main,
-              borderLeft: '1px solid #ddd',
+              borderLeft: (theme) => `1px solid ${theme.palette.divider}`,
             },
             '& .MuiDataGrid-cell[data-field="status"]': {
               position: 'sticky',
               right: ACTION_COL_WIDTH,
               zIndex: 998,
               backgroundColor: (theme) => theme.palette.customGrey.light,
-              borderLeft: '1px solid #ddd',
+              borderLeft: (theme) => `1px solid ${theme.palette.divider}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -316,7 +331,7 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
 
             '& .MuiDataGrid-footerContainer': {
               minHeight: '56px',
-              borderTop: '1px solid rgba(224, 224, 224, 1)',
+              borderTop: (theme) => `1px solid ${theme.palette.divider}`,
             },
             '& .MuiTablePagination-root': {
               overflow: 'visible',

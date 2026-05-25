@@ -5,16 +5,16 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import CounterfactualsTable from '../../../Tasks/ModelAnalysisTask/tables/counterfactuals-table';
 import { useParams } from 'react-router-dom';
 import {
-  ButtonGroup,
-  Button,
   Tooltip,
   Box,
   styled,
-  Checkbox,
-  Typography,
-  Stack,
   IconButton,
+  Paper,
+  Chip,
+  useTheme,
 } from '@mui/material';
+import MisclassifiedToggle from '../../../../shared/components/misclassified-toggle';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
 import ScatterPlotIcon from '@mui/icons-material/ScatterPlot';
 import TableChartIcon from '@mui/icons-material/TableChartSharp';
@@ -53,6 +53,7 @@ const InstanceView = () => {
         .chartType,
   );
   const dispatch = useAppDispatch();
+  const theme = useTheme();
   const experimentId = useParams().experimentId;
   const workflow = tab?.workflowTasks.modelAnalysis?.counterfactuals;
   const tableRef = useRef<HTMLDivElement>(null);
@@ -181,11 +182,6 @@ const InstanceView = () => {
       setCurrentPage(clampedPage);
   };
 
-  const handleMisclassifiedChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setShowMisclassifiedOnly(e.target.checked);
-    setCurrentPage(1);
-  };
-
   const handlePaginationModelChange = useCallback((model: typeof paginationModel) => {
     const newPage = model.page + 1;
 
@@ -232,11 +228,11 @@ const InstanceView = () => {
     // Fix pagination to remain at bottom
     '& .MuiDataGrid-footerContainer': {
       minHeight: '56px',
-      borderTop: '1px solid rgba(224, 224, 224, 1)',
+      borderTop: `1px solid ${theme.palette.divider}`,
       position: 'sticky',
       bottom: 0,
       zIndex: 2,
-      backgroundColor: 'background.paper',
+      backgroundColor: theme.palette.background.paper,
     },
     '& .MuiTablePagination-root': {
       overflow: 'visible',
@@ -259,14 +255,14 @@ const InstanceView = () => {
       right: 0,
       zIndex: 999,
       backgroundColor: theme.palette.customGrey.main,
-      borderLeft: '1px solid #ddd',
+      borderLeft: `1px solid ${theme.palette.divider}`,
     },
     '& .MuiDataGrid-cell[data-field="action"]': {
       position: 'sticky',
       right: 0,
       zIndex: 999,
       backgroundColor: theme.palette.customGrey.light,
-      borderLeft: '1px solid #ddd',
+      borderLeft: `1px solid ${theme.palette.divider}`,
     },
   }));
 
@@ -301,54 +297,54 @@ const InstanceView = () => {
 
   return (
     <>
-      <Box display="flex" justifyContent="space-between" marginBottom={2} alignItems="center">
-        {/* Misclassified instances checkbox moved to the top left */}
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography fontSize={'0.8rem'}>Show Misclassified Instances:</Typography>
-          <Checkbox
-            checked={showMisclassifiedOnly}
-            onChange={handleMisclassifiedChange}
-            disabled={
-              tab?.workflowTasks.modelAnalysis?.modelInstances?.loading ||
-              !tab?.workflowTasks.modelAnalysis?.modelInstances?.data
-            }
-          />
-        </Stack>
-
-        {/* Chart type controls remain on the right */}
-        <ButtonGroup
-          size="small"
-          aria-label="Small button group"
-          variant="outlined"
-          sx={{
-            marginLeft: 'auto',
-            height: 30, // Adjust this value to your desired height
-            '& .MuiButton-root': {
-              minHeight: 30,
-              padding: '2px 2px',
-              marginTop: 0.5,
-            },
+      <Paper
+        elevation={0}
+        variant="outlined"
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          flexWrap: 'wrap',
+          px: 1.5,
+          py: 0.75,
+          mb: 2,
+          borderRadius: 2,
+          background: theme.palette.customSurface.cardHeader,
+          borderColor: theme.palette.customSurface.cardBorder,
+        }}
+      >
+        <MisclassifiedToggle
+          checked={showMisclassifiedOnly}
+          onChange={(checked) => {
+            setShowMisclassifiedOnly(checked);
+            setCurrentPage(1);
           }}
-        >
+          disabled={
+            tab?.workflowTasks.modelAnalysis?.modelInstances?.loading ||
+            !tab?.workflowTasks.modelAnalysis?.modelInstances?.data
+          }
+        />
 
-          <Tooltip title="Table">
-            <Button
-              variant={chartType === 'datatable' ? 'contained' : 'outlined'}
-              onClick={() => dispatch(setControls({ chartType: 'datatable' }))}
-            >
-              <TableChartIcon />
-            </Button>
-          </Tooltip>
-          <Tooltip title="Scatter">
-            <Button
-              variant={chartType === 'scatter' ? 'contained' : 'outlined'}
-              onClick={() => dispatch(setControls({ chartType: 'scatter' }))}
-            >
-              <ScatterPlotIcon />
-            </Button>
-          </Tooltip>
-        </ButtonGroup>
-      </Box>
+        <Chip
+          size="small"
+          variant="outlined"
+          label={`${totalRows} ${showMisclassifiedOnly ? 'misclassified' : 'instances'}`}
+          sx={{ height: 26, fontWeight: 600, color: 'text.secondary' }}
+        />
+
+        <Box sx={{ flex: 1 }} />
+
+        {/* Chart type controls */}
+        <SegmentedToggle
+          aria-label="chart type"
+          value={chartType === 'scatter' ? 'scatter' : 'datatable'}
+          onChange={(v) => dispatch(setControls({ chartType: v }))}
+          options={[
+            { value: 'datatable', icon: <TableChartIcon fontSize="small" />, tooltip: 'Table' },
+            { value: 'scatter', icon: <ScatterPlotIcon fontSize="small" />, tooltip: 'Scatter' },
+          ]}
+        />
+      </Paper>
 
       {chartType === 'scatter' && (
         <Box sx={{ height: shapPoint ? '50%' : (point && showMisclassifiedOnly && isMisclassified(point)) ? '60%' : 'calc(100% - 64px)', minHeight: 400 }}>
@@ -422,7 +418,7 @@ const InstanceView = () => {
                       },
                       '& .MuiDataGrid-columnHeader, & .MuiDataGrid-cell': {
                         // Add border to make cells more distinct
-                        borderRight: '1px solid rgba(224, 224, 224, 0.4)',
+                        borderRight: `1px solid ${theme.palette.divider}`,
                       },
                       // Make the grid look better when fewer columns
                       '& .MuiDataGrid-main': {
@@ -466,40 +462,16 @@ const InstanceView = () => {
       )}
       {chartType === 'scatter' && point && workflow && showMisclassifiedOnly && isMisclassified(point) && (
         // controls to select counterfactuals or shap
-        <Box sx={{ pt: 2 }} display="flex" justifyContent="space-between" alignItems="center">
-          <ButtonGroup
-            size="small"
-            aria-label="Small button group"
-            variant="outlined"
-            sx={{
-              marginLeft: 'auto',
-              height: 30, // Adjust this value to your desired height
-              '& .MuiButton-root': {
-                minHeight: 30,
-                padding: '2px 2px',
-                marginTop: 0.5,
-              },
-            }}
-          >
-
-            <Tooltip title="Explanations">
-              <Button
-                variant={!shapPoint ? 'contained' : 'outlined'}
-                onClick={() => setShapPoint(null)}
-              >
-                <PsychologyAltRoundedIcon />
-              </Button>
-            </Tooltip>
-            <Tooltip title="Shap Values">
-              <Button
-                variant={shapPoint ? 'contained' : 'outlined'}
-                onClick={() => setShapPoint(point)}
-              >
-                <ScienceOutlinedIcon />
-              </Button>
-            </Tooltip>
-          </ButtonGroup>
-
+        <Box sx={{ pt: 2 }} display="flex" justifyContent="flex-end" alignItems="center">
+          <SegmentedToggle
+            aria-label="explanation type"
+            value={shapPoint ? 'shap' : 'explanations'}
+            onChange={(v) => setShapPoint(v === 'shap' ? point : null)}
+            options={[
+              { value: 'explanations', icon: <PsychologyAltRoundedIcon fontSize="small" />, tooltip: 'Explanations' },
+              { value: 'shap', icon: <ScienceOutlinedIcon fontSize="small" />, tooltip: 'Shap Values' },
+            ]}
+          />
         </Box>
       )}
       {!shapPoint && point && workflow && showMisclassifiedOnly && isMisclassified(point) ? (

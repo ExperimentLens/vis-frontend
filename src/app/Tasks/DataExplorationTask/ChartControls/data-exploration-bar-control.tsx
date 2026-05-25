@@ -1,6 +1,7 @@
-import { Box, Button, ButtonGroup, FormControl } from '@mui/material';
+import { Box, FormControl } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import CategoryIcon from '@mui/icons-material/Category';
 import FunctionsIcon from '@mui/icons-material/Functions';
 import { AggregationFunction } from '../../../../shared/models/dataexploration.model';
@@ -120,21 +121,17 @@ const BarChartControlPanel = () => {
       </FormControl>
 
       {/* View mode */}
-      <Box sx={{ mt: 1, display: 'flex', gap: '1rem', flexDirection: 'row', width: '100%' }}>
-        <ButtonGroup variant="contained" aria-label="view mode" size="small" sx={{ height: '28px' }} fullWidth>
-          <Button
-            color={viewMode === 'overlay' ? 'primary' : 'inherit'}
-            onClick={() => dispatch(setControls({ viewMode: 'overlay' }))}
-          >
-            Stacked
-          </Button>
-          <Button
-            color={viewMode === 'stacked' ? 'primary' : 'inherit'}
-            onClick={() => dispatch(setControls({ viewMode: 'stacked' }))}
-          >
-            Separate
-          </Button>
-        </ButtonGroup>
+      <Box sx={{ mt: 1, display: 'flex', width: '100%' }}>
+        <SegmentedToggle
+          fullWidth
+          aria-label="view mode"
+          value={viewMode === 'stacked' ? 'stacked' : 'overlay'}
+          onChange={(v) => dispatch(setControls({ viewMode: v }))}
+          options={[
+            { value: 'overlay', label: 'Stacked' },
+            { value: 'stacked', label: 'Separate' },
+          ]}
+        />
       </Box>
     </Box>
   );

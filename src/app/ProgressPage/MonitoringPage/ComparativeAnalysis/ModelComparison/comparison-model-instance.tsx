@@ -11,7 +11,7 @@ import { fetchComparativeModelInstances, fetchComparativeUmap, setComparativeMod
 import type { TestInstance } from '../../../../../shared/models/tasks/model-analysis.model';
 import { getClassColorMap } from '../../../../../shared/utils/colorUtils';
 import { Link } from 'react-router-dom';
-import TitleTooltip from '../title-tooltip';
+import WorkflowInfoTooltip from '../workflow-info-tooltip';
 
 const ComparisonModelInstance = ({
   isMosaic,
@@ -141,7 +141,7 @@ const ComparisonModelInstance = ({
   const renderCharts = selectedWorkflowIds.map((runId) => {
     const instanceState = comparativeModelInstance[runId];
 
-    const titleTooltip = <TitleTooltip workflowId={runId} />;
+    const titleTooltip = <WorkflowInfoTooltip workflowId={runId} />;
 
     const titleNode = (
       <Tooltip
@@ -149,9 +149,10 @@ const ComparisonModelInstance = ({
         slotProps={{
           tooltip: {
             sx: {
-              backgroundColor: 'background.paper',
+              backgroundColor: 'transparent',
               p: 0,
-              maxWidth: 2000
+              maxWidth: 'none',
+              boxShadow: 'none',
             },
           },
         }}

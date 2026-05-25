@@ -17,6 +17,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import CompactMenuItem from './compact-menu-item';
+import { cardSurfaceSx, cardHeaderSx } from '../styles/card-surface';
 import CloseIcon from '@mui/icons-material/Close';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -377,27 +378,25 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       wrap.style.maxWidth = 'min(90vw, 800px)';
       wrap.style.maxHeight = '80vh';
       wrap.style.overflow = 'auto';
-      wrap.style.background = 'white';
-      wrap.style.border = '1px solid rgba(0,0,0,0.15)';
+      // Theme-aware surface (matches the hover tooltip / app theme).
+      wrap.style.background = theme.palette.background.paper;
+      wrap.style.color = theme.palette.text.primary;
+      wrap.style.border = `1px solid ${theme.palette.customSurface.cardBorder}`;
       wrap.style.borderRadius = '8px';
-      wrap.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
+      wrap.style.boxShadow = theme.customShadows.popover;
 
       // header + close (X only)
       const head = document.createElement('div');
 
       head.style.display = 'flex';
       head.style.alignItems = 'center';
-      head.style.justifyContent = 'space-between';
+      head.style.justifyContent = 'flex-end';
       head.style.gap = '8px';
-      head.style.padding = '8px 10px';
-      head.style.borderBottom = '1px solid rgba(0,0,0,0.08)';
-
-      const title = document.createElement('div');
-
-      title.textContent = '';
-      title.style.fontWeight = '600';
-      title.style.fontSize = '12px';
-      title.style.color = '#1f2937';
+      head.style.padding = '4px 6px';
+      head.style.position = 'sticky';
+      head.style.top = '0';
+      head.style.background = theme.palette.background.paper;
+      head.style.zIndex = '1';
 
       const btn = document.createElement('button');
 
@@ -406,25 +405,34 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       btn.style.cursor = 'pointer';
       btn.style.border = 'none';
       btn.style.background = 'transparent';
-      btn.style.color = 'black';
+      btn.style.color = theme.palette.text.secondary;
       btn.style.fontSize = '18px';
       btn.style.lineHeight = '1';
       btn.style.padding = '2px 6px';
 
-      head.appendChild(title);
       head.appendChild(btn);
 
       // body (copy HTML; scrollable, no mid-word breaks)
       const body = document.createElement('div');
 
-      body.style.padding = '10px';
+      body.style.padding = '0 10px 10px';
       body.style.whiteSpace = 'normal';
       body.style.wordBreak = 'normal';
       body.style.overflowWrap = 'normal';
-      body.style.overflowX = 'auto';
-      body.style.overflowY = 'auto';
-      body.style.color = 'black';
+      body.style.color = theme.palette.text.primary;
       body.innerHTML = src.innerHTML;
+
+      // The copied markup is our self-surfaced workflow-info box; strip its
+      // surface so the pinned panel itself provides the single themed frame.
+      const innerBox = body.querySelector<HTMLElement>('.wf-info-tip');
+
+      if (innerBox) {
+        innerBox.style.background = 'transparent';
+        innerBox.style.border = 'none';
+        innerBox.style.boxShadow = 'none';
+        innerBox.style.padding = '0';
+        innerBox.style.maxWidth = 'none';
+      }
 
       wrap.appendChild(head);
       wrap.appendChild(body);
@@ -534,7 +542,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       closePinned();
 
     };
-  }, []);
+  }, [theme]);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -742,32 +750,27 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       </style>
       <Card
         elevation={0}
-        sx={{
-          maxWidth: maxWidth,
-          mx: 'auto',
-          mb: 1,
-          boxShadow: 'none',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          borderRadius: 2,
-          border: theme => `1px solid ${theme.palette.customGrey.main}`,
-        }}
+        sx={[
+          cardSurfaceSx(),
+          {
+            maxWidth: maxWidth,
+            mx: 'auto',
+            mb: 1,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        ]}
       >
         <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: theme => theme.palette.customSurface.cardHeader,
-            borderBottom: theme => `1px solid ${theme.palette.divider}`,
-            padding: '6px 12px',
-            height: '40px',
-            borderTopLeftRadius: 8,
-            borderTopRightRadius: 8,
-            flexShrink: 0,
-            minWidth: 0,
-          }}
+          sx={[
+            cardHeaderSx(),
+            {
+              justifyContent: 'space-between',
+              flexShrink: 0,
+              minWidth: 0,
+            },
+          ]}
         >
           {/* Title (unchanged, just wrapped for truncation) */}
           <Box
@@ -780,7 +783,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
             }}
           >
             <Typography
-              variant="subtitle1"
+              variant="subtitle2"
               sx={{
                 fontWeight: 700,
                 color: 'text.primary',
@@ -832,13 +835,15 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
                     horizontal: 'right',
                   }}
                   PaperProps={{
-                    elevation: 2,
+                    elevation: 0,
                     sx: {
                       width: 240,
                       maxHeight: 380,
                       overflow: 'hidden',
-                      borderRadius: 1.5,
+                      borderRadius: 2,
                       mt: 0.5,
+                      boxShadow: theme => theme.customShadows.popover,
+                      border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
                       '& .MuiMenu-list': { padding: 0 },
                     },
                   }}
@@ -1055,13 +1060,15 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
                     horizontal: 'right',
                   }}
                   PaperProps={{
-                    elevation: 2,
+                    elevation: 0,
                     sx: {
                       width: 240,
                       maxHeight: 380,
                       overflow: 'hidden',
-                      borderRadius: 1.5,
+                      borderRadius: 2,
                       mt: 0.5,
+                      boxShadow: theme => theme.customShadows.popover,
+                      border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
                       '& .MuiMenu-list': { padding: 0 },
                     },
                   }}

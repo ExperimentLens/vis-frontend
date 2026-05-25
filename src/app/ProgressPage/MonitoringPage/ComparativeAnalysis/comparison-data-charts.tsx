@@ -15,7 +15,7 @@ import BoxPlot from './DataComparison/box-plot';
 import Loader from '../../../../shared/components/loader';
 import PreviewImageCard from './DataComparison/preview-image-card';
 import { Link } from 'react-router-dom';
-import TitleTooltip from './title-tooltip';
+import WorkflowInfoTooltip from './workflow-info-tooltip';
 
 const ComparisonDataCharts = () => {
   const { workflowsTable, comparativeDataExploration } = useAppSelector(
@@ -303,7 +303,7 @@ const ComparisonDataCharts = () => {
             const meta = dataAssetsMetaData?.[selectedDataset!]?.[workflowId]?.meta;
             const fileNames = meta?.data?.fileNames; // string | string[] | undefined
 
-            const titleTooltip = <TitleTooltip workflowId={workflowId} />;
+            const titleTooltip = <WorkflowInfoTooltip workflowId={workflowId} />;
 
             const titleNode = (
               <>
@@ -313,8 +313,10 @@ const ComparisonDataCharts = () => {
                   slotProps={{
                     tooltip: {
                       sx: {
-                        backgroundColor: '#ffff',
-                        maxWidth: '2000px'
+                        backgroundColor: 'transparent',
+                        p: 0,
+                        maxWidth: 'none',
+                        boxShadow: 'none',
                       },
                     },
                   }}

@@ -7,9 +7,8 @@ import {
   Tooltip,
   alpha,
   useTheme,
-  ToggleButton,
-  ToggleButtonGroup,
 } from '@mui/material';
+import SegmentedToggle from '../../../shared/components/segmented-toggle';
 import { MOCK_TRACES } from './mock-data';
 import type { IAssessment } from './mock-data';
 
@@ -83,15 +82,15 @@ const EvaluationTab = () => {
             </Typography>
           </Box>
           <Box sx={{ ml: 'auto' }}>
-            <ToggleButtonGroup
-              size="small"
-              exclusive
+            <SegmentedToggle
+              aria-label="assessment view"
               value={view}
-              onChange={(_, v) => v && setView(v)}
-            >
-              <ToggleButton value="boolean" sx={{ fontSize: '0.7rem' }}>Pass / Fail</ToggleButton>
-              <ToggleButton value="numeric" sx={{ fontSize: '0.7rem' }}>Numeric</ToggleButton>
-            </ToggleButtonGroup>
+              onChange={(v) => setView(v as 'boolean' | 'numeric')}
+              options={[
+                { value: 'boolean', label: 'Pass / Fail' },
+                { value: 'numeric', label: 'Numeric' },
+              ]}
+            />
           </Box>
         </Stack>
 

@@ -9,7 +9,7 @@ import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import { useEffect, useMemo } from 'react';
 import { fetchComparativeConfusionMatrix } from '../../../../../store/slices/monitorPageSlice';
 import { Link } from 'react-router-dom';
-import TitleTooltip from '../title-tooltip';
+import WorkflowInfoTooltip from '../workflow-info-tooltip';
 
 const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
   const { workflowsTable, comparativeModelConfusionMatrix } = useAppSelector(
@@ -114,7 +114,7 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
   const renderCharts = orderedWorkflowIds.map((runId) => {
     const matrixState = comparativeModelConfusionMatrix[runId];
 
-    const titleTooltip = <TitleTooltip workflowId={runId} />;
+    const titleTooltip = <WorkflowInfoTooltip workflowId={runId} />;
 
     const titleNode = (
       <Tooltip
@@ -122,9 +122,10 @@ const ComparisonModelConfusion = ({ isMosaic }: {isMosaic: boolean}) => {
         slotProps={{
           tooltip: {
             sx: {
-              backgroundColor: 'background.paper',
+              backgroundColor: 'transparent',
               p: 0,
-              maxWidth: 2000
+              maxWidth: 'none',
+              boxShadow: 'none',
             },
           },
         }}

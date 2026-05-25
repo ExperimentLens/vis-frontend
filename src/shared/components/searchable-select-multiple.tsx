@@ -86,8 +86,8 @@ const SearchableMultiSelect: React.FC<SearchableMultiSelectProps> = ({
             style: { maxHeight: menuMaxHeight, width: menuWidth },
             sx: {
               borderRadius: 2,
-              border: theme => `1px solid ${theme.palette.customGrey.main}`,
-              boxShadow: '0 10px 30px rgba(0,0,0,0.16)',
+              border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
+              boxShadow: theme => theme.customShadows.popover,
               '& .MuiMenuItem-root': {
                 fontSize: '0.8rem',
                 py: 0.25,

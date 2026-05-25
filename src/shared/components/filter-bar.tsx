@@ -549,14 +549,17 @@ export default function FilterBar({
         {/* Suggestions dropdown */}
         {suggestions.length > 0 && !showAvailableColumns && !showAvailableOperators && !showAvailableValues && (
           <Paper
-            elevation={3}
+            elevation={0}
             sx={{
               position: 'absolute',
               width: '100%',
               zIndex: 1000,
               mt: 0.5,
               maxHeight: 300,
-              overflow: 'hidden' // Changed from 'auto' to 'hidden'
+              overflow: 'hidden', // Changed from 'auto' to 'hidden'
+              borderRadius: 2,
+              border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
+              boxShadow: theme => theme.customShadows.popover,
             }}
           >
             <Box

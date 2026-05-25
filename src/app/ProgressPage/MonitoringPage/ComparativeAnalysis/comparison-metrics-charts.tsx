@@ -5,6 +5,7 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import {
   Grid,
   Container,
+  useTheme,
 } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import InfoMessage from '../../../../shared/components/InfoMessage';
@@ -12,7 +13,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import { fetchWorkflowMetrics, setComparativeVisibleMetrics, setHoveredWorkflow } from '../../../../store/slices/monitorPageSlice';
 import Loader from '../../../../shared/components/loader';
 import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
-import { createTooltipHandler } from './comparative-analysis-shared-tooltip';
+import { createWorkflowTooltipHandler, paletteFromTheme } from './workflow-info-tooltip';
 
 interface BaseMetric {
   id: string
@@ -23,6 +24,7 @@ interface BaseMetric {
 
 const ComparisonMetricsCharts: React.FC = () => {
   const dispatch = useAppDispatch();
+  const theme = useTheme();
   const { workflowsTable, selectedWorkflowsMetrics } = useAppSelector(
     (state: RootState) => state.monitorPage,
   );
@@ -335,6 +337,12 @@ const ComparisonMetricsCharts: React.FC = () => {
       }
       : { type: 'bar', tooltip: true };
 
+    // Cap the bar width so a single (or few) selected workflow doesn't render a
+    // giant bar. Band-scale padding is width-independent, so padding a lone bar
+    // makes it match the width it would have when ~2 bars are present.
+    const barCount = new Set(metricSeries.map(d => String(d[xField]))).size;
+    const barPaddingOuter = Math.max(0.05, (2.1 - barCount) / 2);
+
     // Vega-Lite spec
     const chartSpec = {
       params: [
@@ -350,6 +358,7 @@ const ComparisonMetricsCharts: React.FC = () => {
         x: {
           field: xField,
           type: xType,
+          ...(isLineChart ? {} : { scale: { paddingInner: 0.1, paddingOuter: barPaddingOuter } }),
           axis: {
             title: xTitle,
             ...(xType === 'temporal' ? { format: '%b %d %H:%M' } : { labels: false }),
@@ -398,13 +407,14 @@ const ComparisonMetricsCharts: React.FC = () => {
       },
       data: { values: metricSeries },
     };
-    const tooltipHandler = !isGrouped ? createTooltipHandler({
+    const tooltipHandler = !isGrouped ? createWorkflowTooltipHandler({
       metricName,
       metricSeries,
       isLineChart,
       xField: xField,
       workflowsData: workflows.data,
       experimentId,
+      palette: paletteFromTheme(theme),
       colorMapping: workflowsTable.workflowColors
     })
       : undefined;

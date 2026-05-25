@@ -2,11 +2,10 @@ import { useEffect } from 'react';
 import {
   Box,
   FormControl,
-  Button,
-  ButtonGroup,
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 
 import ShowChartIcon from '@mui/icons-material/ShowChart';
 import SearchableSelect from '../../../../shared/components/searchable-select';
@@ -147,26 +146,16 @@ const LineChartControlPanel = () => {
             width: '100%',
           }}
         >
-          <ButtonGroup
-            variant="contained"
-            aria-label="view mode"
-            size="small"
-            sx={{ height: '28px' }}
+          <SegmentedToggle
             fullWidth
-          >
-            <Button
-              color={viewMode === 'overlay' ? 'primary' : 'inherit'}
-              onClick={() => dispatch(setControls({ viewMode: 'overlay' }))}
-            >
-              Overlay
-            </Button>
-            <Button
-              color={viewMode === 'stacked' ? 'primary' : 'inherit'}
-              onClick={() => dispatch(setControls({ viewMode: 'stacked' }))}
-            >
-              Stacked
-            </Button>
-          </ButtonGroup>
+            aria-label="view mode"
+            value={viewMode === 'stacked' ? 'stacked' : 'overlay'}
+            onChange={(v) => dispatch(setControls({ viewMode: v }))}
+            options={[
+              { value: 'overlay', label: 'Overlay' },
+              { value: 'stacked', label: 'Stacked' },
+            ]}
+          />
         </Box>
       </Box>
     )

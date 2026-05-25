@@ -2,8 +2,6 @@ import { useEffect } from 'react';
 import {
   Box,
   FormControl,
-  Switch,
-  Typography,
   Tooltip,
 } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -13,6 +11,7 @@ import ShowChartIcon from '@mui/icons-material/ShowChart';
 import type { SelectChangeEvent } from '@mui/material';
 import SearchableSelect from '../../../../shared/components/searchable-select';
 import SearchableMultiSelect from '../../../../shared/components/searchable-select-multiple';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 
 const ScatterChartControlPanel = () => {
   const dispatch = useAppDispatch();
@@ -185,33 +184,16 @@ const ScatterChartControlPanel = () => {
             />
           </FormControl>
           <Box sx={{ display: 'flex', alignItems: 'center', flex: 1, gap: 0.5 }}>
-            <Typography
-              variant="caption"
-              sx={{
-                fontWeight: 600,
-                color: tab?.workflowTasks.dataExploration?.controlPanel.umap
-                  ? 'primary.main'
-                  : 'text.secondary'
-              }}
-            >
-              UMAP
-            </Typography>
             <Tooltip title={tooltipTitle} disableHoverListener={!isDisabled}>
               <span>
-                <Switch
-                  size="small"
-                  disabled={isDisabled}
-                  checked={tab?.workflowTasks.dataExploration?.controlPanel.umap}
-                  onChange={() =>
-                    dispatch(
-                      setControls({
-                        umap: !tab?.workflowTasks.dataExploration?.controlPanel.umap,
-                      }),
-                    )
-                  }
-                  color="primary"
-                  name="umap"
-                  inputProps={{ 'aria-label': 'UMAP toggle switch' }}
+                <SegmentedToggle
+                  aria-label="projection mode"
+                  value={tab?.workflowTasks.dataExploration?.controlPanel.umap ? 'umap' : 'features'}
+                  onChange={(v) => dispatch(setControls({ umap: v === 'umap' }))}
+                  options={[
+                    { value: 'features', label: 'Features', disabled: isDisabled },
+                    { value: 'umap', label: 'UMAP', disabled: isDisabled },
+                  ]}
                 />
               </span>
             </Tooltip>

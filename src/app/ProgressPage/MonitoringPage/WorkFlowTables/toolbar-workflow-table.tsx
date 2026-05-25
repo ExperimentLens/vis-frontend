@@ -40,6 +40,7 @@ import TableRowsIcon from '@mui/icons-material/TableRows';
 import CategoryIcon from '@mui/icons-material/Category';
 import CreateIcon from '@mui/icons-material/Create';
 import type { IRun } from '../../../../shared/models/experiment/run.model';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import { setWorkflowsData } from '../../../../store/slices/progressPageSlice';
 import DownloadIcon from '@mui/icons-material/Download';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
@@ -244,24 +245,18 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
         </Typography>
       ) : (
         selectedTab !== 1 && (
-          <Stack spacing={0.75} direction="row" sx={{ flex: '0 0 auto' }}>
-            <Button
-              size="small"
-              variant={visibleTable === 'workflows' ? 'contained' : 'outlined'}
-              sx={{ borderRadius: 1, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase' }}
-              onClick={() => dispatch(setVisibleTable('workflows'))}
-            >
-              Completed
-            </Button>
-            <Button
-              size="small"
-              variant={visibleTable === 'scheduled' ? 'contained' : 'outlined'}
-              sx={{ borderRadius: 1, fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}
-              onClick={() => dispatch(setVisibleTable('scheduled'))}
-            >
-              Scheduled
-            </Button>
-          </Stack>
+          <Box sx={{ flex: '0 0 auto' }}>
+            <SegmentedToggle
+              uppercase
+              aria-label="workflow table"
+              value={visibleTable === 'scheduled' ? 'scheduled' : 'workflows'}
+              onChange={(v) => dispatch(setVisibleTable(v as 'workflows' | 'scheduled'))}
+              options={[
+                { value: 'workflows', label: 'Completed' },
+                { value: 'scheduled', label: 'Scheduled' },
+              ]}
+            />
+          </Box>
         )
       )}
       {numSelected > 0 && selectedTab !== 1 ? (

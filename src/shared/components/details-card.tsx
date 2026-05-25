@@ -1,31 +1,32 @@
 import type React from 'react';
 import { Box, Card, CardContent, CardHeader, Typography, Divider } from '@mui/material';
+import { cardSurfaceSx, cardHeaderSx } from '../styles/card-surface';
 
 interface DetailsCardProps {
   title: string;
   children: React.ReactNode;
   minWidth?: string;
+  /** Optional accent color painted as a thin stripe along the top edge. */
+  accent?: string;
 }
 
 export const DetailsCard = ({
   title,
   children,
-  minWidth = '20%'
+  minWidth = '20%',
+  accent,
 }: DetailsCardProps) => (
   <Card
     elevation={0}
-    sx={{
-      minWidth,
-      boxShadow: 'none',
-      height: '100%',
-      borderRadius: 2,
-      border: theme => `1px solid ${theme.palette.customGrey.main}`,
-    }}
+    sx={[
+      cardSurfaceSx({ accent }),
+      { minWidth, height: '100%' },
+    ]}
   >
     <CardHeader
       title={
         <Typography
-          variant="subtitle1"
+          variant="subtitle2"
           sx={{
             fontWeight: 700,
             color: 'text.primary',
@@ -34,14 +35,7 @@ export const DetailsCard = ({
           {title}
         </Typography>
       }
-      sx={{
-        background: theme => theme.palette.customSurface.cardHeader,
-        borderBottom: theme => `1px solid ${theme.palette.divider}`,
-        padding: '6px 12px',
-        height: '40px',
-        borderTopLeftRadius: 8,
-        borderTopRightRadius: 8,
-      }}
+      sx={cardHeaderSx()}
     />
     <CardContent
       sx={{
@@ -51,7 +45,6 @@ export const DetailsCard = ({
         '&:last-child': {
           paddingBottom: 2
         },
-        borderRadius: '0 0 8px 8px'
       }}
     >
       <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>

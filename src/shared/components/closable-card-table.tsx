@@ -12,6 +12,7 @@ import {
 import DownloadIcon from '@mui/icons-material/Download';
 import CloseIcon from '@mui/icons-material/Close';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { cardSurfaceSx, cardHeaderSx } from '../styles/card-surface';
 
 interface ClosableCardTableProps {
   title: string
@@ -55,16 +56,16 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
   return (
     <Card
       elevation={0}
-      sx={{
-        maxWidth: maxWidth,
-        mx: 'auto',
-        boxShadow: 'none',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: 2,
-        border: theme => `1px solid ${theme.palette.customGrey.main}`,
-      }}
+      sx={[
+        cardSurfaceSx(),
+        {
+          maxWidth: maxWidth,
+          mx: 'auto',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      ]}
     >
       <CardHeader
         action={
@@ -110,7 +111,7 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
         title={
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
             <Typography
-              variant="subtitle1"
+              variant="subtitle2"
               sx={{
                 fontWeight: 700,
                 color: 'text.primary',
@@ -127,14 +128,7 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
             )}
           </Box>
         }
-        sx={{
-          background: theme => theme.palette.customSurface.cardHeader,
-          borderBottom: theme => `1px solid ${theme.palette.divider}`,
-          padding: '6px 12px',
-          minHeight: '44px',
-          borderTopLeftRadius: 8,
-          borderTopRightRadius: 8,
-        }}
+        sx={cardHeaderSx()}
       />
       <CardContent
         sx={{
@@ -143,7 +137,6 @@ const ClosableCardTable: React.FC<ClosableCardTableProps> = ({
           '&:last-child': {
             paddingBottom: noPadding ? 0 : 3,
           },
-          borderRadius: '0 0 8px 8px',
           flexGrow: 1,
           display: 'flex',
           flexDirection: 'column',

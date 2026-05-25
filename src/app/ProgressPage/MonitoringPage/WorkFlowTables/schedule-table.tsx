@@ -5,7 +5,7 @@ import ArrowDown from '@mui/icons-material/KeyboardArrowDown';
 import Close from '@mui/icons-material/Close';
 import ToolBarWorkflow from './toolbar-workflow-table';
 import FilterBar from '../../../../shared/components/filter-bar';
-import { Popover, styled } from '@mui/material';
+import { alpha, Popover, styled } from '@mui/material';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -117,8 +117,14 @@ const WorkflowActions = (props: {
 };
 
 const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
+  border: 'none',
+  '--DataGrid-rowBorderColor': theme.palette.divider,
+  '--DataGrid-containerBackground': theme.palette.customGrey.main,
   '& .MuiDataGrid-scrollbarFiller': {
     backgroundColor: theme.palette.customGrey.main,
+  },
+  '& .MuiDataGrid-columnHeaders': {
+    borderBottom: `1px solid ${theme.palette.divider}`,
   },
   '& .MuiDataGrid-columnHeader': {
     backgroundColor: theme.palette.customGrey.main,
@@ -129,6 +135,22 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
   '& .MuiDataGrid-columnHeaderTitle': {
     whiteSpace: 'nowrap',
     overflow: 'visible',
+    fontWeight: 700,
+  },
+  '& .MuiDataGrid-columnSeparator': {
+    color: 'transparent',
+  },
+  '& .MuiDataGrid-cell': {
+    fontSize: '0.8rem',
+  },
+  '& .MuiDataGrid-row:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  '& .MuiDataGrid-row.Mui-selected': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.16),
+    },
   },
   '& .datagrid-header-fixed': {
     // Action column
@@ -136,19 +158,19 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     right: 0,
     zIndex: 100,
     backgroundColor: theme.palette.customGrey.main,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
   },
   '& .MuiDataGrid-cell[data-field="action"]': {
     position: 'sticky',
     right: 0,
     backgroundColor: theme.palette.customGrey.light,
     zIndex: 90,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
   },
   // Add pagination styling
   '& .MuiDataGrid-footerContainer': {
     minHeight: '56px',
-    borderTop: '1px solid rgba(224, 224, 224, 1)',
+    borderTop: `1px solid ${theme.palette.divider}`,
   },
   '& .MuiTablePagination-root': {
     overflow: 'visible',
@@ -158,7 +180,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     right: 0,
     zIndex: 1000,
     backgroundColor: theme.palette.customGrey.main,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
     display: 'flex',
     justifyContent: 'center', // Center the header content
     alignItems: 'center', // Vertically center

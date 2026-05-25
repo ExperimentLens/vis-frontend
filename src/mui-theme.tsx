@@ -1,6 +1,7 @@
 // Import necessary modules
 import { grey, blue } from '@mui/material/colors';
 import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+import type { Shadows } from '@mui/material/styles';
 import type { CSSProperties } from 'react';
 
 // Custom typography variants (additive — used like <Typography variant="cardTitle">)
@@ -73,6 +74,10 @@ declare module '@mui/material/styles' {
       statSuccess: string
       /** Solid color for failure indicators */
       statFailure: string
+      /** Raised panel background (sits above background.paper in dark mode) */
+      elevated: string
+      /** Subtle border color for cards/panels — soft, never a harsh hairline */
+      cardBorder: string
     }
   }
   interface PaletteOptions {
@@ -104,11 +109,56 @@ declare module '@mui/material/styles' {
       statCardFailure: string
       statSuccess: string
       statFailure: string
+      elevated: string
+      cardBorder: string
+    }
+  }
+}
+
+// Reusable elevation tokens for the modern card surfaces. Unlike the MUI
+// `shadows` scale these are tuned to read clearly on dark backgrounds.
+declare module '@mui/material/styles' {
+  interface Theme {
+    customShadows: {
+      /** Resting elevation for cards / panels */
+      card: string
+      /** Lifted elevation on hover/active */
+      cardHover: string
+      /** Floating surfaces: menus, popovers, dialogs */
+      popover: string
+    }
+  }
+  interface ThemeOptions {
+    customShadows?: {
+      card: string
+      cardHover: string
+      popover: string
     }
   }
 }
 
 export type ThemeMode = 'light' | 'dark';
+
+// Build a soft, layered elevation scale. MUI's default shadows are tuned for
+// light surfaces and all but vanish on a dark background — these stay readable
+// in both modes by pairing a tight contact shadow with a wider ambient one.
+const buildShadows = (isDark: boolean): Shadows => {
+  const rgb = isDark ? '0, 0, 0' : '16, 24, 40';
+  const contactA = isDark ? 0.44 : 0.06;
+  const ambientA = isDark ? 0.36 : 0.10;
+
+  const make = (e: number) => {
+    if (e === 0) return 'none';
+    const y1 = Math.max(1, Math.round(e * 0.5));
+    const b1 = Math.max(2, Math.round(e * 1.2));
+    const y2 = Math.max(2, Math.round(e * 1.1));
+    const b2 = Math.max(4, Math.round(e * 2.8));
+
+    return `0px ${y1}px ${b1}px rgba(${rgb}, ${contactA}), 0px ${y2}px ${b2}px rgba(${rgb}, ${ambientA})`;
+  };
+
+  return Array.from({ length: 25 }, (_, i) => make(i)) as unknown as Shadows;
+};
 
 export const createAppTheme = (mode: ThemeMode) => {
   const isDark = mode === 'dark';
@@ -152,22 +202,45 @@ export const createAppTheme = (mode: ThemeMode) => {
         statCard:        isDark ? 'linear-gradient(135deg, #1a1a2e, #1e2133)' : 'linear-gradient(135deg, #f3f4f6, #e0e7ff)',
         statCardSuccess: isDark ? 'linear-gradient(135deg, #0d2b0d, #1a4a1a)' : 'linear-gradient(135deg, #d7f5d1, #a2d57a)',
         statCardFailure: isDark ? 'linear-gradient(90deg, #d17b0f, #b32d00)' : 'linear-gradient(90deg, #fcd9c8, #f87171)',
-        statSuccess: isDark ? '#1a4a1a' : '#e6f4ea', 
+        statSuccess: isDark ? '#1a4a1a' : '#e6f4ea',
         statFailure: isDark ? '#b32d00' : '#fdecea',
+        elevated:   isDark ? '#23232c' : '#ffffff',
+        cardBorder: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(15, 23, 42, 0.08)',
       },
       background: {
         default: isDark ? '#121212' : '#FFFFFF',
         paper:   isDark ? '#1E1E1E' : '#FFFFFF',
       },
       text: {
-        primary:   isDark ? '#E0E0E0' : '#0E1021',
-        secondary: isDark ? '#B0BEC5' : '#0E1021',
+        // Light mode: soft dark slate instead of near-black, with a clearly
+        // muted secondary — pure-black body text reads harsh on white.
+        primary:   isDark ? '#E0E0E0' : '#2a3142',
+        secondary: isDark ? '#B0BEC5' : '#697586',
       },
+      // Soft divider so 1px borders read as a gentle edge, not a bright
+      // hairline — the main offender behind the "white lines" in dark mode.
+      divider: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(15, 23, 42, 0.08)',
     },
+    shape: {
+      // Rounder corners across the board for a softer, more modern feel.
+      borderRadius: 6,
+    },
+    customShadows: {
+      card: isDark
+        ? '0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.34)'
+        : '0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 18px rgba(16, 24, 40, 0.08)',
+      cardHover: isDark
+        ? '0 2px 6px rgba(0, 0, 0, 0.45), 0 12px 30px rgba(0, 0, 0, 0.5)'
+        : '0 2px 6px rgba(16, 24, 40, 0.08), 0 14px 32px rgba(16, 24, 40, 0.14)',
+      popover: isDark
+        ? '0 10px 36px rgba(0, 0, 0, 0.6)'
+        : '0 10px 36px rgba(16, 24, 40, 0.16)',
+    },
+    shadows: buildShadows(isDark),
     typography: {
       fontFamily: '"All Round Gothic Bold", Arial, sans-serif',
       allVariants: {
-        color: isDark ? '#FFFFFF' : '#0E1021',
+        color: isDark ? '#FFFFFF' : '#2a3142',
       },
       // Compact-UI vocabulary — use these instead of inline sx for repeated patterns.
       cardTitle: {
@@ -226,6 +299,17 @@ export const createAppTheme = (mode: ThemeMode) => {
           '*::-webkit-scrollbar-thumb:hover': {
             backgroundColor: isDark ? grey[600] : grey[500],
           },
+
+          // The shared workflow-info tooltip carries its own themed surface, so
+          // strip Vega-tooltip's default white container when it hosts ours.
+          // Scoped via :has() so other (default) Vega tooltips are untouched.
+          '#vg-tooltip-element:has(.wf-info-tip), .vg-tooltip:has(.wf-info-tip)': {
+            background: 'transparent !important',
+            border: 'none !important',
+            boxShadow: 'none !important',
+            padding: '0 !important',
+            color: 'inherit',
+          },
         },
       },
       // Global defaults that match our compact-UI patterns.
@@ -258,6 +342,52 @@ export const createAppTheme = (mode: ThemeMode) => {
       MuiChip: {
         styleOverrides: {
           root: { fontWeight: 600 },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          // Default (rounded) Paper picks up the softer corner radius.
+          rounded: { borderRadius: 12 },
+          // Outlined papers should use the soft card border, not the default
+          // bright divider — this removes a major source of dark-mode hairlines.
+          outlined: {
+            borderColor: isDark
+              ? 'rgba(255, 255, 255, 0.07)'
+              : 'rgba(15, 23, 42, 0.08)',
+          },
+        },
+      },
+      MuiCard: {
+        defaultProps: { elevation: 0 },
+        styleOverrides: {
+          root: { borderRadius: 12 },
+        },
+      },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            borderRadius: 8,
+            fontSize: '0.72rem',
+            fontWeight: 600,
+            padding: '6px 10px',
+            backgroundColor: isDark
+              ? 'rgba(38, 38, 48, 0.96)'
+              : 'rgba(15, 23, 42, 0.92)',
+            backdropFilter: 'blur(6px)',
+            boxShadow: isDark
+              ? '0 6px 20px rgba(0, 0, 0, 0.5)'
+              : '0 6px 20px rgba(16, 24, 40, 0.18)',
+          },
+          arrow: {
+            color: isDark ? 'rgba(38, 38, 48, 0.96)' : 'rgba(15, 23, 42, 0.92)',
+          },
+        },
+      },
+      MuiListItemButton: {
+        styleOverrides: {
+          root: {
+            transition: 'background-color 160ms ease, color 160ms ease',
+          },
         },
       },
     },

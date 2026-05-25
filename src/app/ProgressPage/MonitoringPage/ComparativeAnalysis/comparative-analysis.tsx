@@ -73,18 +73,18 @@ const ComparativeAnalysis = () => {
             <Tab
               icon={<InsightsRoundedIcon fontSize="small" />}
               iconPosition="start"
-              label="Metrics"
+              label="METRICS"
             />
             <Tab
               icon={<HubRoundedIcon fontSize="small" />}
               iconPosition="start"
-              label="Models"
+              label="MODELS"
               disabled={groupBy.length > 0 || !hasExplainability}
             />
             <Tab
               icon={<StorageRoundedIcon fontSize="small" />}
               iconPosition="start"
-              label="Data"
+              label="DATA"
               disabled={groupBy.length > 0}
             />
           </Tabs>

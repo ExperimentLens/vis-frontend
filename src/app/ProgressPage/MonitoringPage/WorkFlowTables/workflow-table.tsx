@@ -16,7 +16,7 @@ import { setSelectedTab, setWorkflowsTable, toggleWorkflowSelection, setHoveredW
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Badge,  Button,  FormControl,  IconButton, Popover, styled, TextField, Tooltip, useTheme } from '@mui/material';
+import { alpha, Badge,  Button,  FormControl,  IconButton, Popover, styled, TextField, Tooltip, useTheme } from '@mui/material';
 import FilterBar from '../../../../shared/components/filter-bar';
 import ProgressBar from '../../../../shared/components/prgress-bar';
 import debounce from 'lodash/debounce';
@@ -322,8 +322,15 @@ const ACTION_COL_WIDTH = 120;
 const STATUS_COL_WIDTH = 120;
 
 const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
+  border: 'none',
+  // Soften the row separators (no more harsh default lines).
+  '--DataGrid-rowBorderColor': theme.palette.divider,
+  '--DataGrid-containerBackground': theme.palette.customGrey.main,
   '& .MuiDataGrid-scrollbarFiller': {
     backgroundColor: theme.palette.customGrey.main,
+  },
+  '& .MuiDataGrid-columnHeaders': {
+    borderBottom: `1px solid ${theme.palette.divider}`,
   },
   '& .MuiDataGrid-columnHeader': {
     backgroundColor: theme.palette.customGrey.main,
@@ -334,6 +341,24 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
   '& .MuiDataGrid-columnHeaderTitle': {
     whiteSpace: 'nowrap',
     overflow: 'visible',
+    fontWeight: 700,
+  },
+  // Hide the dated vertical separators between header cells.
+  '& .MuiDataGrid-columnSeparator': {
+    color: 'transparent',
+  },
+  '& .MuiDataGrid-cell': {
+    fontSize: '0.8rem',
+  },
+  // Row hover + selection feedback.
+  '& .MuiDataGrid-row:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  '& .MuiDataGrid-row.Mui-selected': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.16),
+    },
   },
   '& .datagrid-header-fixed': {
     // Action column
@@ -341,21 +366,21 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     right: 0,
     zIndex: 9999,
     backgroundColor: theme.palette.customGrey.main,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
   },
   '& .MuiDataGrid-cell[data-field="action"]': {
     position: 'sticky',
     right: 0,
     backgroundColor: theme.palette.customGrey.light,
     zIndex: 9999,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
   },
   '& .datagrid-header-fixed-status': {
     position: 'sticky',
     right: ACTION_COL_WIDTH,
     zIndex: 9999,
     backgroundColor: theme.palette.customGrey.main,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
@@ -365,20 +390,20 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     right: ACTION_COL_WIDTH,
     zIndex: 9998,
     backgroundColor: theme.palette.customGrey.main,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
   },
   '&.status-sticky-mode .MuiDataGrid-cell[data-field="status"]': {
     position: 'sticky',
     right: ACTION_COL_WIDTH,
     zIndex: 9998,
     backgroundColor: theme.palette.customGrey.light,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
   },
 
   // pagination
   '& .MuiDataGrid-footerContainer': {
     minHeight: '56px',
-    borderTop: '1px solid rgba(224, 224, 224, 1)',
+    borderTop: `1px solid ${theme.palette.divider}`,
   },
 
   '& .MuiTablePagination-root': {
@@ -389,7 +414,7 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
     right: 0,
     zIndex: 1000,
     backgroundColor: theme.palette.customGrey.main,
-    borderLeft: '1px solid #ddd',
+    borderLeft: `1px solid ${theme.palette.divider}`,
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
