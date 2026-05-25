@@ -3,48 +3,14 @@ import type { Dispatch, SetStateAction } from 'react';
 import { useEffect } from 'react';
 import { useMediaQuery, useTheme } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
-import ControlSection from '../../../../shared/components/control-section';
-import SegmentedToggle from '../../../../shared/components/segmented-toggle';
+import InstanceScatterControls from '../../../../shared/components/instance-scatter-controls';
 import Loader from '../../../../shared/components/loader';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { fetchUmap } from '../../../../store/slices/dataExplorationSlice';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
 import type { TestInstance } from '../../../../shared/models/tasks/model-analysis.model';
 import type { Item, ScenegraphEvent, View } from 'vega';
 import { getClassColorMap } from '../../../../shared/utils/colorUtils';
-
-interface ControlPanelProps {
-  xAxisOption: string
-  yAxisOption: string
-  setXAxisOption: (val: string) => void
-  setYAxisOption: (val: string) => void
-  showMisclassifiedOnly: boolean
-  options: string[]
-  plotData: {
-      data: TestInstance[] | null
-      loading: boolean
-      error: string | null
-    } | null
-  useUmap: boolean
-  setUseUmap: Dispatch<SetStateAction<boolean>>
-}
-
-const ControlPanel = ({ useUmap, setUseUmap }: ControlPanelProps) => {
-  return (
-    <ControlSection label="Projection" icon={<ShowChartIcon fontSize="small" />}>
-      <SegmentedToggle
-        aria-label="projection mode"
-        value={useUmap ? 'umap' : 'features'}
-        onChange={(v) => setUseUmap(v === 'umap')}
-        options={[
-          { value: 'features', label: 'Features' },
-          { value: 'umap', label: 'UMAP' },
-        ]}
-      />
-    </ControlSection>
-  );
-};
 
 interface Umapi {
   point: { id: string; data: TestInstance } | null
@@ -54,11 +20,16 @@ interface Umapi {
   hashRow: (row: TestInstance) => string
   useUmap: boolean
   setuseUmap: Dispatch<SetStateAction<boolean>>
+  options: string[]
+  xAxisOption: string
+  yAxisOption: string
+  setXAxisOption: (value: string) => void
+  setYAxisOption: (value: string) => void
 }
 
 const InstanceClassificationUmap = (props: Umapi) => {
   const theme = useTheme();
-  const { point, setPoint, setShapPoint, showMisclassifiedOnly, hashRow, useUmap, setuseUmap } = props;
+  const { point, setPoint, setShapPoint, showMisclassifiedOnly, hashRow, useUmap, setuseUmap, options, xAxisOption, yAxisOption, setXAxisOption, setYAxisOption } = props;
   const tab = useAppSelector((state: RootState) => state.workflowPage.tab);
   const raw = tab?.workflowTasks.modelAnalysis?.modelInstances.data;
   const parsedData = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -275,14 +246,14 @@ const InstanceClassificationUmap = (props: Umapi) => {
       maxHeight={1200}
       isStatic={true}
       controlPanel={
-        <ControlPanel
-          xAxisOption={''}
-          yAxisOption={''}
-          setXAxisOption={() => {}}
-          setYAxisOption={() => {}}
-          showMisclassifiedOnly={showMisclassifiedOnly}
-          options={[]}
-          plotData={null} useUmap={useUmap} setUseUmap={setuseUmap}
+        <InstanceScatterControls
+          options={options}
+          xAxisOption={xAxisOption}
+          yAxisOption={yAxisOption}
+          useUmap={useUmap}
+          onXAxisChange={setXAxisOption}
+          onYAxisChange={setYAxisOption}
+          onUseUmapChange={setuseUmap}
         />
       }
 

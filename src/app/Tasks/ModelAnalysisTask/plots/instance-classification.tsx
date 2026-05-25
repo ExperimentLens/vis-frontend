@@ -1,10 +1,8 @@
 import Box from '@mui/material/Box';
-import FormControl from '@mui/material/FormControl';
 import type { Dispatch, SetStateAction } from 'react';
 import { useEffect, useState } from 'react';
 import { useMediaQuery, useTheme } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
 import InstanceClassificationUmap from './instance-classification-umap';
 import type { TestInstance } from '../../../../shared/models/tasks/model-analysis.model';
 import type { View, Item, ScenegraphEvent } from 'vega';
@@ -14,109 +12,7 @@ import Loader from '../../../../shared/components/loader';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import { getClassColorMap } from '../../../../shared/utils/colorUtils';
-import SearchableSelect from '../../../../shared/components/searchable-select';
-import SegmentedToggle from '../../../../shared/components/segmented-toggle';
-import ControlSection from '../../../../shared/components/control-section';
-
-interface ControlPanelProps {
-  xAxisOption: string
-  yAxisOption: string
-  setXAxisOption: (val: string) => void
-  setYAxisOption: (val: string) => void
-  showMisclassifiedOnly: boolean
-  options: string[]
-  plotData: {
-    data: TestInstance[] | null
-    loading: boolean
-    error: string | null
-  } | null
-  useUmap: boolean
-  setUseUmap: Dispatch<SetStateAction<boolean>>
-}
-
-const ControlPanel = ({
-  xAxisOption,
-  yAxisOption,
-  setXAxisOption,
-  setYAxisOption,
-  options,
-  plotData,
-  useUmap,
-  setUseUmap,
-}: ControlPanelProps) => {
-  const handleAxisSelection =
-    (axis: 'x' | 'y') => (e: { target: { value: string } }) => {
-      if (axis === 'x') setXAxisOption(e.target.value);
-      else setYAxisOption(e.target.value);
-    };
-
-  return (
-    <>
-      <Box sx={{ display: 'flex', flexDirection: 'row', gap: 2, px: 1.5 }}>
-        {/* X-Axis Selector */}
-        <FormControl fullWidth>
-          <SearchableSelect
-            labelId="x-axis-select-label"
-            inputLabel={
-              <Box display="flex" alignItems="center" gap={1}>
-                <ShowChartIcon fontSize="small" />
-                X-Axis
-              </Box>
-            }
-            label="X-Axis-----"
-            disabled={plotData?.loading || !plotData?.data}
-            value={xAxisOption}
-            options={options.filter(option => option !== yAxisOption)}
-            onChange={value =>
-              handleAxisSelection('x')({
-                target: { value },
-              })
-            }
-            menuMaxHeight={224}
-            menuWidth={250}
-          />
-        </FormControl>
-        <FormControl fullWidth>
-          <SearchableSelect
-            labelId="y-axis-select-label"
-            inputLabel={
-              <Box display="flex" alignItems="center" gap={1}>
-                <ShowChartIcon fontSize="small" />
-                Y-Axis
-              </Box>
-            }
-            label="Y-Axis-----"
-            disabled={plotData?.loading || !plotData?.data}
-            value={yAxisOption}
-            options={
-              options.filter(option => option !== xAxisOption)
-            }
-            onChange={(value) =>
-              handleAxisSelection('y')({
-                target: { value },
-              })
-            }
-            menuMaxHeight={224}
-            menuWidth={250}
-          />
-        </FormControl>
-      </Box>
-
-      <ControlSection label="Projection" icon={<ShowChartIcon fontSize="small" />}>
-        <SegmentedToggle
-          aria-label="projection mode"
-          value={useUmap ? 'umap' : 'features'}
-          onChange={(v) => setUseUmap(v === 'umap')}
-          options={[
-            { value: 'features', label: 'Features' },
-            { value: 'umap', label: 'UMAP' },
-          ]}
-        />
-      </ControlSection>
-
-    </>
-  );
-};
+import InstanceScatterControls from '../../../../shared/components/instance-scatter-controls';
 
 interface IInstanceClassification {
   plotData: {
@@ -307,7 +203,12 @@ const InstanceClassification = (props: IInstanceClassification) => {
         setShapPoint={setShapPoint}
         hashRow={hashRow}
         useUmap={useUmap}
-        setuseUmap={setUseUmap }
+        setuseUmap={setUseUmap}
+        options={options}
+        xAxisOption={xAxisOption}
+        yAxisOption={yAxisOption}
+        setXAxisOption={setXAxisOption}
+        setYAxisOption={setYAxisOption}
       />
     ) : (
       <ResponsiveCardVegaLite
@@ -431,16 +332,15 @@ const InstanceClassification = (props: IInstanceClassification) => {
         title={'Instance Classification Chart'}
         actions={false}
         controlPanel={
-          <ControlPanel
+          <InstanceScatterControls
+            options={options}
             xAxisOption={xAxisOption}
             yAxisOption={yAxisOption}
-            setXAxisOption={setXAxisOption}
-            setYAxisOption={setYAxisOption}
-            showMisclassifiedOnly={showMisclassifiedOnly}
-            options={options}
-            plotData={plotData}
             useUmap={useUmap}
-            setUseUmap={setUseUmap}
+            onXAxisChange={setXAxisOption}
+            onYAxisChange={setYAxisOption}
+            onUseUmapChange={setUseUmap}
+            axesDisabled={plotData?.loading || !plotData?.data}
           />
         }
         onNewView={handleNewView}

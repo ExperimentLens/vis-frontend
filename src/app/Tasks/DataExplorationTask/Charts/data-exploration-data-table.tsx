@@ -4,8 +4,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import { Box, styled } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
-import ColumnSelectionPanel from '../ChartControls/data-exploration-table-control';
-import ViewColumnIcon from '@mui/icons-material/ViewColumn';
+import ColumnSelectionControl from '../ChartControls/data-exploration-table-control';
 import { fetchDataExplorationData } from '../../../../store/slices/dataExplorationSlice';
 import PaginationComponent from '../../../../shared/components/pagination-control';
 import { setCurrentPage } from '../../../../store/slices/workflowPageSlice';
@@ -246,9 +245,7 @@ const TableExpand: React.FC = () => {
     <Box sx={{ height: '99%' }}>
       <ResponsiveCardTable
         title="Data Table"
-        controlPanel={<ColumnSelectionPanel />}
-        optionsLabel="Visible Columns"
-        optionsIcon={<ViewColumnIcon fontSize="small" />}
+        headerActions={<ColumnSelectionControl />}
         onDownload={handleExportCsv}
         showDownloadButton={hasContent}
         downloadLabel="Export as CSV"

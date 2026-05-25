@@ -1,4 +1,4 @@
-import { Box, Chip, Divider, FormControl, IconButton, Menu, Tooltip } from '@mui/material';
+import { Box, Chip, Divider, IconButton, Menu, Tooltip } from '@mui/material';
 import CompactMenuItem from '../../../../shared/components/compact-menu-item';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -9,18 +9,16 @@ import BlurLinearIcon from '@mui/icons-material/BlurLinear';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
 import MisclassifiedToggle from '../../../../shared/components/misclassified-toggle';
 import SegmentedToggle from '../../../../shared/components/segmented-toggle';
-import ControlSection from '../../../../shared/components/control-section';
+import InstanceScatterControls from '../../../../shared/components/instance-scatter-controls';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import { useMemo, useState } from 'react';
-import ShowChartIcon from '@mui/icons-material/ShowChart';
 import DownloadIcon from '@mui/icons-material/Download';
 import CodeIcon from '@mui/icons-material/Code';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import StorageIcon from '@mui/icons-material/Storage';
 import ViewColumnIcon from '@mui/icons-material/ViewColumn';
 import { GridTableRowsIcon } from '@mui/x-data-grid';
-import SearchableSelect from '../../../../shared/components/searchable-select';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
 import SelectionPopover from '../../../../shared/components/selection-popover';
@@ -354,7 +352,7 @@ const ComparativeAnalysisControls = ()=> {
                 PaperProps={{
                   elevation: 0,
                   sx: {
-                    width: 260,
+                    width: 240,
                     maxHeight: 380,
                     overflow: 'hidden',
                     borderRadius: 2,
@@ -367,69 +365,24 @@ const ComparativeAnalysisControls = ()=> {
               >
                 <SectionHeader
                   icon={<SettingsSuggestIcon fontSize="small" />}
-                  title="Control Options"
+                  title="Chart Options"
                 />
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.75, px: 1.25, pt: 1.25, pb: 0.5 }}>
-                  <FormControl fullWidth size="small">
-                    <SearchableSelect
-                      labelId="x-axis-select-label"
-                      inputLabel={
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          <ShowChartIcon sx={{ fontSize: 14 }} />
-                          X-Axis
-                        </Box>
-                      }
-                      label="X-Axis"
-                      value={xAxisOption}
-                      options={options.filter(option => option !== yAxisOption)}
-                      onChange={value =>
-                        dispatch(
-                          setComparativeModelInstanceControlPanel({ xAxisOption: value }),
-                        )
-                      }
-                      disabled={comparativeModelInstanceControlPanel.useUmap}
-                      menuMaxHeight={224}
-                      menuWidth={236}
-                    />
-                  </FormControl>
-
-                  <FormControl fullWidth size="small">
-                    <SearchableSelect
-                      labelId="y-axis-select-label"
-                      inputLabel={
-                        <Box display="flex" alignItems="center" gap={0.5}>
-                          <ShowChartIcon sx={{ fontSize: 14 }} />
-                          Y-Axis
-                        </Box>
-                      }
-                      label="Y-Axis"
-                      value={yAxisOption}
-                      options={options.filter(option => option !== xAxisOption)}
-                      onChange={value =>
-                        dispatch(
-                          setComparativeModelInstanceControlPanel({ yAxisOption: value }),
-                        )
-                      }
-                      disabled={comparativeModelInstanceControlPanel.useUmap}
-                      menuMaxHeight={224}
-                      menuWidth={236}
-                    />
-                  </FormControl>
-                  <ControlSection label="Projection" icon={<ShowChartIcon sx={{ fontSize: 14 }} />}>
-                    <SegmentedToggle
-                      aria-label="projection mode"
-                      value={comparativeModelInstanceControlPanel.useUmap ? 'umap' : 'features'}
-                      onChange={(v) =>
-                        dispatch(
-                          setComparativeModelInstanceControlPanel({ useUmap: v === 'umap' })
-                        )
-                      }
-                      options={[
-                        { value: 'features', label: 'Features' },
-                        { value: 'umap', label: 'UMAP' },
-                      ]}
-                    />
-                  </ControlSection>
+                <Box sx={{ px: 1.25, pt: 1.25, pb: 0.5 }}>
+                  <InstanceScatterControls
+                    options={options}
+                    xAxisOption={xAxisOption}
+                    yAxisOption={yAxisOption}
+                    useUmap={comparativeModelInstanceControlPanel.useUmap}
+                    onXAxisChange={(value) =>
+                      dispatch(setComparativeModelInstanceControlPanel({ xAxisOption: value }))
+                    }
+                    onYAxisChange={(value) =>
+                      dispatch(setComparativeModelInstanceControlPanel({ yAxisOption: value }))
+                    }
+                    onUseUmapChange={(useUmap) =>
+                      dispatch(setComparativeModelInstanceControlPanel({ useUmap }))
+                    }
+                  />
                 </Box>
                 <Divider sx={{ opacity: 0.6 }} />
                 <Box sx={{ py: 0.5 }}>

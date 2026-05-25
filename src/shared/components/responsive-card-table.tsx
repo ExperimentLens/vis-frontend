@@ -30,6 +30,14 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 interface ResponsiveCardTableProps {
   title: React.ReactNode
   controlPanel?: React.ReactNode
+  /**
+   * Self-contained controls rendered inline in the header action row (and the
+   * fullscreen dialog's), to the left of the settings/fullscreen buttons.
+   * Unlike `controlPanel` — whose body gets dropped *inside* the gear menu —
+   * `headerActions` is never wrapped in a menu, so it is the right slot for a
+   * control that opens its own popover (e.g. a column selector).
+   */
+  headerActions?: React.ReactNode
   children: React.ReactNode
   onDownload?: () => void
   onFullScreen?: (isOpen: boolean) => void
@@ -101,6 +109,7 @@ export const SectionHeader = ({
 const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
   title,
   controlPanel,
+  headerActions,
   children,
   onDownload,
   onFullScreen,
@@ -267,6 +276,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
           <Box
             sx={{ display: 'flex', alignItems: 'center', gap: 0.5, marginLeft: 2 }}
           >
+            {headerActions}
             {shouldShowControlsInHeader && (
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 {controlPanel}
@@ -463,6 +473,7 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
               )}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              {headerActions}
               {showSettings && controlPanel && (
                 <>
                   <IconButton
