@@ -240,7 +240,7 @@ const InstanceShapPlot = ({ shapPoint, onClose }: ShpaPlotProps) => {
             x: { datum: baseValue },
             y: { value: 0 },
             text: { value: baseLabel },
-            color: { value: '#616161' },
+            color: { value: textColor },
             align: { value: 'right' }, // lean right to reduce overlap with f(x)
             dx: { value: -6 },
           },
@@ -265,7 +265,7 @@ const InstanceShapPlot = ({ shapPoint, onClose }: ShpaPlotProps) => {
             x: { datum: fxValue },
             y: { value: 0 },
             text: { value: fxLabel },
-            color: { value: '#616161' },
+            color: { value: textColor },
             align: { value: 'left' },
             dx: { value: 6 },
           },
