@@ -1,5 +1,7 @@
 import { Handler } from 'vega-tooltip';
 import type { IRun } from '../../../shared/models/experiment/run.model';
+import { WF_INFO_TIP_CLASS } from './ComparativeAnalysis/workflow-info-tooltip';
+import type { WorkflowTooltipPalette } from './ComparativeAnalysis/workflow-info-tooltip';
 
 interface ExperimentExplainabilityTooltipProps {
   workflowIds: string[];
@@ -7,9 +9,11 @@ interface ExperimentExplainabilityTooltipProps {
   workflowColors: Record<string, string>;
   xAxisName?: string;
   yAxisName?: string;
+  axisType?: string;
   selectedFeature?: string;
   selectedFeature2?: string;
   experimentId?: string;
+  palette: WorkflowTooltipPalette;
 }
 
 export const createExperimentExplainabilityTooltipHandler = ({
@@ -18,9 +22,11 @@ export const createExperimentExplainabilityTooltipHandler = ({
   workflowColors,
   xAxisName = 'xAxis default',
   yAxisName = 'yAxis default',
+  axisType,
   selectedFeature,
   selectedFeature2,
-  experimentId
+  experimentId,
+  palette
 }: ExperimentExplainabilityTooltipProps) => {
   const runById = new Map<string, IRun>();
 
@@ -111,7 +117,7 @@ export const createExperimentExplainabilityTooltipHandler = ({
           .join('');
 
         return `
-          <div style="max-width: 400px;">
+          <div class="${WF_INFO_TIP_CLASS}" style="max-width: 400px; background-color: ${palette.bg}; color: ${palette.text}; border: 1px solid ${palette.border}; border-radius: 8px; padding: 8px; box-shadow: ${palette.shadow};">
             <div style="margin-bottom: 8px; font-weight: bold;">Available Data:</div>
             ${availableData}
           </div>
@@ -158,22 +164,22 @@ export const createExperimentExplainabilityTooltipHandler = ({
         ? `/${experimentId}/monitoring?tab=1&compareId=${compareKey}`
         : '#';
       const header = `
-        <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #e0e0e0;">
-          ${selectedFeature ? `<div><strong>${sanitize(selectedFeature)}:</strong> ${sanitize(xValue)}</div>` : ''}
-          ${selectedFeature2 ? `<div><strong>${sanitize(selectedFeature2)}:</strong> ${sanitize(yValue)}</div>` : ''}
-          ${!selectedFeature2 && yValue ? `<div><strong>${sanitize(yAxisName)}</strong> ${(Number(sanitize(yValue)).toFixed(4))}</div>` : ''}
-          ${zValue ? `<div><strong>Value:</strong> ${Number(sanitize(zValue)).toFixed(4)}</div>` : ''}
-          ${value['__targetMetric'] ? `<div><strong>Target Metric:</strong> ${sanitize(String(value['__targetMetric']))}</div>` : ''}
+        <div style="margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid ${palette.border};">
+          ${selectedFeature ? `<div style="font-size:0.72rem;font-family:inherit;font-weight:700;">${sanitize(selectedFeature)}: ${sanitize(xValue)}</div>` : ''}
+          ${selectedFeature2 ? `<div style="font-size:0.72rem;font-family:inherit;font-weight:700;">${sanitize(selectedFeature2)}: ${sanitize(yValue)}</div>` : ''}
+          ${!selectedFeature2 && yValue ? `<div style="font-size:0.72rem;font-family:inherit;font-weight:700;">${sanitize(yAxisName)} ${(Number(sanitize(yValue)).toFixed(4))}</div>` : ''}
+          ${zValue ? `<div style="font-size:0.72rem;font-family:inherit;font-weight:700;">Value: ${Number(sanitize(zValue)).toFixed(4)}</div>` : ''}
+          ${value['__targetMetric'] ? `<div style="font-size:0.72rem;font-family:inherit;font-weight:700;">Target Metric: ${sanitize(String(value['__targetMetric']))}</div>` : ''}
         </div>
       `;
 
       const headerCells = [
-        '<th style="text-align:left; padding:4px 8px;">Workflow</th>',
+        `<th style="text-align:left; padding:4px 8px; color:${palette.secondaryText};">Workflow</th>`,
         ...allParamNames.map(
-          n => `<th style="text-align:left; padding:4px 8px;">${sanitize(n)}</th>`
+          n => `<th style="text-align:left; padding:4px 8px; color:${palette.secondaryText};">${sanitize(n)}</th>`
         ),
         ...allMetricNames.map(
-          n => `<th style="text-align:right; padding:4px 8px;">${sanitize(n)}</th>`
+          n => `<th style="text-align:right; padding:4px 8px; color:${palette.secondaryText};">${sanitize(n)}</th>`
         ),
       ].join('');
 
@@ -190,7 +196,7 @@ export const createExperimentExplainabilityTooltipHandler = ({
           .map(name => {
             const paramValue = paramMap.get(name);
             const isSelectedFeature = name === selectedFeature || name === selectedFeature2;
-            const style = isSelectedFeature ? 'font-weight: bold; background-color: #f0f0f0;' : '';
+            const style = isSelectedFeature ? `font-weight: bold; background-color: ${palette.bg};` : '';
 
             return `<td style="padding:4px 8px; vertical-align:top; ${style}">${sanitize(paramValue ?? '')}</td>`;
           })
@@ -230,9 +236,9 @@ export const createExperimentExplainabilityTooltipHandler = ({
         }
 
         return `
-          <div style="max-width: 600px; white-space: normal;">
+          <div class="${WF_INFO_TIP_CLASS}" style="max-width: 600px; white-space: normal; background-color: ${palette.bg}; color: ${palette.text}; border: 1px solid ${palette.border}; border-radius: 8px; padding: 8px; box-shadow: ${palette.shadow};">
             ${header}
-            <div style="color: #666; font-style: italic; margin-top: 8px;">
+            <div style="color: ${palette.secondaryText}; font-style: italic; margin-top: 8px;">
               ${filterMessage}
             </div>
           </div>
@@ -250,30 +256,30 @@ export const createExperimentExplainabilityTooltipHandler = ({
       }
 
       return `
-        <div style="max-width: 800px; max-height: 400px; white-space: normal; display:flex; flex-direction:column;">
+        <div class="${WF_INFO_TIP_CLASS}" style="max-width: 800px; max-height: 400px; white-space: normal; display:flex; flex-direction:column; background-color: ${palette.bg}; color: ${palette.text}; border: 1px solid ${palette.border}; border-radius: 8px; padding: 8px; box-shadow: ${palette.shadow};">
           ${header}
-          <div style="font-size: 12px; margin-top: 8px;">
+          <div style="font-size:0.72rem;font-family:inherit; margin-top: 8px;">
             <strong>${titleText}</strong>
           </div>
 
-          <div style="margin-top:6px; flex:1 1 auto; overflow:auto; border:1px solid #e0e0e0; border-radius:4px;">
+          <div style="margin-top:6px; flex:1 1 auto; overflow:auto; border:1px solid ${palette.border}; border-radius:4px;">
             <table style="border-collapse:collapse; font-size:11px; width:max-content; min-width:100%;">
               <thead>
-                <tr style="border-bottom: 1px solid #e0e0e0;">${headerCells}</tr>
+                <tr style="border-bottom: 1px solid ${palette.border};">${headerCells}</tr>
               </thead>
               <tbody>${body}</tbody>
             </table>
           </div>
 
           ${filteredWorkflowIds.length > 0 ? `
-            <div style="flex:0 0 auto; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0; text-align: center;">
+            <div style="flex:0 0 auto; margin-top: 12px; padding-top: 12px; border-top: 1px solid ${palette.border}; text-align: center;">
               <a 
                 href="${compareLink}"
                 target="_blank"
                 rel="noopener noreferrer"
                 style="
                   display: inline-block;
-                  background-color: #1976d2;
+                  background-color: ${palette.link};
                   color: white;
                   padding: 6px 12px;
                   border-radius: 4px;

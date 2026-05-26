@@ -17,6 +17,7 @@ import Loader from '../../../../shared/components/loader';
 import { fetchModelAnalysisExplainabilityPlot, setAleOrPdpSelections, setSelectedFeature } from '../../../../store/slices/explainabilitySlice';
 import { useExperimentExplainabilityTooltip } from '../../../ProgressPage/MonitoringPage/useExperimentExplainabilityTooltip';
 import SearchableSelect from '../../../../shared/components/searchable-select';
+import { paletteFromTheme } from '../../../ProgressPage/MonitoringPage/ComparativeAnalysis/workflow-info-tooltip';
 
 interface PdpPlotProps {
   explanation_type: string
@@ -58,7 +59,9 @@ const PdpPlot = (props: PdpPlotProps) => {
     plotModel?.data?.xAxis.axisName || 'xAxis default',
     'Average Predicted Value',
     plotModel?.data?.xAxis.axisType,
-    pendingFeature
+    pendingFeature,
+    undefined,
+    paletteFromTheme(theme)
   );
 
   useEffect(() => {

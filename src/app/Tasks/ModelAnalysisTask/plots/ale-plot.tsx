@@ -17,6 +17,7 @@ import Loader from '../../../../shared/components/loader';
 import { fetchModelAnalysisExplainabilityPlot, setSelectedFeature, setAleOrPdpSelections } from '../../../../store/slices/explainabilitySlice';
 import { useExperimentExplainabilityTooltip } from '../../../ProgressPage/MonitoringPage/useExperimentExplainabilityTooltip';
 import SearchableSelect from '../../../../shared/components/searchable-select';
+import { paletteFromTheme } from '../../../ProgressPage/MonitoringPage/ComparativeAnalysis/workflow-info-tooltip';
 
 interface AlePlotProps {
   explanation_type: string
@@ -52,12 +53,15 @@ const AlePlot = (props: AlePlotProps) => {
 
   const [pendingFeature, setPendingFeature] = useState(selectedFeature);
   const [pendingTargetMetric, setPendingTargetMetric] = useState(selectedTargetMetric);
+  const theme = useTheme();
 
   const tooltipHandler = useExperimentExplainabilityTooltip(
     plotModel?.data?.xAxis.axisName || 'xAxis default',
     'Average Predicted Effect',
     plotModel?.data?.xAxis.axisType,
-    selectedFeature
+    selectedFeature,
+    undefined,
+    paletteFromTheme(theme)
   );
 
   useEffect(() => {
@@ -126,7 +130,6 @@ const AlePlot = (props: AlePlotProps) => {
 
   const hasCategoricalBars = !xIsNumeric && yIsNumeric;
 
-  const theme = useTheme();
   const spec = hasCategoricalBars
     ? {
       width: 'container',

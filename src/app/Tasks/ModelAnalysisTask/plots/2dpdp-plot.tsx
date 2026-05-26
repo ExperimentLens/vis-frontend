@@ -16,6 +16,8 @@ import Loader from '../../../../shared/components/loader';
 import { clear2DPDPPlot, fetchModelAnalysisExplainabilityPlot, setSelectedFeatures2D } from '../../../../store/slices/explainabilitySlice';
 import { useExperimentExplainabilityTooltip } from '../../../ProgressPage/MonitoringPage/useExperimentExplainabilityTooltip';
 import SearchableSelect from '../../../../shared/components/searchable-select';
+import { useTheme } from '@mui/material/styles';
+import { paletteFromTheme } from '../../../ProgressPage/MonitoringPage/ComparativeAnalysis/workflow-info-tooltip';
 
 interface IContourplot {
   explanation_type: string
@@ -41,13 +43,15 @@ const Contourplot = (props: IContourplot) => {
   const [pendingTargetMetric, setPendingTargetMetric] = useState(defaultTargetMetric);
 
   const [hasInitialized, setHasInitialized] = useState(false);
+  const theme = useTheme();
 
   const tooltipHandler = useExperimentExplainabilityTooltip(
     plotModel?.data?.xAxis.axisName || 'x',
     plotModel?.data?.yAxis.axisName || 'y',
     plotModel?.data?.xAxis.axisType,
     feature2,
-    feature1
+    feature1,
+    paletteFromTheme(theme)
   );
 
   useEffect(() => {
