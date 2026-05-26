@@ -189,8 +189,6 @@ const LineChart = () => {
           type: xTypeForEncoding,
           axis: {
             labelAngle: xTypeForEncoding === 'ordinal' ? -45 : 0,
-            labelColor: '#333',
-            titleColor: '#444',
             labelOverlap: xTypeForEncoding === 'ordinal' ? 'greedy' : undefined,
           },
         },
