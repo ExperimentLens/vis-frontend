@@ -14,19 +14,19 @@ import ChevronLeftRoundedIcon from '@mui/icons-material/ChevronLeftRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import DarkModeRoundedIcon from '@mui/icons-material/DarkModeRounded';
 import LightModeRoundedIcon from '@mui/icons-material/LightModeRounded';
-import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+// import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import type { RootState } from '../../store/store';
 import { useAppDispatch, useAppSelector } from '../../store/store';
 import { setMenuOptions } from '../../store/slices/progressPageSlice';
 import { toggleThemeMode } from '../../store/slices/uiSlice';
-import { logoutUser } from '../../store/slices/authSlice';
+// import { logoutUser } from '../../store/slices/authSlice';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 
 const LeftMenu = () => {
   const { experimentId } = useParams();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { menuOptions } = useAppSelector(
     (state: RootState) => state.progressPage
   );
@@ -235,7 +235,7 @@ const LeftMenu = () => {
           gap: 1,
         }}
       >
-        <Tooltip title="Logout" placement="right" arrow>
+        {/* <Tooltip title="Logout" placement="right" arrow>
           <IconButton
             onClick={() => {
               dispatch(logoutUser()).then(() => {
@@ -258,7 +258,7 @@ const LeftMenu = () => {
           >
             <LogoutRoundedIcon fontSize="small" />
           </IconButton>
-        </Tooltip>
+        </Tooltip> */}
         <Tooltip title={themeMode === 'light' ? 'Dark mode' : 'Light mode'} placement="right" arrow>
           <IconButton
             onClick={() => dispatch(toggleThemeMode())}
