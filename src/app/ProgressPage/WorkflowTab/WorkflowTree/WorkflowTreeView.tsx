@@ -2,15 +2,21 @@ import { Accordion, AccordionDetails, AccordionSummary, Box, Typography, useThem
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import PsychologyAltRoundedIcon from '@mui/icons-material/PsychologyAltRounded';
+import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import { useEffect, useMemo, useState } from 'react';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 
 import WorkflowDetailsAccordion from './WorkflowDetailsAccordition';
 import ModelInsightsAccordion from './ModelInsightsAccordition';
+import TracesAccordion from './TracesAccordion';
 
 export default function WorkflowTreeView() {
   const { tab } = useAppSelector((s: RootState) => s.workflowPage);
+
+  const isLlmExperiment = useAppSelector(
+    (s: RootState) => s.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
 
   const hasExplainability = useMemo(() => {
     const tasks = tab?.workflowConfiguration.tasks;
@@ -22,9 +28,10 @@ export default function WorkflowTreeView() {
 
   const [workflowExpanded, setWorkflowExpanded] = useState(true);
   const [modelExpanded, setModelExpanded] = useState<boolean>(hasExplainability);
+  const [tracesExpanded, setTracesExpanded] = useState(true);
 
   const theme = useTheme();
-  
+
   useEffect(() => setModelExpanded(hasExplainability), [hasExplainability]);
 
   if (!tab?.workflowConfiguration) return null;
@@ -62,39 +69,71 @@ export default function WorkflowTreeView() {
         </AccordionDetails>
       </Accordion>
 
-      {/* Model Insights */}
-      <Accordion
-        expanded={modelExpanded}
-        disableGutters
-        sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
-      >
-        <AccordionSummary
-          disabled={!hasExplainability}
-          onClick={(e) => e.stopPropagation()}
-          sx={{ borderBottom: '1px solid', borderColor: 'divider', pointerEvents: 'none' }}
+      {/* LLM Traces (when the run is tagged experiment_type=llm) — otherwise Model Insights */}
+      {isLlmExperiment ? (
+        <Accordion
+          expanded={tracesExpanded}
+          disableGutters
+          sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
         >
-          <Box
-            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%', pointerEvents: 'auto', cursor: 'default' }}
+          <AccordionSummary
+            onClick={(e) => e.stopPropagation()}
+            sx={{ borderBottom: '1px solid', borderColor: 'divider', pointerEvents: 'none' }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PsychologyAltRoundedIcon color="primary" />
-              <Typography fontWeight={600} sx={{ color: hasExplainability ? 'inherit' : theme.palette.text.disabled }}>
-                Model Insights
-              </Typography>
-            </Box>
             <Box
-              onClick={(e) => { e.stopPropagation(); if (hasExplainability) setModelExpanded(p => !p); }}
-              sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%', pointerEvents: 'auto', cursor: 'default' }}
             >
-              <ExpandMoreIcon />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <HubRoundedIcon color="primary" />
+                <Typography fontWeight={600}>LLM Traces</Typography>
+              </Box>
+              <Box
+                onClick={(e) => { e.stopPropagation(); setTracesExpanded(p => !p); }}
+                sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              >
+                <ExpandMoreIcon />
+              </Box>
             </Box>
-          </Box>
-        </AccordionSummary>
+          </AccordionSummary>
 
-        <AccordionDetails>
-          <ModelInsightsAccordion />
-        </AccordionDetails>
-      </Accordion>
+          <AccordionDetails>
+            <TracesAccordion />
+          </AccordionDetails>
+        </Accordion>
+      ) : (
+        <Accordion
+          expanded={modelExpanded}
+          disableGutters
+          sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
+        >
+          <AccordionSummary
+            disabled={!hasExplainability}
+            onClick={(e) => e.stopPropagation()}
+            sx={{ borderBottom: '1px solid', borderColor: 'divider', pointerEvents: 'none' }}
+          >
+            <Box
+              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%', pointerEvents: 'auto', cursor: 'default' }}
+            >
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PsychologyAltRoundedIcon color="primary" />
+                <Typography fontWeight={600} sx={{ color: hasExplainability ? 'inherit' : theme.palette.text.disabled }}>
+                  Model Insights
+                </Typography>
+              </Box>
+              <Box
+                onClick={(e) => { e.stopPropagation(); if (hasExplainability) setModelExpanded(p => !p); }}
+                sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              >
+                <ExpandMoreIcon />
+              </Box>
+            </Box>
+          </AccordionSummary>
+
+          <AccordionDetails>
+            <ModelInsightsAccordion />
+          </AccordionDetails>
+        </Accordion>
+      )}
     </Box>
   );
 }
