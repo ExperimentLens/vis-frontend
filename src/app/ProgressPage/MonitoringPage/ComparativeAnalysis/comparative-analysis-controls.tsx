@@ -316,7 +316,8 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedComparisonTab !== 2 && (
+          {selectedComparisonTab !== 2
+            && !(isLlmExperiment && selectedComparisonTab === 1 && selectedExecutionsView === 'verdicts') && (
             <SegmentedToggle
               uppercase
               aria-label="view mode"

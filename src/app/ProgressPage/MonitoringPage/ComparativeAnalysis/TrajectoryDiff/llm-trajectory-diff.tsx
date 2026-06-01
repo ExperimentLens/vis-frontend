@@ -326,22 +326,26 @@ export default function LlmTrajectoryDiff() {
 
       {selectedQ && selectedExecutionsView === 'timeline' && (
         <>
-          {/* Side-by-side trajectories */}
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', xl: runIds.length > 1 ? '1fr 1fr' : '1fr' }, gap: 1.5 }}>
+          {/* Side-by-side trajectories — layout follows Mosaic/Stacked + run count */}
+          <Grid container spacing={1.5}>
             {runIds.map((id, i) => {
               const trace = selectedQ.byRun[id];
+              const mosaicSize = runIds.length >= 3 ? 4 : 6;
+              const size = isMosaic ? mosaicSize : 12;
 
               return (
-                <ResponsiveCardTable key={id} title={runNameById[id] ?? id} details={id === baseline ? 'baseline' : 'execution'}>
-                  <Box sx={{ borderTop: `2px solid ${colorOf(id, i)}`, pt: 1 }}>
-                    {trace
-                      ? <ObservationWaterfall observations={trace.observations} />
-                      : <EmptyNote>No trace for this question in this run.</EmptyNote>}
-                  </Box>
-                </ResponsiveCardTable>
+                <Grid key={id} size={{ xs: 12, md: size }} sx={{ textAlign: 'left' }}>
+                  <ResponsiveCardTable title={runNameById[id] ?? id} details={id === baseline ? 'baseline' : 'execution'}>
+                    <Box sx={{ borderTop: `2px solid ${colorOf(id, i)}`, pt: 1 }}>
+                      {trace
+                        ? <ObservationWaterfall observations={trace.observations} />
+                        : <EmptyNote>No trace for this question in this run.</EmptyNote>}
+                    </Box>
+                  </ResponsiveCardTable>
+                </Grid>
               );
             })}
-          </Box>
+          </Grid>
 
           {/* Per-task delta table */}
           <ResponsiveCardTable title="Per-task delta" details="aligned by task name & occurrence">
