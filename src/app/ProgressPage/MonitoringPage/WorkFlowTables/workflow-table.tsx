@@ -1500,8 +1500,7 @@ export default function WorkflowTable() {
               }
             ]}
           />
-        </div>
+        </Box>
       </Paper>
-    </Box>
   );
 }
