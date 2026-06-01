@@ -84,7 +84,7 @@ const ProgressPage = (props: ProgressPageProps) => {
     const fetchWorkflows = () =>
       dispatch(fetchExperimentWorkflows(experiment?.data?.id ?? ''));
 
-    intervalId.current = setInterval(fetchWorkflows, 30 * 1000); // 1 minute
+    intervalId.current = setInterval(fetchWorkflows, 60 * 1000); // 1 minute
 
     return () => {
       if (intervalId.current) {
@@ -94,13 +94,13 @@ const ProgressPage = (props: ProgressPageProps) => {
 
   }, [experiment.data?.id]);
 
-  useEffect(() => {
-    if (workflows.data && workflows.data.length > 0) {
-      if (workflows.data?.every(workflow => workflow.status === 'COMPLETED' || workflow.status === 'FAILED' || workflow.status === 'KILLED') && intervalId.current) {
-        clearInterval(intervalId.current);
-      }
-    }
-  }, [workflows]);
+  // useEffect(() => {
+  //   if (workflows.data && workflows.data.length > 0) {
+  //     workflows.data?.every(workflow => workflow.status === 'COMPLETED' || workflow.status === 'FAILED' || workflow.status === 'KILLED') &&
+  //       intervalId.current &&
+  //       clearInterval(intervalId.current);
+  //   }
+  // }, [workflows]);
 
   return (
     <>
