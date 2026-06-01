@@ -20,6 +20,7 @@ import { getCache } from '../../../shared/utils/localStorageCache';
 import { useLocation } from 'react-router-dom';
 import ComparativeAnalysis from './ComparativeAnalysis/comparative-analysis';
 import ExperimentExplainability from './ExperimentExplainability';
+import LlmMonitoringOverview from './LLMOverview/llm-monitoring-overview';
 import type { IDataAsset } from '../../../shared/models/experiment/data-asset.model';
 
 const MonitoringPage = () => {
@@ -27,6 +28,9 @@ const MonitoringPage = () => {
     (state: RootState) => state.monitorPage,
   );
   const { workflows } = useAppSelector((state: RootState) => state.progressPage);
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const theme = useTheme();
@@ -121,10 +125,10 @@ const MonitoringPage = () => {
             label="Compare"
           />
           <Tab
-            icon={<LightbulbOutlinedIcon fontSize="small" />}
+            icon={isLlmExperiment ? <MoreVertRoundedIcon fontSize="small" /> : <LightbulbOutlinedIcon fontSize="small" />}
             iconPosition="start"
-            label="Explainability"
-            disabled={!hasExplainability}
+            label={isLlmExperiment ? "Traces" : "Explainability"}
+            disabled={!hasExplainability&&!isLlmExperiment}
           />
         </Tabs>
       </Box>
@@ -141,18 +145,20 @@ const MonitoringPage = () => {
         }}
       >
         {selectedTab === 0 && (
-          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            <Box sx={{ flex: '0 0 60%', minHeight: 320 }}>
-              {visibleTable === 'workflows' ? (
-                <WorkflowTable />
-              ) : (
-                <ScheduleTable />
-              )}
+         
+            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box sx={{ flex: '0 0 60%', minHeight: 320 }}>
+                {visibleTable === 'workflows' ? (
+                  <WorkflowTable />
+                ) : (
+                  <ScheduleTable />
+                )}
+              </Box>
+              <Box sx={{ flex: 1, minHeight: 220 }}>
+                <ParallelCoordinatePlot />
+              </Box>
             </Box>
-            <Box sx={{ flex: 1, minHeight: 220 }}>
-              <ParallelCoordinatePlot />
-            </Box>
-          </Box>
+          
         )}
         {selectedTab === 1 && (
           <Box
@@ -216,10 +222,12 @@ const MonitoringPage = () => {
             </Paper>
           </Box>
         )}
-        {selectedTab === 2 && <ExperimentExplainability />}
+        {selectedTab === 2 && (isLlmExperiment ? <LlmMonitoringOverview /> :
+        <ExperimentExplainability />)}
       </Box>
     </>
   );
 };
 
 export default MonitoringPage;
+

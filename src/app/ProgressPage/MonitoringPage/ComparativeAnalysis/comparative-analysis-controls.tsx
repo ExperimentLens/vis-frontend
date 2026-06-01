@@ -2,10 +2,13 @@ import { Box, Chip, Divider, IconButton, Menu, Tooltip } from '@mui/material';
 import CompactMenuItem from '../../../../shared/components/compact-menu-item';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedDataset, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
+import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedDataset, setSelectedExecutionsView, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
 import WindowRoundedIcon from '@mui/icons-material/WindowRounded';
 import RoundedCornerRoundedIcon from '@mui/icons-material/RoundedCornerRounded';
 import BlurLinearIcon from '@mui/icons-material/BlurLinear';
+import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded';
+import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
+import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
 import MisclassifiedToggle from '../../../../shared/components/misclassified-toggle';
 import SegmentedToggle from '../../../../shared/components/segmented-toggle';
@@ -28,6 +31,10 @@ import SortIcon from '@mui/icons-material/Sort';
 const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
   const selectedModelComparisonChart = useAppSelector((state: RootState) => state.monitorPage.selectedModelComparisonChart);
+  const selectedExecutionsView = useAppSelector((state: RootState) => state.monitorPage.selectedExecutionsView);
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
   const showMisclassifiedOnly = useAppSelector((state: RootState) => state.monitorPage.showMisclassifiedOnly);
   const sortRocByAuc = useAppSelector((state: RootState) => state.monitorPage.sortRocByAuc);
   const sortConfusionByF1 = useAppSelector((state: RootState) => state.monitorPage.sortConfusionByF1);
@@ -125,6 +132,12 @@ const ComparativeAnalysisControls = ()=> {
     { label: 'instanceView', name: 'Instance\nView', icon: <BlurLinearIcon /> }
   ];
 
+  const llmExecutionsOptions = [
+    { label: 'summary' as const, name: 'Summary', icon: <SummarizeRoundedIcon /> },
+    { label: 'timeline' as const, name: 'Timeline', icon: <TimelineRoundedIcon /> },
+    { label: 'verdicts' as const, name: 'Verdicts', icon: <GavelRoundedIcon /> },
+  ];
+
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -175,8 +188,10 @@ const ComparativeAnalysisControls = ()=> {
         )}
         {selectedComparisonTab === 1 ? (
           <Box display="flex" flexWrap="wrap" gap={0.75}>
-            {options1.map(option => {
-              const isSelected = selectedModelComparisonChart === option.label;
+            {(isLlmExperiment ? llmExecutionsOptions : options1).map(option => {
+              const isSelected = isLlmExperiment
+                ? selectedExecutionsView === option.label
+                : selectedModelComparisonChart === option.label;
 
               return (
                 <Chip
@@ -203,7 +218,11 @@ const ComparativeAnalysisControls = ()=> {
                   }}
                   color={isSelected ? 'primary' : 'default'}
                   variant={isSelected ? 'filled' : 'outlined'}
-                  onClick={() => dispatch(setSelectedModelComparisonChart(option.label))}
+                  onClick={() =>
+                    isLlmExperiment
+                      ? dispatch(setSelectedExecutionsView(option.label as 'summary' | 'timeline' | 'verdicts'))
+                      : dispatch(setSelectedModelComparisonChart(option.label))
+                  }
                 />
               );
             })}
@@ -290,7 +309,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
+          {!isLlmExperiment && selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
             <MisclassifiedToggle
               checked={showMisclassifiedOnly}
               onChange={(checked) => dispatch(setShowMisclassifiedOnly(checked))}
@@ -309,7 +328,7 @@ const ComparativeAnalysisControls = ()=> {
               ]}
             />
           )}
-          {selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
+          {!isLlmExperiment && selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
             <PillToggle
               checked={sortConfusionByF1}
               onChange={(c) => dispatch(setSortConfusionByF1(c))}
@@ -319,7 +338,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
+          {!isLlmExperiment && selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
             <PillToggle
               checked={sortRocByAuc}
               onChange={(c) => dispatch(setSortRocByAuc(c))}
@@ -329,7 +348,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
+          {!isLlmExperiment && selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
             <>
               <IconButton
                 aria-label="settings"

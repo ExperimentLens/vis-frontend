@@ -10,11 +10,7 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 import { getTrace, getTraces } from '../../../../store/slices/observabilitySlice';
-
-const MONO = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
-
-// Hardcoded until the backend exposes a project mapping per experiment.
-const OBSERVABILITY_PROJECT_ID = 'cmp72x36n0006n207vrcgltju';
+import { MONO, OBSERVABILITY_PROJECT_ID } from '../../../../shared/models/observability/agentic-conventions';
 
 export default function TracesAccordion() {
   const dispatch = useAppDispatch();

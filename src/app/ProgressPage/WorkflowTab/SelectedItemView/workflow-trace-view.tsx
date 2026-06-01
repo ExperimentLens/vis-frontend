@@ -30,100 +30,23 @@ import type { RootState } from '../../../../store/store';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import ObservationWaterfall, { colorForType } from './trace-observation-waterfall';
-
-const MONO = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
-
-type Tone = 'default' | 'success' | 'warning' | 'error';
-type TokenInfo = { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
-type GenInput = { prompt?: string; model?: string; temperature?: number };
-type GenOutput = { answer?: string; passed?: boolean; rationale?: string; tokens?: TokenInfo };
-type TraceInput = { question?: string } & Record<string, unknown>;
-type TraceOutput = { answer?: string; judge_pass_rate?: number } & Record<string, unknown>;
-
-const formatMs = (ms: number) => (ms >= 1000 ? `${(ms / 1000).toFixed(2)}s` : `${Math.round(ms)}ms`);
-
-const asText = (value: unknown): string => {
-  if (value === null || value === undefined) return '(empty)';
-  if (typeof value === 'string') return value;
-  try {
-    return JSON.stringify(value, null, 2);
-  } catch {
-    return String(value);
-  }
-};
-
-const durationOf = (o: Observation) => {
-  const start = Date.parse(o.startTime);
-  const end = Date.parse(o.endTime);
-
-  return Number.isNaN(start) || Number.isNaN(end) ? 0 : end - start;
-};
-
-const modelOf = (o: Observation) => (o.input as GenInput)?.model ?? o.model ?? undefined;
-const tokensOf = (o: Observation) => (o.output as GenOutput)?.tokens?.total_tokens;
-const isJudge = (o: Observation) =>
-  /judge/i.test(o.name) || typeof (o.output as GenOutput)?.passed === 'boolean';
-
-const prettyName = (name: string) => name.replace(/^judge_/i, '').replace(/_/g, ' ');
-
-/* ---------- shared primitives ---------- */
-
-const useToneColor = (tone: Tone) => {
-  const theme = useTheme();
-  const map: Record<Tone, string> = {
-    default: theme.palette.primary.main,
-    success: theme.palette.success.main,
-    warning: theme.palette.warning.main,
-    error: theme.palette.error.main,
-  };
-
-  return map[tone];
-};
-
-const StatTile = ({
-  icon,
-  label,
-  value,
-  sub,
-  tone = 'default',
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub?: string;
-  tone?: Tone;
-}) => {
-  const color = useToneColor(tone);
-
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        flex: '1 1 96px',
-        minWidth: 96,
-        p: 1,
-        borderRadius: 2,
-        background: alpha(color, 0.06),
-        border: `1px solid ${alpha(color, 0.18)}`,
-      }}
-    >
-      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.25 }}>
-        <Box sx={{ color, display: 'inline-flex' }}>{icon}</Box>
-        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: 'text.secondary', fontSize: '0.58rem' }}>
-          {label}
-        </Typography>
-      </Stack>
-      <Typography sx={{ fontWeight: 700, fontFamily: MONO, fontSize: '1rem', color, lineHeight: 1.2 }}>
-        {value}
-      </Typography>
-      {sub && (
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.58rem', display: 'block' }}>
-          {sub}
-        </Typography>
-      )}
-    </Paper>
-  );
-};
+import StatTile from '../../../../shared/components/stat-tile';
+import {
+  MONO,
+  asText,
+  durationOf,
+  formatMs,
+  isJudge,
+  modelOf,
+  prettyName,
+  tokensOf,
+} from '../../../../shared/models/observability/agentic-conventions';
+import type {
+  GenInput,
+  GenOutput,
+  TraceInput,
+  TraceOutput,
+} from '../../../../shared/models/observability/agentic-conventions';
 
 const SectionLabel = ({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) => (
   <Stack direction="row" alignItems="center" sx={{ mb: 0.75, minHeight: 24 }}>

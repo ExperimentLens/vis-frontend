@@ -3,7 +3,7 @@ import type { Observation } from '../../../../shared/models/observability/observ
 
 const MONO = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
 
-const TYPE_COLORS: Record<string, string> = {
+export const TYPE_COLORS: Record<string, string> = {
   GENERATION: '#10b981',
   SPAN: '#64748b',
   EVENT: '#f59e0b',

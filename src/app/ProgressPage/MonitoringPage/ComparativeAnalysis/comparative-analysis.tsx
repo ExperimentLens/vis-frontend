@@ -6,9 +6,11 @@ import ComparisonMetricsCharts from './comparison-metrics-charts';
 import ComparisonModelsCharts from './comparison-models-charts';
 import ComparisonDataCharts from './comparison-data-charts';
 import ComparativeAnalysisControls from './comparative-analysis-controls';
+import LlmTrajectoryDiff from './TrajectoryDiff/llm-trajectory-diff';
 import { useEffect, useMemo } from 'react';
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
+import WaterfallChartRoundedIcon from '@mui/icons-material/WaterfallChartRounded';
 import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
 import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
 
@@ -21,6 +23,9 @@ const ComparativeAnalysis = () => {
   );
   const { workflows } = useAppSelector(
     (state: RootState) => state.progressPage,
+  );
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
   );
   const theme = useTheme();
 
@@ -76,10 +81,10 @@ const ComparativeAnalysis = () => {
               label="METRICS"
             />
             <Tab
-              icon={<HubRoundedIcon fontSize="small" />}
+              icon={isLlmExperiment ? <WaterfallChartRoundedIcon fontSize="small" /> : <HubRoundedIcon fontSize="small" />}
               iconPosition="start"
-              label="MODELS"
-              disabled={groupBy.length > 0 || !hasExplainability}
+              label={isLlmExperiment ? 'EXECUTIONS' : 'MODELS'}
+              disabled={groupBy.length > 0 || (!isLlmExperiment && !hasExplainability)}
             />
             <Tab
               icon={<StorageRoundedIcon fontSize="small" />}
@@ -114,7 +119,7 @@ const ComparativeAnalysis = () => {
       <ComparativeAnalysisControls />
       <Box sx={{ width: '100%', flexGrow: 1, overflow: 'auto' }}>
         {selectedComparisonTab === 0 && <ComparisonMetricsCharts />}
-        {selectedComparisonTab === 1 && <ComparisonModelsCharts />}
+        {selectedComparisonTab === 1 && (isLlmExperiment ? <LlmTrajectoryDiff /> : <ComparisonModelsCharts />)}
         {selectedComparisonTab === 2 && <ComparisonDataCharts />}
       </Box>
     </Box>
