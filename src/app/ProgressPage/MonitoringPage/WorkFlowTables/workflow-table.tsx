@@ -1287,220 +1287,236 @@ export default function WorkflowTable() {
   };
 
   return (
-    <Paper
-      elevation={0}
-      variant="outlined"
-      sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' }}
-    >
-      <ToolbarWorkflow
-        key="workflows-toolbar"
-        actionButtonName="Compare selected workflows"
-        tableName="Workflow Execution"
-        numSelected={workflowsTable.selectedWorkflows.length}
-        filterNumbers={workflowsTable.filtersCounter}
-        filterClickedFunction={filterClicked}
-        handleClickedFunction={handleLaunchCompletedTab}
-        groupByOptions={Array.from(new Set([...workflowsTable.uniqueTasks, ...workflowsTable.uniqueParameters]))}
-        showFilterButton={true}
-        showSpaceButton={workflowsTable.rows.some(row => row.space && row.space.trim() !== '')}
-        spaceOptions={Array.from(
-          new Set(
-            workflowsTable.rows
-              .map(row => row?.space?.trim())
-              .filter((space): space is string => Boolean(space && space !== ''))
-          )
-        )}
-        onDownloadCsv={workflowsTable.groupBy.length === 0 ? handleDownloadCsv : undefined}
-      />
-      <Popover
-        id={'Filters'}
-        open={isFilterOpen}
-        anchorEl={anchorEl}
-        onClose={() => setFilterOpen(false)}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        transformOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        PaperProps={{
-          sx: {
-            width: 380,
-            p: 1.25,
-            borderRadius: 1.5,
-            boxShadow: 2,
-          }
-        }}
+    <Box sx={{ height: '100%' }}>
+      <Paper
+        elevation={0}
+        variant="outlined"
+        sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' }}
       >
-        <FilterBar
-          columns={workflowsTable.columns}
-          filters={workflowsTable.filters}
-          onFilterChange={handleFilterChange}
-          onAddFilter={handleAddFilter}
-          onRemoveFilter={handleRemoveFilter}
-          valueSuggestions={valueSuggestions}
+        <ToolbarWorkflow
+          key="workflows-toolbar"
+          actionButtonName="Compare selected workflows"
+          tableName="Workflow Execution"
+          numSelected={workflowsTable.selectedWorkflows.length}
+          filterNumbers={workflowsTable.filtersCounter}
+          filterClickedFunction={filterClicked}
+          handleClickedFunction={handleLaunchCompletedTab}
+          groupByOptions={Array.from(new Set([...workflowsTable.uniqueTasks, ...workflowsTable.uniqueParameters]))}
+          showFilterButton={true}
+          showSpaceButton={workflowsTable.rows.some(row => row.space && row.space.trim() !== '')}
+          spaceOptions={Array.from(
+            new Set(
+              workflowsTable.rows
+                .map(row => row?.space?.trim())
+                .filter((space): space is string => Boolean(space && space !== ''))
+            )
+          )}
+          onDownloadCsv={workflowsTable.groupBy.length === 0 ? handleDownloadCsv : undefined}
         />
-      </Popover>
-
-      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
-          <StyledDataGrid
-            className={selectedTab === 0 ? 'status-sticky-mode' : undefined}
-            disableVirtualization
-            disableColumnMenu
-            density="compact"
-            rows={workflowsTable.visibleRows}
-            sortModel={workflowsTable.sortModel}
-            onSortModelChange={(newSortModel) => dispatch(setWorkflowsTable({ sortModel: newSortModel }))}
-            disableColumnFilter
-            columns={workflowsTable.visibleColumns as CustomGridColDef[]}
-            columnVisibilityModel={effectiveColumnVisibilityModel}
-            onColumnVisibilityModelChange={(model) => {
-              const nextModel = {
-                ...model,
-                action: showActionColumn,
-              };
-
-              dispatch(setWorkflowsTable({ columnsVisibilityModel: nextModel }));
-            }}
-            isRowSelectable={(params) => {
-              if (workflowsTable.groupBy.length === 0) return true;
-
-              return !isGroupedWorkflow(params.row.id);
-            }}
-            slots={{ noRowsOverlay: CustomNoRowsOverlay }}
-            slotProps={
-              {
-                row: {
-                  onMouseEnter: (event) => {
-                    if(selectedTab === 1) {
-                      const rowId = event.currentTarget.getAttribute('data-id');
-                      const id = rowId ? workflowsTable.selectedWorkflows.includes(rowId) ? rowId : 'notSelected' : null;
-
-                      handleHover(id);
+        <Popover
+          id={'Filters'}
+          open={isFilterOpen}
+          anchorEl={anchorEl}
+          onClose={() => setFilterOpen(false)}
+          anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+          PaperProps={{
+            sx: {
+              width: 380,
+              p: 1.25,
+              borderRadius: 1.5,
+              boxShadow: 2,
+            }
+          }}
+        >
+          <FilterBar
+            columns={workflowsTable.columns}
+            filters={workflowsTable.filters}
+            onFilterChange={handleFilterChange}
+            onAddFilter={handleAddFilter}
+            onRemoveFilter={handleRemoveFilter}
+            valueSuggestions={valueSuggestions}
+          />
+        </Popover>
+        
+        <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
+            <StyledDataGrid
+              className={selectedTab === 0 ? 'status-sticky-mode' : undefined}
+              disableVirtualization
+              disableColumnMenu
+              density="compact"
+              rows={workflowsTable.visibleRows}
+              sortModel={workflowsTable.sortModel}
+              onSortModelChange={(newSortModel) => dispatch(setWorkflowsTable({ sortModel: newSortModel }))}
+              disableColumnFilter
+              columns={workflowsTable.visibleColumns as CustomGridColDef[]}
+              columnVisibilityModel={effectiveColumnVisibilityModel}
+              onColumnVisibilityModelChange={(model) => {
+                const nextModel = {
+                  ...model,
+                  action: showActionColumn,
+                };
+              
+                dispatch(setWorkflowsTable({ columnsVisibilityModel: nextModel }));
+              }}
+              isRowSelectable={(params) => {
+                if (workflowsTable.groupBy.length === 0) return true;
+              
+                return !isGroupedWorkflow(params.row.id);
+              }}
+              slots={{ noRowsOverlay: CustomNoRowsOverlay }}
+              slotProps={
+                {
+                  row: {
+                    onMouseEnter: (event) => {
+                      if(selectedTab === 1) {
+                        const rowId = event.currentTarget.getAttribute('data-id');
+                        const id = rowId ? workflowsTable.selectedWorkflows.includes(rowId) ? rowId : 'notSelected' : null;
+                      
+                        handleHover(id);
+                      }
+                    },
+                    onMouseLeave: () => {
+                      if(selectedTab === 1)
+                        handleHover(null);
                     }
-                  },
-                  onMouseLeave: () => {
-                    if(selectedTab === 1)
-                      handleHover(null);
                   }
                 }
+              
               }
-
-            }
-            checkboxSelection
-            onRowSelectionModelChange={handleSelectionChange}
-            rowSelectionModel={{ type: 'include', ids: new Set(workflowsTable.selectedWorkflows) }}
-            getRowClassName={(params) =>
-              selectedTab === 1 && workflowsTable.hoveredWorkflowId && params.id === workflowsTable.hoveredWorkflowId
-                ? 'workflow-hovered-row'
-                : ''
-            }
-            sx={{
-              '& .MuiDataGrid-selectedRowCount': {
-                visibility: 'hidden', // Remove the selection count text on the bottom because we implement it in the header
-              },
-              '& .theme-parameters-group': {
-                textAlign: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                display: 'grid',
-                width: '100%',
-                '&::after': {
-                  content: '""',
-                  display: 'block',
-                  width: '100%',
-                  height: '2px',
-                  backgroundColor: theme => theme.palette.customPrimary.main,
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                },
-              },
-              '& .theme-parameters-group-2': {
-                textAlign: 'center',
-                justifyContent: 'center',
-                position: 'relative',
-                display: 'grid',
-                width: '100%',
-                '&::after': {
-                  content: '""',
-                  display: 'block',
-                  width: '100%',
-                  height: '2px',
-                  backgroundColor: theme => theme.palette.secondary.dark,
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                },
-              },
-              '& .workflow-hovered-row': {
-                outline: theme =>  `2px solid ${theme.palette.primary.main}`,
-                outlineOffset: -2,
-              },
-            }}
-            pageSizeOptions={[10, 25, 50]}
-            paginationModel={workflowsTable.paginationModel}
-            onPaginationModelChange={(paginationModel) => dispatch(setWorkflowsTable({ paginationModel }))}
-            columnGroupingModel={[
-              {
-                groupId: 'Parameters',
-                headerClassName: 'theme-parameters-group',
-                children: workflowsTable.uniqueParameters.length > 0
-                  ? (workflowsTable.uniqueParameters.map(
-                    (param): GridColumnNode => ({
-                      field: param,
-                    }),
-                  ) as GridColumnNode[])
-                  : [],
-              },
-              {
-                groupId: 'Metrics',
-                headerClassName: 'theme-parameters-group-2',
-                children: workflowsTable.uniqueMetrics.length > 0 ? (
-                  workflowsTable.uniqueMetrics.map(
-                    (metric): GridColumnNode => ({
-                      field: metric,
-                    }),
-                  ) as GridColumnNode[]
-                ) : []
-              },
-              {
-                groupId: 'Task Variants',
-                headerClassName: hasVisibleParameterColumns ? 'theme-parameters-group-2' : 'theme-parameters-group',
-                children: workflowsTable.uniqueTasks.length > 0 ? (
-                  workflowsTable.uniqueTasks.map(
-                    (task): GridColumnNode => ({
-                      field: task,
-                    }),
-                  ) as GridColumnNode[]
-                ) : []
-              },
-              ...(selectedTab === 0 ?
-                [
-                  {
-                    groupId: 'Status',
-                    headerClassName: 'datagrid-header-fixed-status',
-                    headerAlign: 'center' as GridAlignment,
-                    children: [
-                      { field: 'status' } as GridColumnNode
-                    ]
-                  }
-                ] : []),
-              {
-                groupId: 'Actions',
-                headerClassName: 'datagrid-header-fixed',
-                headerAlign: 'center',
-                children: [
-                  {
-                    field: 'action',
-                  } as GridColumnNode
-                ]
+              checkboxSelection
+              onRowSelectionModelChange={handleSelectionChange}
+              rowSelectionModel={{ type: 'include', ids: new Set(workflowsTable.selectedWorkflows) }}
+              getRowClassName={(params) =>
+                selectedTab === 1 && workflowsTable.hoveredWorkflowId && params.id === workflowsTable.hoveredWorkflowId
+                  ? 'workflow-hovered-row'
+                  : ''
               }
-            ]}
-          />
-        </Box>
-      </Paper>
+              sx={{
+                '& .MuiDataGrid-selectedRowCount': {
+                  visibility: 'hidden', // Remove the selection count text on the bottom because we implement it in the header
+                },
+                '& .theme-parameters-group': {
+                  textAlign: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  display: 'grid',
+                  width: '100%',
+                  '&::after': {
+                    content: '""',
+                    display: 'block',
+                    width: '100%',
+                    height: '2px',
+                    backgroundColor: theme => theme.palette.customPrimary.main,
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                  },
+                },
+                '& .theme-parameters-group-2': {
+                  textAlign: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                  display: 'grid',
+                  width: '100%',
+                  '&::after': {
+                    content: '""',
+                    display: 'block',
+                    width: '100%',
+                    height: '2px',
+                    backgroundColor: theme => theme.palette.secondary.dark,
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                  },
+                },
+                '& .workflow-hovered-row': {
+                  outline: theme =>  `2px solid ${theme.palette.primary.main}`,
+                  outlineOffset: -2,
+                },
+              }}
+              pageSizeOptions={[10, 25, 50]}
+              paginationModel={workflowsTable.paginationModel}
+              onPaginationModelChange={(paginationModel) => dispatch(setWorkflowsTable({ paginationModel }))}
+              columnGroupingModel={[
+                {
+                  groupId: 'Parameters',
+                  headerClassName: 'theme-parameters-group',
+                  children: workflowsTable.uniqueParameters.length > 0
+                    ? (workflowsTable.uniqueParameters.map(
+                      (param): GridColumnNode => ({
+                        field: param,
+                      }),
+                    ) as GridColumnNode[])
+                    : [],
+                },
+                {
+                  groupId: 'Metrics',
+                  headerClassName: 'theme-parameters-group-2',
+                  children: workflowsTable.uniqueMetrics.length > 0 ? (
+                    workflowsTable.uniqueMetrics.map(
+                      (metric): GridColumnNode => ({
+                        field: metric,
+                      }),
+                    ) as GridColumnNode[]
+                  ) : []
+                },
+                {
+                  groupId: 'Task Variants',
+                  headerClassName: hasVisibleParameterColumns ? 'theme-parameters-group-2' : 'theme-parameters-group',
+                  children: workflowsTable.uniqueTasks.length > 0 ? (
+                    workflowsTable.uniqueTasks.map(
+                      (task): GridColumnNode => ({
+                        field: task,
+                      }),
+                    ) as GridColumnNode[]
+                  ) : []
+                },
+                ...(selectedTab === 0 ?
+                  [
+                    {
+                      groupId: 'Status',
+                      headerClassName: 'datagrid-header-fixed-status',
+                      headerAlign: 'center' as GridAlignment,
+                      children: [
+                        { field: 'status' } as GridColumnNode
+                      ]
+                    }
+                  ] : []),
+                {
+                  groupId: 'Actions',
+                  headerClassName: 'datagrid-header-fixed',
+                  headerAlign: 'center',
+                  children: [
+                    {
+                      field: 'action',
+                    } as GridColumnNode
+                  ]
+                }
+              ]}
+            />
+          </Box>
+        </Paper>
+        <Snackbar
+          open={alert.open}
+          autoHideDuration={4000}
+          onClose={() => setAlert(prev => ({ ...prev, open: false }))}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <Alert
+            onClose={() => setAlert(prev => ({ ...prev, open: false }))}
+            severity={alert.severity}
+            variant="filled"
+          >
+            {alert.message}
+          </Alert>
+        </Snackbar>
+      </Box>
   );
 }
