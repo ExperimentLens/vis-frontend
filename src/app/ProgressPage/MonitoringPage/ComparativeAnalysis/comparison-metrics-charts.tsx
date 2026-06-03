@@ -254,7 +254,7 @@ const ComparisonMetricsCharts: React.FC = () => {
     const isGrouped = workflowsTable.groupBy.length > 0;
 
     const signalListeners = {
-      hover: (_name: string, value: { id?: string | string[] }) => {
+      hover: (_name: string, value: { id?: string | string[]}) => {
         const next =
           value && value.id
             ? (Array.isArray(value.id) ? value.id[0] : value.id) ?? null
@@ -381,12 +381,16 @@ const ComparisonMetricsCharts: React.FC = () => {
         },
         opacity: hoveredWorkflowId ? {
           condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: 1 },
-          value: 0.5,
+          value: 0.35,
         } : undefined,
 
         strokeWidth: hoveredWorkflowId ? {
           condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: 3 },
-          value: 1,
+          value: 0,
+        } : undefined,
+        stroke: hoveredWorkflowId ? {
+          condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: '#000' },
+          value: 'transparent',
         } : undefined,
         tooltip: [
           ...(isGrouped ? [] : [{ field: 'id', type: 'nominal', title: 'Workflow' }]),

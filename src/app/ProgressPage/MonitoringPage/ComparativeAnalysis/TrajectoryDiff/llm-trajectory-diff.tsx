@@ -183,20 +183,6 @@ export default function LlmTrajectoryDiff() {
     return out;
   }, [runIds, detailsByRun, runNameById]);
 
-  if (runIds.length < 2) {
-    return (
-      
-     
-        <InfoMessage
-          message="Select at least two workflows in the table to compare their agent trajectories."
-          type="info"
-          icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
-          fullHeight
-        />
-      
-    );
-  }
-
   if (!hasAny && anyLoading) {
     return (
       <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, py: 6, gap: 1.5 }}>
