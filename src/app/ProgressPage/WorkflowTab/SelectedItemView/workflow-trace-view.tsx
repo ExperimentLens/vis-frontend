@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Chip,
-  CircularProgress,
   Collapse,
   IconButton,
   Paper,
@@ -47,6 +46,8 @@ import type {
   TraceInput,
   TraceOutput,
 } from '../../../../shared/models/observability/agentic-conventions';
+import Loader from '../../../../shared/components/loader';
+import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
 
 const SectionLabel = ({ children, action }: { children: React.ReactNode; action?: React.ReactNode }) => (
   <Stack direction="row" alignItems="center" sx={{ mb: 0.75, minHeight: 24 }}>
@@ -251,10 +252,7 @@ export default function WorkflowTraceView() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1.5, height: '100%', minHeight: 200 }}>
-        <CircularProgress size={20} />
-        <Typography variant="body2" color="text.secondary">Loading trace…</Typography>
-      </Box>
+      <Loader />
     );
   }
 
@@ -355,17 +353,16 @@ export default function WorkflowTraceView() {
       {/* Overview */}
       {tab === 'overview' && (
         <Stack spacing={1.5}>
-          <Paper variant="outlined" sx={{ borderRadius: 2, p: 1.5 }}>
+          <ResponsiveCardTable title="Question & Answer" showSettings={false} showFullScreenButton={false}>
             <SectionLabel>Question</SectionLabel>
             <Typography variant="body2" sx={{ mb: 1.5 }}>{question}</Typography>
             <SectionLabel action={<CopyButton text={answer} />}>Answer</SectionLabel>
             <Typography variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>{answer}</Typography>
-          </Paper>
+          </ResponsiveCardTable>
 
           {passRate !== null && (
-            <Paper variant="outlined" sx={{ borderRadius: 2, p: 1.5 }}>
+            <ResponsiveCardTable title="Judge verdicts" showSettings={false} showFullScreenButton={false}>
               <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
-                <SectionLabel>Judge verdicts</SectionLabel>
                 <Box sx={{ flexGrow: 1 }} />
                 <Typography variant="caption" sx={{ fontFamily: MONO, fontWeight: 700, color: passRate === 1 ? theme.palette.success.main : theme.palette.warning.main }}>
                   {Math.round(passRate * 100)}% pass
@@ -383,7 +380,7 @@ export default function WorkflowTraceView() {
                   <Typography variant="caption" color="text.secondary">No judges recorded.</Typography>
                 )}
               </Stack>
-            </Paper>
+            </ResponsiveCardTable>
           )}
         </Stack>
       )}
@@ -391,13 +388,13 @@ export default function WorkflowTraceView() {
       {/* Timeline */}
       {tab === 'timeline' && (
         <Stack spacing={1.25}>
-          <Paper variant="outlined" sx={{ borderRadius: 2, p: 1.5 }}>
+          <ResponsiveCardTable title="Observation Waterfall" showSettings={false} showFullScreenButton={false}>
             <ObservationWaterfall
               observations={observations}
               selectedId={selectedSpanId ?? defaultSpanId}
               onSelect={setSelectedSpanId}
             />
-          </Paper>
+          </ResponsiveCardTable>
           {selectedObs && <SpanDetail obs={selectedObs} />}
         </Stack>
       )}
@@ -406,8 +403,7 @@ export default function WorkflowTraceView() {
       {tab === 'eval' && (
         <Stack spacing={1.5}>
           {judges.length > 0 && (
-            <Box>
-              <SectionLabel>Judges</SectionLabel>
+            <ResponsiveCardTable title="Judges" showSettings={false} showFullScreenButton={false}>
               <Stack spacing={0.75}>
                 {judges.map(j => {
                   const o = j.output as GenOutput;
@@ -431,27 +427,25 @@ export default function WorkflowTraceView() {
                   );
                 })}
               </Stack>
-            </Box>
+            </ResponsiveCardTable>
           )}
 
           {checks.length > 0 && (
-            <Box>
-              <SectionLabel>Checks</SectionLabel>
+            <ResponsiveCardTable title="Checks" showSettings={false} showFullScreenButton={false}>
               <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
                 {checks.map(s => (
                   <PassFailChip key={s.id} passed={s.value === 1} label={prettyName(s.name)} tooltip={s.comment} />
                 ))}
               </Stack>
-            </Box>
+            </ResponsiveCardTable>
           )}
 
           {metrics.length > 0 && (
-            <Box>
-              <SectionLabel>Metrics</SectionLabel>
+            <ResponsiveCardTable title="Metrics" showSettings={false} showFullScreenButton={false}>
               <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 0.75 }}>
                 {metrics.map(s => <MetricCard key={s.id} score={s} />)}
               </Box>
-            </Box>
+            </ResponsiveCardTable>
           )}
 
           {judges.length === 0 && data.scores.length === 0 && (
@@ -462,26 +456,28 @@ export default function WorkflowTraceView() {
 
       {/* Prompts */}
       {tab === 'prompts' && (
-        <Stack spacing={0.75}>
-          {promptObs.map((o, i) => {
-            const prompt = (o.input as GenInput).prompt ?? '';
+        <ResponsiveCardTable title={`Prompts (${promptObs.length})`} showSettings={false} showFullScreenButton={false}>
+          <Stack spacing={0.75}>
+            {promptObs.map((o, i) => {
+              const prompt = (o.input as GenInput).prompt ?? '';
 
-            return (
-              <Collapsible
-                key={o.id}
-                title={o.name}
-                defaultOpen={i === 0}
-                meta={modelOf(o) ? <Chip size="small" label={modelOf(o)} variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} /> : undefined}
-                action={<CopyButton text={prompt} />}
-              >
-                <CodeBlock maxHeight={260}>{prompt}</CodeBlock>
-              </Collapsible>
-            );
-          })}
-          {promptObs.length === 0 && (
-            <Typography variant="caption" color="text.secondary">No prompts captured for this trace.</Typography>
-          )}
-        </Stack>
+              return (
+                <Collapsible
+                  key={o.id}
+                  title={o.name}
+                  defaultOpen={i === 0}
+                  meta={modelOf(o) ? <Chip size="small" label={modelOf(o)} variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} /> : undefined}
+                  action={<CopyButton text={prompt} />}
+                >
+                  <CodeBlock maxHeight={260}>{prompt}</CodeBlock>
+                </Collapsible>
+              );
+            })}
+            {promptObs.length === 0 && (
+              <Typography variant="caption" color="text.secondary">No prompts captured for this trace.</Typography>
+            )}
+          </Stack>
+        </ResponsiveCardTable>
       )}
     </Stack>
   );
