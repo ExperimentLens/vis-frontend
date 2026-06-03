@@ -14,8 +14,10 @@ import OverlayHistogram from './DataComparison/overlay-histogram';
 import BoxPlot from './DataComparison/box-plot';
 import Loader from '../../../../shared/components/loader';
 import PreviewImageCard from './DataComparison/preview-image-card';
+import PreviewTextCard from './DataComparison/preview-text-card';
 import { Link } from 'react-router-dom';
 import WorkflowInfoTooltip from './workflow-info-tooltip';
+import { isComparableDataAsset } from '../../../../shared/utils/dataAssetFormat';
 
 const ComparisonDataCharts = () => {
   const { workflowsTable, comparativeDataExploration } = useAppSelector(
@@ -56,17 +58,18 @@ const ComparisonDataCharts = () => {
     (state) => state.monitorPage.workflowsTable.workflowColors
   );
 
-  const { anyMetaLoading, anyMetaError, areAllImages } = useAppSelector((state: RootState) => {
+  const { anyMetaLoading, anyMetaError, areAllImages, areAllTexts } = useAppSelector((state: RootState) => {
     const metaRoot =
       state.monitorPage.comparativeDataExploration.dataAssetsMetaData ?? {};
 
     if (!selectedDataset || assetsForSelectedDataset.length === 0) {
-      return { anyMetaLoading: false, anyMetaError: false };
+      return { anyMetaLoading: false, anyMetaError: false, areAllImages: false, areAllTexts: false };
     }
 
     let loading = false;
     let error = false;
     let allImages = true;
+    let allTexts = true;
 
     assetsForSelectedDataset.forEach(({ workflowId }) => {
       const meta = metaRoot?.[selectedDataset]?.[workflowId]?.meta;
@@ -77,9 +80,10 @@ const ComparisonDataCharts = () => {
         error = true;
       }
       if(!meta?.data?.datasetType?.match('IMAGE')) allImages = false;
+      if(!meta?.data?.datasetType?.match('TEXT')) allTexts = false;
     });
 
-    return { anyMetaLoading: loading, anyMetaError: error, areAllImages: allImages };
+    return { anyMetaLoading: loading, anyMetaError: error, areAllImages: allImages, areAllTexts: allTexts };
   });
 
   const getCommonDataAssets = () => {
@@ -124,16 +128,7 @@ const ComparisonDataCharts = () => {
       .filter(([, entries]) =>
         Array.isArray(entries) &&
         entries.length > 0 &&
-        entries.every(({ dataAsset }) => {
-          const rawFormat = (dataAsset as { format?: unknown } | null | undefined)?.format;
-
-          if (typeof rawFormat !== 'string') return false;
-
-          const normalized = rawFormat.trim().toLowerCase()
-            .replace(/^\./, '');
-
-          return normalized === 'csv' || normalized === 'parquet';
-        })
+        entries.every(({ dataAsset }) => isComparableDataAsset(dataAsset))
       )
       .map(([name]) => name);
 
@@ -331,6 +326,52 @@ const ComparisonDataCharts = () => {
                 <PreviewImageCard
                   title={titleNode}
                   fileNames={fileNames}
+                />
+              </Grid>
+            );
+          })}
+        </Grid>
+      </Container>
+    );
+  }
+
+  if(areAllTexts) {
+    return (
+      <Container maxWidth={false} sx={{ p: 2 }}>
+        <Grid container spacing={2}>
+          {assetsForSelectedDataset.map(({ workflowId, dataAsset }) => {
+            const meta = dataAssetsMetaData?.[selectedDataset!]?.[workflowId]?.meta;
+            const fileNames = meta?.data?.fileNames; // string | string[] | undefined
+
+            const titleTooltip = <WorkflowInfoTooltip workflowId={workflowId} />;
+
+            const titleNode = (
+              <>
+                {dataAsset?.name ? dataAsset.name : 'Workflow'} —{' '}
+                <Tooltip
+                  title={titleTooltip}
+                  slotProps={{
+                    tooltip: {
+                      sx: {
+                        backgroundColor: 'transparent',
+                        p: 0,
+                        maxWidth: 'none',
+                        boxShadow: 'none',
+                      },
+                    },
+                  }}
+                >
+                  <Link to={`/${experimentId}/workflow?workflowId=${workflowId}`}>{workflowId}</Link>
+                </Tooltip>
+              </>
+            );
+
+            return (
+              <Grid size={{ xs: 6 }} key={`${selectedDataset}-${workflowId}`}>
+                <PreviewTextCard
+                  title={titleNode}
+                  fileNames={fileNames}
+                  downloadName={dataAsset?.name}
                 />
               </Grid>
             );

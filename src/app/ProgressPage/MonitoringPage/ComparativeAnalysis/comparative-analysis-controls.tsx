@@ -27,6 +27,7 @@ import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
 import SelectionPopover from '../../../../shared/components/selection-popover';
 import PillToggle from '../../../../shared/components/pill-toggle';
 import SortIcon from '@mui/icons-material/Sort';
+import { isComparableDataAsset } from '../../../../shared/utils/dataAssetFormat';
 
 const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
@@ -67,16 +68,7 @@ const ComparativeAnalysisControls = ()=> {
         .filter(([, entries]) =>
           Array.isArray(entries) &&
           entries.length > 0 &&
-          entries.every(({ dataAsset }) => {
-            const rawFormat = (dataAsset as { format?: unknown } | null | undefined)?.format;
-
-            if (typeof rawFormat !== 'string') return false;
-
-            const normalized = rawFormat.trim().toLowerCase()
-              .replace(/^\./, '');
-
-            return normalized === 'csv' || normalized === 'parquet';
-          })
+          entries.every(({ dataAsset }) => isComparableDataAsset(dataAsset))
         )
         .map(([name]) => name),
     [commonDataAssets]
@@ -90,14 +82,16 @@ const ComparativeAnalysisControls = ()=> {
 
     if (!Array.isArray(assets) || assets.length === 0) return true;
 
-    const allImages = assets.every(({ workflowId }) => {
+    // The box/histogram toggle only applies to tabular datasets; hide it when
+    // every asset is an image or text preview.
+    const allNonTabular = assets.every(({ workflowId }) => {
       const meta = dataAssetsMetaData?.[selectedDataset]?.[workflowId]?.meta;
       const datasetType = meta?.data?.datasetType;
 
-      return typeof datasetType === 'string' && datasetType.match('IMAGE');
+      return typeof datasetType === 'string' && /IMAGE|TEXT/.test(datasetType);
     });
 
-    return !allImages;
+    return !allNonTabular;
   })();
 
   const { workflowsTable } = useAppSelector(
