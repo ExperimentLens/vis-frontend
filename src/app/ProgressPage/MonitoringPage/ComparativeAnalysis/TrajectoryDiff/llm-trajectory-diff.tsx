@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Chip,
-  CircularProgress,
   FormControl,
   Grid,
   InputLabel,
@@ -35,6 +34,7 @@ import ResponsiveCardVegaLite from '../../../../../shared/components/responsive-
 import { EmptyNote } from '../../LLMOverview/chart-kit';
 import { alignByQuestion, alignTasks, alignVerdicts } from './trajectory-alignment';
 import type { AlignedTaskCell } from './trajectory-alignment';
+import Loader from '../../../../../shared/components/loader';
 
 const FALLBACK_COLORS = ['#3766AF', '#6BBC8C', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9'];
 
@@ -160,12 +160,9 @@ export default function LlmTrajectoryDiff() {
     const rolls: Record<string, ExperimentRollup> = {};
 
     runIds.forEach(id => { rolls[id] = rollup(detailsByRun[id] ?? []); });
-    const baseR = rolls[runIds[0]];
-    const out: Record<string, Array<{ id: string; runName: string; value: number; delta: number | null }>> = {};
+    const out: Record<string, Array<{ id: string; runName: string; value: number }>> = {};
 
     SUMMARY_METRICS.forEach(m => {
-      const baseRaw = baseR ? baseR[m.key] as number | null | undefined : null;
-      const baseV = baseRaw !== null && baseRaw !== undefined ? baseRaw * m.scale : null;
 
       out[m.key] = runIds
         .map(id => {
@@ -173,30 +170,156 @@ export default function LlmTrajectoryDiff() {
 
           if (raw === null || raw === undefined) return null;
           const v = raw * m.scale;
-          const delta = id !== runIds[0] && baseV !== null ? Number((v - baseV).toFixed(2)) : null;
 
-          return { id, runName: runNameById[id] ?? id, value: Number(v.toFixed(2)), delta };
+          return { id, runName: runNameById[id] ?? id, value: Number(v.toFixed(2)) };
         })
-        .filter((r): r is { id: string; runName: string; value: number; delta: number | null } => r !== null);
+        .filter((r): r is { id: string; runName: string; value: number } => r !== null);
     });
 
     return out;
   }, [runIds, detailsByRun, runNameById]);
 
+  const handleDownloadTaskDelta = () => {
+    const selectedQ = aligned.length ? aligned[Math.min(questionIdx, aligned.length - 1)] : undefined;
+    const tasksData = selectedQ ? alignTasks(selectedQ.byRun) : [];
+    const baseMs = (c: AlignedTaskCell | undefined) => (c ? c.durationMs : null);
+    const baseline = runIds[0];
+
+    if (!tasksData.length) return;
+
+    const headers = ['Task', ...runIds.map(id => runNameById[id] ?? id)];
+    const rows = tasksData.map(task => {
+      const baseTime = baseMs(task.byRun[baseline]);
+      const rowData: string[] = [task.name];
+
+      runIds.forEach(id => {
+        const cell = task.byRun[id];
+        if (!cell) {
+          rowData.push('—');
+        } else {
+          const duration = formatMs(cell.durationMs);
+          if (id === baseline || baseTime === null) {
+            rowData.push(duration);
+          } else {
+            const delta = cell.durationMs - baseTime;
+            const deltaSign = delta > 0 ? '+' : '−';
+            const deltaStr = deltaSign + formatMs(Math.abs(delta));
+            rowData.push(`${duration} (${deltaStr})`);
+          }
+        }
+      });
+
+      return rowData.join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `per-task-delta-${new Date().toISOString().split('T')[0]}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const trajectoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const handleDownloadTrajectoryPng = async (runId: string) => {
+    const element = trajectoryRefs.current[runId];
+    if (!element) return;
+
+      // Dynamically load html2canvas from CDN
+      if (!(window as any).html2canvas) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+        document.head.appendChild(script);
+        
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+        });
+      }
+
+      const html2canvas = (window as any).html2canvas;
+      const canvas = await html2canvas(element, {
+        backgroundColor: theme.palette.background.paper,
+        scale: 2,
+        logging: false,
+      });
+
+      canvas.toBlob((blob: Blob | null) => {
+        if (!blob) return;
+
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        link.href = blobUrl;
+        link.download = `trajectory-${runNameById[runId] ?? runId}-${new Date().toISOString().split('T')[0]}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // Revoke blob URL to free memory
+        URL.revokeObjectURL(blobUrl);
+      });
+  };
+
+  const verdictDiffRef = useRef<HTMLDivElement | null>(null);
+
+  const handleDownloadVerdictDiffPng = async () => {
+    const element = verdictDiffRef.current;
+    if (!element) return;
+
+    // Dynamically load html2canvas from CDN
+    if (!(window as any).html2canvas) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      document.head.appendChild(script);
+      
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+      });
+    }
+    const html2canvas = (window as any).html2canvas;
+    const canvas = await html2canvas(element, {
+      backgroundColor: theme.palette.background.paper,
+      scale: 2,
+      logging: false,
+    });
+    canvas.toBlob((blob: Blob | null) => {
+      if (!blob) return;
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `verdict-diff-${new Date().toISOString().split('T')[0]}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      // Revoke blob URL to free memory
+      URL.revokeObjectURL(blobUrl);
+    });
+  };
+
   if (!hasAny && anyLoading) {
     return (
-      <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, py: 6, gap: 1.5 }}>
-        <CircularProgress size={22} />
-        <Typography variant="body2" color="text.secondary">Fetching trajectories…</Typography>
-      </Stack>
-    );
+      <Loader />
+    )
   }
 
   if (!hasAny) {
     return (
-      <Box sx={{ p: 2 }}>
-        <InfoMessage message="No traces found for the selected workflows." type="info" icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />} fullHeight />
-      </Box>
+        <InfoMessage 
+          message="No traces found for the selected workflows." 
+          type="info" 
+          icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />} 
+          fullHeight 
+        />
     );
   }
 
@@ -252,7 +375,6 @@ export default function LlmTrajectoryDiff() {
                 tooltip: [
                   { field: 'runName', type: 'nominal', title: 'workflow' },
                   { field: 'value', type: 'quantitative', title: m.label, format: ',.2f' },
-                  { field: 'delta', type: 'quantitative', title: 'Δ vs baseline', format: '+,.2f' },
                 ],
               },
             } as Record<string, unknown>;
@@ -273,6 +395,7 @@ export default function LlmTrajectoryDiff() {
                   sx={{ width: '100%', maxWidth: '100%' }}
                   minHeight={220}
                   showInfoMessage={data.length === 0}
+                  showSettings={true}
                   infoMessage={
                     <InfoMessage
                       message={`No ${m.label.toLowerCase()} data.`}
@@ -321,8 +444,17 @@ export default function LlmTrajectoryDiff() {
 
               return (
                 <Grid key={id} size={{ xs: 12, md: size }} sx={{ textAlign: 'left' }}>
-                  <ResponsiveCardTable title={runNameById[id] ?? id} details={id === baseline ? 'baseline' : 'execution'}>
-                    <Box sx={{ borderTop: `2px solid ${colorOf(id, i)}`, pt: 1 }}>
+                  <ResponsiveCardTable 
+                    title={runNameById[id] ?? id} 
+                    details={id === baseline ? 'baseline' : 'execution'}
+                    showDownloadButton={true}
+                    onDownload={() => handleDownloadTrajectoryPng(id)}
+                    downloadLabel="Download as PNG"
+                  >
+                    <Box 
+                      ref={(el: HTMLDivElement | null) => { if (el) trajectoryRefs.current[id] = el; }}
+                      sx={{ borderTop: `2px solid ${colorOf(id, i)}`, pt: 1 }}
+                    >
                       {trace
                         ? <ObservationWaterfall observations={trace.observations} />
                         : <EmptyNote>No trace for this question in this run.</EmptyNote>}
@@ -334,7 +466,7 @@ export default function LlmTrajectoryDiff() {
           </Grid>
 
           {/* Per-task delta table */}
-          <ResponsiveCardTable title="Per-task delta" details="aligned by task name & occurrence">
+          <ResponsiveCardTable title="Per-task delta" details="aligned by task name & occurrence" showDownloadButton={true} onDownload={handleDownloadTaskDelta} downloadLabel="Download as CSV" downloadSecondaryText="">
             <Box sx={{ overflow: 'auto' }}>
               <Table size="small">
                 <TableHead>
@@ -395,8 +527,17 @@ export default function LlmTrajectoryDiff() {
         <>
           {/* Verdict diff — one aligned table, columns headed by workflow swatch+name */}
           {(judgeRows.length > 0 || checkRows.length > 0) && (
-            <ResponsiveCardTable title="Verdict diff" details="regressions vs. baseline highlighted">
-              <Box sx={{ overflow: 'auto' }}>
+            <ResponsiveCardTable 
+              title="Verdict diff" 
+              details="regressions vs. baseline highlighted"
+              showDownloadButton={true}
+              onDownload={handleDownloadVerdictDiffPng}
+              downloadLabel="Download as PNG"
+            >
+              <Box 
+                ref={verdictDiffRef}
+                sx={{ overflow: 'auto' }}
+              >
                 <Table size="small" sx={{ tableLayout: 'fixed' }}>
                   <TableHead>
                     <TableRow>
