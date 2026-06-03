@@ -338,6 +338,13 @@ export default function LlmTrajectoryDiff() {
           {SUMMARY_METRICS.map(m => {
             const data = summaryDatasets[m.key] ?? [];
             const yMax = data.length ? Math.max(...data.map(d => d.value)) * 1.1 : 1;
+            
+            // Cap the bar width so a single (or few) selected workflow doesn't render a
+            // giant bar. Band-scale padding is width-independent, so padding a lone bar
+            // makes it match the width it would have when ~2 bars are present.
+            const barCount = data.length;
+            const barPaddingOuter = Math.max(0.05, (2.1 - barCount) / 2);
+            
             const spec = {
               $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
               data: { values: data },
@@ -350,7 +357,7 @@ export default function LlmTrajectoryDiff() {
                   field: 'id',
                   type: 'ordinal',
                   sort: runIds,
-                  scale: { paddingInner: 0.2, paddingOuter: 0.15 },
+                  scale: { paddingInner: 0.2, paddingOuter: barPaddingOuter },
                   axis: { labels: false, ticks: false, title: null, domain: false },
                 },
                 y: {
