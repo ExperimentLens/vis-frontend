@@ -1,15 +1,15 @@
-# ExtremeXP Visualization Page
+# Experiment Lens Visualization Page
 
 **Important**
 
 This branch is not the active development branch.
   
-To run ExtremeXP Visualization Page, switch to:
+To run Experiment Lens Visualization Page, switch to:
 
-**`new-extreme-new-navigation`**
+**`experiment-lens`**
 
  ```bash
- git checkout new-extreme-new-navigation
+ git checkout experiment-lens
  ```
 
 
