@@ -1,5 +1,5 @@
 import { Box, Stack, Typography, Tooltip, useTheme, alpha } from '@mui/material';
-import type { Observation } from '../../../../shared/models/observability/observation';
+import type { Observation } from '../../../shared/models/observability/observation';
 
 const MONO = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
 
