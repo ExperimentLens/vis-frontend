@@ -9,7 +9,6 @@ import Loader from '../../../../shared/components/loader';
 
 const ImageCard = () => {
   const { tab } = useAppSelector(state => state.workflowPage);
-  const baseApi = 'http://localhost:8080/api/data/file?path=';
 
   const imageRef = useRef<HTMLImageElement>(null);
   const [loaded, setLoaded] = useState(false);
@@ -19,16 +18,9 @@ const ImageCard = () => {
     state =>
       state.workflowPage?.tab?.dataTaskTable?.selectedItem?.data?.dataset,
   );
-  const imageSrc = `${baseApi}${tab?.workflowTasks.dataExploration?.metaData.data?.fileNames || ''}`;
-  // const normalizePath = (path?: string | string[]): string => {
-  //   if (!path) return '';
-  //   const s = Array.isArray(path) ? path.join(',') : path;
-  //   return s.replace(/\\/g, '/');
-  // };
-
-  // const rawFileNames = tab?.workflowTasks.dataExploration?.metaData?.data?.fileNames;
-  // const fileName = normalizePath(rawFileNames);
-  // const imageSrc = fileName ? `${baseApi}${fileName}` : '';
+  // The server hands back an opaque, id-based URL (`/api/data/file/{id}`) for the cached
+  // image; we hit it directly instead of building a `?path=` URL from a filesystem path.
+  const imageSrc = tab?.workflowTasks.dataExploration?.metaData.data?.fileUrl ?? '';
 
   useEffect(() => {
     setLoaded(false);

@@ -5,26 +5,18 @@ import ResponsiveCardTable from '../../../../../shared/components/responsive-car
 import InfoMessage from '../../../../../shared/components/InfoMessage';
 import Loader from '../../../../../shared/components/loader';
 
-const normalizePath = (path?: string | string[]): string => {
-  if (!path) return '';
-  const s = Array.isArray(path) ? path.join(',') : path;
-
-  return s.replace(/\\/g, '/');
-};
-
 type PreviewImageCardProps = {
   title: React.ReactNode;
-  fileNames: string | string[] | undefined;
+  // Opaque, server-issued URL for the cached image, e.g. `/api/data/file/{id}`.
+  fileUrl: string | undefined;
 };
 
-export default function PreviewImageCard({ title, fileNames }: PreviewImageCardProps) {
+export default function PreviewImageCard({ title, fileUrl }: PreviewImageCardProps) {
   const imageRef = useRef<HTMLImageElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const baseApi = 'http://localhost:8080/api/data/file?path=';
 
-  const fileName = normalizePath(fileNames);
-  const imageSrc = fileName ? `${baseApi}${fileName}` : '';
+  const imageSrc = fileUrl ?? '';
 
   useEffect(() => {
     setLoaded(false);

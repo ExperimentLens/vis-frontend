@@ -9,25 +9,17 @@ import InfoMessage from '../../../../../shared/components/InfoMessage';
 import Loader from '../../../../../shared/components/loader';
 import { logger } from '../../../../../shared/utils/logger';
 
-const normalizePath = (path?: string | string[]): string => {
-  if (!path) return '';
-  const s = Array.isArray(path) ? path[0] ?? '' : path;
-
-  return s.replace(/\\/g, '/');
-};
-
 type PreviewTextCardProps = {
   title: React.ReactNode;
-  fileNames: string | string[] | undefined;
+  // Opaque, server-issued URL for the cached text file, e.g. `/api/data/file/{id}`.
+  fileUrl: string | undefined;
   downloadName?: string;
 };
 
 // Text-asset counterpart of PreviewImageCard: fetches the cached file content
-// via /api/data/file and renders it in a scrollable monospace viewer.
-export default function PreviewTextCard({ title, fileNames, downloadName }: PreviewTextCardProps) {
-  const baseApi = 'http://localhost:8080/api/data/file?path=';
-  const filePath = normalizePath(fileNames);
-  const textSrc = filePath ? `${baseApi}${filePath}` : '';
+// via /api/data/file/{id} and renders it in a scrollable monospace viewer.
+export default function PreviewTextCard({ title, fileUrl, downloadName }: PreviewTextCardProps) {
+  const textSrc = fileUrl ?? '';
 
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);

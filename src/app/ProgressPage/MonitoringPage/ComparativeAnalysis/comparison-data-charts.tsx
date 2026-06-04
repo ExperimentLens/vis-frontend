@@ -296,7 +296,7 @@ const ComparisonDataCharts = () => {
         <Grid container spacing={2}>
           {assetsForSelectedDataset.map(({ workflowId, dataAsset }) => {
             const meta = dataAssetsMetaData?.[selectedDataset!]?.[workflowId]?.meta;
-            const fileNames = meta?.data?.fileNames; // string | string[] | undefined
+            const fileUrl = meta?.data?.fileUrl; // server-issued `/api/data/file/{id}`
 
             const titleTooltip = <WorkflowInfoTooltip workflowId={workflowId} />;
 
@@ -325,7 +325,7 @@ const ComparisonDataCharts = () => {
               <Grid size={{ xs: 6 }} key={`${selectedDataset}-${workflowId}`}>
                 <PreviewImageCard
                   title={titleNode}
-                  fileNames={fileNames}
+                  fileUrl={fileUrl}
                 />
               </Grid>
             );
@@ -341,7 +341,7 @@ const ComparisonDataCharts = () => {
         <Grid container spacing={2}>
           {assetsForSelectedDataset.map(({ workflowId, dataAsset }) => {
             const meta = dataAssetsMetaData?.[selectedDataset!]?.[workflowId]?.meta;
-            const fileNames = meta?.data?.fileNames; // string | string[] | undefined
+            const fileUrl = meta?.data?.fileUrl; // server-issued `/api/data/file/{id}`
 
             const titleTooltip = <WorkflowInfoTooltip workflowId={workflowId} />;
 
@@ -370,7 +370,7 @@ const ComparisonDataCharts = () => {
               <Grid size={{ xs: 6 }} key={`${selectedDataset}-${workflowId}`}>
                 <PreviewTextCard
                   title={titleNode}
-                  fileNames={fileNames}
+                  fileUrl={fileUrl}
                   downloadName={dataAsset?.name}
                 />
               </Grid>

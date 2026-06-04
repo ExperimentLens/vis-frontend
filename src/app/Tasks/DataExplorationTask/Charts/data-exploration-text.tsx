@@ -11,20 +11,17 @@ import { useAppSelector } from '../../../../store/store';
 import { logger } from '../../../../shared/utils/logger';
 
 // Mirrors ImageCard: the backend flags .txt/.log/.md datasets with
-// datasetType === 'TEXT' and returns the cached file path in `fileNames`.
-// Here we fetch that file's raw content via /api/data/file and render it
+// datasetType === 'TEXT' and returns an opaque, id-based URL in `fileUrl`.
+// Here we fetch that file's raw content via /api/data/file/{id} and render it
 // in a clean, scrollable monospace viewer.
 const TextCard = () => {
   const { tab } = useAppSelector(state => state.workflowPage);
-  const baseApi = 'http://localhost:8080/api/data/file?path=';
 
   const selectedText = useAppSelector(
     state => state.workflowPage?.tab?.dataTaskTable?.selectedItem?.data?.dataset,
   );
 
-  const rawFileNames = tab?.workflowTasks.dataExploration?.metaData.data?.fileNames;
-  const filePath = Array.isArray(rawFileNames) ? rawFileNames[0] ?? '' : rawFileNames ?? '';
-  const textSrc = filePath ? `${baseApi}${filePath}` : '';
+  const textSrc = tab?.workflowTasks.dataExploration?.metaData.data?.fileUrl ?? '';
 
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
