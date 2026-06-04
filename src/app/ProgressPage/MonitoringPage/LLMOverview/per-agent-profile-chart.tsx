@@ -2,7 +2,7 @@ import type { VisualizationSpec } from 'vega-embed';
 import ResponsiveVegaLite from '../../../../shared/components/responsive-vegalite';
 import { ChartCard, EmptyNote, useVegaThemeConfig, useVegaTooltip } from './chart-kit';
 import { perAgentProfile } from '../../../../shared/utils/observability-aggregates';
-import { TYPE_COLORS } from '../../WorkflowTab/SelectedItemView/trace-observation-waterfall';
+import { TYPE_COLORS } from '../../../Tasks/Observability/trace-observation-waterfall';
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
 
 export default function PerAgentProfileChart({ details }: { details: TraceDetail[] }) {

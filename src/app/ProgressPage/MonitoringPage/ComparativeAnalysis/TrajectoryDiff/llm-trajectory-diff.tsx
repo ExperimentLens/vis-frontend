@@ -28,7 +28,7 @@ import { Handler } from 'vega-tooltip';
 import { rollup } from '../../../../../shared/utils/observability-aggregates';
 import type { ExperimentRollup } from '../../../../../shared/utils/observability-aggregates';
 import InfoMessage from '../../../../../shared/components/InfoMessage';
-import ObservationWaterfall, { colorForType } from '../../../WorkflowTab/SelectedItemView/trace-observation-waterfall';
+import ObservationWaterfall, { colorForType } from '../../../../Tasks/Observability/trace-observation-waterfall';
 import ResponsiveCardTable from '../../../../../shared/components/responsive-card-table';
 import ResponsiveCardVegaLite from '../../../../../shared/components/responsive-card-vegalite';
 import { EmptyNote } from '../../LLMOverview/chart-kit';
