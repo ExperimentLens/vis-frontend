@@ -1,7 +1,5 @@
-import Box from "@mui/material/Box"
-import grey from "@mui/material/colors/grey"
-import Grid from "@mui/material/Grid"
-import Typography from "@mui/material/Typography"
+import ResponsiveCardTable from "../../../shared/components/responsive-card-table"
+import { Box } from "@mui/material"
 
 interface UserInteractiveTaskProps {
   url: string
@@ -9,38 +7,19 @@ interface UserInteractiveTaskProps {
 
 const UserInteractiveTask = (props: UserInteractiveTaskProps) => {
   const { url } = props
-    
+  const normalizedUrl =
+    url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `http://${url}`
+
   return (
-    <>
-      <Grid
-        sx={{
-          flexDirection: "column",
-          display: "flex",
-          justifyContent: "center",
-          textAlign: "center",
-          border: `1px solid ${grey[400]}`,
-          borderRadius: 3,
-          overflow: "hidden",
-        }}
-      >
-        <Box
-          sx={{
-            bgcolor: grey[300],
-            display: "flex",
-            height: "3.5rem",
-            alignItems: "center",
-            textAlign: "left",
-            px: 2,
-          }}
-        >
-          <Typography fontSize={"1.2rem"}>User Interactive Task</Typography>
-          <Box sx={{ flex: 1 }} />
-        </Box>
-        <div>
-          <iframe src={url} width="100%" height="500px" />
-        </div>
-      </Grid>
-    </>
+    <Box sx={{ height: 500, width: '100%' }}>
+    <ResponsiveCardTable title="User Interactive Task">
+      <Box style={{height: '100%', width: '100%'}}>
+        <iframe src={normalizedUrl} height='100%' width='100%'/>
+      </Box>
+    </ResponsiveCardTable>
+    </Box>
   )
 }
 

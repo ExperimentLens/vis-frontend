@@ -1,0 +1,712 @@
+import Paper from '@mui/material/Paper';
+import Box from '@mui/material/Box';
+import ArrowUp from '@mui/icons-material/KeyboardArrowUp';
+import ArrowDown from '@mui/icons-material/KeyboardArrowDown';
+import Close from '@mui/icons-material/Close';
+import ToolBarWorkflow from './toolbar-workflow-table';
+import FilterBar from '../../../../shared/components/filter-bar';
+import { alpha, Popover, styled } from '@mui/material';
+import type { RootState } from '../../../../store/store';
+import { useAppDispatch, useAppSelector } from '../../../../store/store';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { ScheduleTableRow } from '../../../../store/slices/monitorPageSlice';
+import { setScheduledTable } from '../../../../store/slices/monitorPageSlice';
+import type { GridColumnNode } from '@mui/x-data-grid';
+import { DataGrid } from '@mui/x-data-grid';
+import InfoMessage from '../../../../shared/components/InfoMessage';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import type { CustomGridColDef } from '../../../../shared/types/table-types';
+export interface Data {
+  [key: string]: string | number | boolean
+}
+
+let idCounter = 1;
+
+const WorkflowActions = (props: {
+  id: number,
+}) => {
+  const { id } = props;
+  const dispatch = useAppDispatch();
+  const { scheduledTable } = useAppSelector(
+    (state: RootState) => state.monitorPage,
+  );
+
+  const handleIndexChange = (indexChange: number, id: number) => {
+    const rowIndex = scheduledTable.rows.findIndex(row => row.id === id);
+    const newIndex = rowIndex + indexChange;
+
+    if (newIndex < 0 || newIndex >= scheduledTable.rows.length) {
+      return;
+    } else {
+      const updatedRows = [...scheduledTable.rows];
+      const [movedRow] = updatedRows.splice(rowIndex, 1);
+
+      updatedRows.splice(newIndex, 0, movedRow);
+
+      const newRows = updatedRows.map((row, index) => ({
+        ...row,
+        id: index + 1,
+      }));
+
+      dispatch(
+        setScheduledTable({ rows: newRows, visibleRows: newRows }),
+      );
+    }
+  };
+
+  const removeRow = () => {
+    const filteredWorkflows = scheduledTable.rows.filter(
+      row => !(row.id === id),
+    );
+
+    dispatch(
+      setScheduledTable({
+        rows: filteredWorkflows,
+        visibleRows: filteredWorkflows,
+        selectedWorkflows: [],
+      }),
+    );
+  };
+
+  const isStartRow = (id: number): boolean => {
+    if (id === 1) {
+      return true;
+    }
+
+    return false;
+  };
+  const isEndRow = (id: number): boolean => {
+    if (id === scheduledTable.rows.length) {
+      return true;
+    }
+
+    return false;
+  };
+
+  return (
+    <span onClick={event => event.stopPropagation()} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+      <ArrowUp
+        onClick={() => handleIndexChange(-1, id)}
+        sx={{
+          cursor: 'pointer',
+          color: theme =>
+            isStartRow(id)
+              ? theme.palette.text.disabled
+              : theme.palette.primary.main,
+        }}
+      />
+      <ArrowDown
+        onClick={() => handleIndexChange(1, id)}
+        sx={{
+          cursor: 'pointer',
+          color: theme =>
+            isEndRow(id)
+              ? theme.palette.text.disabled
+              : theme.palette.primary.main,
+        }}
+      />
+      <Close
+        onClick={() => removeRow()} // TODO: Create function deleting the workflow (delete from scheduled? Or from whole database?)
+        sx={{
+          cursor: 'pointer',
+          color: theme => theme.palette.primary.main,
+        }}
+      />
+    </span>
+  );
+};
+
+const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
+  border: 'none',
+  '--DataGrid-rowBorderColor': theme.palette.divider,
+  '--DataGrid-containerBackground': theme.palette.customGrey.main,
+  '& .MuiDataGrid-scrollbarFiller': {
+    backgroundColor: theme.palette.customGrey.main,
+  },
+  '& .MuiDataGrid-columnHeaders': {
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
+  '& .MuiDataGrid-columnHeader': {
+    backgroundColor: theme.palette.customGrey.main,
+  },
+  '& .MuiDataGrid-columnHeader[data-field="__check__"]': {
+    backgroundColor: theme.palette.customGrey.main,
+  },
+  '& .MuiDataGrid-columnHeaderTitle': {
+    whiteSpace: 'nowrap',
+    overflow: 'visible',
+    fontWeight: 700,
+  },
+  '& .MuiDataGrid-columnSeparator': {
+    color: 'transparent',
+  },
+  '& .MuiDataGrid-cell': {
+    fontSize: '0.8rem',
+  },
+  '& .MuiDataGrid-row:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+  '& .MuiDataGrid-row.Mui-selected': {
+    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+    '&:hover': {
+      backgroundColor: alpha(theme.palette.primary.main, 0.16),
+    },
+  },
+  '& .datagrid-header-fixed': {
+    // Action column
+    position: 'sticky',
+    right: 0,
+    zIndex: 100,
+    backgroundColor: theme.palette.customGrey.main,
+    borderLeft: `1px solid ${theme.palette.divider}`,
+  },
+  '& .MuiDataGrid-cell[data-field="action"]': {
+    position: 'sticky',
+    right: 0,
+    backgroundColor: theme.palette.customGrey.light,
+    zIndex: 90,
+    borderLeft: `1px solid ${theme.palette.divider}`,
+  },
+  // Add pagination styling
+  '& .MuiDataGrid-footerContainer': {
+    minHeight: '56px',
+    borderTop: `1px solid ${theme.palette.divider}`,
+  },
+  '& .MuiTablePagination-root': {
+    overflow: 'visible',
+  },
+  '& .MuiDataGrid-columnHeader[data-field="__action_group__"]': {
+    position: 'sticky',
+    right: 0,
+    zIndex: 1000,
+    backgroundColor: theme.palette.customGrey.main,
+    borderLeft: `1px solid ${theme.palette.divider}`,
+    display: 'flex',
+    justifyContent: 'center', // Center the header content
+    alignItems: 'center', // Vertically center
+  },
+}));
+
+// Create a custom NoRowsOverlay component using InfoMessage
+const CustomNoRowsOverlay = () => {
+  return (
+    <InfoMessage
+      message="No scheduled workflows available."
+      type="info"
+      icon={<ScheduleIcon sx={{ fontSize: 40, color: 'info.main' }} />}
+      fullHeight
+    />
+  );
+};
+
+const HIDDEN_INTERNAL_FIELDS = new Set(['space']);
+
+export default function ScheduleTable() {
+  const { workflows } = useAppSelector(
+    (state: RootState) => state.progressPage,
+  );
+  const { scheduledTable } = useAppSelector(
+    (state: RootState) => state.monitorPage
+  );
+  const dispatch = useAppDispatch();
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
+  const [isFilterOpen, setFilterOpen] = useState(false);
+  const paramLength = useRef(0);
+
+  useEffect(() => {
+    if (workflows.data.length > 0) {
+      const uniqueParameters = new Set(
+        workflows.data.filter(workflow => workflow.status === 'SCHEDULED')
+          .reduce((acc: string[], workflow) => {
+            const params = workflow.params;
+
+            if (params) {
+              return [...acc, ...params.map(param => param.name)];
+            } else {
+              return [...acc];
+            }
+          }, []),
+      );
+
+      const uniqueTasks = Object.entries(workflows.data.filter(workflow => workflow.status === 'SCHEDULED').flatMap(workflow => workflow.tasks || [])
+        .reduce((acc: Record<string, Set<string>>, task) => {
+          if (task && task.name) {
+            if (!acc[task.name]) {
+              acc[task.name] = new Set<string>();
+            }
+            if (task.variant) {
+              acc[task.name].add(task.variant);
+            }
+          }
+
+          return acc;
+        }, {})).filter(([, variants]) => variants.size > 1)
+        .map(([name]) => name);
+
+      const rows: ScheduleTableRow[] = workflows.data
+        .filter(workflow => workflow.status === 'SCHEDULED')
+        .map(workflow => {
+          const params = workflow.params;
+          const tasks = workflow?.tasks;
+
+          return {
+            id: idCounter++,
+            workflowId: workflow.name || '',
+            space: workflow.space,
+            ...Array.from(uniqueTasks).reduce((acc, variant) => {
+              acc[variant] =
+                tasks?.find(task => task.name === variant)?.variant || 'n/a';
+
+              return acc;
+            }, {} as Record<string, string>),
+            ...Array.from(uniqueParameters).reduce((acc, variant) => {
+              const rawValue = params?.find(param => param.name === variant)?.value;
+              const parsedValue =
+                rawValue !== null && rawValue !== undefined && !isNaN(Number(rawValue)) && rawValue !== ''
+                  ? Number(rawValue)
+                  : rawValue ?? 'n/a';
+
+              acc[variant] = parsedValue;
+
+              return acc;
+            }, {} as Record<string, string | number>),
+            status: workflow.status.toLowerCase(),
+            action: '',
+          };
+        })
+        .sort((a, b) => a.id - b.id);
+      const workflow = workflows.data[0];
+      const params = workflow.params;
+      const tasks = workflow?.tasks;
+      const infoRow = {
+        id: idCounter++,
+        workflowId: workflow.id,
+        ...Array.from(uniqueTasks).reduce((acc, variant) => {
+          acc[variant] =
+            tasks?.find(task => task.name === variant)?.variant || 'n/a';
+
+          return acc;
+        }, {} as Record<string, string>),
+        ...Array.from(uniqueParameters).reduce((acc, variant) => {
+          const rawValue = params?.find(param => param.name === variant)?.value;
+          const parsedValue =
+                rawValue !== null && rawValue !== undefined && !isNaN(Number(rawValue)) && rawValue !== ''
+                  ? Number(rawValue)
+                  : rawValue ?? 'n/a';
+
+          acc[variant] = parsedValue;
+
+          return acc;
+        }, {} as Record<string, string | number>),
+        status: workflow.status,
+        action: '',
+      };
+      const columns: CustomGridColDef[] =
+        infoRow
+          ? Object.keys(infoRow)
+            .filter(key => key !== 'id' && !HIDDEN_INTERNAL_FIELDS.has(key))
+            .map(key => ({
+              field: key,
+              headerName: key === 'action' ? '' : key.replace('_', ' '),
+              headerClassName:
+                key === 'action' ? 'datagrid-header-fixed' : 'datagrid-header',
+              minWidth: key === 'action' ? 120 : key === 'status' ? key.length * 10 + 40 : key.length * 10,
+              flex: 1,
+              align: 'center',
+              headerAlign: 'center',
+              sortable: false,
+              type: (rows.length > 0 && typeof (rows[0] as Record<string, string | number | boolean | undefined>)[key] === 'number') ? 'number' : 'string',
+              ...(key === 'action' && {
+                renderCell: (params) => {
+                  return (
+                    <WorkflowActions
+                      id={params.row.id}
+                    />
+                  );
+                }
+              })
+            }))
+          : [];
+
+      paramLength.current = uniqueParameters.size;
+      const visibilityModel = columns.reduce((acc, col) => {
+        acc[col.field] = true;
+
+        return acc;
+      }, {} as Record<string, boolean>);
+
+      const { filteredRows } = applyScheduledFilters(
+        rows,
+        scheduledTable.filters,
+        scheduledTable.selectedSpaces,
+      );
+
+      dispatch(
+        setScheduledTable({
+          rows,
+          filteredRows,
+          visibleRows: filteredRows,
+          columns: columns,
+          columnsVisibilityModel: visibilityModel,
+          uniqueParameters: Array.from(uniqueParameters),
+          uniqueTasks: Array.from(uniqueTasks)
+        }),
+      );
+    }
+  }, [workflows.data]);
+
+  const filterClicked = (event: React.MouseEvent<HTMLElement>) => {
+    setFilterOpen(!isFilterOpen);
+    if (!isFilterOpen) {
+      setAnchorEl(event.currentTarget as HTMLButtonElement);
+    } else {
+      setAnchorEl(null);
+    }
+  };
+
+  const removeSelected =
+    (list: number[] | string) => () => {
+      let filteredWorkflows;
+
+      if (typeof list !== 'string') {
+        filteredWorkflows = scheduledTable.rows.filter(
+          row => !list.includes(row.id),
+        );
+      } else {
+        filteredWorkflows = scheduledTable.rows.filter(
+          row => !scheduledTable.selectedWorkflows.includes(row.id),
+        );
+      }
+      dispatch(
+        setScheduledTable({
+          rows: filteredWorkflows,
+          visibleRows: filteredWorkflows,
+          selectedWorkflows: [],
+        }),
+      );
+    };
+
+  const handleFilterChange = (
+    index: number,
+    column: string,
+    operator: string,
+    value: string,
+  ) => {
+    const newFilters = [...scheduledTable.filters];
+
+    newFilters[index] = { column, operator, value };
+    dispatch(setScheduledTable({ filters: newFilters }));
+  };
+
+  const handleAddFilter = () => {
+    dispatch(
+      setScheduledTable({
+        filters: [
+          ...scheduledTable.filters,
+          { column: '', operator: '', value: '' },
+        ],
+      }),
+    );
+  };
+
+  const handleRemoveFilter = (index: number) => {
+    const newFilters = scheduledTable.filters.filter(
+      (_, i) => i !== index,
+    );
+
+    dispatch(setScheduledTable({ filters: newFilters }));
+  };
+  const applyScheduledFilters = (
+    rows: typeof scheduledTable.rows,
+    filters: typeof scheduledTable.filters,
+    selectedSpaces: typeof scheduledTable.selectedSpaces,
+  ) => {
+    let counter = 0;
+    let filteredRows = rows;
+
+    // spaces filter
+    if (Array.isArray(selectedSpaces) && selectedSpaces.length > 0) {
+      const selSpaces = new Set(
+      selectedSpaces
+        .map(s => s?.trim().toLowerCase())
+        .filter(Boolean) as string[]
+      );
+
+      filteredRows = filteredRows.filter(row => {
+        const space = (row.space ?? '').toString().trim()
+          .toLowerCase();
+
+        return selSpaces.has(space);
+      });
+    }
+
+    // column filters
+    if (filters.length > 0) {
+      for (let i = 0; i < filters.length; i++) {
+        if (filters[i].value !== '') {
+          counter++;
+        }
+      }
+
+      filteredRows = filteredRows.filter(row => {
+        return filters.every(filter => {
+          if (filter.value === '') return true;
+
+          const cellValue = row[filter.column as keyof Data]
+            ?.toString()
+            .toLowerCase();
+          const filterValue = filter.value.toLowerCase();
+
+          if (!cellValue) return false;
+
+          switch (filter.operator) {
+            case 'contains':
+              return cellValue.includes(filterValue);
+            case '=':
+              return !Number.isNaN(Number(cellValue))
+                ? Number(cellValue) === Number(filterValue)
+                : cellValue === filterValue;
+            case 'startsWith':
+              return cellValue.startsWith(filterValue);
+            case 'endsWith':
+              return cellValue.endsWith(filterValue);
+            case '>':
+              return !Number.isNaN(Number(cellValue))
+                ? Number(cellValue) > Number(filterValue)
+                : false;
+            case '<':
+              return !Number.isNaN(Number(cellValue))
+                ? Number(cellValue) < Number(filterValue)
+                : false;
+            case '>=':
+              return !Number.isNaN(Number(cellValue))
+                ? Number(cellValue) >= Number(filterValue)
+                : false;
+            case '<=':
+              return !Number.isNaN(Number(cellValue))
+                ? Number(cellValue) <= Number(filterValue)
+                : false;
+            case 'IN': {
+              const parts = filter.value
+                .split(',')
+                .map(v => v.trim().toLowerCase())
+                .filter(Boolean);
+
+              if (parts.length === 0) return true;
+
+              return parts.includes(cellValue);
+            }
+            default:
+              return true;
+          }
+        });
+      });
+    }
+
+    return { filteredRows, filtersCounter: counter };
+  };
+
+  useEffect(() => {
+    const { filteredRows, filtersCounter } = applyScheduledFilters(scheduledTable.rows, scheduledTable.filters, scheduledTable.selectedSpaces);
+
+    dispatch(
+      setScheduledTable({
+        filtersCounter,
+        filteredRows,
+      }),
+    );
+  }, [scheduledTable.filters, scheduledTable.selectedSpaces]);
+
+  const valueSuggestions = useMemo(() => {
+    const valueSets: Record<string, Set<string>> = {};
+    const valueCounts: Record<string, number> = {};
+
+    scheduledTable.rows.forEach((row) => {
+      Object.entries(row).forEach(([field, value]) => {
+        if (
+          HIDDEN_INTERNAL_FIELDS.has(field) ||
+          field === 'id' ||
+          field === 'workflowId' ||
+          field === 'status' ||
+          field === 'action'
+        ) {
+          return;
+        }
+
+        if (value === null || value === undefined || value === 'n/a') return;
+
+        const str = String(value).trim();
+
+        if (!str) return;
+
+        if (!valueSets[field]) {
+          valueSets[field] = new Set<string>();
+          valueCounts[field] = 0;
+        }
+
+        valueSets[field].add(str);
+        valueCounts[field] += 1;
+      });
+    });
+
+    const result: Record<string, string[]> = {};
+
+    const MAX_DISTINCT_VALUES = 10;
+
+    Object.entries(valueSets).forEach(([field, set]) => {
+      const distinctCount = set.size;
+
+      if (distinctCount > 0 && distinctCount <= MAX_DISTINCT_VALUES) {
+        result[field] = Array.from(set).sort((a, b) => a.localeCompare(b));
+      }
+    });
+
+    return result;
+  }, [scheduledTable.rows]);
+
+  return (
+    <Paper
+      elevation={0}
+      variant="outlined"
+      sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' }}
+    >
+      <ToolBarWorkflow
+        key="scheduled-toolbar"
+        filterNumbers={scheduledTable.filtersCounter}
+        filterClickedFunction={filterClicked}
+        actionButtonName="Cancel selected workflows"
+        numSelected={scheduledTable.selectedWorkflows.length}
+        tableName={'Scheduled Workflows'}
+        handleClickedFunction={removeSelected}
+        showFilterButton={true}
+        showSpaceButton={scheduledTable.rows.some(row => row.space && row.space.trim() !== '')}
+        spaceOptions={Array.from(
+          new Set(
+            scheduledTable.rows
+              .map(row => row?.space?.trim())
+              .filter((space): space is string => Boolean(space && space !== ''))
+          )
+        )}
+      />
+      <Popover
+        id={'Filters'}
+        open={isFilterOpen}
+        anchorEl={anchorEl}
+        onClose={() => setFilterOpen(false)}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+        PaperProps={{
+          sx: { p: 1.5, borderRadius: 1.5, boxShadow: 2 },
+        }}
+      >
+        <FilterBar
+          columns={scheduledTable.columns}
+          filters={scheduledTable.filters}
+          onFilterChange={handleFilterChange}
+          onAddFilter={handleAddFilter}
+          onRemoveFilter={handleRemoveFilter}
+          valueSuggestions={valueSuggestions}
+        />
+      </Popover>
+
+      <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
+          <StyledDataGrid
+            disableVirtualization
+            disableColumnMenu
+            density="compact"
+            rows={scheduledTable.visibleRows}
+            sortModel={scheduledTable.sortModel}
+            onSortModelChange={(newSortModel) => dispatch(setScheduledTable({ sortModel: newSortModel }))}
+            disableColumnFilter
+            columns={scheduledTable.columns as CustomGridColDef[]}
+            columnVisibilityModel={scheduledTable.columnsVisibilityModel}
+            onColumnVisibilityModelChange={(model) =>
+              dispatch(setScheduledTable({ columnsVisibilityModel: model }))
+            }
+            slots={{
+              noRowsOverlay: CustomNoRowsOverlay
+            }}
+            checkboxSelection
+            sx={{
+              '& .MuiDataGrid-selectedRowCount': {
+                visibility: 'hidden', // Remove the selection count text on the bottom because we implement it in the header
+              },
+              '& .theme-parameters-group': {
+                textAlign: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                display: 'grid',
+                width: '100%',
+                '&::after': {
+                  content: '""',
+                  display: 'block',
+                  width: '100%',
+                  height: '2px',
+                  backgroundColor: theme => theme.palette.primary.main,
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                },
+              },
+              '& .theme-parameters-group-2': {
+                textAlign: 'center',
+                justifyContent: 'center',
+                position: 'relative',
+                display: 'grid',
+                width: '100%',
+                '&::after': {
+                  content: '""',
+                  display: 'block',
+                  width: '100%',
+                  height: '2px',
+                  backgroundColor: theme => theme.palette.secondary.dark,
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                },
+              }
+            }}
+            pageSizeOptions={[10, 25, 50]}
+            paginationModel={scheduledTable.paginationModel}
+            onPaginationModelChange={(paginationModel) => dispatch(setScheduledTable({ paginationModel }))}
+            columnGroupingModel={[
+              {
+                groupId: 'Parameters',
+                headerClassName: 'theme-parameters-group',
+                children: scheduledTable.uniqueParameters.length > 0
+                  ? (scheduledTable.uniqueParameters.map(
+                    (param): GridColumnNode => ({
+                      field: param,
+                    }),
+                  ) as GridColumnNode[])
+                  : [],
+              },
+              {
+                groupId: 'Task Variants',
+                headerClassName: 'theme-parameters-group-2',
+                children: scheduledTable.uniqueTasks.length > 0 ? (
+                  scheduledTable.uniqueTasks.map(
+                    (task): GridColumnNode => ({
+                      field: task,
+                    }),
+                  ) as GridColumnNode[]
+                ) : []
+              },
+              {
+                groupId: 'Actions',
+                headerClassName: 'datagrid-header-fixed',
+                headerAlign: 'center',
+                children: [
+                  {
+                    field: 'action',
+                  } as GridColumnNode
+                ]
+              }
+            ]}
+          />
+      </Box>
+    </Paper>
+  );
+}

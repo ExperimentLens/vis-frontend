@@ -1,439 +1,391 @@
-import React, { useEffect, useState } from "react"
-import { useAppDispatch, useAppSelector } from "../../../../store/store"
-import ControlPanel from "../ChartControls/ControlPanel" // Import the new ControlPanel component
-import { Box, CircularProgress, Grid, Tooltip, Typography } from "@mui/material"
+import type React from 'react';
+import { useEffect, useRef } from 'react';
 import {
-  defaultDataExplorationQuery,
-  IFilter,
-  VisualColumn,
-} from "../../../../shared/models/dataexploration.model" // Ensure correct path
-import GraphContainer from "./GraphContainer"
-import { useParams } from "react-router-dom"
-import { IWorkflowTabModel } from "../../../../shared/models/workflow.tab.model"
-import { fetchDataExplorationData, fetchMetaData } from "../../../../shared/models/tasks/data-exploration-task.model"
-import { grey } from "@mui/material/colors"
-import InfoIcon from "@mui/icons-material/Info"
-import MultiTimeSeriesVisualization from "../multi-ts-visualization/MultiTimeSeriesVisualization"
+  Box,
+  Paper,
+  Stack,
+  Typography,
+  Tooltip,
+  Fade,
+  Skeleton,
+  Button,
+  Divider,
+  alpha,
+  useTheme,
+} from '@mui/material';
+import {
+  dataExplorationDefault,
+} from '../../../../shared/models/tasks/data-exploration-task.model';
+import { fetchMetaData } from '../../../../store/slices/dataExplorationSlice';
+import { useAppDispatch, useAppSelector } from '../../../../store/store';
+import LeftPanel from './data-exploration-left-panel';
+import LineChart from '../Charts/data-exploration-line-chart';
+import ScatterChart from '../Charts/data-exploration-scatter-chart';
+import BarChart from '../Charts/data-exploration-bar-chart';
+import TableExpand from '../Charts/data-exploration-data-table';
+import HeatMap from '../Charts/data-exploration-heatmap';
+import MapCardWrapper from '../Charts/map-wrap';
+import ImageCard from '../Charts/data-exploration-image';
+import TextCard from '../Charts/data-exploration-text';
+import InfoMessage from '../../../../shared/components/InfoMessage';
+import { setControls } from '../../../../store/slices/workflowPageSlice';
+import AssessmentIcon from '@mui/icons-material/Assessment';
+import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
+import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
+import ViewColumnRoundedIcon from '@mui/icons-material/ViewColumnRounded';
+import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
+import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import PlaceRoundedIcon from '@mui/icons-material/PlaceRounded';
+import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
+import TableRowsIcon from '@mui/icons-material/TableRows';
 
-interface IDataExplorationComponent {
-  workflow: IWorkflowTabModel | null
+interface MetaChipProps {
+  icon?: React.ReactNode;
+  label: React.ReactNode;
+  tone?: 'default' | 'primary' | 'success' | 'info' | 'warning';
+  loading?: boolean;
+  width?: number;
 }
-const DataExplorationComponent = (props: IDataExplorationComponent) => {
-  const { workflow } = props
-  const dispatch = useAppDispatch()
-  const {} = useAppSelector(state => state.workflowTabs)
-  const [columns, setColumns] = useState<any[]>([])
-  const [selectedColumns, setSelectedColumns] = useState<any>([])
-  const [rowLimit, setRowLimit] = useState(1000)
-  const [filters, setFilters] = useState<IFilter[]>([])
-  const { experimentId } = useParams()
-  const [xAxis, setXAxis] = useState<VisualColumn>({ name: "", type: "" })
-  const [lat,setLat] = useState<string>("")
-  const [lon,setLon] = useState<string>("")
 
+const MetaChip = ({ icon, label, tone = 'default', loading, width = 64 }: MetaChipProps) => {
+  const theme = useTheme();
 
-  const [xAxisScatter, setXAxisScatter] = useState<VisualColumn>({
-    name: "",
-    type: "",
-  })
-  const [yAxis, setYAxis] = useState<VisualColumn[]>([])
-  const [yAxisScatter, setYAxisScatter] = useState<VisualColumn[]>([])
-  const [barGroupBy, setBarGroupBy] = useState<string[]>([])
-  const [barAggregation, setBarAggregation] = useState<any>({})
-  const [viewMode, setViewMode] = useState<"overlay" | "stacked">("overlay")
-  const [chartType, setChartType] = useState<
-    "datatable" | "line" | "bar" | "scatter" | "map"
-  >("datatable")
-  const [colorBy, setColorBy] = useState("None")
-  const [currentPage, setCurrentPage] = useState(1)
-  const pageSize = 100
-  const totalPages = Math.ceil(
-    (workflow?.workflowTasks?.dataExploration?.lineChart?.data?.querySize ??
-      0) / pageSize,
-  )
-  const taskDependancies = workflow?.workflowTasks.dataExploration
-  const workflowId = workflow?.workflowId
-  // const [offset, setOffset] = useState((currentPage - 1) * pageSize)
+  if (loading) return <Skeleton variant="rounded" width={width} height={22} />;
 
-  //mapcontrols
-    const [colorByMap, setColorByMap] = useState<string | null>("None") // Set initial color to 'default'
-      const [tripsMode, setTripsMode] = useState<boolean>(false)
-        const [selectedColumnsMap, setSelectedColumnsMap] = useState<string[]>([])
-      
-    
-  
-
-
-  const handleFetchData = () => {
-    if (
-      barGroupBy.length > 0 &&
-      Object.keys(barAggregation).length > 0 &&
-      chartType === "bar"
-    ) {
-      dispatch(
-        fetchDataExplorationData({
-          query: {
-            datasetId: `${experimentId}/dataset/${experimentId}_dataset.csv`,
-            limit: 0, // Default row limit
-            columns: [], // Include selected columns in the payload
-            filters: [],
-            groupBy: barGroupBy,
-            aggregation: barAggregation,
-          },
-          metadata: {
-            workflowId: workflowId || "",
-            queryCase: "barChart",
-          },
-        }),
-      )
-    }
-    if (chartType === "line" || chartType === "datatable" || chartType === "scatter") {
-      dispatch(
-        fetchDataExplorationData({
-          query: {
-            datasetId: `${experimentId}/dataset/${experimentId}_dataset.csv`,
-            limit: pageSize, // Default row limit
-            columns: selectedColumns, // Include selected columns in the payload
-            filters: filters,
-            offset: 0,
-            groupBy: ["handlefetchdata gia line,"],
-          },
-          metadata: {
-            workflowId: workflowId || "",
-            queryCase: "lineChart",
-          },
-        }),
-      )
-      dispatch(
-        fetchDataExplorationData({
-          query: {
-            datasetId: `${experimentId}/dataset/${experimentId}_dataset.csv`,
-            limit: 2000, // Default row limit
-            columns: selectedColumns, // Include selected columns in the payload
-            filters: filters,
-            offset: 0,
-            groupBy: ["handlefetchdata gia ,scatter"],
-          },
-          metadata: {
-            workflowId: workflowId || "",
-            queryCase: "scatterChart",
-          },
-        }),
-      )
-    }
-  }
-
-  const handlePageChange = (
-    event: React.ChangeEvent<unknown>,
-    value: number,
-  ) => {
-    setCurrentPage(value)
-  }
-  useEffect(() => {
-    if (workflow && experimentId) {
-      if (experimentId === "ideko") {
-        if (
-          workflow.workflowTasks.dataExploration?.multipleTimeSeries.data ===
-          null
-        ) {
-          dispatch(
-            fetchDataExplorationData({
-              query: {
-                ...defaultDataExplorationQuery,
-                datasetId: `${experimentId}/datasets/LG600B6-100636-IDK`,
-              },
-              metadata: {
-                workflowId: workflowId || "",
-                queryCase: "multipleTimeSeries",
-              },
-            }),
-          )
-        }
-      } else {
-        if (workflow.workflowTasks.dataExploration?.barChart.data === null) {
-          dispatch(
-            fetchDataExplorationData({
-              query: {
-                datasetId: `${experimentId}/dataset/${experimentId}_dataset.csv`,
-                limit: 10,
-                columns: [],
-                filters: [],
-                groupBy: ["arxiko gia bar"],
-                aggregation: {},
-                offset: 0,
-              },
-              metadata: {
-                workflowId: workflowId || "",
-                queryCase: "barChart",
-              },
-            }),
-          )
-        }
-        if (workflow.workflowTasks.dataExploration?.metaData.data === null) {
-          dispatch(
-            fetchMetaData({
-              query: {
-                
-                datasetId: `${experimentId}/dataset/${experimentId}_dataset.csv`,
-                limit: 10,
-                columns: [],
-                filters: [],
-                groupBy: [],
-                aggregation: {},
-                offset: 0,
-              },
-              metadata: {
-                workflowId: workflowId || "",
-                queryCase: "metaData",
-              },
-            }),
-          )
-        }
-        if (workflow.workflowTasks.dataExploration?.scatterChart.data === null) {
-          dispatch(
-            fetchDataExplorationData({
-              query: {
-                datasetId: `${experimentId}/dataset/${experimentId}_dataset.csv`,
-                limit: 2000,
-                columns: [],
-                filters: [],
-                groupBy: ["arxikogiascatter"],
-                aggregation: {},
-                offset: 0,
-              },
-              metadata: {
-                workflowId: workflowId || "",
-                queryCase: "scatterChart",
-              },
-            }),
-          )
-        }
-        if (workflow.workflowTasks.dataExploration?.mapChart.data === null) {
-          dispatch(
-                    fetchDataExplorationData({
-                      query: {
-                        datasetId: "/test/newresult.csv",
-                        limit: 0,
-                        columns: [],
-                        filters: [],
-                        groupBy: ["arxiko gia map"],
-                        aggregation: {},
-                        offset: 0,
-                      },
-                      metadata: {
-                        workflowId: workflowId || "",
-                        queryCase: "mapChart",
-                      },
-                    }),
-                  )
-        }
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    if (taskDependancies?.lineChart.data) {
-      setColumns(taskDependancies?.lineChart.data.columns)
-    }
-  }, [taskDependancies?.lineChart.data])
-
-  useEffect(() => {
-    if (taskDependancies?.lineChart.data) {
-      if (selectedColumns.length === 0) {
-        setSelectedColumns(
-          taskDependancies.lineChart.data.originalColumns.map(
-            (col: any) => col.name,
-          ),
-        )
-      }
-    }
-  }, [selectedColumns])
-
-  useEffect(() => {
-    if (barGroupBy.length > 0 && Object.keys(barAggregation).length > 0) {
-      handleFetchData()
-    }
-  }, [barGroupBy, barAggregation])
-
-  useEffect(() => {
-    if (workflow && experimentId) {
-      if (filters.length > 0) {
-        setCurrentPage(1)
-      }
-      const offset = (currentPage - 1) * pageSize
-      dispatch(
-        fetchDataExplorationData({
-          query: {
-            datasetId: `${experimentId}/dataset/${experimentId}_dataset.csv`,
-            limit: pageSize,
-            columns: selectedColumns,
-            filters: filters,
-            groupBy: ["linechart meta apo filter kai pagination"],
-            aggregation: {},
-            offset: offset,
-          },
-          metadata: {
-            workflowId: workflowId || "",
-            queryCase: "lineChart",
-          },
-        }),
-      )
-     
-    }
-  }, [currentPage, pageSize, filters])
-  useEffect(() => {
-    dispatch(
-      fetchDataExplorationData({
-        query: {
-          datasetId: `${experimentId}/dataset/${experimentId}_dataset.csv`,
-          limit: 2000, // Default row limit
-          columns: selectedColumns, // Include selected columns in the payload
-          filters: filters,
-          offset: 0,
-          groupBy: ["scatterchart meta apo filter"],
-        },
-        metadata: {
-          workflowId: workflowId || "",
-          queryCase: "scatterChart",
-        },
-      }),
-    )
-  }, [filters])
+  const toneColor =
+    tone === 'primary' ? theme.palette.primary.main :
+      tone === 'success' ? theme.palette.success.main :
+        tone === 'info' ? theme.palette.info.main :
+          tone === 'warning' ? theme.palette.warning.main :
+            theme.palette.text.secondary;
 
   return (
-    <Grid
-      className="Category-Item"
+    <Box
       sx={{
-        borderRadius: 4,
-        display: "flex",
-        flexDirection: "column",
-        minWidth: "300px",
-        overflow: "hidden",
-        border: `1px solid ${grey[400]}`,
-        height: 1100,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.5,
+        px: 0.85,
+        py: 0.25,
+        borderRadius: '999px',
+        bgcolor: tone === 'default' ? 'transparent' : alpha(toneColor, 0.1),
+        color: toneColor,
+        // fontFamily: theme.typography.mono.fontFamily,
+        fontSize: '0.72rem',
+        fontWeight: 600,
+        letterSpacing: '0.2px',
+        lineHeight: 1.4,
+        whiteSpace: 'nowrap',
+        fontFeatureSettings: '"tnum" 1, "lnum" 1',
+        border: tone === 'default' ? 'none' : `1px solid ${alpha(toneColor, 0.2)}`,
       }}
     >
-      {/* Header */}
-      <Box
-        sx={{
-          px: 2,
-          height: "3.5rem",
-          display: "flex",
-          alignItems: "center",
-          backgroundColor: grey[300],
-        }}
-      >
-        <Typography fontSize={"1.2rem"}>Data Exploration of {experimentId}</Typography>
-        <Box sx={{ flex: 1 }} />
-        <Box sx={{ position: "relative" }}>
-          <Tooltip title="Explore your data through interactive charts and tables. Use the control panel to filter and select columns.">
-            <InfoIcon sx={{ padding: 1, zIndex: 100, color: grey[600] }} />
+      {icon}
+      <span>{label}</span>
+    </Box>
+  );
+};
+
+const DataExplorationComponent = () => {
+  const dispatch = useAppDispatch();
+  const theme = useTheme();
+  const { tab } = useAppSelector(state => state.workflowPage);
+  const experimentId = useAppSelector(state => state.progressPage?.experiment.data?.id || '');
+  const dataset = useAppSelector(
+    state => state.workflowPage?.tab?.dataTaskTable?.selectedItem?.data?.dataset,
+  );
+  const workflowId = useAppSelector(state => state.workflowPage?.tab?.workflowId || '');
+  const chartType = useAppSelector(
+    state => state.workflowPage?.tab?.workflowTasks?.dataExploration?.controlPanel?.chartType || '',
+  );
+  const selectedDataset = dataset?.source || '';
+  const meta = tab?.workflowTasks.dataExploration?.metaData;
+  const isImage = !!meta?.data?.datasetType?.match('IMAGE');
+  const isText = !!meta?.data?.datasetType?.match('TEXT');
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const triggerFetchMeta = () => {
+    if (!selectedDataset || !workflowId) return;
+    dispatch(setControls({ ...dataExplorationDefault.controlPanel }));
+    dispatch(
+      fetchMetaData({
+        query: {
+          source: selectedDataset,
+          format: dataset?.format || '',
+          sourceType: dataset?.sourceType || '',
+          fileName: dataset?.name || '',
+          runId: workflowId || '',
+          experimentId: experimentId || '',
+          includeSummary: false,
+          includeTotalItems: true,
+          detectDatasetType: true,
+        },
+        metadata: { workflowId, queryCase: 'metaData' },
+      }),
+    );
+  };
+
+  useEffect(() => {
+    if (selectedDataset && workflowId) triggerFetchMeta();
+  }, [selectedDataset, workflowId]);
+
+  // Reset card scroll when switching chart types so the new viz starts in view.
+  useEffect(() => {
+    if (cardRef.current) cardRef.current.scrollTop = 0;
+  }, [chartType]);
+
+  const hasLatLon = !!meta?.data?.hasLatLonColumns;
+  const hasTime = (meta?.data?.timeColumn?.length ?? 0) > 0;
+
+  if (!selectedDataset)
+    return (
+      <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4 }}>
+        <Stack spacing={2.5} alignItems="center" sx={{ maxWidth: 520, textAlign: 'center' }}>
+          <Box
+            sx={{
+              width: 92,
+              height: 92,
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.18)}, ${alpha(theme.palette.primary.main, 0.04)})`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <AssessmentIcon sx={{ fontSize: 44, color: 'primary.main' }} />
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Start exploring your data
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Select a dataset from the table on the left to inspect its schema, generate
+            visualizations, and apply interactive filters across multiple chart types.
+          </Typography>
+          <Stack direction="row" spacing={1} flexWrap="wrap" justifyContent="center">
+            <MetaChip icon={<TableRowsRoundedIcon sx={{ fontSize: 14 }} />} label="Table view" />
+            <MetaChip icon={<AssessmentIcon sx={{ fontSize: 14 }} />} label="Line · Bar · Scatter" />
+            <MetaChip icon={<PlaceRoundedIcon sx={{ fontSize: 14 }} />} label="Geo · Heatmap" />
+          </Stack>
+        </Stack>
+      </Box>
+    );
+
+  if (meta?.error)
+    return (
+      <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 4 }}>
+        <Stack spacing={2} alignItems="center" sx={{ maxWidth: 520, textAlign: 'center' }}>
+          <Box
+            sx={{
+              width: 92,
+              height: 92,
+              borderRadius: '50%',
+              background: `radial-gradient(circle, ${alpha(theme.palette.error.main, 0.18)}, ${alpha(theme.palette.error.main, 0.04)})`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ReportProblemRoundedIcon sx={{ fontSize: 44, color: 'error.main' }} />
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Could not load dataset
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            We were unable to fetch metadata for{' '}
+            <Box component="span" sx={{ fontWeight: 600, color: 'text.primary' }}>
+              {dataset?.name || selectedDataset}
+            </Box>
+            . This is usually a temporary issue with the storage backend.
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<RefreshRoundedIcon />}
+            onClick={triggerFetchMeta}
+            sx={{ mt: 1, textTransform: 'none', borderRadius: 2 }}
+          >
+            Retry
+          </Button>
+        </Stack>
+      </Box>
+    );
+
+  // const datasetType = meta?.data?.datasetType ?? 'TABULAR';
+  const cols = meta?.data?.originalColumns?.length ?? 0;
+  const rows = meta?.data?.totalItems ?? 0;
+  const isMetaLoading = !!meta?.loading && !meta?.data;
+
+  const summaryBanner = (
+    <Paper
+      elevation={0}
+      variant="outlined"
+      sx={{
+        px: 1.5,
+        py: 0.75,
+        borderRadius: 2,
+        background: theme.palette.customSurface.cardHeader,
+        borderColor: theme.palette.customGrey.main,
+      }}
+    >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', rowGap: 0.5 }}>
+        <Stack
+          direction="row"
+          spacing={1.25}
+          alignItems="center"
+          divider={<Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />}
+          sx={{ flexWrap: 'wrap', rowGap: 0.5, flex: 1, minWidth: 0 }}
+        >
+          <Tooltip title={selectedDataset} arrow>
+            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
+              <StorageRoundedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+              <Typography
+                variant="mono"
+                sx={{
+                  fontWeight: 700,
+                  fontSize: '0.85rem',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: 320,
+                }}
+              >
+                {dataset?.name || selectedDataset}
+              </Typography>
+            </Stack>
           </Tooltip>
-          {(workflow?.workflowTasks.dataExploration?.multipleTimeSeries
-            .loading ||
-            workflow?.workflowTasks.dataExploration?.lineChart.loading 
-            // || workflow?.workflowTasks.dataExploration?.scatterChart.loading 
-            // || workflow?.workflowTasks.dataExploration?.barChart.loading
-          || workflow?.workflowTasks.dataExploration?.mapChart.loading) && (
-            <CircularProgress
-              size={28}
-              sx={{
-                position: "absolute",
-                top: 6,
-                left: 6,
-                zIndex: 0,
-              }}
+
+          <MetaChip
+            icon={<ViewColumnRoundedIcon sx={{ fontSize: 14 }} />}
+            label={`${cols} cols`}
+            loading={isMetaLoading}
+            width={68}
+          />
+          <MetaChip
+            icon={<TableRowsIcon sx={{ fontSize: 14 }} />}
+            label={`${rows} rows`}
+            loading={isMetaLoading}
+            width={68}
+          />
+          {dataset?.format && (
+            <MetaChip
+              icon={<InsertDriveFileOutlinedIcon sx={{ fontSize: 14 }} />}
+              label={dataset.format.toUpperCase()}
             />
           )}
-        </Box>
+
+          {hasTime && (
+            <Tooltip title={`Time column: ${meta?.data?.timeColumn?.join(', ')}`} arrow>
+              <Box sx={{ display: 'inline-flex' }}>
+                <MetaChip
+                  icon={<AccessTimeRoundedIcon sx={{ fontSize: 14 }} />}
+                  label="Temporal"
+                  tone="info"
+                />
+              </Box>
+            </Tooltip>
+          )}
+          {hasLatLon && (
+            <MetaChip
+              icon={<PlaceRoundedIcon sx={{ fontSize: 14 }} />}
+              label="Geo"
+              tone="success"
+            />
+          )}
+        </Stack>
+
+        {!isImage && !isText && (
+          <>
+            <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
+            <LeftPanel />
+          </>
+        )}
       </Box>
+    </Paper>
+  );
 
-      {/* Main Content */}
-      {experimentId === "ideko" ? (
-        <MultiTimeSeriesVisualization
-          multipleTimeSeries={
-            workflow?.workflowTasks.dataExploration?.multipleTimeSeries || null
-          }
-        />
-      ) : (
-        <Box sx={{ display: "flex", height: "100vh",padding: 1 }}>
-          {/* Control Panel */}
-          <ControlPanel
-              originalColumns={workflow?.workflowTasks.dataExploration?.metaData.data
-                ?.originalColumns || []}
-              selectedColumns={selectedColumns}
-              setSelectedColumns={setSelectedColumns}
-              onFetchData={handleFetchData}
-              filters={filters}
-              setFilters={setFilters}
-              uniqueValues={workflow?.workflowTasks.dataExploration?.metaData.data
-                ?.uniqueColumnValues || []}
-              chartType={chartType}
-              columns={columns}
-              xAxis={xAxis}
-              setXAxis={setXAxis}
-              yAxis={yAxis}
-              setYAxis={setYAxis}
-              barGroupBy={barGroupBy}
-              setBarGroupBy={setBarGroupBy}
-              barAggregation={barAggregation}
-              setBarAggregation={setBarAggregation} 
-              yAxisScatter={yAxisScatter} 
-              setYAxisScatter={setYAxisScatter}
-              xAxisScatter={xAxisScatter} 
-              setXAxisScatter={setXAxisScatter} 
-              colorBy={colorBy} 
-              setColorBy={setColorBy}   
-              datamap={workflow.workflowTasks.dataExploration?.mapChart.data?.data ||
-                []}   
-                
-              colorByMap={colorByMap}
-              setColorByMap={setColorByMap}
-              columnsMap={workflow.workflowTasks.dataExploration?.mapChart.data?.originalColumns.filter(col=>col.type==="STRING").map(col=>col.name)}
-              columnsMapDouble={workflow.workflowTasks.dataExploration?.mapChart.data?.originalColumns.filter(col=>col.type==="DOUBLE").map(col=>col.name)}
-              tripsMode={tripsMode}
-              setTripsMode={setTripsMode}
-              selectedColumnsMap={selectedColumnsMap} 
-              setSelectedColumnsMap={setSelectedColumnsMap}
-              lat={lat}
-              setLat={setLat}
-              lon={lon}
-              setLon={setLon}
-              />
+  if (isImage)
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          rowGap: 1,
+          height: '100%',
+          overflow: 'auto',
+        }}
+      >
+        {summaryBanner}
+        <ImageCard />
+      </Box>
+    );
 
-          {/* Graph Container */}
-          <Box sx={{ flex: 1, overflow: "auto" }}>
-            {workflow?.workflowTasks.dataExploration?.lineChart.data && workflow?.workflowTasks.dataExploration?.metaData.data &&
-            workflow?.workflowTasks.dataExploration?.scatterChart.data && workflow?.workflowTasks.dataExploration?.mapChart.data && (
-              <GraphContainer
-                  workflow={workflow}
-                  count={totalPages}
-                  page={currentPage}
-                  onChange={handlePageChange}
-                  chartType={chartType}
-                  setChartType={setChartType}
-                  xAxis={xAxis}
-                  colorBy={colorBy}
-                  setColorBy={setColorBy}
-                  xAxisScatter={xAxisScatter}
-                  yAxis={yAxis}
-                  yAxisScatter={yAxisScatter}
-                  viewMode={viewMode}
-                  setViewMode={setViewMode}
-                  colorByMap={colorByMap}
-                  tripsMode={tripsMode}
-                  selectedColumnsMap={selectedColumnsMap}
-                  barGroupBy={barGroupBy}
-                  barAggregation={barAggregation}
-                  lat={lat}
-                  lon={lon}
-                             />
-            )}
+  if (isText)
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          rowGap: 1,
+          height: '100%',
+          overflow: 'auto',
+        }}
+      >
+        {summaryBanner}
+        <TextCard />
+      </Box>
+    );
+
+  const chartFallback = isMetaLoading ? (
+    <Box sx={{ p: 3, height: '100%' }}>
+      <Skeleton variant="rounded" height={32} sx={{ mb: 2, width: '40%' }} />
+      <Skeleton variant="rounded" height="80%" />
+    </Box>
+  ) : (
+    <InfoMessage
+      message="Select a chart type to begin visualizing this dataset."
+      type="info"
+      icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
+      fullHeight
+    />
+  );
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        rowGap: 1,
+        height: '100%',
+        overflow: 'auto',
+      }}
+    >
+      {summaryBanner}
+      <Paper
+        ref={cardRef}
+        elevation={1}
+        sx={{
+          flex: 1,
+          overflow: 'auto',
+          height: '100%',
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        <Fade key={chartType || 'empty'} in timeout={250}>
+          <Box sx={{ height: '100%', width: '100%' }}>
+            {chartType === 'datatable' && <TableExpand />}
+            {chartType === 'line' && <LineChart />}
+            {chartType === 'scatter' && <ScatterChart />}
+            {chartType === 'bar' && <BarChart />}
+            {chartType === 'heatmap' && <HeatMap />}
+            {chartType === 'map' && <MapCardWrapper />}
+            {!chartType && chartFallback}
           </Box>
-        </Box>
-      )}
-    </Grid>
-  )
-}
+        </Fade>
+      </Paper>
+    </Box>
+  );
+};
 
-export default DataExplorationComponent
+export default DataExplorationComponent;

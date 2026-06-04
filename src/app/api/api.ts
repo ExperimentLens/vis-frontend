@@ -1,0 +1,88 @@
+import axios from 'axios';
+import { getToken } from '../../store/slices/authSlice';
+
+export const experimentApi = axios.create({
+  baseURL: '/experiments',
+  withCredentials: true,
+});
+
+export const api = axios.create({
+  baseURL: '/api',
+  withCredentials: true,
+});
+
+export const authApi = axios.create({
+  baseURL: '/auth',
+  withCredentials: true,
+});
+
+export const dataApi = axios.create({
+  baseURL: '/api/data',
+  withCredentials: true,
+});
+
+api.interceptors.request.use(config => {
+  const token = getToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+experimentApi.interceptors.request.use(config => {
+  const token = getToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+experimentApi.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+dataApi.interceptors.request.use(config => {
+  const token = getToken();
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
+dataApi.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('auth_token');
+      window.location.href = '/login';
+    }
+
+    return Promise.reject(error);
+  },
+);

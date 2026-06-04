@@ -1,25 +1,17 @@
-import { ActionReducerMapBuilder, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit"
-import { IWorkflowTab } from "../../../store/slices/workflowTabsSlice"
-import axios from "axios"
-import {
-  IDataExplorationRequest,
+import type {
+  IAggregation,
+  IDataExplorationMetaDataResponse,
   IDataExplorationResponse,
   IFilter,
   VisualColumn,
-} from "../dataexploration.model"
-import {
-  handleMultiTimeSeriesData,
-  prepareDataExplorationResponse,
-} from "./model-analysis.model"
-import { P } from "vitest/dist/reporters-yx5ZTtEV.js"
-
+} from '../dataexploration.model';
 export interface IDataExploration {
   multipleTimeSeries: {
-    data: IDataExplorationResponse | null, 
-    loading: boolean, 
+    data: IDataExplorationResponse | null
+    loading: boolean
     error: string | null
   }
-  dataTable:{
+  dataTable: {
     data: IDataExplorationResponse | null
     loading: boolean
     error: string | null
@@ -28,35 +20,88 @@ export interface IDataExploration {
     data: IDataExplorationResponse | null
     loading: boolean
     error: string | null
-    // xAxis: string
-    // yAxis: string[]
   }
   barChart: {
     data: IDataExplorationResponse | null
     loading: boolean
     error: string | null
-    // aggregations: {
-    //   xAxis: string
-    //   yAxis: string[] | null
-    //   groupFunction: string[]
-    // }[]
   }
-  scatterChart:{
+  scatterChart: {
     data: IDataExplorationResponse | null
     loading: boolean
     error: string | null
+  }
+  mapChart: {
+    data: IDataExplorationResponse | null
+    loading: boolean
+    error: string | null
+  }
+  heatChart: {
+    data: IDataExplorationResponse | null
+    loading: boolean
+    error: string | null
+  }
+
+  metaData: {
+    data: IDataExplorationMetaDataResponse | null
+    loading: boolean
+    error: string | null
+    source: string | null
+  }
+  controlPanel: {
+    chartType: string
+    selectedColumns: VisualColumn[]
+    filters: IFilter[]
+    viewMode: 'overlay' | 'stacked'
+    selectedDataset: string
+    currentPage: number
+    pageSize: number
+    queryItems: number
+    totalPages: number
+    timestampField: string[] | null
+    secondaryChartType: string
+
+    // Line
+    xAxis: VisualColumn
+    yAxis: VisualColumn[]
+    // Bar
+    barGroupBy: string[]
+    barAggregation: IAggregation[]
+    selectedMeasureColumn: string | null
+
+    // Scatter
+    xAxisScatter: VisualColumn
+    yAxisScatter: VisualColumn[]
+    colorBy: VisualColumn
+    umap: boolean
+    // Heatmap
+    barGroupByHeat: string[]
+    barAggregationHeat: IAggregation[]
+    selectedMeasureColumnHeat: string | null
+
+    // Map
+    colorByMap: string
+    segmentBy: string[]
+    lat: string
+    lon: string
+    heatmap: boolean
+    tripsMode: boolean
+    selectedColumnsMap: string[]
+    mapType: string
+    weightBy: string
+    radius: number
+    orderBy: string | null
 
   }
-  mapChart:{
+  chart: {
     data: IDataExplorationResponse | null
     loading: boolean
     error: string | null
   }
-  metaData:{
-    data: IDataExplorationResponse | null
+  umap: {
+    data: number[][] | null
     loading: boolean
     error: string | null
-
   }
 }
 
@@ -65,165 +110,90 @@ export const dataExplorationDefault: IDataExploration = {
   multipleTimeSeries: {
     data: null,
     loading: false,
-    error: null
+    error: null,
   },
-  
+
   dataTable: {
     data: null,
     loading: false,
-    error: null
+    error: null,
   },
   lineChart: {
     data: null,
     loading: false,
     error: null,
-    // xAxis: "",
-    // yAxis: [],
   },
   barChart: {
     data: null,
     loading: false,
     error: null,
-    // aggregations: [],
   },
-  scatterChart:{
+  heatChart: {
     data: null,
     loading: false,
-    error:  null
-
+    error: null,
   },
-  mapChart:{
+  scatterChart: {
     data: null,
     loading: false,
-    error:  null
+    error: null,
   },
-  metaData:{
-
+  mapChart: {
     data: null,
     loading: false,
-    error:  null
-
-  }
-}
-
-// export const additionalReducers = {
-//   updateFilters: (state: IWorkflowTab, action: PayloadAction<{ filter: IFilter, workflowId: any }>) => {
-//     const compareCompletedTask = state.tabs.find(
-//       tab => tab.workflowId === action.payload.workflowId
-//     )?.workflowTasks?.dataExploration;
-//     if (compareCompletedTask) {
-//       compareCompletedTask.filters = [...compareCompletedTask.filters, action.payload.filter];
-//     }
-//   },
-//   updateColumns: (state: IWorkflowTab, action: PayloadAction<{ columns: VisualColumn[], workflowId: any }>) => {
-//     const compareCompletedTask = state.tabs.find(
-//       tab => tab.workflowId === action.payload.workflowId
-//     )?.workflowTasks?.dataExploration;
-//     if (compareCompletedTask) {
-//       compareCompletedTask.columns = action.payload.columns;
-//     }
-//   },
-//   updateChartData: (state: IWorkflowTab, action: PayloadAction<{ chartType: "lineChart" | "barChart", data: {xAxis?: string, yAxis?: string[], 
-//     aggregations?: {
-//     xAxis: string
-//     yAxis: string[] | null
-//     groupFunction: string[]
-//   }[]}, workflowId: any }>) => {
-//     const compareCompletedTask = state.tabs.find(
-//       tab => tab.workflowId === action.payload.workflowId
-//     )?.workflowTasks?.dataExploration;
-//     if (compareCompletedTask && action.payload.chartType === "lineChart") {
-//       compareCompletedTask[action.payload.chartType] = {...compareCompletedTask[action.payload.chartType], ...action.payload.data};
-//     }else if (compareCompletedTask && action.payload.chartType === "barChart") {
-//       compareCompletedTask[action.payload.chartType] = {...compareCompletedTask[action.payload.chartType], ...action.payload.data};
-//     }
-//   },
-//   // Add more reducers as needed
-// };
-
-export const explainabilityExtraReducers = (
-  builder: ActionReducerMapBuilder<IWorkflowTab>,
-) => {
-  builder.addCase(fetchDataExplorationData.fulfilled, (state, action) => {
-    const dataExplorationTask = state.tabs.find(
-      tab => tab.workflowId === action.meta.arg.metadata.workflowId,
-    )?.workflowTasks.dataExploration
-    const queryCase = action.meta.arg.metadata.queryCase as keyof IDataExploration
-    console.log("Data exploration task:", dataExplorationTask); // Debugging log
-
-        if (dataExplorationTask) {
-          dataExplorationTask[queryCase].data = queryCase === "multipleTimeSeries" ? handleMultiTimeSeriesData(action.payload) : prepareDataExplorationResponse(action.payload)
-          dataExplorationTask[queryCase].loading = false
-          dataExplorationTask[queryCase].error = null
-        }
-  })
-  .addCase(fetchDataExplorationData.pending, (state, action) => {
-    const dataExplorationTask = state.tabs.find(
-      tab => tab.workflowId === action.meta.arg.metadata.workflowId,
-    )?.workflowTasks.dataExploration
-    const queryCase = action.meta.arg.metadata.queryCase as keyof IDataExploration
-        if (dataExplorationTask) {
-          dataExplorationTask[queryCase].loading = true
-        }
-  })
-  .addCase(fetchDataExplorationData.rejected, (state, action) => {
-    const dataExplorationTask = state.tabs.find(
-      tab => tab.workflowId === action.meta.arg.metadata.workflowId,
-    )?.workflowTasks.dataExploration
-    const queryCase = action.meta.arg.metadata.queryCase as keyof IDataExploration
-        if (dataExplorationTask) {
-          dataExplorationTask[queryCase].loading = false
-          dataExplorationTask[queryCase].error = "Failed to fetch data"
-        }
-  })
-
-  .addCase(fetchMetaData.fulfilled, (state, action) => {
-      const dataExplorationTask = state.tabs.find(
-        tab => tab.workflowId === action.meta.arg.metadata.workflowId,
-      )?.workflowTasks.dataExploration;
-      if (dataExplorationTask) {
-        dataExplorationTask.metaData.data = action.payload;
-        dataExplorationTask.metaData.loading = false;
-        dataExplorationTask.metaData.error = null;
-      }
-    })
-    .addCase(fetchMetaData.pending, (state, action) => {
-      const dataExplorationTask = state.tabs.find(
-        tab => tab.workflowId === action.meta.arg.metadata.workflowId,
-      )?.workflowTasks.dataExploration;
-      if (dataExplorationTask) {
-        dataExplorationTask.metaData.loading = true;
-      }
-    })
-    .addCase(fetchMetaData.rejected, (state, action) => {
-      const dataExplorationTask = state.tabs.find(
-        tab => tab.workflowId === action.meta.arg.metadata.workflowId,
-      )?.workflowTasks.dataExploration;
-      if (dataExplorationTask) {
-        dataExplorationTask.metaData.loading = false;
-        dataExplorationTask.metaData.error = "Failed to fetch metadata";
-      }
-    });
-}
-
-export const fetchDataExplorationData = createAsyncThunk(
-  "workflowTasks/data_exploration/fetch_data",
-  async (payload: IDataExplorationRequest) => {
-    const requestUrl = "api/visualization/tabular"
-    return axios
-      .post<IDataExplorationResponse>(requestUrl, payload.query)
-      .then(response => response.data)
+    error: null,
   },
-)
+  metaData: {
+    data: null,
+    loading: false,
+    error: null,
+    source: null
+  },
+  controlPanel: {
+    chartType: 'datatable',
+    selectedColumns: [],
+    filters: [],
+    xAxis: { name: '', type: '' },
+    xAxisScatter: { name: '', type: '' },
+    yAxis: [],
+    yAxisScatter: [],
+    barGroupBy: [],
+    barAggregation: [],
+    viewMode: 'overlay',
+    colorBy: { name: '', type: '' },
+    colorByMap: 'None',
+    tripsMode: false,
+    selectedColumnsMap: [],
+    selectedDataset: '',
+    lat: 'latitude',
+    lon: 'longitude',
+    umap: false,
+    segmentBy: [],
+    timestampField: null,
+    selectedMeasureColumn: null,
+    heatmap: false,
+    barGroupByHeat: [],
+    barAggregationHeat: [],
+    selectedMeasureColumnHeat: null,
+    currentPage: 1,
+    pageSize: 100,
+    queryItems: 0,
+    totalPages: 0,
+    mapType: 'heatmap',
+    weightBy: 'None',
+    radius: 25,
+    orderBy: null,
+    secondaryChartType: '',
+  },
 
-export const fetchMetaData=createAsyncThunk(
-  "workflowTasks/data_exploration/fetch_metadata",
-  async(payload:IDataExplorationRequest)=>{
-    const requestUrl="api/visualization/metadata"
-    return axios
-    .post<IDataExplorationResponse>(requestUrl, payload.query)
-      .then(response => response.data)
-  }
-
-
-)
+  chart: {
+    data: null,
+    loading: false,
+    error: null,
+  },
+  umap: {
+    data: null,
+    loading: false,
+    error: null,
+  },
+};

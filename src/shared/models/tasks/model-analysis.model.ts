@@ -1,39 +1,65 @@
-import { ActionReducerMapBuilder, createAsyncThunk } from "@reduxjs/toolkit"
-import { IPlotModel } from "../plotmodel.model"
-import { IWorkflowTab } from "../../../store/slices/workflowTabsSlice"
-import axios from "axios"
-import {
-  fetchAffectedRequest,
-  IDataExplorationRequest,
+import type { IPlotModel } from '../plotmodel.model';
+import type {
   IDataExplorationResponse
-} from "../dataexploration.model"
-import { FetchExplainabilityPlotPayload } from "./explainability.model"
+} from '../dataexploration.model';
+
+interface RawRow {
+  timestamp: string;
+  f3: string;
+  [key: string]: unknown;
+}
+
+interface ParsedRow extends Omit<RawRow, 'timestamp' | 'f3'> {
+  timestamp: Date;
+  value: number;
+  // series: string;
+}
+
+export interface ParsedDataExplorationResponse extends IDataExplorationResponse {
+  parsedData: ParsedRow[];
+}
+
+export interface ConfusionMatrixResult {
+  labels: string[];
+  matrix: number[][];
+}
+
+export type TestInstance = {
+  instanceId: number;
+} & Record<string, string | number | boolean | null>;
 
 export const prepareDataExplorationResponse = (payload: IDataExplorationResponse) => ({
   ...payload,
-  data: JSON.parse(payload.data),
-})
+  data: JSON.parse(payload.data as string),
+});
 
-export const handleMultiTimeSeriesData = (payload : any) => {
-  const fileData = JSON.parse(payload.data);
-  const seriesData = payload.fileNames;
-  const flatFileData =  fileData.flatMap((file: any, id:number)=> {
-    return file.map((row: any) => {
-      return { 
+// TODO: fix this whit correct typings to support multiple timeseries
+export const handleMultiTimeSeriesData = (payload : IDataExplorationResponse) => {
+  const fileData: RawRow[][] = JSON.parse(payload.data as string);
+  // const seriesData = payload.fileNames;
+  const flatFileData: ParsedRow[] =  fileData.flatMap((file, _id)=> {
+    return file.map(row => {
+      return {
         ...row,
         timestamp: new Date(row.timestamp), // Ensure timestamp is parsed as Date object
         value: +row.f3, // Ensure value is a number
-        series: seriesData[id].replace('.csv', '') // Strip the .csv extension for series name
+        // series: seriesData[id].replace('.csv', '') // Strip the .csv extension for series name
       };
     });
   });
-  return {...payload, data: flatFileData};
-}
+
+  return { ...payload, data: flatFileData };
+};
 
 export interface IModelAnalysis {
   featureNames: string[]
-  pdp: { data: IPlotModel | null; loading: boolean; error: string | null }
-  ale: { data: IPlotModel | null; loading: boolean; error: string | null }
+  pdp: { data: IPlotModel | null; loading: boolean; error: string | null; selectedFeature: string | null; latestRequestId?: string; targetMetric?: string | null; }
+  ale: { data: IPlotModel | null; loading: boolean; error: string | null; selectedFeature: string | null; latestRequestId?: string; targetMetric?: string | null; }
+  '2dpdp': { data: IPlotModel | null; loading: boolean; error: string | null; selectedFeature1: string | null; selectedFeature2: string | null; latestRequestId?: string; targetMetric?: string | null; }
+  featureImportance: { data: IPlotModel | null; loading: boolean; error: string | null; latestRequestId?: string;}
+  shap: { data: IPlotModel | null; loading: boolean; error: string | null; latestRequestId?: string;}
+  shapValues: { data: IPlotModel | null; loading: boolean; error: string | null; }
+  segmentation: {data: IPlotModel | null; loading: boolean; error: string | null; selectedFeature: string | null; selectedTime: string | null; latestRequestId?: string; selectedInstance: string | null; }
   counterfactuals: {
     data: IPlotModel | null
     loading: boolean
@@ -43,15 +69,26 @@ export interface IModelAnalysis {
     data: IPlotModel | null
     loading: boolean
     error: string | null
+    latestRequestId?: string
+  }
+  global_counterfactuals_control_panel: {
+    cfMethod: string
+    actionChoiceStrategy: string
+    gcfSize: number
   }
   influenceFunctions: {
     data: IPlotModel | null
     loading: boolean
     error: string | null
   }
-  modelInstances: { data: IDataExplorationResponse | null; loading: boolean; error: string | null }
+  modelInstances: { data: TestInstance[] | null; loading: boolean; error: string | null }
   modelConfusionMatrix: {
-    data: IDataExplorationResponse | null
+    data: ConfusionMatrixResult | null
+    loading: boolean
+    error: string | null
+  }
+  modelRocCurve: {
+    data: {fpr: number[]; tpr: number[]; thresholds?: number[]; auc?: number} | null
     loading: boolean
     error: string | null
   }
@@ -66,7 +103,19 @@ export interface IModelAnalysis {
     error: string | null
   }
   affected: {
-    data: any | null
+    data: unknown | null
+    loading: boolean
+    error: string | null
+  }
+  modelSummary: {
+    data: {
+      overallMetrics: Record<string, number>
+      classificationReport: Array<Record<string, string | number>>
+      numSamples: number
+      numFeatures: number
+      classLabels: string[]
+      dataSplitSizes: Record<string, number>
+    } | null
     loading: boolean
     error: string | null
   }
@@ -74,143 +123,22 @@ export interface IModelAnalysis {
 
 export const modelAnalysisDefault: IModelAnalysis = {
   featureNames: [],
-  pdp: { data: null, loading: false, error: null },
-  ale: { data: null, loading: false, error: null },
+  pdp: { data: null, loading: false, error: null, selectedFeature: null, targetMetric: null },
+  ale: { data: null, loading: false, error: null, selectedFeature: null, targetMetric: null },
+  '2dpdp': { data: null, loading: false, error: null, selectedFeature1: null,  selectedFeature2: null, targetMetric: null },
+  featureImportance: { data: null, loading: false, error: null },
+  shap: { data: null, loading: false, error: null },
+  shapValues: { data: null, loading: false, error: null },
+  segmentation: { data: null, loading: false, error: null, selectedFeature: null, selectedTime: null, selectedInstance: null },
   counterfactuals: { data: null, loading: false, error: null },
   global_counterfactuals: { data: null, loading: false, error: null },
+  global_counterfactuals_control_panel: { cfMethod: 'Dice', actionChoiceStrategy: 'max-eff', gcfSize: 3 },
   influenceFunctions: { data: null, loading: false, error: null },
   modelInstances: { data: null, loading: false, error: null },
   modelConfusionMatrix: { data: null, loading: false, error: null },
+  modelRocCurve: { data: null, loading: false, error: null },
   multipleTimeSeries: { data: null, loading: false, error: null },
   multipleTimeSeriesMetadata: { data: null, loading: false, error: null },
   affected: { data: null, loading: false, error: null },
-}
-
-export const modelAnalysisReducers = (
-  builder: ActionReducerMapBuilder<IWorkflowTab>,
-) => {
-  builder
-    .addCase(
-      fetchModelAnalysisExplainabilityPlot.fulfilled,
-      (state, action) => {
-        const compareCompletedTask = state.tabs.find(
-          tab => tab.workflowId === `${action.meta.arg.metadata.workflowId}`,
-        )?.workflowTasks.modelAnalysis
-        const plotType = action.meta.arg.query.explanation_method as keyof IModelAnalysis;
-        console.log(compareCompletedTask, plotType)
-        if (compareCompletedTask && plotType !== 'featureNames') {
-              compareCompletedTask[plotType].data = action.payload
-              compareCompletedTask[plotType].loading = false
-              compareCompletedTask[plotType].error = null
-        }
-      },
-    )
-    .addCase(fetchModelAnalysisData.fulfilled, (state, action) => {
-      const compareCompletedTask = state.tabs.find(
-        tab => tab.workflowId === action.meta.arg.metadata.workflowId,
-      )?.workflowTasks.modelAnalysis
-      const queryCase = action.meta.arg.metadata.queryCase as keyof IModelAnalysis
-      if (compareCompletedTask && queryCase !== 'featureNames') {
-        compareCompletedTask[queryCase].data = queryCase === "multipleTimeSeries" ? handleMultiTimeSeriesData(action.payload) : prepareDataExplorationResponse(action.payload)
-        compareCompletedTask[queryCase].loading = false
-        compareCompletedTask[queryCase].error = null
-      }
-    })
-    .addCase(fetchModelAnalysisExplainabilityPlot.pending, (state, action) => {
-      const compareCompletedTask = state.tabs.find(
-        tab => tab.workflowId === `${action.meta.arg.metadata.workflowId}`,
-      )?.workflowTasks.modelAnalysis
-      const plotType = action.meta.arg.query.explanation_method as keyof IModelAnalysis;
-        if (compareCompletedTask && plotType !== 'featureNames') {
-              compareCompletedTask[plotType].loading = true
-        }
-    })
-    .addCase(fetchModelAnalysisData.pending, (state, action) => {
-      const compareCompletedTask = state.tabs.find(
-        tab => tab.workflowId === action.meta.arg.metadata.workflowId,
-      )?.workflowTasks.modelAnalysis
-      const queryCase = action.meta.arg.metadata.queryCase as keyof IModelAnalysis
-      if (compareCompletedTask && queryCase !== 'featureNames') {
-        compareCompletedTask[queryCase].loading = true
-      }
-    })
-    .addCase(fetchModelAnalysisExplainabilityPlot.rejected, (state, action) => {
-      const compareCompletedTask = state.tabs.find(
-        tab => tab.workflowId === `${action.meta.arg.metadata.workflowId}`,
-      )?.workflowTasks.modelAnalysis
-      const plotType = action.meta.arg.query.explanation_method as keyof IModelAnalysis;
-        if (compareCompletedTask && plotType !== 'featureNames') {
-              compareCompletedTask[plotType].loading = false
-              compareCompletedTask[plotType].error = "Failed to fetch data"
-        }
-    })
-    .addCase(fetchModelAnalysisData.rejected, (state, action) => {
-      const compareCompletedTask = state.tabs.find(
-        tab => tab.workflowId === action.meta.arg.metadata.workflowId,
-      )?.workflowTasks.modelAnalysis
-      const queryCase = action.meta.arg.metadata.queryCase as keyof IModelAnalysis
-      if (compareCompletedTask && queryCase !== 'featureNames') {
-        compareCompletedTask[queryCase].loading = false
-        compareCompletedTask[queryCase].error = "Failed to fetch data"
-      }
-    })
-    .addCase(
-      fetchAffected.fulfilled,
-      (state, action) => {
-        const compareCompletedTask = state.tabs.find(
-          tab => tab.workflowId === `${action.meta.arg.workflowId}`,
-        )?.workflowTasks.modelAnalysis
-        const plotType = action.meta.arg.queryCase as keyof IModelAnalysis;
-        console.log(compareCompletedTask, plotType)
-        if (compareCompletedTask && plotType !== 'featureNames' ) {
-              compareCompletedTask[plotType].data = action.payload
-              compareCompletedTask[plotType].loading = false
-              compareCompletedTask[plotType].error = null
-        }
-      },
-    )
-    .addCase(fetchAffected.pending, (state, action) => {
-      const compareCompletedTask = state.tabs.find(
-        tab => tab.workflowId === `${action.meta.arg.workflowId}`,
-      )?.workflowTasks.modelAnalysis
-      const plotType = action.meta.arg.queryCase as keyof IModelAnalysis;
-      if (compareCompletedTask && plotType !== 'featureNames') {
-            compareCompletedTask[plotType].loading = true
-      }
-    })
-    .addCase(fetchAffected.rejected, (state, action) => {
-      const compareCompletedTask = state.tabs.find(
-        tab => tab.workflowId === `${action.meta.arg.workflowId}`,
-      )?.workflowTasks.modelAnalysis
-      const plotType = action.meta.arg.queryCase as keyof IModelAnalysis;
-      if (compareCompletedTask && plotType !== 'featureNames') {
-            compareCompletedTask[plotType].loading = false
-            compareCompletedTask[plotType].error = "Failed to fetch data"
-      }
-    })
-}
-
-export const fetchModelAnalysisExplainabilityPlot = createAsyncThunk(
-  "workflowTasks/model_analysis/fetch_explainability_plot",
-  async (payload: FetchExplainabilityPlotPayload) => {
-    const requestUrl = "/api/explainability"
-    return axios.post<any>(requestUrl, payload.query).then(response => response.data)
-  },
-)
-export const fetchAffected = createAsyncThunk(
-  "workflowTasks/model_analysis/fetch_affected",
-  async (payload: fetchAffectedRequest) => {
-    const requestUrl = "/api/affected"
-    return axios.get<any>(requestUrl).then(response => response.data)
-  },
-)
-
-export const fetchModelAnalysisData = createAsyncThunk(
-  "workflowTasks/model_analysis/fetch_data",
-  async (payload: IDataExplorationRequest) => {
-    const requestUrl = "api/visualization/tabular"
-    return axios
-      .post<IDataExplorationResponse>(requestUrl, payload.query)
-      .then(response => response.data)
-  }
-)
+  modelSummary: { data: null, loading: false, error: null }
+};

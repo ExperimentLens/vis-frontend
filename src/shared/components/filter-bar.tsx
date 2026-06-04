@@ -1,0 +1,648 @@
+import {
+  TextField,
+  Box,
+  IconButton,
+  Chip,
+  InputAdornment,
+  Paper,
+  Typography,
+  Button,
+  Divider,
+} from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CloseIcon from '@mui/icons-material/Close';
+import type { GridColDef } from '@mui/x-data-grid';
+import { useState, useRef, useEffect, useMemo } from 'react';
+
+type CustomGridColDef = GridColDef & {
+  field: string
+  minWidth?: number
+  flex?: number
+  align?: 'left' | 'right' | 'center'
+  headerAlign?: 'left' | 'right' | 'center'
+  originalType?: string
+}
+
+const stringOperators = [
+  { id: 'contains', label: 'contains' },
+  { id: 'startsWith', label: 'starts with' },
+  { id: 'endsWith', label: 'ends with' },
+  { id: '=', label: '=' },
+  { id: 'IN', label: 'in' },
+];
+
+const numberOperators = [
+  { id: '=', label: '=' },
+  { id: '>', label: '>' },
+  { id: '<', label: '<' },
+  { id: '>=', label: '>=' },
+  { id: '<=', label: '<=' },
+];
+
+const booleanOperators = [
+  { id: '=', label: '=' },
+];
+
+interface FilterBarProps {
+  columns: CustomGridColDef[]
+  filters: { column: string; operator: string; value: string }[]
+  onFilterChange: (
+    index: number,
+    column: string,
+    operator: string,
+    value: string,
+  ) => void
+  onAddFilter: () => void
+  onRemoveFilter: (index: number) => void
+  valueSuggestions?: Record<string, string[]>
+}
+
+export type FilterStep = 'idle' | 'column' | 'operator' | 'value';
+
+export const FilterStep = {
+  IDLE: 'idle',
+  COLUMN: 'column',
+  OPERATOR: 'operator',
+  VALUE: 'value',
+} as const;
+
+type Suggestion = { id?: string; value?: string; label: string };
+
+export default function FilterBar({
+  columns,
+  filters,
+  onFilterChange,
+  onAddFilter,
+  onRemoveFilter,
+  valueSuggestions
+}: FilterBarProps) {
+  const [inputValue, setInputValue] = useState('');
+  const [currentStep, setCurrentStep] = useState<FilterStep>(FilterStep.IDLE);
+  const [tempColumn, setTempColumn] = useState<string>('');
+  const [tempOperator, setTempOperator] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [showAvailableColumns, setShowAvailableColumns] = useState<boolean>(true);
+  const [showAvailableOperators, setShowAvailableOperators] = useState<boolean>(false);
+  const [showAvailableValues, setShowAvailableValues] = useState<boolean>(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState<number>(0);
+  const [showAllColumns, setShowAllColumns] = useState<boolean>(false);
+  const [showAllValues, setShowAllValues] = useState<boolean>(false);
+  const selectedItemRef = useRef<HTMLDivElement | null>(null);
+  const suggestionsContainerRef = useRef<HTMLDivElement | null>(null);
+  const prevSuggestions = useRef<Suggestion[]>([]);
+  const prevStep = useRef<FilterStep>(FilterStep.IDLE);
+  const [availableOperators, setAvailableOperators] = useState<typeof stringOperators | typeof numberOperators>(stringOperators);
+  const [, setCurrentColumnType] = useState<string | undefined>(undefined);
+
+  const validColumns = useMemo(() =>
+    columns.filter(col =>
+      col.field !== 'rating' && col.field !== 'status' && col.field !== 'action'
+    ).map(col => ({
+      value: col.field,
+      label: col.headerName as string,
+    })),
+  [columns]
+  );
+
+  // Focus the input field when the component mounts
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
+  // Update suggestions based on the current step and input value
+  useEffect(() => {
+    if (currentStep === FilterStep.COLUMN) {
+      const filtered = validColumns.filter(col =>
+        col.label.toLowerCase().includes(inputValue.toLowerCase())
+      );
+
+      setSuggestions(filtered);
+      setShowAvailableColumns(inputValue.length === 0);
+      setShowAvailableOperators(false);
+      setShowAvailableValues(false);
+    } else if (currentStep === FilterStep.OPERATOR) {
+      const filtered = availableOperators.filter(op =>
+        op.label.toLowerCase().includes(inputValue.toLowerCase())
+      );
+
+      setSuggestions(filtered);
+      setShowAvailableColumns(false);
+      setShowAvailableOperators(inputValue.length === 0);
+      setShowAvailableValues(false);
+    } else if (currentStep === FilterStep.VALUE) {
+      const allValues =
+        tempColumn && valueSuggestions ? valueSuggestions[tempColumn] : undefined;
+
+      if (!allValues || allValues.length === 0) {
+        setSuggestions([]);
+        setShowAvailableColumns(false);
+        setShowAvailableOperators(false);
+        setShowAvailableValues(false);
+
+        return;
+      }
+
+      // For IN operator, we rely on manual comma-separated input and chips,
+      // so we disable dropdown suggestions to allow Enter to submit the full value.
+      if (tempOperator === 'IN') {
+        setSuggestions([]);
+        setShowAvailableColumns(false);
+        setShowAvailableOperators(false);
+        setShowAvailableValues(inputValue.length === 0);
+
+        return;
+      }
+
+      if (inputValue.length === 0) {
+        setSuggestions([]);
+        setShowAvailableColumns(false);
+        setShowAvailableOperators(false);
+        setShowAvailableValues(true);
+      } else {
+        const filtered = allValues.filter(v =>
+          v.toLowerCase().includes(inputValue.toLowerCase())
+        );
+
+        setSuggestions(filtered.map(v => ({ value: v, label: v })));
+        setShowAvailableColumns(false);
+        setShowAvailableOperators(false);
+        setShowAvailableValues(false);
+      }
+    } else {
+      setSuggestions([]);
+      setShowAvailableColumns(currentStep === FilterStep.IDLE);
+      setShowAvailableOperators(false);
+      setShowAvailableValues(false);
+    }
+  }, [currentStep, inputValue, validColumns, availableOperators, valueSuggestions, tempColumn, tempOperator]);
+
+  const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(event.target.value);
+
+    // If we're in IDLE state and user starts typing, move to COLUMN step
+    if (currentStep === FilterStep.IDLE && event.target.value) {
+      setCurrentStep(FilterStep.COLUMN);
+      setShowAvailableColumns(false);
+    }
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === 'Tab') {
+      event.preventDefault();
+
+      if (
+        (currentStep === FilterStep.COLUMN ||
+          currentStep === FilterStep.OPERATOR ||
+          currentStep === FilterStep.VALUE) &&
+        suggestions.length > 0
+      ) {
+        const selectedItem = suggestions[selectedSuggestionIndex];
+
+        if (currentStep === FilterStep.COLUMN) {
+          if (selectedItem.value) selectColumn(selectedItem.value);
+        } else if (currentStep === FilterStep.OPERATOR) {
+          if (selectedItem.id) selectOperator(selectedItem.id);
+        } else if (currentStep === FilterStep.VALUE) {
+          if (selectedItem.value) addFilter(selectedItem.value);
+        }
+      } else if (currentStep === FilterStep.VALUE && inputValue) {
+        addFilter(inputValue);
+      }
+    } else if (event.key === 'Escape') {
+      resetFilterProcess();
+    } else if (event.key === 'Backspace' && inputValue === '') {
+      // Go back a step when pressing backspace on an empty input field
+      handleBackStep();
+    } else if (event.key === 'ArrowDown' && suggestions.length > 0) {
+      event.preventDefault();
+      setSelectedSuggestionIndex(prev =>
+        prev < suggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (event.key === 'ArrowUp' && suggestions.length > 0) {
+      event.preventDefault();
+      setSelectedSuggestionIndex(prev => (prev > 0 ? prev - 1 : 0));
+    }
+  };
+
+  // Reset selected suggestion index when suggestions change
+  useEffect(() => {
+    // Only reset the selection index when the suggestions array changes size
+    // or when transitioning between column and operator selection
+    const isNewSuggestionSet =
+      prevSuggestions.current?.length !== suggestions.length ||
+      prevStep.current !== currentStep;
+
+    if (isNewSuggestionSet) {
+      setSelectedSuggestionIndex(0);
+    }
+
+    prevSuggestions.current = [...suggestions];
+    prevStep.current = currentStep;
+  }, [suggestions, currentStep]);
+
+  // Add effect to scroll selected suggestion into view
+  useEffect(() => {
+    if (selectedItemRef.current && suggestionsContainerRef.current) {
+      const container = suggestionsContainerRef.current;
+      const item = selectedItemRef.current;
+
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = item.getBoundingClientRect();
+
+      // Check if the item is outside the visible area
+      if (itemRect.bottom > containerRect.bottom) {
+        // Item is below visible area
+        item.scrollIntoView({ behavior: 'auto', block: 'end' });
+      } else if (itemRect.top < containerRect.top) {
+        // Item is above visible area
+        item.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+    }
+  }, [selectedSuggestionIndex]);
+
+  const selectColumn = (columnValue: string) => {
+    setTempColumn(columnValue);
+    setCurrentStep(FilterStep.OPERATOR);
+    setShowAvailableColumns(false);
+    setShowAvailableOperators(true);
+    setInputValue('');
+
+    // Set available operators based on column type
+    const selectedColumn = columns.find(col => col.field === columnValue);
+    const columnType = selectedColumn?.originalType ?? selectedColumn?.type;
+
+    setCurrentColumnType(columnType);
+
+    if (columnType === 'INTEGER' || columnType === 'DOUBLE' || columnType === 'number') {
+      setAvailableOperators(numberOperators);
+    } else if (columnType === 'BOOLEAN' || columnType === 'boolean') {
+      setAvailableOperators(booleanOperators);
+    } else {
+      setAvailableOperators(stringOperators);
+    }
+  };
+
+  const selectOperator = (operatorValue: string) => {
+    setTempOperator(operatorValue);
+    setCurrentStep(FilterStep.VALUE);
+    setShowAvailableColumns(false);
+    setShowAvailableOperators(false);
+    setInputValue('');
+  };
+
+  const addFilter = (value: string) => {
+    if (tempColumn && tempOperator && value) {
+      onAddFilter();
+      onFilterChange(filters.length, tempColumn, tempOperator, value);
+      resetFilterProcess();
+    }
+  };
+
+  const resetFilterProcess = () => {
+    setCurrentStep(FilterStep.IDLE);
+    setTempColumn('');
+    setTempOperator('');
+    setCurrentColumnType(undefined);
+    setInputValue('');
+    setShowAvailableColumns(true);
+    setShowAvailableOperators(false);
+  };
+
+  const handleRemoveFilter = (index: number) => {
+    onRemoveFilter(index);
+  };
+
+  const handleBackStep = () => {
+    switch (currentStep) {
+      case FilterStep.OPERATOR:
+        setCurrentStep(FilterStep.COLUMN);
+        setTempColumn('');
+        setInputValue('');
+        setShowAvailableColumns(true);
+        setShowAvailableOperators(false);
+        break;
+      case FilterStep.VALUE:
+        setCurrentStep(FilterStep.OPERATOR);
+        setTempOperator('');
+        setInputValue('');
+        setShowAvailableColumns(false);
+        setShowAvailableOperators(true);
+        break;
+      default:
+        resetFilterProcess();
+    }
+  };
+
+  const getPlaceholder = () => {
+    switch (currentStep) {
+      case FilterStep.COLUMN:
+        return 'Select or type a column...';
+      case FilterStep.OPERATOR:
+        return `${tempColumn} (select operator)`;
+      case FilterStep.VALUE:
+        if (tempOperator === 'IN') {
+          return `${tempColumn} IN (comma-separated values)`;
+        }
+
+        return `${tempColumn} ${tempOperator} (enter value)`;
+      default:
+        return 'Build a filter query...';
+    }
+  };
+
+  // Function to render the input field with pills inside
+  const renderInputWithPills = () => {
+    return (
+      <TextField
+        fullWidth
+        variant="outlined"
+        size="small"
+        placeholder={getPlaceholder()}
+        value={inputValue}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        inputRef={inputRef}
+        InputProps={{
+          startAdornment: (
+            <>
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+              {tempColumn && currentStep !== FilterStep.COLUMN && (
+                <Chip
+                  size="small"
+                  label={tempColumn}
+                  sx={{ mr: 0.5, height: 24 }}
+                  color="primary"
+                />
+              )}
+              {tempOperator && currentStep === FilterStep.VALUE && (
+                <Chip
+                  size="small"
+                  label={tempOperator}
+                  sx={{ mr: 0.5, height: 24 }}
+                  color="primary"
+                />
+              )}
+            </>
+          ),
+          endAdornment: (
+            <InputAdornment position="end">
+              {inputValue && (
+                <IconButton size="small" onClick={resetFilterProcess}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
+              {(tempColumn || tempOperator) && !inputValue && (
+                <IconButton size="small" onClick={handleBackStep}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              )}
+            </InputAdornment>
+          ),
+          sx: {
+            // Add some padding to accommodate for the chips
+            pl: 0.5,
+            alignItems: 'center',
+            gap: 0.5
+          }
+        }}
+      />
+    );
+  };
+
+  // Function to render available columns as chips
+  const renderAvailableColumns = () => {
+    if (!showAvailableColumns) return null;
+
+    const columnsToShow = showAllColumns ? validColumns : validColumns.slice(0, 5);
+    const hasMore = validColumns.length > 5;
+
+    return (
+      <Box sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
+          Available Columns
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {columnsToShow.map((column, index) => (
+            <Chip
+              key={index}
+              size="small"
+              label={column.label}
+              onClick={() => selectColumn(column.value)}
+              color="default"
+              clickable
+            />
+          ))}
+          {hasMore && !showAllColumns && (
+            <Button
+              size="small"
+              onClick={() => setShowAllColumns(true)}
+              sx={{ fontSize: '0.75rem', ml: 1 }}
+            >
+              Show More ({validColumns.length - 5})
+            </Button>
+          )}
+          {showAllColumns && (
+            <Button
+              size="small"
+              onClick={() => setShowAllColumns(false)}
+              sx={{ fontSize: '0.75rem', ml: 1 }}
+            >
+              Show Less
+            </Button>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  // Function to render available operators as chips
+  const renderAvailableOperators = () => {
+    if (!showAvailableOperators) return null;
+
+    return (
+      <Box sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
+          Available Operators for {tempColumn}
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {availableOperators.map((op, index) => (
+            <Chip
+              key={index}
+              size="small"
+              label={op.label}
+              onClick={() => selectOperator(op.id)}
+              color="default"
+              clickable
+            />
+          ))}
+        </Box>
+      </Box>
+    );
+  };
+
+  const renderAvailableValues = () => {
+    if (!showAvailableValues || !tempColumn || !valueSuggestions) return null;
+
+    const allValues = valueSuggestions[tempColumn] ?? [];
+
+    if (allValues.length === 0) return null;
+
+    const valuesToShow = showAllValues ? allValues : allValues.slice(0, 10);
+    const hasMore = allValues.length > 10;
+
+    return (
+      <Box sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
+          Available values for {tempColumn}
+        </Typography>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {valuesToShow.map((val, index) => (
+            <Chip
+              key={index}
+              size="small"
+              label={val}
+              clickable
+              onClick={() => {
+                if (tempOperator === 'IN') {
+                  setInputValue(prev => (prev ? `${prev}, ${val}` : val));
+                } else {
+                  addFilter(val);
+                }
+              }}
+            />
+          ))}
+          {hasMore && !showAllValues && (
+            <Button
+              size="small"
+              onClick={() => setShowAllValues(true)}
+              sx={{ fontSize: '0.75rem', ml: 1 }}
+            >
+              Show More ({allValues.length - 10})
+            </Button>
+          )}
+          {showAllValues && (
+            <Button
+              size="small"
+              onClick={() => setShowAllValues(false)}
+              sx={{ fontSize: '0.75rem', ml: 1 }}
+            >
+              Show Less
+            </Button>
+          )}
+        </Box>
+      </Box>
+    );
+  };
+
+  return (
+    <Box sx={{ width: '100%', overflow: 'visible' }}>
+      {/* Search input */}
+      <Box sx={{ position: 'relative' }}>
+        {renderInputWithPills()}
+
+        {/* Suggestions dropdown */}
+        {suggestions.length > 0 && !showAvailableColumns && !showAvailableOperators && !showAvailableValues && (
+          <Paper
+            elevation={0}
+            sx={{
+              position: 'absolute',
+              width: '100%',
+              zIndex: 1000,
+              mt: 0.5,
+              maxHeight: 300,
+              overflow: 'hidden', // Changed from 'auto' to 'hidden'
+              borderRadius: 2,
+              border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
+              boxShadow: theme => theme.customShadows.popover,
+            }}
+          >
+            <Box
+              ref={suggestionsContainerRef}
+              sx={{ maxHeight: 300, overflow: 'auto' }}
+            >
+              {suggestions.map((item, index) => (
+                <Box
+                  key={index}
+                  ref={index === selectedSuggestionIndex ? selectedItemRef : null}
+                  sx={{
+                    p: 1.5,
+                    cursor: 'pointer',
+                    backgroundColor: index === selectedSuggestionIndex ? 'action.selected' : 'inherit',
+                    '&:hover': { backgroundColor: 'action.hover' }
+                  }}
+                  onClick={() => {
+                    if (currentStep === FilterStep.COLUMN) {
+                      if (item.value) selectColumn(item.value);
+                    } else if (currentStep === FilterStep.OPERATOR) {
+                      if (item.id) selectOperator(item.id);
+                    } else if (currentStep === FilterStep.VALUE) {
+                      if (item.value) addFilter(item.value);
+                    }
+                  }}
+                >
+                  <Typography variant="body2">
+                    {currentStep === FilterStep.COLUMN ? item.label : item.label}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Paper>
+        )}
+      </Box>
+
+      {/* Available columns section */}
+      {renderAvailableColumns()}
+
+      {/* Available operators section */}
+      {renderAvailableOperators()}
+
+      {/* Available values section */}
+      {renderAvailableValues()}
+
+      {/* Remove the filter preview since we now show pills in the input */}
+
+      {/* Help text only when not showing available options */}
+      {currentStep !== FilterStep.IDLE && !showAvailableColumns && !showAvailableOperators && (
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+          {currentStep === FilterStep.COLUMN && 'Select a column or type to filter columns (use arrow keys to navigate)'}
+          {currentStep === FilterStep.OPERATOR && 'Select an operator (contains, =, >, <, in, etc.) - use arrow keys to navigate'}
+          {currentStep === FilterStep.VALUE && tempOperator !== 'IN' && 'Enter a value and press Enter to add the filter'}
+          {currentStep === FilterStep.VALUE && tempOperator === 'IN' && 'Enter one or more comma-separated values and press Enter to add the filter'}
+        </Typography>
+      )}
+
+      <Divider sx={{ my: 1.25 }} />
+
+      {/* Active filters */}
+      <Box sx={{ mt: 1.25 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
+          Active Filters
+        </Typography>
+
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {filters.filter(f => f.column && f.operator && f.value).map((filter, index) => (
+            <Chip
+              key={index}
+              size="small"
+              label={`${filter.column} ${filter.operator} ${filter.value}`}
+              onDelete={() => handleRemoveFilter(index)}
+              deleteIcon={<CancelIcon />}
+            />
+          ))}
+
+          {filters.filter(f => f.column && f.operator && f.value).length === 0 && (
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+              No active filters
+            </Typography>
+          )}
+        </Box>
+      </Box>
+    </Box>
+  );
+}

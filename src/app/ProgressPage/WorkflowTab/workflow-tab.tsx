@@ -1,177 +1,126 @@
-import Box from "@mui/material/Box"
-import WorkflowMetrics from "./workflow-metrics"
-import ModelAnalysisTask from "../../Tasks/ModelAnalysisTask/model-analysis-task"
-import WorkflowSvg from "./workflow-svg"
-import { useState } from "react"
-import Typography from "@mui/material/Typography"
-import DataExplorationComponent from "../../Tasks/DataExplorationTask/ComponentContainer/DataExplorationComponent"
-import { RootState, useAppSelector } from "../../../store/store"
-import WorkflowMetricDetails from "./workflow-metric-details"
-import WorkflowTaskConfiguration from "./workflow-task-configuration"
-import { IWorkflowTabModel } from "../../../shared/models/workflow.tab.model"
-import Rating from "@mui/material/Rating"
-import UserInteractiveTask from "../../Tasks/UserInteractiveTask/user-interactive-task"
-import StaticDirectedGraph from "./worfklow-flow-chart"
+import Box from '@mui/material/Box';
+import { useEffect, useRef } from 'react';
+import type { RootState } from '../../../store/store';
+import { useAppDispatch, useAppSelector } from '../../../store/store';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Paper } from '@mui/material';
+import { fetchWorkflowMetrics, initTab, resetWorkflowTab } from '../../../store/slices/workflowPageSlice';
+import { Resizable } from 're-resizable';
+import WorkflowTreeView from './WorkflowTree/WorkflowTreeView';
+import SelectedItemViewer from './SelectedItemViewer';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
+import { useTheme } from '@mui/material/styles';
+import isEqual from 'lodash/isEqual';
+import type { IRun } from '../../../shared/models/experiment/run.model';
 
-interface IWorkflowTab {
-  workflowId: number | string
-}
+const WorkflowTab = () => {
+  const { isTabInitialized } = useAppSelector((state: RootState) => state.workflowPage);
+  const workflowMetrics = useAppSelector((state: RootState) => state.workflowPage.tab?.workflowMetrics);
+  const { workflows } = useAppSelector((state: RootState) => state.progressPage);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const workflowId = searchParams.get('workflowId');
+  const dispatch = useAppDispatch();
+  const { experimentId } = useParams();
+  const theme = useTheme();
+  const prevWorkflowRef = useRef<IRun | null>(null);
 
-const WorkflowTab = (props: IWorkflowTab) => {
-  const { workflowId } = props
-  const { tabs } = useAppSelector((state: RootState) => state.workflowTabs)
-  const [chosenTask, setChosenTask] = useState<string | null>(null)
-  const { workflows } = useAppSelector((state: RootState) => state.progressPage)
-  const selectedTab = tabs.find(tab => tab.workflowId === workflowId)
+  useEffect(() => {
+    const currentWorkflow = workflows.data.find((w) => w.id === workflowId);
 
-  const taskProvider = (taskType: string | null) => {
-    switch (taskType) {
-      case "read_data":
-        return (
-          <DataExplorationComponent
-            workflow={tabs.find(tab => tab.workflowId === workflowId) || null}
-          />
-        )
-      case "evaluation":
-        return (
-          <ModelAnalysisTask
-            workflow={
-              tabs.find(
-                tab => tab.workflowId === workflowId,
-              ) as IWorkflowTabModel
-            }
-          />
-        )
-      case "interactive":
-        return (
-          <UserInteractiveTask
-            url={"http://163.172.30.91:5000"}
-          />
-        )
-      case null:
-        return null
+    if (!currentWorkflow) {
+      navigate(`/${experimentId}/monitoring`);
+
+      return;
     }
-  }
-  return (
-    <>
-      <Box sx={{ display: "flex", flexDirection: "column", rowGap: 2, mb: 3 }}>
-        <Box key="workflow-title" sx={{ display: "flex", flexDirection: "row", columnGap: 2, justifyContent: "left", alignItems: "center" }}>
-          <Typography
-            variant="body1"
-            sx={{ fontWeight: 600, fontSize: "2rem" }}
-          >
-           {`Workflow ${workflowId}`}
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{ fontWeight: 600, fontSize: "2rem" }}
-          >
-            -
-          </Typography>
-          <Rating
-            name="simple-uncontrolled"
-            size="large"
-            onChange={(event, newValue) => {
-              console.log(newValue)
-            }}
-            defaultValue={2}
-          />
-        </Box>
-        <Box key="workflow-flow-chart">
-          <StaticDirectedGraph setChosenTask={setChosenTask} chosenTask={chosenTask} workflowSvg={tabs.find(tab => tab.workflowId === workflowId)?.workflowSvg.data || null} />
-        </Box>
-        {chosenTask ? (
-          <Box key="workflow-task">{taskProvider(chosenTask)}</Box>
-        ) : (
-          <>
-            <Box
-              key="task-configuration"
-              sx={{ display: "flex", flexDirection: "column", rowGap: 2 }}
-            >
-              <Box key="task-configuration-title">
-                <Typography
-                  variant="body1"
-                  sx={{ fontWeight: 600, fontSize: "1.5rem" }}
-                >
-                  Workflow Configuration
-                </Typography>
-              </Box>
-              <Box key="task-configuration-items">
-                <WorkflowTaskConfiguration
-                  configuration={
-                    (
-                      tabs.find(
-                        tab => tab.workflowId === workflowId,
-                      ) as IWorkflowTabModel
-                    )?.workflowConfiguration.data || null
-                  }
-                />
-              </Box>
-            </Box>
-            <Box
-              key="metric-summary"
-              sx={{ display: "flex", flexDirection: "column", rowGap: 2 }}
-            >
-              <Box key="metric-summary-title">
-                <Typography
-                  variant="body1"
-                  sx={{ fontWeight: 600, fontSize: "1.5rem" }}
-                >
-                  Metric Summary
-                </Typography>
-              </Box>
-              <Box key="metric-summary-items">
-                <WorkflowMetrics
-                  metrics={
-                    (
-                      tabs.find(
-                        tab => tab.workflowId === workflowId,
-                      ) as IWorkflowTabModel
-                    )?.workflowMetrics.data || null
-                  }
-                />
-              </Box>
-            </Box>
-            <Box
-              key="workflow-metric-details"
-              sx={{ display: "flex", flexDirection: "column", rowGap: 2 }}
-            >
-              <Box key="workflow-metric-details-title">
-                <Typography
-                  variant="body1"
-                  sx={{ fontWeight: 600, fontSize: "1.5rem" }}
-                >
-                  Metric Details
-                </Typography>
-              </Box>
-              <Box key="workflow-metric-details-items">
-                { selectedTab && 
-                (<WorkflowMetricDetails
-                  key={workflowId}
-                  metrics={
-                    (
-                      tabs.find(
-                        tab => tab.workflowId === workflowId,
-                      ) as IWorkflowTabModel
-                    )?.workflowMetrics.data || null
-                  }
-                  workflowId={workflowId}
-                  info={
-                    (
-                      workflows.data.find(
-                        workflow => workflow.workflowId === workflowId,
-                      ) as any
-                    )?.tasks || null
-                  }
-                />)
-                }
-              </Box>
-            </Box>
-          </>
-        )}
-      </Box>
-    </>
-  )
-}
 
-export default WorkflowTab
+    const workflowWithoutRatingMetric = {
+      ...currentWorkflow,
+      metrics: (currentWorkflow.metrics || []).filter(
+        (metric) => metric.name !== 'rating'
+      ),
+    };
+
+    if (!isEqual(prevWorkflowRef.current, workflowWithoutRatingMetric)) {
+      prevWorkflowRef.current = workflowWithoutRatingMetric;
+      dispatch(initTab({ tab: workflowId, workflows }));
+    }
+  }, [workflows.data]);
+
+  useEffect(() => {
+    const metricNames = workflowMetrics?.data?.map((m) => m.name);
+
+    if (experimentId && workflowId && metricNames && isTabInitialized) {
+      dispatch(fetchWorkflowMetrics({ experimentId, workflowId, metricNames }));
+    }
+  }, [workflows.data, isTabInitialized]);
+
+  useEffect(() => {
+    return () => {
+      prevWorkflowRef.current = null;
+      dispatch(resetWorkflowTab());
+    };
+  }, []);
+
+  return (
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box sx={{ p: 2, height: '100%', display: 'flex', direction: 'row', gap: 1, overflow: 'hidden' }}>
+        <Resizable
+          defaultSize={{
+            width: '25%',
+            height: '100%',
+          }}
+          minWidth="0px"
+          enable={{
+            top: false,
+            right: true,
+            bottom: false,
+            left: false,
+            topRight: false,
+            bottomRight: false,
+            bottomLeft: false,
+            topLeft: false,
+          }}
+          maxWidth="30%"
+          maxHeight="100%"
+          style={{ height: '100%', position: 'relative' }}
+          handleStyles={{
+            right: {
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '16px',
+              right: '-16px',
+              zIndex: 10,
+            }
+          }}
+          handleComponent={{
+            right: (
+              <Box
+                sx={{
+                  height: '100%',
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'ew-resize',
+                }}
+              >
+                <MoreVertRoundedIcon style={{ color: theme.palette.action.active }} />
+              </Box>
+            )
+          }}
+        >
+          <Paper elevation={3} sx={{ width: '100%', height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <WorkflowTreeView />
+          </Paper>
+        </Resizable>
+        <Paper elevation={3} sx={{ flex: 1, height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column', ml: '8px' }}>
+          <SelectedItemViewer />
+        </Paper>
+      </Box>
+    </Box>
+  );
+};
+
+export default WorkflowTab;

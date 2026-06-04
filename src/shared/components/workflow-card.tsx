@@ -1,52 +1,48 @@
-import { Paper, Box, Typography, Tooltip, IconButton } from "@mui/material"
-import InfoIcon from "@mui/icons-material/Info"
-import { grey } from "@mui/material/colors"
+import { Paper, Box, Typography, Tooltip } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { cardSurfaceSx, cardHeaderSx } from '../styles/card-surface';
 
 const WorkflowCard: React.FC<{
   title: string
   description?: string
   children: React.ReactNode
+  accent?: string
 }> = ({
-  title = "Title",
+  title = 'Title',
   children = <></>,
-  description = "Description not available.",
+  description = 'Description not available.',
+  accent,
 }) => {
   return (
     <Paper
       className="Category-Item"
-      elevation={2}
-      sx={{
-        borderRadius: 4,
-        width: "inherit",
-        display: "flex",
-        flexDirection: "column",
-        rowGap: 0,
-        minWidth: "300px",
-        height: "100%",
-      }}
+      elevation={0}
+      sx={[
+        cardSurfaceSx({ accent }),
+        {
+          width: 'inherit',
+          display: 'flex',
+          flexDirection: 'column',
+          rowGap: 0,
+          minWidth: '300px',
+          height: '100%',
+        },
+      ]}
     >
-      <Box
-        sx={{
-          px: 1.5,
-          py: 0.5,
-          display: "flex",
-          alignItems: "center",
-          borderBottom: `1px solid ${grey[400]}`,
-        }}
-      >
-        <Typography fontSize={"1rem"} fontWeight={600}>
+      <Box sx={cardHeaderSx()}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
           {title}
         </Typography>
         <Box sx={{ flex: 1 }} />
         <Tooltip title={description}>
-          <IconButton>
-            <InfoIcon />
-          </IconButton>
+          <InfoOutlinedIcon
+            sx={{ fontSize: 14, color: 'text.secondary', cursor: 'default' }}
+          />
         </Tooltip>
       </Box>
       {children}
     </Paper>
-  )
-}
+  );
+};
 
-export default WorkflowCard
+export default WorkflowCard;

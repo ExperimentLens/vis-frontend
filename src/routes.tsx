@@ -1,16 +1,105 @@
-import { createBrowserRouter } from "react-router-dom"
-import ProgressPage from "./app/ProgressPage/progress-page";
-import ErrorPage from "./error-page";
-import NotFound from "./not-found";
+import { createBrowserRouter } from 'react-router-dom';
+import ProgressPage from './app/ProgressPage/progress-page';
+import ErrorPage from './error-page';
+import NotFound from './not-found';
+import MonitoringPage from './app/ProgressPage/MonitoringPage/monitoring-page';
+import WorkflowTab from './app/ProgressPage/WorkflowTab/workflow-tab';
+import ProgressPageLoading from './app/ProgressPage/progress-page-loading';
+import LoginPage from './app/LoginPage/login-page';
+// import ProtectedRoute from './protected-route';
+import TokenAuthHandler from './token-auth-handler';
+import ExperimentsLandingPage from './app/ProgressPage/ExperimentsLandingPage/experiments-landing-page';
+import HighlightsPage from './app/ProgressPage/HighlightsPage/highlights-page';
+import LLMObservabilityPage from './app/ProgressPage/LLMObservabilityPage/llm-observability-page';
 
 const routes = createBrowserRouter([
   {
-    path: "/:experimentId",
-    element: <ProgressPage />,
+    path: '/login',
+    element: <LoginPage />,
     errorElement: <ErrorPage />
   },
   {
-    path: "*",
+    path: '/',
+    element: (
+      // <ProtectedRoute>
+        <ProgressPage>
+          <ExperimentsLandingPage />
+        </ProgressPage>
+      // </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/:experimentId',
+    element: (
+      // <ProtectedRoute>
+        <ProgressPageLoading />
+      // </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/external/:token/:experimentId?',
+    element: <TokenAuthHandler />,
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/:experimentId/monitoring',
+    element: (
+      // <ProtectedRoute>
+        <ProgressPage>
+          <MonitoringPage />
+        </ProgressPage>
+      // </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />
+  },
+  // {
+  //   path: '/:experimentId/gamification',
+  //   element: (
+  //     <ProtectedRoute>
+  //       <ProgressPage>
+  //         <GamificationPage />
+  //       </ProgressPage>
+  //     </ProtectedRoute>
+  //   ),
+  //   errorElement: <ErrorPage />
+  // },
+  {
+    path: '/:experimentId/workflow',
+    element: (
+      // <ProtectedRoute>
+        <ProgressPage>
+          <WorkflowTab />
+        </ProgressPage>
+      // </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/:experimentId/highlights',
+    element: (
+      // <ProtectedRoute>
+        <ProgressPage>
+          <HighlightsPage />
+        </ProgressPage>
+      // </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '/:experimentId/llm-observability',
+    element: (
+      // <ProtectedRoute>
+        <ProgressPage>
+          <LLMObservabilityPage />
+        </ProgressPage>
+      // </ProtectedRoute>
+    ),
+    errorElement: <ErrorPage />
+  },
+  {
+    path: '*',
     element: <NotFound />,
     errorElement: <NotFound />
   }

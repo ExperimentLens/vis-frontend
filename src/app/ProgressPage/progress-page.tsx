@@ -1,249 +1,171 @@
-import Box from "@mui/material/Box"
-import Grid from "@mui/material/Grid"
-import Typography from "@mui/material/Typography"
-import grey from "@mui/material/colors/grey"
-import ParallelCoordinatePlot from "./parallel-coordinate-plot"
-import { useEffect, useState, useRef } from "react"
-import WorkflowTab from "./WorkflowTab/workflow-tab"
-import ProgressPageTabs from "./progress-page-tabs"
-import WorkflowTable from "./WorkFlowTables/workflow-table"
-import ScheduleTable from "./WorkFlowTables/schedule-table"
-import { RootState, useAppDispatch, useAppSelector } from "../../store/store"
-import CompareCompleted from "./CompareTab/CompareCompleted/compare-completed"
-import ProgressPageBar from "./progress-page-bar"
-import ProgressPageGauges from "./progress-page-gauges"
-import PauseIcon from "@mui/icons-material/Pause"
-import StopIcon from "@mui/icons-material/Stop"
-import { useParams, useLocation, useSearchParams, useNavigate } from "react-router-dom"
+import Box from '@mui/material/Box';
+import type { ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
+import type { RootState } from '../../store/store';
+import { useAppDispatch, useAppSelector } from '../../store/store';
 import {
-  fetchExperiment,
-  fetchExperimentTesting,
+  useLocation,
+  useParams,
+} from 'react-router-dom';
+import {
+  clearExperiment,
+  clearWorkflows,
   fetchExperimentWorkflows,
-  fetchExperimentWorkflowsTesting,
-} from "../../store/slices/progressPageSlice"
-import ProgressPageLoading from "./progress-page-loading"
-import ProgressPageTab from "./progressPageTabs/progress-page-tab"
-import { updateTabs, initTabs } from "../../store/slices/workflowTabsSlice"
+  setIntialization,
+  setMenuOptions,
+} from '../../store/slices/progressPageSlice';
+import ProgressPageLoading from './progress-page-loading';
+import LeftMenu from './left-menu';
+import ExperimentControls from './experiment-controls';
+import { resetMonitoringPage } from '../../store/slices/monitorPageSlice';
 
-const ProgressPage = () => {
-  const { experiment, workflows, initialization } = useAppSelector(
+interface ProgressPageProps {
+  children?: ReactNode
+}
+
+const ProgressPage = (props: ProgressPageProps) => {
+  const { experiment, workflows, initialization, menuOptions } = useAppSelector(
     (state: RootState) => state.progressPage,
-  )
-  const { tabs } = useAppSelector(
-    (state: RootState) => state.workflowTabs,
-  )
-  const tabsRef = useRef(tabs)
-  const { experimentId } = useParams()
-  const [ searchParams ] = useSearchParams()
-  const workflowId = searchParams.get("workflowId")
-  const tabsQuery = searchParams.get("tabs")
-  const dispatch = useAppDispatch()
-  const intervalId = useRef<NodeJS.Timeout | null>(null)
-  const navigate = useNavigate()
-  const location = useLocation()
+  );
+  const { experimentId } = useParams();
+  const dispatch = useAppDispatch();
+  const intervalId = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { children } = props;
+  const location = useLocation();
 
   useEffect(() => {
-    if (experimentId) {
-      // TODO: Remove this if statement when no longer needed
-      if (experimentId === "ideko" || experimentId === "I2Cat_phising") {
-        dispatch(fetchExperimentTesting(experimentId))
-      } else {
-        dispatch(fetchExperiment(experimentId))
-      }
+    if (!experimentId) return;
+
+    if (experimentId !== experiment.data?.id) {
+      dispatch(clearExperiment());
+      dispatch(clearWorkflows());
+      dispatch(resetMonitoringPage());
+      dispatch(setIntialization(false));
     }
-  }, [])
+  }, [experimentId]);
+
+  useEffect(() => {
+    const pathParts = location.pathname.split('/').filter(Boolean);
+
+    if (pathParts.length === 0) {
+      dispatch(setMenuOptions({ ...menuOptions, selected: 'experiments' }));
+
+      return;
+    }
+
+    if (location.pathname.includes('workflow'))
+      dispatch(setMenuOptions({ ...menuOptions, selected: 'monitoring' }));
+    else dispatch(setMenuOptions({ ...menuOptions, selected: pathParts[1] }));
+  }, [location]);
+
+  useEffect(() => {
+    if (experimentId && experimentId !== experiment.data?.id) {
+      // dispatch(fetchExperiment(experimentId))
+    }
+  }, []);
 
   // useEffect(() => {
-  //   if (!experiment.loading && experiment.data) {
-  //     // TODO: Remove this if statement when no longer needed
-  //     if (experimentId === "ideko" || experimentId === "I2Cat_phising") {
-  //       dispatch(
-  //         fetchExperimentWorkflowsTesting({
-  //           experimentId: experimentId || "",
-  //           workflowIds: experiment.data.workflow_ids,
-  //         }),
-  //       )
-  //     } else {
-  //       dispatch(fetchExperimentWorkflows(experimentId || ""))
-  //     }
-  //   }
-  // }, [experiment])
+  //   const fetchWorkflows = () =>
+  //     !experiment.loading &&
+  //     experiment.data &&
+  //     dispatch(fetchExperimentWorkflows(experiment?.data?.id ?? ''));
+  //   intervalId.current = setInterval(fetchWorkflows, 1 * 60 * 1000);
 
-  // TODO: Enable this for live data
+  //   return () => {
+  //     if (intervalId.current) {
+  //       clearInterval(intervalId.current);
+  //     }
+  //   };
+  // }, [experiment]);
+
   useEffect(() => {
-    const fetchWorkflows = () => {
-      if (!experiment.loading && experiment.data) {
-        // TODO: Remove this if statement when no longer needed
-        if (experimentId === "ideko" || experimentId === "I2Cat_phising") {
-          dispatch(
-            fetchExperimentWorkflowsTesting({
-              experimentId: experimentId || "",
-              workflowIds: experiment.data.workflow_ids,
-            }),
-          )
-        } else {
-          dispatch(fetchExperimentWorkflows(experimentId || ""))
-        }
-      }
-    }
-    fetchWorkflows()
-    // TODO: Remove this if statement when no longer needed
-    if (experimentId !== "ideko" && experimentId !== "I2Cat_phising") {
-    intervalId.current = setInterval(fetchWorkflows, 5000)
-    }
+    if (!experiment.data?.id) return;
+
+    const fetchWorkflows = () =>
+      dispatch(fetchExperimentWorkflows(experiment?.data?.id ?? ''));
+
+    intervalId.current = setInterval(fetchWorkflows, 60 * 1000); // 1 minute
 
     return () => {
       if (intervalId.current) {
-        clearInterval(intervalId.current)
+        clearInterval(intervalId.current);
       }
-    }
-  }, [experiment])
+    };
 
-  // TODO: Enable this for live data
-  useEffect(() => {
-    if (workflows.data && workflows.data.length > 0) {
-      dispatch(updateTabs({workflows, tabs}))
-      workflows.data.every(workflow => workflow.status === "completed") &&
-        intervalId.current &&
-        clearInterval(intervalId.current)
-    }
-  }, [workflows])
+  }, [experiment.data?.id]);
 
-  useEffect (() => {
-    const tabsArray = tabsQuery?.split(',')
-    if (workflowId && !tabsArray?.find(tabId => tabId === workflowId)) {
-      const queryParams = new URLSearchParams()
-      queryParams.append("workflowId", workflowId.toString())
-      queryParams.append("tabs", workflowId.toString())
-      navigate(`${location.pathname}?${queryParams.toString()}`, {replace: true})
-    }
-
-    if (workflows.data && workflows.data.length > 0 ) dispatch(initTabs({tabs: tabsQuery, workflows}))
-  },[searchParams,workflows])
-
-  useEffect(() => {
-    tabsRef.current = tabs
-  }, [tabs]);
-  
-
-  const handleChange =
-  (newValue: number | string | null) => (event: React.SyntheticEvent) => {
-    if (workflowId === newValue) return
-    const currentTabs = newValue && !tabsRef.current.find(tab => tab.workflowId === newValue) ? 
-      [...tabsRef.current.map(tab => tab.workflowId), newValue.toString()] : tabsRef.current.map(tab => tab.workflowId)
-    
-    const newTabsQuery = currentTabs.join(",")
-    const queryParams = new URLSearchParams()
-
-    if (newValue !== null) queryParams.append("workflowId", newValue.toString())
-    if(currentTabs.length > 0) queryParams.append("tabs", newTabsQuery)
-
-    navigate(`${location.pathname}?${queryParams.toString()}`)
-    window.scrollTo(0, 0)
-  }
+  // useEffect(() => {
+  //   if (workflows.data && workflows.data.length > 0) {
+  //     workflows.data?.every(workflow => workflow.status === 'COMPLETED' || workflow.status === 'FAILED' || workflow.status === 'KILLED') &&
+  //       intervalId.current &&
+  //       clearInterval(intervalId.current);
+  //   }
+  // }, [workflows]);
 
   return (
     <>
       {!initialization ? (
         <ProgressPageLoading />
       ) : (
-        <Grid
+        <Box
           sx={{
-            maxWidth: "100vw",
-            minHeight: "100vh",
-            flexDirection: "column",
-            display: "flex",
-            rowGap: 3,
+            height: '100vh',
+            width: '100vw',
+            display: 'flex',
           }}
         >
-          <Box
-            key={"progress-page-title"}
-            sx={{
-              width: "inherit",
-              px: 2,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Box className={"progress-page-description"}>
-              <Box
-                sx={{
-                  display: "flex",
-                  borderBottom: `1px solid ${grey[500]}`,
-                }}
-              >
-                <Typography fontSize={"2rem"} sx={{ fontWeight: 600 }}>
-                  {experiment.data?.name || "Experiment Name"}
-                </Typography>
-              </Box>
-              <Box>
-                <Typography fontSize={"1rem"}>
-                  {
-                    "Description: Improve accuracy in the anomaly prediction classification"
-                  }
-                </Typography>
-              </Box>
-            </Box>
-            <Box className={"progress-page-actions"}>
-              <PauseIcon
-                onClick={() => console.log("clicked")}
-                sx={{
-                  cursor: "pointer",
-                  color: theme => theme.palette.primary.main,
-                }}
-                fontSize="large"
-              />
-              <StopIcon
-                onClick={() => console.log("clicked")}
-                sx={{
-                  cursor: "pointer",
-                  color: theme => theme.palette.primary.main,
-                }}
-                fontSize="large"
-              />
-            </Box>
-          </Box>
-          <Box key="progress-tabs">
-            {/* <ProgressPageTabs value={value} handleChange={handleChange} /> */}
-            <ProgressPageTab value={workflowId ? workflowId : "progress"} handleChange={handleChange} />
-          </Box>
+          {/* Left Menu - Full Height */}
           <Box
             sx={{
-              px: 5,
-              display: "flex",
-              flexDirection: "column",
-              mt: 2,
-              rowGap: 6,
+              width: !menuOptions.collapsed ? 'calc(15% + 16px)' : '56px',
+              height: '100%',
+              transition: 'width 0.3s ease',
+              flexShrink: 0,
             }}
           >
-            {!workflowId && (
-              <>
-                <ProgressPageBar />
-                <ProgressPageGauges />
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    rowGap: 6,
-                    px: [0, 3, 8, 15],
-                  }}
-                >
-                  <ParallelCoordinatePlot />
-                  <WorkflowTable handleChange={handleChange} />
-                  <ScheduleTable />
-                </Box>
-              </>
-            )}
-            {workflowId && workflowId !== "compare-completed" && (
-              <WorkflowTab workflowId={workflowId} />
-            )}
-            {workflowId === "compare-completed" && <CompareCompleted />}
+            <LeftMenu />
           </Box>
-        </Grid>
+
+          {/* Right Content Area */}
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              height: '100%',
+              width: !menuOptions.collapsed
+                ? 'calc(85% - 16px)'
+                : 'calc(100% - 56px)',
+              transition: 'width 0.3s ease',
+            }}
+          >
+            {/* Experiment Controls */}
+            {experimentId && (
+              <Box sx={{ width: '100%' }}>
+                <ExperimentControls />
+              </Box>
+            )}
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                rowGap: 2,
+                flexGrow: 1,
+                overflow: 'hidden', // Prevent overflow
+                width: '100%',
+                boxSizing: 'border-box',
+                bgcolor: theme => theme.palette.mode === 'dark'
+                  ? theme.palette.background.default
+                  : theme.palette.customGrey.light,
+              }}
+            >
+              {children}
+            </Box>
+          </Box>
+        </Box>
       )}
     </>
-  )
-}
+  );
+};
 
-export default ProgressPage
+export default ProgressPage;

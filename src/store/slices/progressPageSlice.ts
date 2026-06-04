@@ -1,39 +1,31 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
-import { defaultDataExplorationQuery, IDataExplorationQuery } from "../../shared/models/dataexploration.model"
-import axios from "axios"
-import { IExperimentResponse } from "../../shared/models/experiment.model"
-import { IWorkflowResponse, MetricDetail } from "../../shared/models/workflow.model"
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import type { IExperiment } from '../../shared/models/experiment/experiment.model';
+import type { IRun } from '../../shared/models/experiment/run.model';
+import type { IMetric } from '../../shared/models/experiment/metric.model';
+import { experimentApi } from '../../app/api/api';
 
-const workflowMetricsPreparation = (workflow: any, workflowId: string) => {
-  if (!workflow.metrics) {
-    return { ...workflow, workflowId };
-  }
-  const ok = {
-    ...workflow,
-    workflowId,
-    metrics: workflow.metrics.map((item: any) => {
-      const metricId = Object.keys(item)[0]
-      const metricData = item[metricId]
-      return {
-        ...metricData,
-        metricId,
-      }
-    })
-  }
-  return ok
+interface IUserEvaluationResponse {
+  status: string;
+  message: string;
 }
 
-interface IWorkflowTab {
+interface IProgressPage {
   initialization: boolean
+  experiments: {
+    data: IExperiment[]
+    loading: boolean
+    error: string | null
+  }
   experiment: {
-    data: IExperimentResponse["experiment"] | null
+    data: IExperiment | null
     loading: boolean
     error: string | null
   }
   workflows: {
-    data: IWorkflowResponse[]
+    data: IRun[]
     loading: boolean
     error: string | null
+    requested: boolean
   }
   progressBar: {
     total: number
@@ -42,323 +34,357 @@ interface IWorkflowTab {
     failed: number
     progress: number
   }
-  progressGauges: {
-    name: string
-    type: string
-    value: number
-  }[]
-  progressParallel: {
-    data: { [key: string]: any }[]
-    options: string[]
-    selected: string
-  }
-  progressWokflowsTable: {
-    order: "asc" | "desc"
-    orderBy: string
-    page: number
-    rowsPerPage: number
-    selectedWorkflows: number[]
-    filters: { column: string; operator: string; value: string }[]
-    rows: { [key: string]: any }[]
-    filteredRows: { [key: string]: any }[]
-    filtersCounter: number
-    visibleRows: { [key: string]: any }[]
-  }
-  progressScheduledTable: {
-    order: "asc" | "desc"
-    orderBy: string
-    page: number
-    rowsPerPage: number
-    selectedWorkflows: number[]
-    filters: { column: string; operator: string; value: string }[]
-    rows: { [key: string]: any }[]
-    filteredRows: { [key: string]: any }[]
-    filtersCounter: number
-    visibleRows: { [key: string]: any }[]
-  }
   statusController: {
     data: string;
     loading: boolean;
     error: string | null;
   }
+  menuOptions: {
+    selected: string | null
+    collapsed: boolean
+},
+workflowEvaluation: {
+  loading: boolean
+  error: string | null
+},
+createdWorkflow: {
+  data: ICreateRunResponse | null
+  loading: boolean
+  error: string | null
+}
 }
 
-const initialState: IWorkflowTab = {
+const initialState: IProgressPage = {
   initialization: false,
+  experiments: { data: [], loading: false, error: null },
   experiment: { data: null, loading: false, error: null },
-  workflows: { data: [], loading: false, error: null },
+  workflows: { data: [], loading: false, error: null, requested: false },
   progressBar: { total: 0, completed: 0, running: 0, failed: 0, progress: 0 },
-  progressGauges: [],
-  progressParallel: { data: [], options: [], selected: "" },
-  progressWokflowsTable: {
-    order: "asc",
-    orderBy: "id",
-    page: 0,
-    rowsPerPage: 10,
-    selectedWorkflows: [],
-    filters: [],
-    rows: [],
-    filteredRows: [],
-    filtersCounter: 0,
-    visibleRows: [],
-  },
-  progressScheduledTable: {
-    order: "asc",
-    orderBy: "id",
-    page: 0,
-    rowsPerPage: 10,
-    selectedWorkflows: [],
-    filters: [],
-    rows: [],
-    filteredRows: [],
-    filtersCounter: 0,
-    visibleRows: [],
-  },
   statusController: {
-    data: "",
+    data: '',
     loading: false,
     error: null,
+  },
+  menuOptions: {
+    selected: null,
+    collapsed: true
+  },
+  workflowEvaluation: {
+    loading: false,
+    error: null
+  },
+  createdWorkflow: {
+    data: null,
+    loading: false,
+    error: null
   }
+};
+
+function workflowsDiffer(existing: IRun[], incoming: IRun[]): boolean {
+  if (existing.length !== incoming.length) return true;
+
+  for (let i = 0; i < incoming.length; i++) {
+    const ex = existing[i];
+    const inc = incoming[i];
+
+    if (ex.id !== inc.id || ex.status !== inc.status || ex.space !== inc.space || ex.name !== inc.name) return true;
+
+    if ((ex.tasks?.length ?? 0) !== (inc.tasks?.length ?? 0)) return true;
+    if (ex.tasks && inc.tasks) {
+      const exDone = ex.tasks.filter(t => t.endTime).length;
+      const incDone = inc.tasks.filter(t => t.endTime).length;
+
+      if (exDone !== incDone) return true;
+    }
+
+    if ((ex.metrics?.length ?? 0) !== (inc.metrics?.length ?? 0)) return true;
+    if (ex.metrics && inc.metrics) {
+      for (let j = 0; j < inc.metrics.length; j++) {
+        if (ex.metrics[j]?.name !== inc.metrics[j]?.name || ex.metrics[j]?.value !== inc.metrics[j]?.value) return true;
+      }
+    }
+
+    if ((ex.params?.length ?? 0) !== (inc.params?.length ?? 0)) return true;
+    if (ex.params && inc.params) {
+      for (let j = 0; j < inc.params.length; j++) {
+        if (ex.params[j]?.name !== inc.params[j]?.name || ex.params[j]?.value !== inc.params[j]?.value) return true;
+      }
+    }
+  }
+
+  return false;
 }
 
-// explainabilitySlice
 export const progressPageSlice = createSlice({
-  name: "ProgressPage",
+  name: 'ProgressPage',
   initialState,
   reducers: {
     setProgressBarData: (state, action) => {
-      state.progressBar = action.payload
+      state.progressBar = action.payload;
     },
     setIntialization: (state, action) => {
-      state.initialization = action.payload
+      state.initialization = action.payload;
     },
-    setProgressGauges: (state, action) => {
-      state.progressGauges = action.payload
+    setMenuOptions: (state, action) => {
+      state.menuOptions = action.payload;
     },
-    setProgressParallel: (state, action) => {
-      state.progressParallel = { ...state.progressParallel, ...action.payload }
+    // dummy for now
+    setWorkflowsData: (state, action) => {
+      state.workflows.data = action.payload;
     },
-    setProgressWokflowsTable: (state, action) => {
-      state.progressWokflowsTable = {
-        ...state.progressWokflowsTable,
-        ...action.payload,
-      }
+    setExperimentStatus: (state, action) => {
+      if(state.experiment.data)
+        state.experiment.data.status = action.payload;
     },
-    setProgressScheduledTable: (state, action) => {
-      state.progressScheduledTable = {
-        ...state.progressScheduledTable,
-        ...action.payload,
-      }
+    clearExperiment: (state) => {
+      state.experiment.data = null;
+      state.experiment.loading = false;
+      state.experiment.error = null;
+    },
+
+    clearWorkflows: (state) => {
+      state.workflows.data = [];
+      state.workflows.loading = false;
+      state.workflows.error = null;
+      state.workflows.requested = false;
     },
   },
   extraReducers: builder => {
     builder
       .addCase(fetchExperiment.fulfilled, (state, action) => {
-        state.experiment.data = action.payload
-        state.experiment.loading = false
-        state.experiment.error = null
+        state.experiment.data = action.payload;
+        state.experiment.loading = false;
+        state.experiment.error = null;
       })
       .addCase(fetchExperimentWorkflows.fulfilled, (state, action) => {
-        state.workflows.data = action.payload
-        state.workflows.loading = false
-        state.workflows.error = null
+        const incoming = action.payload;
+        const existing = state.workflows.data;
+
+        const isDifferent = workflowsDiffer(existing, incoming);
+
+        if (isDifferent) {
+          state.workflows.data = incoming;
+        }
+
+        state.workflows.loading = false;
+        state.workflows.error = null;
       })
       .addCase(workflowsReordering.fulfilled, (state, action) => {
-        state.workflows.data = action.payload
-        state.workflows.loading = false
-        state.workflows.error = null
+        state.workflows.data = action.payload;
+        state.workflows.loading = false;
+        state.workflows.error = null;
       })
       .addCase(stateController.fulfilled, (state, action) => {
-        state.statusController.data = action.payload
-        state.statusController.loading = false
-        state.statusController.error = null
+        state.statusController.data = action.payload;
+        state.statusController.loading = false;
+        state.statusController.error = null;
       })
       .addCase(fetchExperimentWorkflows.pending, state => {
-        state.workflows.loading = true
+        state.workflows.loading = true;
+        state.workflows.requested = true;
       })
       .addCase(fetchExperiment.pending, state => {
-        state.experiment.loading = true
+        state.experiment.loading = true;
       })
       .addCase(workflowsReordering.pending, state => {
-        state.workflows.loading = true
+        state.workflows.loading = true;
       })
       .addCase(stateController.pending, state => {
-        state.statusController.loading = true
+        state.statusController.loading = true;
       })
       .addCase(fetchExperimentWorkflows.rejected, (state, action) => {
-        state.workflows.loading = false
+        state.workflows.loading = false;
         state.workflows.error =
-          action.error.message || "Error while fetching data"
+          action.error.message || 'Error while fetching data';
       })
       .addCase(fetchExperiment.rejected, (state, action) => {
-        state.experiment.loading = false
+        state.experiment.loading = false;
         state.experiment.error =
-          action.error.message || "Error while fetching data"
+          action.error.message || 'Error while fetching data';
       })
       .addCase(workflowsReordering.rejected, (state, action) => {
-        state.workflows.loading = false
+        state.workflows.loading = false;
         state.workflows.error =
-          action.error.message || "Error while fetching data"
+          action.error.message || 'Error while fetching data';
       })
       .addCase(stateController.rejected, (state, action) => {
-        state.statusController.loading = false
+        state.statusController.loading = false;
         state.statusController.error =
-          action.error.message || "Error while fetching data"
+          action.error.message || 'Error while fetching data';
       })
-      // TODO: Remove this when no longer needed: Hard Coded Cases for testing
-      .addCase(fetchExperimentTesting.fulfilled, (state, action) => {
-        state.experiment.data = action.payload
-        state.experiment.loading = false
-        state.experiment.error = null
-      })
-      .addCase(fetchExperimentWorkflowsTesting.fulfilled, (state, action) => {
-        state.workflows.data = action.payload
-        state.workflows.loading = false
-        state.workflows.error = null
-      })
-      .addCase(fetchExperimentWorkflowsTesting.pending, state => {
-        state.workflows.loading = true
-      })
-      .addCase(fetchExperimentTesting.pending, state => {
-        state.experiment.loading = true
-      })
-      .addCase(fetchExperimentWorkflowsTesting.rejected, (state, action) => {
-        state.workflows.loading = false
-        state.workflows.error =
-          action.error.message || "Error while fetching data"
-      })
-      .addCase(fetchExperimentTesting.rejected, (state, action) => {
-        state.experiment.loading = false
-        state.experiment.error =
-          action.error.message || "Error while fetching data"
-      })
+      .addCase(fetchUserEvaluation.fulfilled, (state, action) => {
+        state.workflowEvaluation.loading = false;
+        state.workflowEvaluation.error = null;
 
+        if (action.payload?.status === 'success') {
+          const { runId, data } = action.meta.arg;
+
+          if (data.rating === null) return;
+          const workflowIndex = state.workflows.data.findIndex(w => w.id === runId);
+
+          if (workflowIndex !== -1) {
+            const currentWorkflow = state.workflows.data[workflowIndex];
+            const metrics = currentWorkflow.metrics ?? [];
+            const ratingMetricIndex = metrics.findIndex(m => m.name === 'rating');
+
+            if (ratingMetricIndex !== -1) {
+              metrics[ratingMetricIndex].value = data.rating;
+            } else {
+              metrics.push({
+                name: 'rating',
+                value: data.rating,
+              } as IMetric);
+            }
+
+            const updatedWorkflow: IRun = {
+              ...currentWorkflow,
+              metrics: [...metrics],
+            };
+
+            state.workflows.data[workflowIndex] = updatedWorkflow;
+          }
+        }
+      })
+      .addCase(fetchUserEvaluation.pending, (state) => {
+        state.workflowEvaluation.loading = true;
+      })
+      .addCase(fetchUserEvaluation.rejected, (state, action) => {
+        state.workflowEvaluation.loading = false;
+        state.workflowEvaluation.error = action.error.message || 'Error while fetching data';
+      })
+      .addCase(fetchAllExperiments.fulfilled, (state, action) => {
+        state.experiments.data = action.payload;
+        state.experiments.loading = false;
+        state.experiments.error = null;
+      })
+      .addCase(fetchAllExperiments.pending, state => {
+        state.experiments.loading = true;
+      })
+      .addCase(fetchAllExperiments.rejected, (state, action) => {
+        state.experiments.loading = false;
+        state.experiments.error =
+          action.error.message || 'Error while fetching data';
+      })
+    .addCase(createWorkflow.pending, (state) => {
+      state.createdWorkflow.loading = true;
+      state.createdWorkflow.error = null;
+    })
+
+    .addCase(createWorkflow.fulfilled, (state, action) => {
+      state.createdWorkflow.data = action.payload;
+      state.createdWorkflow.loading = false;
+      state.createdWorkflow.error = null;
+    })
+
+    .addCase(createWorkflow.rejected, (state, action) => {
+      state.createdWorkflow.loading = false;
+      state.createdWorkflow.error =
+        action.error.message || 'Error while creating new run';
+    });
   },
-})
+});
 
-//Thunk Calls for Experiment/Workflows fetching
+// Thunk Calls for Experiment/Workflows fetching
 
-const apiPath = "/ivis/api"
-const apiKey = "67770b80c01a7a7c9ee031021c9500f825a8750b"
+export const fetchAllExperiments = createAsyncThunk(
+  'progressPage/fetch_all_experiments',
+  async () => {
+    const limit = 50;
 
-//TODO: Remove this when no longer needed
-export const fetchExperimentTesting = createAsyncThunk(
-  "progressPage/fetch_experiment_testing",
-  async (experimentId: string) => {
-    const request: IDataExplorationQuery = {...defaultDataExplorationQuery, 
-      datasetId: `${experimentId}/metadata/experiment.json`
-    }
-    const requestUrl = `api/visualization/tabular`
-    return axios
-      .post<any>(requestUrl,request)
-      .then(response => JSON.parse(response.data.data).experiment)
-  },
-)
+    const res = await experimentApi.get('', {
+      params: {
+        limit,
+      },
+    });
 
-//TODO: Remove this when no longer needed
-export const fetchExperimentWorkflowsTesting = createAsyncThunk(
-  "progressPage/fetch_experiment_workflows_testing",
-  async (payload: {experimentId: string, workflowIds: string[]}) => {
-    const {experimentId, workflowIds} = payload
-    const allData = await Promise.all(
-      workflowIds.map(async workflowId => {
-        const workflowRequestUrl = `api/visualization/tabular`
-        const workflowsResponse = await axios
-          .post<any>(workflowRequestUrl, {
-            ...defaultDataExplorationQuery,
-            datasetId: `${experimentId}/metadata/${workflowId}.json`,
-          })
-          .then(response => (workflowMetricsPreparation(JSON.parse(response.data.data).workflow, workflowId)))
-        return workflowsResponse
-      }),
-    )
-    return allData
-  },
-)
+    return res.data;
+  }
+);
 
 export const fetchExperiment = createAsyncThunk(
-  "progressPage/fetch_experiment",
+  'progressPage/fetch_experiment',
   async (experimentId: string) => {
-    const headers = {
-      "access-token": apiKey,
-    }
-    const requestUrl = apiPath + `/experiments/${experimentId}`
-    return axios
-      .get<IExperimentResponse>(requestUrl, { headers })
-      .then(response => response.data.experiment)
-  },
-)
+    const requestUrl = `${experimentId}`;
+    const res = await experimentApi.get(requestUrl);
+
+    return res.data;
+  }
+);
 
 export const fetchExperimentWorkflows = createAsyncThunk(
-  "progressPage/fetch_experiment_workflows",
+  'progressPage/fetch_experiment_workflows',
   async (experimentId: string) => {
-    const headers = {
-      "access-token": apiKey,
-    }
-    const requestUrl = apiPath + `/workflows-query`
-    return axios
-      .post<IWorkflowResponse[]>(requestUrl, { experimentId }, { headers })
-      .then(response => response.data.map(workflow => workflowMetricsPreparation(workflow, workflow.id || "")))
-  },
-)
+    const requestUrl = `${experimentId}/runs`;
+
+    return experimentApi.get(requestUrl).then(response => response.data);
+  });
 
 // Calls for Workflow Actions
 
 // TODO: Test this once the reordering changes are done
 export const workflowsReordering = createAsyncThunk(
-  "progressPage/workflows_reordering",
+  'progressPage/workflows_reordering',
   async (payload: { workflowId1: string; workflowId2: string, experimentId: string }) => {
-    const { workflowId1, workflowId2, experimentId } = payload
-    const headers = {
-      "access-token": apiKey,
-    }
-    const requestUrl = apiPath + `/experiments-sort-workflows/${experimentId}`
+    const { workflowId1, workflowId2 } = payload;
+    const requestUrl = '';
     const requestPayload = {
       precedence: {
         [workflowId1]: workflowId2,
       },
-    }
-    return axios
-      .post<IWorkflowResponse[]>(requestUrl, requestPayload, { headers })
-      .then(response => response.data.map(workflow => workflowMetricsPreparation(workflow, workflow.id || "")))    
-  }
-)
+    };
 
-// TODO: Test this once the table changes are done
+    return experimentApi
+      .post<IRun[]>(requestUrl, requestPayload)
+      .then(response => response.data);
+  }
+);
+
+// TODO: create this once state changes done
 export const stateController = createAsyncThunk(
-  "progressPage/state_controller",
-  async (payload: {state: string, id: string, action: string}) => {
-    const {state, id, action} = payload
-    const apiPath = `/exp/${state}/${action}/${id}`
-    return axios
-      .get(apiPath)
-      .then(response => response.data)
-  },
-)
-
-// TODO: Test this once the table changes are done
-export const workflowRating = (payload: {metric: MetricDetail, newValue: string}) => {
-    const {metric, newValue} = payload
-    const headers = {
-      "access-token": apiKey,
-    }
-    const requestUrl = apiPath + `/metrics/metricId`
-    const requestPayload: Partial<MetricDetail> = {
-      ...metric,
-      value: newValue,
-    }
-    delete requestPayload.metricId
-    return axios.post<IWorkflowResponse[]>(requestUrl, requestPayload, { headers })
+  'progressPage/state_controller',
+  async (payload: { experimentId: string | null; runId: string | null; action: string }) => {
+    return experimentApi
+      .post<string>('/life-cycle', payload)
+      .then(response => response.data);
   }
+);
 
-//Reducer exports
+export const fetchUserEvaluation = createAsyncThunk(
+  'workflowTasks/user_evaluation/fetch_data',
+  async (
+    payload: { experimentId: string; runId: string; data: {rating: number | null} }
+  ) => {
+    const { experimentId, runId, data } = payload;
+    const requestUrl = `${experimentId}/runs/${runId}/user-evaluation`;
+
+    return experimentApi
+      .post<IUserEvaluationResponse>(requestUrl, data)
+      .then(response => response.data);
+
+  },
+);
+
+export const createWorkflow = createAsyncThunk(
+  'progressPage/create_workflow',
+  async (payload: { experimentId: string; runName: string; params: Record<string, string> }) => {
+    const { experimentId, runName, params } = payload;
+    const requestUrl = `${experimentId}/runs/create`;
+
+    return experimentApi
+      .post<ICreateRunResponse>(requestUrl, { runName, params })
+      .then(res => res.data);
+  }
+);
+
+// Reducer exports
 export const {
   setProgressBarData,
-  setProgressGauges,
-  setProgressParallel,
-  setProgressWokflowsTable,
-  setProgressScheduledTable,
-  setIntialization
-} = progressPageSlice.actions
+  setIntialization,
+  setMenuOptions,
+  setWorkflowsData,
+  setExperimentStatus,
+  clearExperiment,
+  clearWorkflows,
+} = progressPageSlice.actions;
 
-export default progressPageSlice.reducer
+export default progressPageSlice.reducer;
