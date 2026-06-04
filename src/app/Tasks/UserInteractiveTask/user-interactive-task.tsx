@@ -1,4 +1,4 @@
-import ResponsiveCardTable from "../../shared/components/responsive-card-table"
+import ResponsiveCardTable from "../../../shared/components/responsive-card-table"
 import { Box } from "@mui/material"
 
 interface UserInteractiveTaskProps {
