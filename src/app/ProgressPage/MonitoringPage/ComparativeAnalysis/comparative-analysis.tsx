@@ -7,7 +7,8 @@ import ComparisonModelsCharts from './comparison-models-charts';
 import ComparisonDataCharts from './comparison-data-charts';
 import ComparativeAnalysisControls from './comparative-analysis-controls';
 import LlmTrajectoryDiff from './TrajectoryDiff/llm-trajectory-diff';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
+import { useExperimentCapabilities, COMPARE_TAB } from '../../../../shared/utils/experimentCapabilities';
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import WaterfallChartRoundedIcon from '@mui/icons-material/WaterfallChartRounded';
@@ -21,28 +22,22 @@ const ComparativeAnalysis = () => {
   const groupBy = useAppSelector(
     (state: RootState) => state.monitorPage.workflowsTable.groupBy,
   );
-  const { workflows } = useAppSelector(
-    (state: RootState) => state.progressPage,
-  );
-  const isLlmExperiment = useAppSelector(
-    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
-  );
+  const capabilities = useExperimentCapabilities();
   const theme = useTheme();
 
   const dispatch = useAppDispatch();
 
-  const hasExplainability = useMemo(() => {
-    if (workflows.data.every(workflow => !workflow.tasks)) return true;
-
-    return workflows.data.some(workflow => workflow.tasks?.some(t => typeof t.name === 'string' && /explainability/i.test(t.name)))
-      && !workflows.data.some(workflow => workflow.dataAssets?.some(asset => asset.name === 'model.pt'));
-  }, [workflows]);
-
   useEffect(() => {
-    if (groupBy.length > 0 && selectedComparisonTab !== 0) {
-      dispatch(setSelectedComparisonTab(0));
+    // Grouping only supports the Metrics view; also bail out of a subtab whose
+    // capability is unavailable (Models without explainability, Executions without traces).
+    const subtabUnavailable =
+      (selectedComparisonTab === COMPARE_TAB.MODELS && !capabilities.explainability) ||
+      (selectedComparisonTab === COMPARE_TAB.EXECUTIONS && !capabilities.traces);
+
+    if ((groupBy.length > 0 || subtabUnavailable) && selectedComparisonTab !== COMPARE_TAB.METRICS) {
+      dispatch(setSelectedComparisonTab(COMPARE_TAB.METRICS));
     }
-  }, [groupBy, selectedComparisonTab]);
+  }, [groupBy, selectedComparisonTab, capabilities.explainability, capabilities.traces]);
 
   const numSelected = workflowsTable.selectedWorkflows.length;
 
@@ -81,16 +76,22 @@ const ComparativeAnalysis = () => {
               label="METRICS"
             />
             <Tab
-              icon={isLlmExperiment ? <WaterfallChartRoundedIcon fontSize="small" /> : <HubRoundedIcon fontSize="small" />}
+              icon={<WaterfallChartRoundedIcon fontSize="small" />}
               iconPosition="start"
-              label={isLlmExperiment ? 'EXECUTIONS' : 'MODELS'}
-              disabled={groupBy.length > 0 || (!isLlmExperiment && !hasExplainability)}
+              label="EXECUTIONS"
+              disabled={groupBy.length > 0 || !capabilities.traces}
+            />
+            <Tab
+              icon={<HubRoundedIcon fontSize="small" />}
+              iconPosition="start"
+              label="MODELS"
+              disabled={groupBy.length > 0 || !capabilities.explainability}
             />
             <Tab
               icon={<StorageRoundedIcon fontSize="small" />}
               iconPosition="start"
               label="DATA"
-              disabled={groupBy.length > 0}
+              disabled={groupBy.length > 0 || !capabilities.datasets}
             />
           </Tabs>
 
@@ -118,9 +119,10 @@ const ComparativeAnalysis = () => {
       </Box>
       <ComparativeAnalysisControls />
       <Box sx={{ width: '100%', flexGrow: 1, overflow: 'auto' }}>
-        {selectedComparisonTab === 0 && <ComparisonMetricsCharts />}
-        {selectedComparisonTab === 1 && (isLlmExperiment ? <LlmTrajectoryDiff /> : <ComparisonModelsCharts />)}
-        {selectedComparisonTab === 2 && <ComparisonDataCharts />}
+        {selectedComparisonTab === COMPARE_TAB.METRICS && <ComparisonMetricsCharts />}
+        {selectedComparisonTab === COMPARE_TAB.EXECUTIONS && <LlmTrajectoryDiff />}
+        {selectedComparisonTab === COMPARE_TAB.MODELS && <ComparisonModelsCharts />}
+        {selectedComparisonTab === COMPARE_TAB.DATA && <ComparisonDataCharts />}
       </Box>
     </Box>
   );

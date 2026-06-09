@@ -28,14 +28,12 @@ import SelectionPopover from '../../../../shared/components/selection-popover';
 import PillToggle from '../../../../shared/components/pill-toggle';
 import SortIcon from '@mui/icons-material/Sort';
 import { isComparableDataAsset } from '../../../../shared/utils/dataAssetFormat';
+import { COMPARE_TAB } from '../../../../shared/utils/experimentCapabilities';
 
 const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
   const selectedModelComparisonChart = useAppSelector((state: RootState) => state.monitorPage.selectedModelComparisonChart);
   const selectedExecutionsView = useAppSelector((state: RootState) => state.monitorPage.selectedExecutionsView);
-  const isLlmExperiment = useAppSelector(
-    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
-  );
   const showMisclassifiedOnly = useAppSelector((state: RootState) => state.monitorPage.showMisclassifiedOnly);
   const sortRocByAuc = useAppSelector((state: RootState) => state.monitorPage.sortRocByAuc);
   const sortConfusionByF1 = useAppSelector((state: RootState) => state.monitorPage.sortConfusionByF1);
@@ -75,7 +73,7 @@ const ComparativeAnalysisControls = ()=> {
   );
 
   const showDataComparisonViewModeToggle = (() => {
-    if (selectedComparisonTab !== 2) return false;
+    if (selectedComparisonTab !== COMPARE_TAB.DATA) return false;
     if (!selectedDataset) return true;
 
     const assets = commonDataAssets[selectedDataset];
@@ -140,6 +138,49 @@ const ComparativeAnalysisControls = ()=> {
     setAnchorEl(null);
   };
 
+  // Shared chip row for the Executions / Models subtabs — same styling, different
+  // option set + selection state.
+  const renderChoiceChips = (
+    opts: { label: string; name: string; icon: React.ReactElement }[],
+    isSelected: (label: string) => boolean,
+    onSelect: (label: string) => void,
+  ) => (
+    <Box display="flex" flexWrap="wrap" gap={0.75}>
+      {opts.map(option => {
+        const selected = isSelected(option.label);
+
+        return (
+          <Chip
+            key={option.label}
+            label={option.name.replace('\n', ' ')}
+            icon={option.icon}
+            clickable
+            size="small"
+            sx={{
+              height: 30,
+              px: 1,
+              borderRadius: 2,
+              fontWeight: 600,
+              fontSize: '0.8rem',
+              textTransform: 'uppercase',
+              background: selected
+                ? undefined
+                : theme => theme.palette.customGrey.light,
+              '& .MuiChip-icon': {
+                fontSize: 18,
+                marginLeft: 0.25,
+                marginRight: -0.5,
+              },
+            }}
+            color={selected ? 'primary' : 'default'}
+            variant={selected ? 'filled' : 'outlined'}
+            onClick={() => onSelect(option.label)}
+          />
+        );
+      })}
+    </Box>
+  );
+
   return (
     <>
       <Box
@@ -153,7 +194,7 @@ const ComparativeAnalysisControls = ()=> {
           overflowX: 'auto',
         }}
       >
-        {selectedComparisonTab === 0 && (
+        {selectedComparisonTab === COMPARE_TAB.METRICS && (
           <Box>
             <Tooltip title="Select Metrics">
               <IconButton onClick={handleOpenMetricsMenu} size="small">
@@ -180,48 +221,17 @@ const ComparativeAnalysisControls = ()=> {
             />
           </Box>
         )}
-        {selectedComparisonTab === 1 ? (
-          <Box display="flex" flexWrap="wrap" gap={0.75}>
-            {(isLlmExperiment ? llmExecutionsOptions : options1).map(option => {
-              const isSelected = isLlmExperiment
-                ? selectedExecutionsView === option.label
-                : selectedModelComparisonChart === option.label;
-
-              return (
-                <Chip
-                  key={option.label}
-                  label={option.name.replace('\n', ' ')}
-                  icon={option.icon}
-                  clickable
-                  size="small"
-                  sx={{
-                    height: 30,
-                    px: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: '0.8rem',
-                    textTransform: 'uppercase',
-                    background: isSelected
-                      ? undefined
-                      : theme => theme.palette.customGrey.light,
-                    '& .MuiChip-icon': {
-                      fontSize: 18,
-                      marginLeft: 0.25,
-                      marginRight: -0.5,
-                    },
-                  }}
-                  color={isSelected ? 'primary' : 'default'}
-                  variant={isSelected ? 'filled' : 'outlined'}
-                  onClick={() =>
-                    isLlmExperiment
-                      ? dispatch(setSelectedExecutionsView(option.label as 'summary' | 'timeline' | 'verdicts'))
-                      : dispatch(setSelectedModelComparisonChart(option.label))
-                  }
-                />
-              );
-            })}
-          </Box>
-        ) : selectedComparisonTab === 2 && workflowsTable.selectedWorkflows.length > 0 && (
+        {selectedComparisonTab === COMPARE_TAB.EXECUTIONS && renderChoiceChips(
+          llmExecutionsOptions,
+          label => selectedExecutionsView === label,
+          label => dispatch(setSelectedExecutionsView(label as 'summary' | 'timeline' | 'verdicts')),
+        )}
+        {selectedComparisonTab === COMPARE_TAB.MODELS && renderChoiceChips(
+          options1,
+          label => selectedModelComparisonChart === label,
+          label => dispatch(setSelectedModelComparisonChart(label)),
+        )}
+        {selectedComparisonTab === COMPARE_TAB.DATA && workflowsTable.selectedWorkflows.length > 0 && (
           <>
             <Box display="flex" flexWrap="wrap" gap={0.2}>
               <Tooltip title="Select Dataset">
@@ -291,7 +301,7 @@ const ComparativeAnalysisControls = ()=> {
           sx={{ ml: 'auto' }}
         >
 
-          {showDataComparisonViewModeToggle && selectedComparisonTab === 2 && (
+          {showDataComparisonViewModeToggle && selectedComparisonTab === COMPARE_TAB.DATA && (
             <SegmentedToggle
               aria-label="data comparison view mode"
               value={dataComparisonViewMode === 'boxplot' ? 'boxplot' : 'overlay'}
@@ -303,15 +313,15 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {!isLlmExperiment && selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
+          {selectedComparisonTab === COMPARE_TAB.MODELS && selectedModelComparisonChart === 'instanceView' && (
             <MisclassifiedToggle
               checked={showMisclassifiedOnly}
               onChange={(checked) => dispatch(setShowMisclassifiedOnly(checked))}
             />
           )}
 
-          {selectedComparisonTab !== 2
-            && !(isLlmExperiment && selectedComparisonTab === 1 && (selectedExecutionsView === 'verdicts' || selectedExecutionsView === 'timeline')) && (
+          {selectedComparisonTab !== COMPARE_TAB.DATA
+            && !(selectedComparisonTab === COMPARE_TAB.EXECUTIONS && (selectedExecutionsView === 'verdicts' || selectedExecutionsView === 'timeline')) && (
             <SegmentedToggle
               uppercase
               aria-label="view mode"
@@ -323,7 +333,7 @@ const ComparativeAnalysisControls = ()=> {
               ]}
             />
           )}
-          {!isLlmExperiment && selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
+          {selectedComparisonTab === COMPARE_TAB.MODELS && selectedModelComparisonChart === 'confusionMatrix' && (
             <PillToggle
               checked={sortConfusionByF1}
               onChange={(c) => dispatch(setSortConfusionByF1(c))}
@@ -333,7 +343,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {!isLlmExperiment && selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
+          {selectedComparisonTab === COMPARE_TAB.MODELS && selectedModelComparisonChart === 'rocCurve' && (
             <PillToggle
               checked={sortRocByAuc}
               onChange={(c) => dispatch(setSortRocByAuc(c))}
@@ -343,7 +353,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {!isLlmExperiment && selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
+          {selectedComparisonTab === COMPARE_TAB.MODELS && selectedModelComparisonChart === 'instanceView' && (
             <>
               <IconButton
                 aria-label="settings"
