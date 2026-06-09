@@ -33,6 +33,11 @@ import {
 } from '../../../../shared/utils/observability-aggregates';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import { Bar, EmptyNote } from './chart-kit';
+import LlmKpiStrip from './llm-kpi-strip';
+import VerdictPassRateChart from './verdict-passrate-chart';
+import PerAgentProfileChart from './per-agent-profile-chart';
+import CallFrequencyChart from './call-frequency-chart';
+import DistributionChart from './distribution-chart';
 
 const Th = ({ children, align }: { children: React.ReactNode; align?: 'left' | 'right' }) => (
   <TableCell align={align} sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', color: 'text.secondary', whiteSpace: 'nowrap', py: 0.75 }}>
@@ -173,6 +178,8 @@ export default function LlmMonitoringOverview() {
 
       {hasData && r && (
         <>
+          <LlmKpiStrip details={allDetails} sessionCount={workflowIds.length} />
+
           {/* Top row: Traces / Model usage / Scores */}
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
@@ -250,6 +257,14 @@ export default function LlmMonitoringOverview() {
                 )}
               </ResponsiveCardTable>
             </Grid>
+          </Grid>
+
+          {/* Quality, latency & frequency — all derived from the trace payload you already fetch */}
+          <Grid container spacing={1.5}>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><VerdictPassRateChart details={allDetails} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><PerAgentProfileChart details={allDetails} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><CallFrequencyChart details={allDetails} /></Grid>
+            <Grid size={{ xs: 12 }} sx={{ textAlign: 'left' }}><DistributionChart details={allDetails} /></Grid>
           </Grid>
 
           {/* Bottom row: Observations by time / Trace latency percentiles */}
