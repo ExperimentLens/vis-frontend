@@ -218,6 +218,7 @@ export default function LlmTrajectoryDiff() {
                 } : undefined,
                 tooltip: [
                   { field: 'runName', type: 'nominal', title: 'workflow' },
+                  { field: 'id', type: 'nominal', title: 'workflow id' },
                   { field: 'value', type: 'quantitative', title: m.label, format: ',.2f' },
                 ],
               },
