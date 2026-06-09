@@ -338,6 +338,28 @@ export const observationsByTime = (details: TraceDetail[], bucketMs = 3600000): 
     .sort((a, b) => a.time - b.time);
 };
 
+export interface TokenSplitTotals { prompt: number; completion: number; total: number }
+
+/** Sum prompt vs. completion tokens across every generation in a set of traces. */
+export const tokenSplit = (details: TraceDetail[]): TokenSplitTotals => {
+  let prompt = 0;
+  let completion = 0;
+  let total = 0;
+
+  details.forEach(t =>
+    t.observations.forEach(o => {
+      const tk = (o.output as GenOutput)?.tokens;
+
+      if (!tk) return;
+      prompt += tk.prompt_tokens ?? 0;
+      completion += tk.completion_tokens ?? 0;
+      total += tk.total_tokens ?? 0;
+    }),
+  );
+
+  return { prompt, completion, total };
+};
+
 export interface LatencyPercentiles { name: string; count: number; p50: number; p90: number; p95: number; p99: number }
 
 export const latencyByTraceName = (details: TraceDetail[]): LatencyPercentiles[] => {

@@ -28,6 +28,8 @@ import { alignByQuestion } from './trajectory-alignment';
 import Loader from '../../../../../shared/components/loader';
 import VerdictMatrix from './verdict-matrix';
 import PerTaskAnalysis from './per-task-analysis';
+import SummaryKpiStrip from './summary-kpi-strip';
+import { JudgePassRateChart, TokenSplitChart, LatencyCostChart } from './summary-comparisons';
 import { exportElementToPng } from '../../../../../shared/utils/export-png';
 
 const FALLBACK_COLORS = ['#3766AF', '#6BBC8C', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9'];
@@ -116,10 +118,13 @@ export default function LlmTrajectoryDiff() {
     },
   }), [dispatch]);
 
-  const summaryDatasets = useMemo(() => {
-    const rolls: Record<string, ExperimentRollup> = {};
+  const rollups = useMemo(
+    () => Object.fromEntries(runIds.map(id => [id, rollup(detailsByRun[id] ?? [])])) as Record<string, ExperimentRollup>,
+    [runIds, detailsByRun],
+  );
 
-    runIds.forEach(id => { rolls[id] = rollup(detailsByRun[id] ?? []); });
+  const summaryDatasets = useMemo(() => {
+    const rolls = rollups;
     const out: Record<string, Array<{ id: string; runName: string; value: number }>> = {};
 
     SUMMARY_METRICS.forEach(m => {
@@ -137,7 +142,7 @@ export default function LlmTrajectoryDiff() {
     });
 
     return out;
-  }, [runIds, detailsByRun, runNameById]);
+  }, [runIds, rollups, runNameById]);
 
   const trajectoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -171,11 +176,15 @@ export default function LlmTrajectoryDiff() {
 
   const selectedQ = aligned.length ? aligned[Math.min(questionIdx, aligned.length - 1)] : undefined;
 
+  const summaryChartProps = { detailsByRun, runIds, runNameById, summaryColor, summaryTooltip, signalListeners, hoveredWorkflowId };
+
   return (
     <Stack spacing={1.5} sx={{ p: 1.5, height: '100%' }}>
       {/* SUMMARY — bar charts per metric, layout follows Mosaic/Stacked. Hover syncs with the workflow table. */}
       {selectedExecutionsView === 'summary' && (
-        <Grid container spacing={1.5}>
+        <>
+          <SummaryKpiStrip runIds={runIds} runNameById={runNameById} colorById={colorById} rollups={rollups} baselineId={baseline} />
+          <Grid container spacing={1.5}>
           {SUMMARY_METRICS.map(m => {
             const data = summaryDatasets[m.key] ?? [];
             const yMax = data.length ? Math.max(...data.map(d => d.value)) * 1.1 : 1;
@@ -257,7 +266,18 @@ export default function LlmTrajectoryDiff() {
               </Grid>
             );
           })}
-        </Grid>
+
+            <Grid size={{ xs: isMosaic ? 6 : 12 }}>
+              <JudgePassRateChart {...summaryChartProps} />
+            </Grid>
+            <Grid size={{ xs: isMosaic ? 6 : 12 }}>
+              <TokenSplitChart {...summaryChartProps} />
+            </Grid>
+            <Grid size={{ xs: isMosaic ? 6 : 12 }}>
+              <LatencyCostChart {...summaryChartProps} />
+            </Grid>
+          </Grid>
+        </>
       )}
 
       {/* Question selector — TIMELINE / VERDICTS */}
