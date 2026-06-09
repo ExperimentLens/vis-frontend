@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Box, Chip, Stack, Tooltip, Typography, alpha, useTheme } from '@mui/material';
 import type { TraceDetail } from '../../../../../shared/models/observability/trace-detail';
 import { MONO, formatMs } from '../../../../../shared/models/observability/agentic-conventions';
 import SegmentedToggle from '../../../../../shared/components/segmented-toggle';
 import ResponsiveCardTable from '../../../../../shared/components/responsive-card-table';
 import { colorForType } from '../../../../Tasks/Observability/trace-observation-waterfall';
+import { exportElementToPng } from '../../../../../shared/utils/export-png';
 import { alignTasks } from './trajectory-alignment';
 import type { AlignedTaskCell } from './trajectory-alignment';
 
@@ -17,6 +18,8 @@ type Props = {
 };
 
 export default function PerTaskAnalysis({ byRun, runIds, runNameById, colorById, baselineId }: Props) {
+  const theme = useTheme();
+  const gridRef = useRef<HTMLDivElement | null>(null);
   const [metric, setMetric] = useState<'duration' | 'tokens'>('duration');
   const [sortMode, setSortMode] = useState<'regression' | 'order'>('regression');
 
@@ -56,52 +59,36 @@ export default function PerTaskAnalysis({ byRun, runIds, runNameById, colorById,
 
   const gridCols = `minmax(150px, 1.4fr) repeat(${runIds.length}, minmax(110px, 1fr))`;
 
-  const handleDownloadCsv = () => {
-    if (!sortedTasks.length) return;
-    const q = (s: string) => `"${s.replace(/"/g, '""')}"`;
-    const headers = ['Task', ...runIds.map(id => runNameById[id] ?? id)].map(q);
-    const rows = sortedTasks.map(task => {
-      const base = valueOf(task.byRun[baselineId]);
-      const cells = runIds.map(id => {
-        const v = valueOf(task.byRun[id]);
-        if (v === null) return '—';
-        if (id === baselineId || base === null) return fmtVal(v);
-        const d = v - base;
-        return `${fmtVal(v)} (${d > 0 ? '+' : '−'}${fmtVal(Math.abs(d))})`;
-      });
-      return [task.name, ...cells].map(q).join(',');
-    });
-    const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.href = url;
-    link.download = `per-task-${metric}-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+  const handleDownloadPng = () => {
+    if (gridRef.current) {
+      exportElementToPng(gridRef.current, `per-task-analysis-${new Date().toISOString().split('T')[0]}.png`, theme.palette.background.paper);
+    }
   };
 
   return (
     <ResponsiveCardTable
       title="Per-task analysis"
       details="bars share a per-task scale; Δ vs. baseline"
-      showSettings={false}
       showFullScreenButton={false}
       showDownloadButton={tasks.length > 0}
-      onDownload={handleDownloadCsv}
-      downloadLabel="Download as CSV"
-      headerActions={
-        <Stack direction="row" spacing={0.75}>
-          <SegmentedToggle aria-label="metric" value={metric} onChange={v => setMetric(v as 'duration' | 'tokens')} options={[{ value: 'duration', label: 'Duration' }, { value: 'tokens', label: 'Tokens' }]} />
-          <SegmentedToggle aria-label="sort" value={sortMode} onChange={v => setSortMode(v as 'regression' | 'order')} options={[{ value: 'regression', label: 'Biggest Δ' }, { value: 'order', label: 'Order' }]} />
+      onDownload={handleDownloadPng}
+      downloadLabel="Download as PNG"
+      optionsLabel="Per-task options"
+      controlPanel={
+        <Stack spacing={1.25} sx={{ width: '100%' }}>
+          <Box>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>Metric</Typography>
+            <SegmentedToggle fullWidth aria-label="metric" value={metric} onChange={v => setMetric(v as 'duration' | 'tokens')} options={[{ value: 'duration', label: 'Duration' }, { value: 'tokens', label: 'Tokens' }]} />
+          </Box>
+          <Box>
+            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>Sort</Typography>
+            <SegmentedToggle fullWidth aria-label="sort" value={sortMode} onChange={v => setSortMode(v as 'regression' | 'order')} options={[{ value: 'regression', label: 'Biggest Δ' }, { value: 'order', label: 'Order' }]} />
+          </Box>
         </Stack>
       }
     >
       <Box sx={{ overflow: 'auto' }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: gridCols, gap: 0.5, minWidth: 480, alignItems: 'center' }}>
+        <Box ref={gridRef} sx={{ display: 'grid', gridTemplateColumns: gridCols, gap: 0.5, minWidth: 480, alignItems: 'center' }}>
           <Box />
           {runIds.map(id => <RunHead key={id} id={id} colorById={colorById} runNameById={runNameById} baselineId={baselineId} />)}
 
@@ -132,7 +119,7 @@ export default function PerTaskAnalysis({ byRun, runIds, runNameById, colorById,
                   const delta = id !== baselineId && base !== null ? v - base : null;
 
                   return (
-                    <Box key={id} sx={{ position: 'relative', height: 26, borderRadius: 0.75, bgcolor: alpha(color, 0.1), overflow: 'hidden' }}>
+                    <Box key={id} sx={{ position: 'relative', height: 34, borderRadius: 0.75, bgcolor: alpha(color, 0.1), overflow: 'hidden' }}>
                       <Box sx={{ position: 'absolute', inset: 0, width: `${pct}%`, bgcolor: alpha(color, 0.32) }} />
                       <Stack direction="row" alignItems="center" sx={{ position: 'relative', height: '100%', px: 0.6 }}>
                         <Typography component="span" sx={{ fontFamily: MONO, fontSize: '0.62rem', fontWeight: 700 }}>{fmtVal(v)}</Typography>

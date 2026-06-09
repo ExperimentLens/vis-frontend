@@ -39,6 +39,10 @@ const SUMMARY_METRICS: ReadonlyArray<{ key: keyof ExperimentRollup; label: strin
   { key: 'errorRate', label: 'Errors (%)', scale: 100 },
 ];
 
+// Timeline tab: the side-by-side waterfall trajectories are temporarily hidden.
+// Flip to true to restore them (and re-enable the Mosaic/Stacked toggle in the controls).
+const SHOW_TIMELINE_WATERFALLS = false;
+
 export default function LlmTrajectoryDiff() {
   const dispatch = useAppDispatch();
   const theme = useTheme();
@@ -168,7 +172,7 @@ export default function LlmTrajectoryDiff() {
   const selectedQ = aligned.length ? aligned[Math.min(questionIdx, aligned.length - 1)] : undefined;
 
   return (
-    <Stack spacing={1.5} sx={{ p: 1.5 }}>
+    <Stack spacing={1.5} sx={{ p: 1.5, height: '100%' }}>
       {/* SUMMARY — bar charts per metric, layout follows Mosaic/Stacked. Hover syncs with the workflow table. */}
       {selectedExecutionsView === 'summary' && (
         <Grid container spacing={1.5}>
@@ -280,7 +284,8 @@ export default function LlmTrajectoryDiff() {
 
       {selectedQ && selectedExecutionsView === 'timeline' && (
         <>
-          {/* Side-by-side trajectories — layout follows Mosaic/Stacked + run count */}
+          {/* Side-by-side trajectory waterfalls — temporarily hidden; flip SHOW_TIMELINE_WATERFALLS to restore. */}
+          {SHOW_TIMELINE_WATERFALLS && (
           <Grid container spacing={1.5}>
             {runIds.map((id, i) => {
               const trace = selectedQ.byRun[id];
@@ -309,6 +314,7 @@ export default function LlmTrajectoryDiff() {
               );
             })}
           </Grid>
+          )}
 
           {/* Per-task analysis — inline bars, metric toggle, regression sort */}
           <PerTaskAnalysis byRun={selectedQ.byRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} />
