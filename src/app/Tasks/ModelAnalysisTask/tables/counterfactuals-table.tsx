@@ -18,7 +18,7 @@ import type { GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import ReportProblemRoundedIcon from '@mui/icons-material/ReportProblemRounded';
 import BuildIcon from '@mui/icons-material/Build';
-import { createWorkflow, setWorkflowsData } from '../../../../store/slices/progressPageSlice';
+import { createWorkflow } from '../../../../store/slices/progressPageSlice';
 import { Snackbar, Alert } from '@mui/material';
 
 interface ITableComponent {
@@ -33,6 +33,10 @@ interface ITableComponent {
   workflowId: string
   onClose: () => void
 }
+
+type CounterfactualRow = {
+  id: number;
+} & Record<string, string | number>;
 
 const CounterfactualsTable = (props: ITableComponent) => {
   const {
@@ -283,7 +287,7 @@ const CounterfactualsTable = (props: ITableComponent) => {
     return !isNaN(n) && isFinite(n);
   };
 
-  const handleReconfigure = async (row: any) => {
+  const handleReconfigure = async (row: CounterfactualRow) => {
     if (!experimentId) return;
 
     const currentWorkflow = workflows?.data?.find(
@@ -365,20 +369,20 @@ const CounterfactualsTable = (props: ITableComponent) => {
 
   const tableContents = tab?.workflowTasks.modelAnalysis?.counterfactuals?.data?.tableContents || {};
 
-  const rows = Array.from({ length: rowCount }, (_, rowIndex) => {
+  const rows: CounterfactualRow[] = Array.from({ length: rowCount }, (_, rowIndex) => {
     // Skip the factual row
     if (tableContents['Type']?.values[rowIndex] === 'Factual') {
       return null;
     }
 
-    const row: Record<string, number | string> = { id: rowIndex };
+    const row: CounterfactualRow = { id: rowIndex };
 
     for (const [key, column] of Object.entries(filteredTableContents)) {
       row[key] = column.values[rowIndex];
     }
 
     return row;
-  }).filter((row): row is Record<string, number | string> => row !== null);
+  }).filter((row): row is CounterfactualRow => row !== null);
 
   return (
     <Box sx={{ height: '100%' }}>

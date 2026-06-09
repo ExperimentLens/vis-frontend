@@ -254,12 +254,21 @@ const ComparisonMetricsCharts: React.FC = () => {
     const isGrouped = workflowsTable.groupBy.length > 0;
 
     const signalListeners = {
-      hover: (_name: string, value: { id?: string | string[]}) => {
+      hover: (_name: string, value: unknown) => {
+        const id =
+          value &&
+          typeof value === 'object' &&
+          'id' in value
+            ? (value as { id?: string | string[] }).id
+            : undefined;
+      
         const next =
-          value && value.id
-            ? (Array.isArray(value.id) ? value.id[0] : value.id) ?? null
+          id !== null && id !== undefined
+            ? Array.isArray(id)
+              ? id[0] ?? null
+              : id
             : null;
-
+      
         if (next !== lastHoverRef.current) {
           lastHoverRef.current = next;
           dispatch(setHoveredWorkflow(next));
@@ -332,6 +341,7 @@ const ComparisonMetricsCharts: React.FC = () => {
         type: 'line',
         tooltip: true,
         point: {
+          filled: true,
           size: 20,
         },
       }
@@ -346,12 +356,10 @@ const ComparisonMetricsCharts: React.FC = () => {
     // Vega-Lite spec
     const chartSpec = {
       params: [
-        ...([
-          {
-            name: 'hover',
-            select: { type: 'point', fields: ['id'], on: 'mouseover', clear: 'mouseout' },
-          },
-        ]),
+        {
+          name: 'hover',
+          select: { type: 'point', fields: ['id'], on: 'mouseover', clear: 'mouseout' },
+        },
       ],
       mark,
       encoding: {
@@ -361,15 +369,18 @@ const ComparisonMetricsCharts: React.FC = () => {
           ...(isLineChart ? {} : { scale: { paddingInner: 0.1, paddingOuter: barPaddingOuter } }),
           axis: {
             title: xTitle,
-            ...(xType === 'temporal' ? { format: '%b %d %H:%M' } : { labels: false }),
+            ...(xType === 'temporal' ? { format: '%b %d %H:%M' } : {}),
+            ...(!isLineChart && xType !== 'temporal' ? { labels: false } : {}),
           },
         },
+      
         y: {
           field: 'value',
           type: 'quantitative',
           axis: { title: metricName },
           scale: yScale,
         },
+      
         color: {
           field: 'id',
           type: 'nominal',
@@ -379,19 +390,40 @@ const ComparisonMetricsCharts: React.FC = () => {
           },
           legend: null,
         },
-        opacity: hoveredWorkflowId ? {
-          condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: 1 },
-          value: 0.35,
-        } : undefined,
-
-        strokeWidth: hoveredWorkflowId ? {
-          condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: 3 },
-          value: 0,
-        } : undefined,
-        stroke: hoveredWorkflowId ? {
-          condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: '#000' },
-          value: 'transparent',
-        } : undefined,
+      
+        ...(isLineChart
+          ? {
+              detail: {
+                field: 'id',
+                type: 'nominal',
+              },
+              order: {
+                field: xField,
+                type: xType,
+              },
+            }
+          : {}),
+          
+        opacity: hoveredWorkflowId
+          ? {
+              condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: 1 },
+              value: 0.35,
+            }
+          : undefined,
+          
+        ...(!isLineChart && hoveredWorkflowId
+          ? {
+              strokeWidth: {
+                condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: 3 },
+                value: 0,
+              },
+              stroke: {
+                condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: '#000' },
+                value: 'transparent',
+              },
+            }
+          : {}),
+          
         tooltip: [
           ...(isGrouped ? [] : [{ field: 'id', type: 'nominal', title: 'Workflow' }]),
           ...workflowsTable.groupBy.map(field => ({
