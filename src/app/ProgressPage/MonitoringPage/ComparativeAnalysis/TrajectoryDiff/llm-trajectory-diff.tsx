@@ -8,33 +8,27 @@ import {
   MenuItem,
   Select,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
   useTheme,
 } from '@mui/material';
-import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import type { RootState } from '../../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../../store/store';
 import { fetchSessionTraceDetails, selectSessionsMap } from '../../../../../store/slices/observabilitySlice';
 import { setHoveredWorkflow } from '../../../../../store/slices/monitorPageSlice';
-import { MONO, OBSERVABILITY_PROJECT_ID, formatMs } from '../../../../../shared/models/observability/agentic-conventions';
+import { OBSERVABILITY_PROJECT_ID } from '../../../../../shared/models/observability/agentic-conventions';
 import { Handler } from 'vega-tooltip';
 import { rollup } from '../../../../../shared/utils/observability-aggregates';
 import type { ExperimentRollup } from '../../../../../shared/utils/observability-aggregates';
 import InfoMessage from '../../../../../shared/components/InfoMessage';
-import ObservationWaterfall, { colorForType } from '../../../../Tasks/Observability/trace-observation-waterfall';
+import ObservationWaterfall from '../../../../Tasks/Observability/trace-observation-waterfall';
 import ResponsiveCardTable from '../../../../../shared/components/responsive-card-table';
 import ResponsiveCardVegaLite from '../../../../../shared/components/responsive-card-vegalite';
 import { EmptyNote } from '../../LLMOverview/chart-kit';
-import { alignByQuestion, alignTasks, alignVerdicts } from './trajectory-alignment';
-import type { AlignedTaskCell } from './trajectory-alignment';
+import { alignByQuestion } from './trajectory-alignment';
 import Loader from '../../../../../shared/components/loader';
+import VerdictMatrix from './verdict-matrix';
+import PerTaskAnalysis from './per-task-analysis';
+import { exportElementToPng } from '../../../../../shared/utils/export-png';
 
 const FALLBACK_COLORS = ['#3766AF', '#6BBC8C', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9'];
 
@@ -44,45 +38,6 @@ const SUMMARY_METRICS: ReadonlyArray<{ key: keyof ExperimentRollup; label: strin
   { key: 'judgePassRate', label: 'Judge pass (%)', scale: 100 },
   { key: 'errorRate', label: 'Errors (%)', scale: 100 },
 ];
-
-type CellAlign = 'left' | 'right' | 'center';
-
-const Th = ({ children, align, colSpan }: { children: React.ReactNode; align?: CellAlign; colSpan?: number }) => (
-  <TableCell align={align} colSpan={colSpan} sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', color: 'text.secondary', whiteSpace: 'nowrap', py: 0.75 }}>
-    {children}
-  </TableCell>
-);
-
-const Td = ({ children, align, colSpan }: { children: React.ReactNode; align?: CellAlign; colSpan?: number }) => (
-  <TableCell align={align} colSpan={colSpan} sx={{ fontSize: '0.74rem', whiteSpace: 'nowrap', py: 0.5 }}>
-    {children}
-  </TableCell>
-);
-
-const DeltaText = ({ delta, lowerBetter, format }: { delta: number; lowerBetter: boolean; format: (n: number) => string }) => {
-  const theme = useTheme();
-
-  if (delta === 0) return <Box component="span" sx={{ color: 'text.disabled', ml: 0.5, fontSize: '0.68rem' }}>=</Box>;
-  const good = lowerBetter ? delta < 0 : delta > 0;
-  const color = good ? theme.palette.success.main : theme.palette.error.main;
-
-  return (
-    <Box component="span" sx={{ color, ml: 0.5, fontSize: '0.68rem', fontFamily: MONO }}>
-      {delta > 0 ? '+' : '−'}{format(Math.abs(delta))}
-    </Box>
-  );
-};
-
-const VerdictDot = ({ value }: { value: boolean | undefined }) => {
-  const theme = useTheme();
-
-  if (value === undefined) return <Box component="span" sx={{ color: 'text.disabled' }}>—</Box>;
-  const color = value ? theme.palette.success.main : theme.palette.error.main;
-
-  return value
-    ? <CheckCircleRoundedIcon sx={{ fontSize: 15, color }} />
-    : <CancelRoundedIcon sx={{ fontSize: 15, color }} />;
-};
 
 export default function LlmTrajectoryDiff() {
   const dispatch = useAppDispatch();
@@ -122,6 +77,7 @@ export default function LlmTrajectoryDiff() {
   useEffect(() => setQuestionIdx(0), [idKey]);
 
   const colorOf = (runId: string, i: number) => workflowColors[runId] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length];
+  const colorById = Object.fromEntries(runIds.map((id, i) => [id, colorOf(id, i)]));
   const baseline = runIds[0];
   const anyLoading = runIds.some(id => sessions[id]?.loading);
   const hasAny = runIds.some(id => (sessions[id]?.details?.length ?? 0) > 0);
@@ -179,131 +135,17 @@ export default function LlmTrajectoryDiff() {
     return out;
   }, [runIds, detailsByRun, runNameById]);
 
-  const handleDownloadTaskDelta = () => {
-    const selectedQ = aligned.length ? aligned[Math.min(questionIdx, aligned.length - 1)] : undefined;
-    const tasksData = selectedQ ? alignTasks(selectedQ.byRun) : [];
-    const baseMs = (c: AlignedTaskCell | undefined) => (c ? c.durationMs : null);
-    const baseline = runIds[0];
-
-    if (!tasksData.length) return;
-
-    const headers = ['Task', ...runIds.map(id => runNameById[id] ?? id)];
-    const rows = tasksData.map(task => {
-      const baseTime = baseMs(task.byRun[baseline]);
-      const rowData: string[] = [task.name];
-
-      runIds.forEach(id => {
-        const cell = task.byRun[id];
-        if (!cell) {
-          rowData.push('—');
-        } else {
-          const duration = formatMs(cell.durationMs);
-          if (id === baseline || baseTime === null) {
-            rowData.push(duration);
-          } else {
-            const delta = cell.durationMs - baseTime;
-            const deltaSign = delta > 0 ? '+' : '−';
-            const deltaStr = deltaSign + formatMs(Math.abs(delta));
-            rowData.push(`${duration} (${deltaStr})`);
-          }
-        }
-      });
-
-      return rowData.join(',');
-    });
-
-    const csvContent = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `per-task-delta-${new Date().toISOString().split('T')[0]}.csv`
-    );
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const trajectoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const handleDownloadTrajectoryPng = async (runId: string) => {
     const element = trajectoryRefs.current[runId];
     if (!element) return;
 
-      // Dynamically load html2canvas from CDN
-      if (!(window as any).html2canvas) {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-        document.head.appendChild(script);
-        
-        await new Promise((resolve, reject) => {
-          script.onload = resolve;
-          script.onerror = reject;
-        });
-      }
-
-      const html2canvas = (window as any).html2canvas;
-      const canvas = await html2canvas(element, {
-        backgroundColor: theme.palette.background.paper,
-        scale: 2,
-        logging: false,
-      });
-
-      canvas.toBlob((blob: Blob | null) => {
-        if (!blob) return;
-
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-
-        link.href = blobUrl;
-        link.download = `trajectory-${runNameById[runId] ?? runId}-${new Date().toISOString().split('T')[0]}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        // Revoke blob URL to free memory
-        URL.revokeObjectURL(blobUrl);
-      });
-  };
-
-  const verdictDiffRef = useRef<HTMLDivElement | null>(null);
-
-  const handleDownloadVerdictDiffPng = async () => {
-    const element = verdictDiffRef.current;
-    if (!element) return;
-
-    // Dynamically load html2canvas from CDN
-    if (!(window as any).html2canvas) {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      document.head.appendChild(script);
-      
-      await new Promise((resolve, reject) => {
-        script.onload = resolve;
-        script.onerror = reject;
-      });
-    }
-    const html2canvas = (window as any).html2canvas;
-    const canvas = await html2canvas(element, {
-      backgroundColor: theme.palette.background.paper,
-      scale: 2,
-      logging: false,
-    });
-    canvas.toBlob((blob: Blob | null) => {
-      if (!blob) return;
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = `verdict-diff-${new Date().toISOString().split('T')[0]}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      // Revoke blob URL to free memory
-      URL.revokeObjectURL(blobUrl);
-    });
+    await exportElementToPng(
+      element,
+      `trajectory-${runNameById[runId] ?? runId}-${new Date().toISOString().split('T')[0]}.png`,
+      theme.palette.background.paper,
+    );
   };
 
   if (!hasAny && anyLoading) {
@@ -324,11 +166,6 @@ export default function LlmTrajectoryDiff() {
   }
 
   const selectedQ = aligned.length ? aligned[Math.min(questionIdx, aligned.length - 1)] : undefined;
-  const tasks = selectedQ ? alignTasks(selectedQ.byRun) : [];
-  const judgeRows = selectedQ ? alignVerdicts(selectedQ.byRun, 'judges') : [];
-  const checkRows = selectedQ ? alignVerdicts(selectedQ.byRun, 'checks') : [];
-
-  const cellMs = (c: AlignedTaskCell | undefined) => (c ? c.durationMs : null);
 
   return (
     <Stack spacing={1.5} sx={{ p: 1.5 }}>
@@ -472,135 +309,19 @@ export default function LlmTrajectoryDiff() {
             })}
           </Grid>
 
-          {/* Per-task delta table */}
-          <ResponsiveCardTable title="Per-task delta" details="aligned by task name & occurrence" showDownloadButton={true} onDownload={handleDownloadTaskDelta} downloadLabel="Download as CSV" downloadSecondaryText="">
-            <Box sx={{ overflow: 'auto' }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <Th>Task</Th>
-                    {runIds.map((id, i) => (
-                      <Th key={id} align="right">
-                        <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="flex-end" sx={{ minWidth: 0 }}>
-                          <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: colorOf(id, i), flexShrink: 0 }} />
-                          <Box component="span" sx={{ fontFamily: MONO, fontSize: '0.6rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={runNameById[id] ?? id}>
-                            {runNameById[id] ?? id}
-                          </Box>
-                        </Stack>
-                      </Th>
-                    ))}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {tasks.map(task => {
-                    const baseMs = cellMs(task.byRun[baseline]);
-
-                    return (
-                      <TableRow key={task.key} hover>
-                        <Td>
-                          <Stack direction="row" spacing={0.5} alignItems="center">
-                            <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: colorForType(task.type), flexShrink: 0 }} />
-                            <Typography variant="caption" sx={{ fontFamily: MONO }}>{task.name}</Typography>
-                          </Stack>
-                        </Td>
-                        {runIds.map(id => {
-                          const c = task.byRun[id];
-
-                          if (!c) return <Td key={id} align="right"><Box component="span" sx={{ color: 'text.disabled' }}>—</Box></Td>;
-
-                          return (
-                            <Td key={id} align="right">
-                              <Box component="span" sx={{ fontFamily: MONO }}>{formatMs(c.durationMs)}</Box>
-                              {id !== baseline && baseMs !== null && (
-                                <DeltaText delta={c.durationMs - baseMs} lowerBetter format={formatMs} />
-                              )}
-                            </Td>
-                          );
-                        })}
-                      </TableRow>
-                    );
-                  })}
-                  {tasks.length === 0 && (
-                    <TableRow><Td>No tasks.</Td></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </Box>
-          </ResponsiveCardTable>
+          {/* Per-task analysis — inline bars, metric toggle, regression sort */}
+          <PerTaskAnalysis byRun={selectedQ.byRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} />
         </>
       )}
 
       {selectedQ && selectedExecutionsView === 'verdicts' && (
-        <>
-          {/* Verdict diff — one aligned table, columns headed by workflow swatch+name */}
-          {(judgeRows.length > 0 || checkRows.length > 0) && (
-            <ResponsiveCardTable 
-              title="Verdict diff" 
-              details="regressions vs. baseline highlighted"
-              showDownloadButton={true}
-              onDownload={handleDownloadVerdictDiffPng}
-              downloadLabel="Download as PNG"
-            >
-              <Box 
-                ref={verdictDiffRef}
-                sx={{ overflow: 'auto' }}
-              >
-                <Table size="small" sx={{ tableLayout: 'fixed' }}>
-                  <TableHead>
-                    <TableRow>
-                      <Th>Verdict</Th>
-                      {runIds.map((id, i) => (
-                        <Th key={id} align="center">
-                          <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center" sx={{ minWidth: 0 }}>
-                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: colorOf(id, i), flexShrink: 0 }} />
-                            <Box component="span" sx={{ fontFamily: MONO, fontSize: '0.6rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={runNameById[id] ?? id}>
-                              {runNameById[id] ?? id}
-                            </Box>
-                          </Stack>
-                        </Th>
-                      ))}
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {[{ label: 'Judges', rows: judgeRows }, { label: 'Checks', rows: checkRows }].flatMap(group => {
-                      if (group.rows.length === 0) return [];
-                      const header = (
-                        <TableRow key={`section-${group.label}`}>
-                          <Td colSpan={runIds.length + 1}>
-                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.6rem', letterSpacing: '0.5px' }}>
-                              {group.label}
-                            </Typography>
-                          </Td>
-                        </TableRow>
-                      );
-                      const rows = group.rows.map(v => {
-                        const baseVal = v.byRun[baseline];
-                        const regression = baseVal === true && runIds.some(id => id !== baseline && v.byRun[id] === false);
-                        const fix = baseVal === false && runIds.some(id => id !== baseline && v.byRun[id] === true);
-                        const accent = regression ? theme.palette.error.main : fix ? theme.palette.info.main : 'transparent';
-
-                        return (
-                          <TableRow key={`${group.label}-${v.name}`}>
-                            <Td>
-                              <Box sx={{ borderLeft: `3px solid ${accent}`, pl: 1 }}>
-                                <Typography variant="caption" sx={{ fontFamily: MONO }}>{v.name}</Typography>
-                              </Box>
-                            </Td>
-                            {runIds.map(id => (
-                              <Td key={id} align="center"><VerdictDot value={v.byRun[id]} /></Td>
-                            ))}
-                          </TableRow>
-                        );
-                      });
-
-                      return [header, ...rows];
-                    })}
-                  </TableBody>
-                </Table>
-              </Box>
-            </ResponsiveCardTable>
-          )}
-        </>
+        <VerdictMatrix
+          byRun={selectedQ.byRun}
+          runIds={runIds}
+          runNameById={runNameById}
+          colorById={colorById}
+          baselineId={baseline}
+        />
       )}
     </Stack>
   );
