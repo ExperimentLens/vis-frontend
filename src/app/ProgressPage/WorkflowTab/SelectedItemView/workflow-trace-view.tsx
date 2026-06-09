@@ -126,7 +126,7 @@ export default function WorkflowTraceView() {
         />
       )}
 
-      {tab === 'eval' && <EvaluationTab judges={judges} checks={checks} metrics={metrics} scoresCount={data.scores.length} />}
+      {tab === 'eval' && <EvaluationTab judges={judges} checks={checks} metrics={metrics} />}
 
       {tab === 'prompts' && <PromptsTab promptObs={promptObs} />}
     </Stack>

@@ -121,3 +121,49 @@ export const alignVerdicts = (byRun: Record<string, TraceDetail>, kind: 'judges'
     .map(([name, runMap]) => ({ name, byRun: runMap }))
     .sort((a, b) => a.name.localeCompare(b.name));
 };
+
+export interface VerdictCellDetail {
+  passed?: boolean;
+  rationale?: string;
+}
+
+export interface AlignedVerdictDetail {
+  name: string;
+  kind: 'judges' | 'checks';
+  byRun: Record<string, VerdictCellDetail>;
+}
+
+/** Like alignVerdicts, but keeps each run's rationale/comment for side-by-side compare. */
+export const alignVerdictDetails = (
+  byRun: Record<string, TraceDetail>,
+  kind: 'judges' | 'checks',
+): AlignedVerdictDetail[] => {
+  const rows = new Map<string, Record<string, VerdictCellDetail>>();
+
+  Object.entries(byRun).forEach(([runId, trace]) => {
+    if (kind === 'judges') {
+      trace.observations.filter(isJudge).forEach(o => {
+        const name = prettyName(o.name);
+        const r = rows.get(name) ?? {};
+        const out = o.output as GenOutput;
+
+        r[runId] = { passed: out?.passed === true, rationale: out?.rationale };
+        rows.set(name, r);
+      });
+    } else {
+      trace.scores
+        .filter(sc => sc.value === 0 || sc.value === 1)
+        .forEach(sc => {
+          const name = prettyName(sc.name);
+          const r = rows.get(name) ?? {};
+
+          r[runId] = { passed: sc.value === 1, rationale: sc.comment };
+          rows.set(name, r);
+        });
+    }
+  });
+
+  return Array.from(rows.entries())
+    .map(([name, runMap]) => ({ name, kind, byRun: runMap }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+};
