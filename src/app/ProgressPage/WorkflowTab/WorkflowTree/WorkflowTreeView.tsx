@@ -70,38 +70,59 @@ export default function WorkflowTreeView() {
       {/* Both sections always render so a workflow with ML artifacts AND traces shows
           both. LLM Traces has its own empty-state; Model Insights is grayed out when
           there is no (tabular) model to explain. */}
-      <Accordion
-        expanded={tracesExpanded && hasTraces}
-        disableGutters
-        sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
-      >
-        <AccordionSummary
-          disabled={!hasTraces}
-          onClick={(e) => e.stopPropagation()}
-          sx={{ borderBottom: '1px solid', borderColor: 'divider', pointerEvents: 'none' }}
+      {hasTraces && (
+        <Accordion
+          expanded={tracesExpanded}
+          disableGutters
+          sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
         >
-          <Box
-            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%', pointerEvents: 'auto', cursor: 'default' }}
+          <AccordionSummary
+            onClick={(e) => e.stopPropagation()}
+            sx={{
+              borderBottom: '1px solid',
+              borderColor: 'divider',
+              pointerEvents: 'none',
+            }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <HubRoundedIcon color="primary" />
-              <Typography fontWeight={600} sx={{ color: hasTraces ? 'inherit' : theme.palette.text.disabled }}>
-                LLM Traces
-              </Typography>
-            </Box>
             <Box
-              onClick={(e) => { e.stopPropagation(); if (hasTraces) setTracesExpanded(p => !p); }}
-              sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+                width: '100%',
+                pointerEvents: 'auto',
+                cursor: 'default',
+              }}
             >
-              <ExpandMoreIcon />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <HubRoundedIcon color="primary" />
+                <Typography fontWeight={600}>
+                  LLM Traces
+                </Typography>
+              </Box>
+            
+              <Box
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTracesExpanded((p) => !p);
+                }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <ExpandMoreIcon />
+              </Box>
             </Box>
-          </Box>
-        </AccordionSummary>
-
-        <AccordionDetails>
-          <TracesAccordion />
-        </AccordionDetails>
-      </Accordion>
+          </AccordionSummary>
+              
+          <AccordionDetails>
+            <TracesAccordion />
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       <Accordion
         expanded={modelExpanded && hasExplainability}
