@@ -100,6 +100,93 @@ export default function LlmMonitoringOverview() {
     );
   };
 
+  const downloadCsv = (
+    rows: Array<Record<string, string | number | boolean | null | undefined>>,
+    filename: string
+  ) => {
+    if (!rows.length) return;
+
+    const headers = Object.keys(rows[0]);
+
+    const escapeCsv = (value: unknown) => {
+      if (value === null || value === undefined) return '';
+
+      const stringValue = String(value);
+
+      if (
+        stringValue.includes(',') ||
+        stringValue.includes('"') ||
+        stringValue.includes('\n')
+      ) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+
+      return stringValue;
+    };
+
+    const csv = [
+      headers.join(','),
+      ...rows.map(row => headers.map(header => escapeCsv(row[header])).join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadTracesCsv = () => {
+    downloadCsv(
+      topTraces.map(t => ({
+        trace: t.name,
+        count: t.count,
+      })),
+      'traces.csv'
+    );
+  };
+
+  const handleDownloadModelUsageCsv = () => {
+    downloadCsv(
+      models.map(m => ({
+        model: m.model,
+        generations: m.generations,
+        tokens: m.tokens,
+      })),
+      'model-usage.csv'
+    );
+  };
+
+  const handleDownloadScoresCsv = () => {
+    downloadCsv(
+      scores.map(s => ({
+        name: s.name,
+        count: s.count,
+        average: s.avg,
+        zeros: s.zeros ?? 0,
+        ones: s.ones ?? 0,
+      })),
+      'scores.csv'
+    );
+  };
+  const handleDownloadTraceLatencyCsv = () => {
+    downloadCsv(
+      latencies.map(l => ({
+        traceName: l.name,
+        count: l.count,
+        p50: l.p50,
+        p90: l.p90,
+        p95: l.p95,
+        p99: l.p99,
+      })),
+      'trace-latency-percentiles.csv'
+    );
+  };
+
   if (workflowIds.length === 0) {
     return (
       <InfoMessage
@@ -183,7 +270,7 @@ export default function LlmMonitoringOverview() {
           {/* Top row: Traces / Model usage / Scores */}
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
-              <ResponsiveCardTable title="Traces" showSettings={false}>
+              <ResponsiveCardTable title="Traces" showSettings={true} onDownload={handleDownloadTracesCsv} downloadLabel="Download as CSV" downloadSecondaryText="Save traces as CSV">
                 <BigNum value={r.traceCount.toLocaleString()} sub="Total traces tracked" />
                 {topTraces.length === 0 ? <EmptyNote>No traces.</EmptyNote> : (
                   <Stack spacing={0.5}>
@@ -200,7 +287,7 @@ export default function LlmMonitoringOverview() {
             </Grid>
 
             <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
-              <ResponsiveCardTable title="Model usage" showSettings={false}>
+              <ResponsiveCardTable title="Model usage" showSettings={true} onDownload={handleDownloadModelUsageCsv} downloadLabel="Download as CSV" downloadSecondaryText="Save model usage as CSV">
                 <BigNum
                   value={r.totalTokens ? r.totalTokens.toLocaleString() : '—'}
                   sub={`Total tokens · $${r.totalCost.toFixed(4)} cost`}
@@ -229,7 +316,7 @@ export default function LlmMonitoringOverview() {
             </Grid>
 
             <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
-              <ResponsiveCardTable title="Scores" showSettings={false}>
+              <ResponsiveCardTable title="Scores" showSettings={true} onDownload={handleDownloadScoresCsv} downloadLabel="Download as CSV" downloadSecondaryText="Save scores as CSV">
                 <BigNum value={totalScores.toLocaleString()} sub="Total scores tracked" />
                 {scores.length === 0 ? <EmptyNote>No scores.</EmptyNote> : (
                   <Table size="small">
@@ -270,25 +357,33 @@ export default function LlmMonitoringOverview() {
           {/* Bottom row: Observations by time / Trace latency percentiles */}
           <Grid container spacing={1.5}>
             <Grid size={{ xs: 12, lg: 6 }} sx={{ textAlign: 'left' }}>
-              {timeSeries.length === 0 ? (
-                <ResponsiveCardTable title="Observations by time" showSettings={false}>
-                  <EmptyNote>No observations to plot.</EmptyNote>
-                </ResponsiveCardTable>
-              ) : (
-                <ResponsiveCardVegaLite
-                  title="Observations by time"
-                  details={`${totalObservations.toLocaleString()} observations tracked`}
-                  spec={obsSpec}
-                  actions={false}
-                  isStatic={false}
-                  tooltip={tooltip}
-                  sx={{ width: '100%', maxWidth: '100%' }}
-                />
-              )}
+              <ResponsiveCardVegaLite
+                title="Observations by time"
+                details={
+                  timeSeries.length > 0
+                    ? `${totalObservations.toLocaleString()} observations tracked`
+                    : 'No observations tracked.'
+                }
+                spec={timeSeries.length > 0 ? obsSpec : {}}
+                actions={false}
+                isStatic={false}
+                tooltip={tooltip}
+                showSettings={timeSeries.length > 0}
+                showInfoMessage={timeSeries.length === 0}
+                infoMessage={
+                  <InfoMessage
+                    message="No observations to plot."
+                    icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
+                    type="info"
+                    fullHeight
+                  />
+                }
+                sx={{ width: '100%', maxWidth: '100%' }}
+              />            
             </Grid>
 
             <Grid size={{ xs: 12, lg: 6 }} sx={{ textAlign: 'left' }}>
-              <ResponsiveCardTable title="Trace latency percentiles" showSettings={false}>
+              <ResponsiveCardTable title="Trace latency percentiles" showSettings={true} onDownload={handleDownloadTraceLatencyCsv} downloadLabel="Download as CSV" downloadSecondaryText="Save latency percentiles as CSV">
                 {latencies.length === 0 ? <EmptyNote>No latency data.</EmptyNote> : (
                   <Box sx={{ overflow: 'auto' }}>
                     <Table size="small">
