@@ -17,7 +17,6 @@ const FIELD: Record<Metric, { key: 'latencyMs' | 'cost' | 'tokens'; title: strin
 };
 
 export default function DistributionChart({ details }: { details: TraceDetail[] }) {
-  const theme = useTheme();
   const config = useVegaThemeConfig();
   const tooltip = useVegaTooltip();
   const [metric, setMetric] = useState<Metric>('latency');
@@ -52,7 +51,7 @@ export default function DistributionChart({ details }: { details: TraceDetail[] 
       y: { aggregate: 'count', type: 'quantitative', title: 'traces' },
       ...(bySession
         ? { color: { field: 'sessionId', type: 'nominal', legend: null, scale: { scheme: 'tableau20' } } }
-        : { color: { value: theme.palette.primary.main } }),
+        : { color: "default" }),
       tooltip: [
         { aggregate: 'count', title: 'traces' },
         { field: field.key, title: field.title, bin: { maxbins: 20 } },

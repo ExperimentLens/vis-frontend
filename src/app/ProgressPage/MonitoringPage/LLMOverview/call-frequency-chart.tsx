@@ -32,7 +32,7 @@ export default function CallFrequencyChart({ details }: { details: TraceDetail[]
     $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
     config,
     data: { values: rows },
-    mark: { type: 'bar', cornerRadiusEnd: 3, color: theme.palette.primary.main },
+    mark: { type: 'bar', cornerRadiusEnd: 3 },
     encoding: {
       y: { field: 'key', type: 'nominal', sort: '-x', title: null },
       x: { field: 'count', type: 'quantitative', title: 'calls' },
