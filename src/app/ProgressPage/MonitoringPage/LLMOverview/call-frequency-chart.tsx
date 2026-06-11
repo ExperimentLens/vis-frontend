@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTheme } from '@mui/material';
 import BarChartIcon from '@mui/icons-material/BarChart';
 
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
@@ -14,7 +13,6 @@ export default function CallFrequencyChart({
 }: {
   details: TraceDetail[];
 }) {
-  const theme = useTheme();
   const config = useVegaThemeConfig();
   const tooltip = useVegaTooltip();
   const [by, setBy] = useState<'name' | 'type'>('name');
@@ -41,8 +39,7 @@ export default function CallFrequencyChart({
         data: { values: rows },
         mark: {
           type: 'bar',
-          cornerRadiusEnd: 3,
-          color: theme.palette.primary.main,
+          cornerRadiusEnd: 3
         },
         encoding: {
           y: {
