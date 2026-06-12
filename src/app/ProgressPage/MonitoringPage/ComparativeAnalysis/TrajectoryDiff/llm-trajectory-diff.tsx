@@ -16,7 +16,6 @@ import { useAppDispatch, useAppSelector } from '../../../../../store/store';
 import { fetchSessionTraceDetails, selectSessionsMap } from '../../../../../store/slices/observabilitySlice';
 import { setHoveredWorkflow } from '../../../../../store/slices/monitorPageSlice';
 import { OBSERVABILITY_PROJECT_ID } from '../../../../../shared/models/observability/agentic-conventions';
-import { Handler } from 'vega-tooltip';
 import { rollup } from '../../../../../shared/utils/observability-aggregates';
 import type { ExperimentRollup } from '../../../../../shared/utils/observability-aggregates';
 import InfoMessage from '../../../../../shared/components/InfoMessage';
@@ -28,9 +27,11 @@ import { alignByQuestion } from './trajectory-alignment';
 import Loader from '../../../../../shared/components/loader';
 import VerdictMatrix from './verdict-matrix';
 import PerTaskAnalysis from './per-task-analysis';
-import SummaryKpiStrip from './summary-kpi-strip';
+// import SummaryKpiStrip from './summary-kpi-strip';
 import { JudgePassRateChart, TokenSplitChart, LatencyCostChart } from './summary-comparisons';
 import { exportElementToPng } from '../../../../../shared/utils/export-png';
+import { createLLMSummaryMetricTooltipHandler } from '../workflow-info-tooltip';
+import { paletteFromTheme } from '../workflow-info-tooltip';
 
 const FALLBACK_COLORS = ['#3766AF', '#6BBC8C', '#f59e0b', '#8b5cf6', '#ec4899', '#0ea5e9'];
 
@@ -92,11 +93,6 @@ export default function LlmTrajectoryDiff() {
 
   // SUMMARY 2x2 charts — one card per metric. Hooks declared up here so they
   // always run before the early returns below.
-  const summaryTooltip = useMemo(
-    () => new Handler({ sanitize: (v: unknown) => String(v) }).call,
-    [],
-  );
-
   const summaryColor = useMemo(() => ({
     domain: runIds,
     range: runIds.map((id, i) => workflowColors[id] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length]),
@@ -176,19 +172,39 @@ export default function LlmTrajectoryDiff() {
 
   const selectedQ = aligned.length ? aligned[Math.min(questionIdx, aligned.length - 1)] : undefined;
 
-  const summaryChartProps = { detailsByRun, runIds, runNameById, summaryColor, summaryTooltip, signalListeners, hoveredWorkflowId };
+  const summaryChartProps = { detailsByRun, runIds, runNameById, summaryColor, signalListeners, hoveredWorkflowId, workflowsData: workflows.data, experimentId, workflowColors };
 
   return (
     <Stack spacing={1.5} sx={{ p: 1.5, height: '100%' }}>
       {/* SUMMARY — bar charts per metric, layout follows Mosaic/Stacked. Hover syncs with the workflow table. */}
       {selectedExecutionsView === 'summary' && (
         <>
-          <SummaryKpiStrip runIds={runIds} runNameById={runNameById} colorById={colorById} rollups={rollups} baselineId={baseline} />
+          {/* <SummaryKpiStrip runIds={runIds} runNameById={runNameById} colorById={colorById} rollups={rollups} baselineId={baseline} /> */}
           <Grid container spacing={1.5}>
           {SUMMARY_METRICS.map(m => {
             const data = summaryDatasets[m.key] ?? [];
             const yMax = data.length ? Math.max(...data.map(d => d.value)) * 1.1 : 1;
+
+            const metricLabel = m.label ?? String(m.key);
+
+            const summaryMetricData = data
+              .filter(d => typeof d.value === 'number' && !Number.isNaN(d.value))
+              .map(d => ({
+                ...d,
+                id: String(d.id),
+                value: d.value,
+              }));
             
+            const tooltipHandler = experimentId
+              ? createLLMSummaryMetricTooltipHandler({
+                  metricName: metricLabel,
+                  summaryData: summaryMetricData,
+                  workflowsData: workflows.data,
+                  experimentId,
+                  palette: paletteFromTheme(theme),
+                  colorMapping: workflowsTable.workflowColors,
+                })
+              : undefined;
             // Cap the bar width so a single (or few) selected workflow doesn't render a
             // giant bar. Band-scale padding is width-independent, so padding a lone bar
             // makes it match the width it would have when ~2 bars are present.
@@ -197,11 +213,11 @@ export default function LlmTrajectoryDiff() {
             
             const spec = {
               $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-              data: { values: data },
+              data: { values: summaryMetricData },
               params: [
                 { name: 'hover', select: { type: 'point', fields: ['id'], on: 'mouseover', clear: 'mouseout' } },
               ],
-              mark: { type: 'bar', cornerRadiusEnd: 3 },
+              mark: { type: 'bar', cornerRadiusEnd: 3, tooltip: true },
               encoding: {
                 x: {
                   field: 'id',
@@ -229,11 +245,6 @@ export default function LlmTrajectoryDiff() {
                   condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: '#000' },
                   value: 'transparent',
                 } : undefined,
-                tooltip: [
-                  { field: 'runName', type: 'nominal', title: 'workflow' },
-                  { field: 'id', type: 'nominal', title: 'workflow id' },
-                  { field: 'value', type: 'quantitative', title: m.label, format: ',.2f' },
-                ],
               },
             } as Record<string, unknown>;
 
@@ -248,7 +259,7 @@ export default function LlmTrajectoryDiff() {
                   spec={spec}
                   actions={false}
                   isStatic={false}
-                  tooltip={summaryTooltip}
+                  tooltip={tooltipHandler}
                   signalListeners={signalListeners}
                   sx={{ width: '100%', maxWidth: '100%' }}
                   minHeight={220}
