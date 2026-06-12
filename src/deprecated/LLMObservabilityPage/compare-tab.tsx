@@ -12,7 +12,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { MOCK_RUN_SUMMARIES } from './mock-data';
-import { cardSurfaceSx } from '../../../shared/styles/card-surface';
+import { cardSurfaceSx } from '../../shared/styles/card-surface';
 
 const numericColor = (value: number, theme: ReturnType<typeof useTheme>, invert = false) => {
   // Map 0..1 → red..green (or inverted for latency-style metrics).

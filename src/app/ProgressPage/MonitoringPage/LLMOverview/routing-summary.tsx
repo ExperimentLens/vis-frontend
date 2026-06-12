@@ -1,3 +1,4 @@
+//UNUSED
 import { useTheme } from '@mui/material';
 import type { VisualizationSpec } from 'vega-embed';
 import ResponsiveVegaLite from '../../../../shared/components/responsive-vegalite';

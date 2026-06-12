@@ -13,7 +13,7 @@ import {
   useTheme,
   IconButton,
 } from '@mui/material';
-import SegmentedToggle from '../../../shared/components/segmented-toggle';
+import SegmentedToggle from '../../shared/components/segmented-toggle';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';

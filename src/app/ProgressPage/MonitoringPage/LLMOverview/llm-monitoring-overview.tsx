@@ -83,7 +83,7 @@ export default function LlmMonitoringOverview() {
     workflowIds.forEach(id =>
       dispatch(fetchSessionTraceDetails({ projectId: OBSERVABILITY_PROJECT_ID, experimentId, workflowId: id })),
     );
-  }, [experimentId, idKey, workflowIds, dispatch]);
+  }, [experimentId, idKey, workflowIds]);
 
   const allDetails = useMemo(
     () => workflowIds.flatMap(id => sessions[id]?.details ?? []),
@@ -173,6 +173,7 @@ export default function LlmMonitoringOverview() {
       'scores.csv'
     );
   };
+
   const handleDownloadTraceLatencyCsv = () => {
     downloadCsv(
       latencies.map(l => ({
