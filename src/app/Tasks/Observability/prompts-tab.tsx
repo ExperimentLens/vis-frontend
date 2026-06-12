@@ -37,7 +37,7 @@ const PromptsTab = ({ promptObs }: PromptsTabProps) => {
                 <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
                   {model && <Chip size="small" label={model} variant="outlined" sx={{ height: 18, fontSize: '0.6rem' }} />}
                   <MetaChip label="chars" value={prompt.length.toLocaleString()} />
-                  {typeof tokens === 'number' && <MetaChip label="tok" value={tokens} />}
+                  {typeof tokens === 'number' && <MetaChip label="tokens" value={tokens} />}
                 </Stack>
               }
               action={<CopyButton text={prompt} />}
