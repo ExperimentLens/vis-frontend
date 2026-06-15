@@ -352,7 +352,7 @@ export default function LlmMonitoringOverview() {
             <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><VerdictPassRateChart details={allDetails} /></Grid>
             <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><PerAgentProfileChart details={allDetails} /></Grid>
             <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><CallFrequencyChart details={allDetails} /></Grid>
-            <Grid size={{ xs: 12 }} sx={{ textAlign: 'left' }}><DistributionChart details={allDetails} /></Grid>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><DistributionChart details={allDetails} /></Grid>
           </Grid>
 
           {/* Bottom row: Observations by time / Trace latency percentiles */}
