@@ -145,8 +145,18 @@ const ComparativeAnalysisControls = ()=> {
     isSelected: (label: string) => boolean,
     onSelect: (label: string) => void,
   ) => (
-    <Box display="flex" flexWrap="wrap" gap={0.75}>
-      {opts.map(option => {
+      <Box
+        display="flex"
+        alignItems="center"
+        sx={{
+          px: 1.5,
+          gap: 0.5,
+          flexWrap: { xs: 'wrap', lg: 'nowrap' },
+          overflowX: 'auto',
+          backgroundColor: theme => theme.palette.background.paper,
+        }}
+      >
+        {opts.map(option => {
         const selected = isSelected(option.label);
 
         return (

@@ -43,81 +43,103 @@ const ComparativeAnalysis = () => {
 
   return (
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box
-        sx={{
-          borderColor: theme => theme.palette.customGrey.main,
-          borderBottomWidth: 1,
-          borderBottomStyle: 'solid',
-          width: '100%',
-          pr: 1.5,
-        }}
-      >
+      <Box sx={{ px: 1.5, pt: 1.25 }}>
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 1.5,
-            flexWrap: 'wrap',
+            border: theme => `1px solid ${theme.palette.customGrey.main}`,
+            borderRadius: 2.5,
+            overflow: 'hidden',
+            backgroundColor: theme.palette.background.paper,
           }}
         >
-          <Tabs
-            value={selectedComparisonTab}
-            onChange={(_event, newValue) => {
-              dispatch(setSelectedComparisonTab(newValue));
+          <Box
+            sx={{
+              pr: 1.5,
+              backgroundColor: theme => theme.palette.customGrey.light,
+              borderBottom: theme => `1px solid ${theme.palette.customGrey.main}`,
             }}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{ '& .MuiTab-root': { gap: 0.5, px: 1.5 } }}
           >
-            <Tab
-              icon={<InsightsRoundedIcon fontSize="small" />}
-              iconPosition="start"
-              label="METRICS"
-            />
-            <Tab
-              icon={<WaterfallChartRoundedIcon fontSize="small" />}
-              iconPosition="start"
-              label="EXECUTIONS"
-              disabled={groupBy.length > 0 || !capabilities.traces}
-            />
-            <Tab
-              icon={<HubRoundedIcon fontSize="small" />}
-              iconPosition="start"
-              label="MODELS"
-              disabled={groupBy.length > 0 || !capabilities.explainability}
-            />
-            <Tab
-              icon={<StorageRoundedIcon fontSize="small" />}
-              iconPosition="start"
-              label="DATA"
-              disabled={groupBy.length > 0 || !capabilities.datasets}
-            />
-          </Tabs>
-
-          {numSelected > 0 && (
-            <Tooltip title="Workflows being compared" arrow>
-              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pr: 0.5 }}>
-                <CompareArrowsRoundedIcon sx={{ fontSize: 16, color: theme.palette.primary.main }} />
-                <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                  {numSelected}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                  comparing
-                </Typography>
-                {groupBy.length > 0 && (
-                  <Chip
-                    size="small"
-                    label={`grouped by ${groupBy.length}`}
-                    sx={{ ml: 0.5, height: 18, fontSize: '0.65rem', fontWeight: 700 }}
-                  />
-                )}
-              </Stack>
-            </Tooltip>
-          )}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1.5,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Tabs
+                value={selectedComparisonTab}
+                onChange={(_event, newValue) => {
+                  dispatch(setSelectedComparisonTab(newValue));
+                }}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{
+                  '& .MuiTab-root': {
+                    gap: 0.5,
+                    px: 1.5,
+                    borderTopLeftRadius: 10,
+                    borderTopRightRadius: 10,
+                  },
+                  '& .Mui-selected': {
+                    backgroundColor: theme => theme.palette.background.paper,
+                    border: theme => `1px solid ${theme.palette.customGrey.main}`,
+                    borderBottomColor: theme => theme.palette.background.paper,
+                  },
+                }}
+              >
+                <Tab
+                  icon={<InsightsRoundedIcon fontSize="small" />}
+                  iconPosition="start"
+                  label="METRICS"
+                />
+                <Tab
+                  icon={<WaterfallChartRoundedIcon fontSize="small" />}
+                  iconPosition="start"
+                  label="EXECUTIONS"
+                  disabled={groupBy.length > 0 || !capabilities.traces}
+                />
+                <Tab
+                  icon={<HubRoundedIcon fontSize="small" />}
+                  iconPosition="start"
+                  label="MODELS"
+                  disabled={groupBy.length > 0 || !capabilities.explainability}
+                />
+                <Tab
+                  icon={<StorageRoundedIcon fontSize="small" />}
+                  iconPosition="start"
+                  label="DATA"
+                  disabled={groupBy.length > 0 || !capabilities.datasets}
+                />
+              </Tabs>
+              
+              {numSelected > 0 && (
+                <Tooltip title="Workflows being compared" arrow>
+                  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pr: 0.5 }}>
+                    <CompareArrowsRoundedIcon sx={{ fontSize: 16, color: theme.palette.primary.main }} />
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                      {numSelected}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                      comparing
+                    </Typography>
+                    {groupBy.length > 0 && (
+                      <Chip
+                        size="small"
+                        label={`grouped by ${groupBy.length}`}
+                        sx={{ ml: 0.5, height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                      />
+                    )}
+                  </Stack>
+                </Tooltip>
+              )}
+            </Box>
+          </Box>
+            
+          <ComparativeAnalysisControls />
         </Box>
       </Box>
-      <ComparativeAnalysisControls />
       <Box sx={{ width: '100%', flexGrow: 1, overflow: 'auto' }}>
         {selectedComparisonTab === COMPARE_TAB.METRICS && <ComparisonMetricsCharts />}
         {selectedComparisonTab === COMPARE_TAB.EXECUTIONS && <LlmTrajectoryDiff />}
