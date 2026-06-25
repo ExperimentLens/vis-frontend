@@ -401,22 +401,19 @@ export const createAppTheme = (mode: ThemeMode) => {
       },
       MuiTooltip: {
         styleOverrides: {
-          tooltip: {
+          tooltip: ({ theme }) => ({
             borderRadius: 8,
             fontSize: '0.72rem',
             fontWeight: 600,
             padding: '6px 10px',
-            backgroundColor: isDark
-              ? 'rgba(38, 38, 48, 0.96)'
-              : 'rgba(15, 23, 42, 0.92)',
+            backgroundColor: theme.palette.background.paper,
+            color: theme.palette.text.primary,
+            boxShadow: theme.customShadows.popover,
             backdropFilter: 'blur(6px)',
-            boxShadow: isDark
-              ? '0 6px 20px rgba(0, 0, 0, 0.5)'
-              : '0 6px 20px rgba(16, 24, 40, 0.18)',
-          },
-          arrow: {
-            color: isDark ? 'rgba(38, 38, 48, 0.96)' : 'rgba(15, 23, 42, 0.92)',
-          },
+          }),
+          arrow: ({ theme }) => ({
+            color: theme.palette.background.paper,
+          }),
         },
       },
       MuiListItemButton: {
