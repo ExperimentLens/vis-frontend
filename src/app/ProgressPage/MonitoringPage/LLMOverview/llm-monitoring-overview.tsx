@@ -357,7 +357,7 @@ export default function LlmMonitoringOverview() {
 
           {/* Bottom row: Observations by time / Trace latency percentiles */}
           <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, lg: 6 }} sx={{ textAlign: 'left' }}>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', mb: {xs: 0, md: 1.5} }}>
               <ResponsiveCardVegaLite
                 title="Observations by time"
                 details={
@@ -379,11 +379,12 @@ export default function LlmMonitoringOverview() {
                     fullHeight
                   />
                 }
-                sx={{ width: '100%', maxWidth: '100%' }}
+                maxHeight={260}
+                aspectRatio={1.7}
               />            
             </Grid>
 
-            <Grid size={{ xs: 12, lg: 6 }} sx={{ textAlign: 'left' }}>
+            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', mb: 1.5 }}>
               <ResponsiveCardTable title="Trace latency percentiles" showSettings={true} onDownload={handleDownloadTraceLatencyCsv} downloadLabel="Download as CSV" downloadSecondaryText="Save latency percentiles as CSV">
                 {latencies.length === 0 ? <EmptyNote>No latency data.</EmptyNote> : (
                   <Box sx={{ overflow: 'auto' }}>
