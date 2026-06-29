@@ -1,4 +1,4 @@
-import { Box, Chip, Divider, IconButton, Menu, Tooltip } from '@mui/material';
+import { Box, Divider, IconButton, Menu, Tooltip } from '@mui/material';
 import CompactMenuItem from '../../../../shared/components/compact-menu-item';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
@@ -10,11 +10,12 @@ import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded';
 import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
 import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
+import { menuPaperSx } from '../../../../shared/styles/card-surface';
 import MisclassifiedToggle from '../../../../shared/components/misclassified-toggle';
 import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import InstanceScatterControls from '../../../../shared/components/instance-scatter-controls';
 import SettingsIcon from '@mui/icons-material/Settings';
-import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import { useMemo, useState } from 'react';
 import DownloadIcon from '@mui/icons-material/Download';
 import CodeIcon from '@mui/icons-material/Code';
@@ -27,13 +28,14 @@ import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
 import SelectionPopover from '../../../../shared/components/selection-popover';
 import PillToggle from '../../../../shared/components/pill-toggle';
 import SortIcon from '@mui/icons-material/Sort';
-import { isComparableDataAsset } from '../../../../shared/utils/dataAssetFormat';
-import { COMPARE_TAB } from '../../../../shared/utils/experimentCapabilities';
 
 const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
   const selectedModelComparisonChart = useAppSelector((state: RootState) => state.monitorPage.selectedModelComparisonChart);
   const selectedExecutionsView = useAppSelector((state: RootState) => state.monitorPage.selectedExecutionsView);
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
   const showMisclassifiedOnly = useAppSelector((state: RootState) => state.monitorPage.showMisclassifiedOnly);
   const sortRocByAuc = useAppSelector((state: RootState) => state.monitorPage.sortRocByAuc);
   const sortConfusionByF1 = useAppSelector((state: RootState) => state.monitorPage.sortConfusionByF1);
@@ -66,30 +68,37 @@ const ComparativeAnalysisControls = ()=> {
         .filter(([, entries]) =>
           Array.isArray(entries) &&
           entries.length > 0 &&
-          entries.every(({ dataAsset }) => isComparableDataAsset(dataAsset))
+          entries.every(({ dataAsset }) => {
+            const rawFormat = (dataAsset as { format?: unknown } | null | undefined)?.format;
+
+            if (typeof rawFormat !== 'string') return false;
+
+            const normalized = rawFormat.trim().toLowerCase()
+              .replace(/^\./, '');
+
+            return normalized === 'csv' || normalized === 'parquet';
+          })
         )
         .map(([name]) => name),
     [commonDataAssets]
   );
 
   const showDataComparisonViewModeToggle = (() => {
-    if (selectedComparisonTab !== COMPARE_TAB.DATA) return false;
+    if (selectedComparisonTab !== 2) return false;
     if (!selectedDataset) return true;
 
     const assets = commonDataAssets[selectedDataset];
 
     if (!Array.isArray(assets) || assets.length === 0) return true;
 
-    // The box/histogram toggle only applies to tabular datasets; hide it when
-    // every asset is an image or text preview.
-    const allNonTabular = assets.every(({ workflowId }) => {
+    const allImages = assets.every(({ workflowId }) => {
       const meta = dataAssetsMetaData?.[selectedDataset]?.[workflowId]?.meta;
       const datasetType = meta?.data?.datasetType;
 
-      return typeof datasetType === 'string' && /IMAGE|TEXT/.test(datasetType);
+      return typeof datasetType === 'string' && datasetType.match('IMAGE');
     });
 
-    return !allNonTabular;
+    return !allImages;
   })();
 
   const { workflowsTable } = useAppSelector(
@@ -119,15 +128,15 @@ const ComparativeAnalysisControls = ()=> {
   };
 
   const options1 = [
-    { label: 'confusionMatrix', name: 'Confusion\nMatrix', icon: <WindowRoundedIcon /> },
-    { label: 'rocCurve', name: 'Roc\nCurve', icon: <RoundedCornerRoundedIcon /> },
-    { label: 'instanceView', name: 'Instance\nView', icon: <BlurLinearIcon /> }
+    { label: 'confusionMatrix', name: 'Confusion\nMatrix', icon: <WindowRoundedIcon fontSize="small" /> },
+    { label: 'rocCurve', name: 'Roc\nCurve', icon: <RoundedCornerRoundedIcon fontSize="small" /> },
+    { label: 'instanceView', name: 'Instance\nView', icon: <BlurLinearIcon fontSize="small" /> }
   ];
 
   const llmExecutionsOptions = [
-    { label: 'summary' as const, name: 'Summary', icon: <SummarizeRoundedIcon /> },
-    { label: 'timeline' as const, name: 'Timeline', icon: <TimelineRoundedIcon /> },
-    { label: 'verdicts' as const, name: 'Verdicts', icon: <GavelRoundedIcon /> },
+    { label: 'summary' as const, name: 'Summary', icon: <SummarizeRoundedIcon fontSize="small" /> },
+    { label: 'timeline' as const, name: 'Timeline', icon: <TimelineRoundedIcon fontSize="small" /> },
+    { label: 'verdicts' as const, name: 'Verdicts', icon: <GavelRoundedIcon fontSize="small" /> },
   ];
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -137,59 +146,6 @@ const ComparativeAnalysisControls = ()=> {
   const handleMenuClose = () => {
     setAnchorEl(null);
   };
-
-  // Shared chip row for the Executions / Models subtabs — same styling, different
-  // option set + selection state.
-  const renderChoiceChips = (
-    opts: { label: string; name: string; icon: React.ReactElement }[],
-    isSelected: (label: string) => boolean,
-    onSelect: (label: string) => void,
-  ) => (
-      <Box
-        display="flex"
-        alignItems="center"
-        sx={{
-          px: 1.5,
-          gap: 0.5,
-          flexWrap: { xs: 'wrap', lg: 'nowrap' },
-          overflowX: 'auto',
-          backgroundColor: theme => theme.palette.background.paper,
-        }}
-      >
-        {opts.map(option => {
-        const selected = isSelected(option.label);
-
-        return (
-          <Chip
-            key={option.label}
-            label={option.name.replace('\n', ' ')}
-            icon={option.icon}
-            clickable
-            size="small"
-            sx={{
-              height: 30,
-              px: 1,
-              borderRadius: 2,
-              fontWeight: 600,
-              fontSize: '0.8rem',
-              textTransform: 'uppercase',
-              background: selected
-                ? undefined
-                : theme => theme.palette.customGrey.light,
-              '& .MuiChip-icon': {
-                fontSize: 18,
-                marginLeft: 0.25,
-                marginRight: -0.5,
-              },
-            }}
-            color={selected ? 'primary' : 'default'}
-            variant={selected ? 'filled' : 'outlined'}
-            onClick={() => onSelect(option.label)}
-          />
-        );
-      })}
-    </Box>
-  );
 
   return (
     <>
@@ -204,7 +160,7 @@ const ComparativeAnalysisControls = ()=> {
           overflowX: 'auto',
         }}
       >
-        {selectedComparisonTab === COMPARE_TAB.METRICS && (
+        {selectedComparisonTab === 0 && (
           <Box>
             <Tooltip title="Select Metrics">
               <IconButton onClick={handleOpenMetricsMenu} size="small">
@@ -231,17 +187,23 @@ const ComparativeAnalysisControls = ()=> {
             />
           </Box>
         )}
-        {selectedComparisonTab === COMPARE_TAB.EXECUTIONS && renderChoiceChips(
-          llmExecutionsOptions,
-          label => selectedExecutionsView === label,
-          label => dispatch(setSelectedExecutionsView(label as 'summary' | 'timeline' | 'verdicts')),
-        )}
-        {selectedComparisonTab === COMPARE_TAB.MODELS && renderChoiceChips(
-          options1,
-          label => selectedModelComparisonChart === label,
-          label => dispatch(setSelectedModelComparisonChart(label)),
-        )}
-        {selectedComparisonTab === COMPARE_TAB.DATA && workflowsTable.selectedWorkflows.length > 0 && (
+        {selectedComparisonTab === 1 ? (
+          <SegmentedToggle
+            uppercase
+            aria-label={isLlmExperiment ? 'executions view' : 'model comparison chart'}
+            value={isLlmExperiment ? selectedExecutionsView : selectedModelComparisonChart}
+            onChange={(value) =>
+              isLlmExperiment
+                ? dispatch(setSelectedExecutionsView(value as 'summary' | 'timeline' | 'verdicts'))
+                : dispatch(setSelectedModelComparisonChart(value))
+            }
+            options={(isLlmExperiment ? llmExecutionsOptions : options1).map(option => ({
+              value: option.label,
+              label: option.name.replace('\n', ' '),
+              icon: option.icon,
+            }))}
+          />
+        ) : selectedComparisonTab === 2 && workflowsTable.selectedWorkflows.length > 0 && (
           <>
             <Box display="flex" flexWrap="wrap" gap={0.2}>
               <Tooltip title="Select Dataset">
@@ -311,7 +273,7 @@ const ComparativeAnalysisControls = ()=> {
           sx={{ ml: 'auto' }}
         >
 
-          {showDataComparisonViewModeToggle && selectedComparisonTab === COMPARE_TAB.DATA && (
+          {showDataComparisonViewModeToggle && selectedComparisonTab === 2 && (
             <SegmentedToggle
               aria-label="data comparison view mode"
               value={dataComparisonViewMode === 'boxplot' ? 'boxplot' : 'overlay'}
@@ -323,15 +285,15 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedComparisonTab === COMPARE_TAB.MODELS && selectedModelComparisonChart === 'instanceView' && (
+          {!isLlmExperiment && selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
             <MisclassifiedToggle
               checked={showMisclassifiedOnly}
               onChange={(checked) => dispatch(setShowMisclassifiedOnly(checked))}
             />
           )}
 
-          {selectedComparisonTab !== COMPARE_TAB.DATA
-            && !(selectedComparisonTab === COMPARE_TAB.EXECUTIONS && (selectedExecutionsView === 'verdicts' || selectedExecutionsView === 'timeline')) && (
+          {selectedComparisonTab !== 2
+            && !(isLlmExperiment && selectedComparisonTab === 1 && selectedExecutionsView === 'verdicts') && (
             <SegmentedToggle
               uppercase
               aria-label="view mode"
@@ -343,7 +305,7 @@ const ComparativeAnalysisControls = ()=> {
               ]}
             />
           )}
-          {selectedComparisonTab === COMPARE_TAB.MODELS && selectedModelComparisonChart === 'confusionMatrix' && (
+          {!isLlmExperiment && selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
             <PillToggle
               checked={sortConfusionByF1}
               onChange={(c) => dispatch(setSortConfusionByF1(c))}
@@ -353,7 +315,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedComparisonTab === COMPARE_TAB.MODELS && selectedModelComparisonChart === 'rocCurve' && (
+          {!isLlmExperiment && selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
             <PillToggle
               checked={sortRocByAuc}
               onChange={(c) => dispatch(setSortRocByAuc(c))}
@@ -363,7 +325,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedComparisonTab === COMPARE_TAB.MODELS && selectedModelComparisonChart === 'instanceView' && (
+          {!isLlmExperiment && selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
             <>
               <IconButton
                 aria-label="settings"
@@ -385,20 +347,12 @@ const ComparativeAnalysisControls = ()=> {
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 PaperProps={{
                   elevation: 0,
-                  sx: {
-                    width: 240,
-                    maxHeight: 380,
-                    overflow: 'hidden',
-                    borderRadius: 2,
-                    mt: 0.5,
-                    boxShadow: theme => theme.customShadows.popover,
-                    border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
-                  },
+                  sx: menuPaperSx(),
                 }}
                 MenuListProps={{ sx: { pt: 0, pb: 0 } }}
               >
                 <SectionHeader
-                  icon={<SettingsSuggestIcon fontSize="small" />}
+                  icon={<TuneRoundedIcon fontSize="small" />}
                   title="Chart Options"
                 />
                 <Box sx={{ px: 1.25, pt: 1.25, pb: 0.5 }}>

@@ -1,6 +1,6 @@
-import { Box, Tab, Tabs, Paper, useTheme } from '@mui/material';
+import { Box, Tab, Tabs, Paper } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import ParallelCoordinatePlot from './ParalleleCoodrinates/parallel-coordinate-plot';
 import WorkflowTable from './WorkFlowTables/workflow-table';
 import ScheduleTable from './WorkFlowTables/schedule-table';
@@ -16,27 +16,39 @@ import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
-import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import { getCache } from '../../../shared/utils/localStorageCache';
 import { useLocation } from 'react-router-dom';
 import ComparativeAnalysis from './ComparativeAnalysis/comparative-analysis';
 import ExperimentExplainability from './ExperimentExplainability';
 import LlmMonitoringOverview from './LLMOverview/llm-monitoring-overview';
-import { useExperimentCapabilities, MONITOR_TAB } from '../../../shared/utils/experimentCapabilities';
+import type { IDataAsset } from '../../../shared/models/experiment/data-asset.model';
 
 const MonitoringPage = () => {
   const { visibleTable, selectedTab, workflowsTable } = useAppSelector(
     (state: RootState) => state.monitorPage,
   );
-  const capabilities = useExperimentCapabilities();
+  const { workflows } = useAppSelector((state: RootState) => state.progressPage);
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const theme = useTheme();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const compareId = queryParams.get('compareId');
   const tabParam = queryParams.get('tab');
   const compareWorkflowsRef = useRef<string[] | null>(null);
+
+  const hasExplainability = useMemo(() => {
+    const firstWorkflow = workflows.data?.[0];
+    const tasks = firstWorkflow?.tasks;
+    const dataAssets = firstWorkflow?.dataAssets;
+
+    if (!tasks) return true;
+
+    return tasks.some(t => typeof t.name === 'string' && /explainability/i.test(t.name)) &&
+      !dataAssets?.some((asset: IDataAsset) => asset.name === 'model.pt');
+  }, [workflows]);
 
   useEffect(() => {
     if (compareId) {
@@ -48,16 +60,9 @@ const MonitoringPage = () => {
     }
 
     if (tabParam) {
-      const requested = Number(tabParam);
-      // Don't land on a tab whose capability is unavailable (e.g. ?tab=3 on a
-      // non-explainability experiment) — fall back to the Overview tab.
-      const blocked =
-        (requested === MONITOR_TAB.EXPLAINABILITY && !capabilities.explainability) ||
-        (requested === MONITOR_TAB.TRACES && !capabilities.traces);
-
-      dispatch(setSelectedTab(blocked ? MONITOR_TAB.OVERVIEW : requested));
+      dispatch(setSelectedTab(Number(tabParam)));
     }
-  }, [compareId, tabParam, capabilities.explainability, capabilities.traces]);
+  }, [compareId, tabParam]);
 
   useEffect(() => {
     if (
@@ -69,19 +74,6 @@ const MonitoringPage = () => {
       compareWorkflowsRef.current = null;
     }
   }, [workflowsTable.initialized]);
-
-  // If the selected tab's capability disappears (e.g. switching from an LLM to an ML
-  // experiment while parked on Traces), fall back to Overview so we never render an
-  // empty disabled tab.
-  useEffect(() => {
-    const onUnavailableTab =
-      (selectedTab === MONITOR_TAB.TRACES && !capabilities.traces) ||
-      (selectedTab === MONITOR_TAB.EXPLAINABILITY && !capabilities.explainability);
-
-    if (onUnavailableTab) {
-      dispatch(setSelectedTab(MONITOR_TAB.OVERVIEW));
-    }
-  }, [selectedTab, capabilities.traces, capabilities.explainability]);
 
   return (
     <>
@@ -107,7 +99,7 @@ const MonitoringPage = () => {
               search: searchParams.toString(),
             }, { replace: true });
 
-            if (newValue === MONITOR_TAB.COMPARE) {
+            if (newValue === 1) {
               dispatch(setVisibleTable('workflows'));
             }
           }}
@@ -132,16 +124,10 @@ const MonitoringPage = () => {
             label="Compare"
           />
           <Tab
-            icon={<HubRoundedIcon fontSize="small" />}
+            icon={isLlmExperiment ? <MoreVertRoundedIcon fontSize="small" /> : <LightbulbOutlinedIcon fontSize="small" />}
             iconPosition="start"
-            label="Traces"
-            disabled={!capabilities.traces}
-          />
-          <Tab
-            icon={<LightbulbOutlinedIcon fontSize="small" />}
-            iconPosition="start"
-            label="Explainability"
-            disabled={!capabilities.explainability}
+            label={isLlmExperiment ? "Traces" : "Explainability"}
+            disabled={!hasExplainability&&!isLlmExperiment}
           />
         </Tabs>
       </Box>
@@ -157,8 +143,8 @@ const MonitoringPage = () => {
           pb: 1.5,
         }}
       >
-        {selectedTab === MONITOR_TAB.OVERVIEW && (
-
+        {selectedTab === 0 && (
+         
             <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               <Box sx={{ flex: '0 0 60%', minHeight: 320 }}>
                 {visibleTable === 'workflows' ? (
@@ -173,7 +159,7 @@ const MonitoringPage = () => {
             </Box>
           
         )}
-        {selectedTab === MONITOR_TAB.COMPARE && (
+        {selectedTab === 1 && (
           <Box
             sx={{
               flex: 1,
@@ -223,7 +209,7 @@ const MonitoringPage = () => {
                       cursor: 'ew-resize',
                     }}
                   >
-                    <MoreVertRoundedIcon style={{ color: theme.palette.action.active }} />
+                    <MoreVertRoundedIcon sx={{ color: 'action.active' }} />
                   </Box>
                 )
               }}
@@ -235,12 +221,11 @@ const MonitoringPage = () => {
             </Paper>
           </Box>
         )}
-        {selectedTab === MONITOR_TAB.TRACES && <LlmMonitoringOverview />}
-        {selectedTab === MONITOR_TAB.EXPLAINABILITY && <ExperimentExplainability />}
+        {selectedTab === 2 && (isLlmExperiment ? <LlmMonitoringOverview /> :
+        <ExperimentExplainability />)}
       </Box>
     </>
   );
 };
 
 export default MonitoringPage;
-

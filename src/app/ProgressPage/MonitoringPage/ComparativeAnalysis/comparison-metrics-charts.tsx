@@ -1,10 +1,12 @@
 import type React from 'react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
+import type { View } from 'vega';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import {
   Grid,
   Container,
+  Box,
   useTheme,
 } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
@@ -49,6 +51,62 @@ const ComparisonMetricsCharts: React.FC = () => {
 
   const { hoveredWorkflowId } = workflowsTable;
   const previousVisibleRef = useRef<string[]>([]);
+
+  // --- Cross-chart hover highlight, decoupled from React re-renders ----------
+  // The highlight lives in a static Vega `hoveredId` signal baked into every
+  // spec, so changing the hovered workflow never alters spec *content* — Vega
+  // never re-embeds/redraws the whole chart. We push the value into each live
+  // chart view imperatively, and still mirror it to Redux so the workflow table
+  // stays in sync (cross-highlight between table and charts).
+  const viewsRef = useRef<Map<string, View>>(new Map());
+  const hoveredRef = useRef<string>('');
+
+  const registerView = useCallback((metricName: string, view: View) => {
+    viewsRef.current.set(metricName, view);
+    try {
+      view.signal('hoveredId', hoveredRef.current);
+      void view.runAsync();
+    } catch { /* view not ready / disposed */ }
+  }, []);
+
+  const handleHoverSignal = useCallback(
+    (_name: string, value: unknown) => {
+      const v = value as { id?: string | string[] } | null | undefined;
+      const raw = v && v.id
+        ? (Array.isArray(v.id) ? v.id[0] : v.id) ?? null
+        : null;
+
+      if (raw !== lastHoverRef.current) {
+        lastHoverRef.current = raw;
+        dispatch(setHoveredWorkflow(raw));
+      }
+    },
+    [dispatch],
+  );
+
+  const signalListeners = useMemo(() => ({ hover: handleHoverSignal }), [handleHoverSignal]);
+
+  // Reliable clear: Vega's mark `mouseout` can be missed on fast bar-to-bar
+  // movement (and we no longer re-embed to reset it), leaving the highlight
+  // stuck. A DOM mouseleave on the chart cell always fires, so clear there.
+  const clearHover = useCallback(() => {
+    if (lastHoverRef.current !== null) {
+      lastHoverRef.current = null;
+      dispatch(setHoveredWorkflow(null));
+    }
+  }, [dispatch]);
+
+  useEffect(() => {
+    const id = hoveredWorkflowId === null ? '' : String(hoveredWorkflowId);
+
+    hoveredRef.current = id;
+    viewsRef.current.forEach((view) => {
+      try {
+        view.signal('hoveredId', id);
+        void view.runAsync();
+      } catch { /* view disposed */ }
+    });
+  }, [hoveredWorkflowId]);
 
   const getCommonMetrics = (workflowIds: string[]) => {
     if (!workflowIds.length) return [];
@@ -244,37 +302,22 @@ const ComparisonMetricsCharts: React.FC = () => {
           size={{ xs: isMosaic ? 6 : 12 }}
           key={metricName}
           sx={{ textAlign: 'left' }}
+          onMouseLeave={clearHover}
         >
-          <ResponsiveCardTable title={metricName} minHeight={300} showSettings={false}>
+          <ResponsiveCardTable
+            title={metricName}
+            minHeight={300}
+            showSettings={false}
+            // Reserve the gear's footprint while loading so it doesn't pop in and
+            // shove the fullscreen button when the chart swaps in.
+            headerActions={<Box aria-hidden sx={{ width: 30, height: 30 }} />}
+          >
             <Loader />
           </ResponsiveCardTable>
         </Grid>
       );
     }
     const isGrouped = workflowsTable.groupBy.length > 0;
-
-    const signalListeners = {
-      hover: (_name: string, value: unknown) => {
-        const id =
-          value &&
-          typeof value === 'object' &&
-          'id' in value
-            ? (value as { id?: string | string[] }).id
-            : undefined;
-      
-        const next =
-          id !== null && id !== undefined
-            ? Array.isArray(id)
-              ? id[0] ?? null
-              : id
-            : null;
-      
-        if (next !== lastHoverRef.current) {
-          lastHoverRef.current = next;
-          dispatch(setHoveredWorkflow(next));
-        }
-      },
-    };
 
     // Determine if line chart is needed: any workflow with multiple values for this metric
     const isLineChart = (() => {
@@ -341,7 +384,6 @@ const ComparisonMetricsCharts: React.FC = () => {
         type: 'line',
         tooltip: true,
         point: {
-          filled: true,
           size: 20,
         },
       }
@@ -360,6 +402,9 @@ const ComparisonMetricsCharts: React.FC = () => {
           name: 'hover',
           select: { type: 'point', fields: ['id'], on: 'mouseover', clear: 'mouseout' },
         },
+        // Highlight target, updated imperatively (see registerView / hover effect)
+        // so hovering never changes the spec content and never re-embeds Vega.
+        { name: 'hoveredId', value: '' },
       ],
       mark,
       encoding: {
@@ -369,18 +414,15 @@ const ComparisonMetricsCharts: React.FC = () => {
           ...(isLineChart ? {} : { scale: { paddingInner: 0.1, paddingOuter: barPaddingOuter } }),
           axis: {
             title: xTitle,
-            ...(xType === 'temporal' ? { format: '%b %d %H:%M' } : {}),
-            ...(!isLineChart && xType !== 'temporal' ? { labels: false } : {}),
+            ...(xType === 'temporal' ? { format: '%b %d %H:%M' } : { labels: false }),
           },
         },
-      
         y: {
           field: 'value',
           type: 'quantitative',
           axis: { title: metricName },
           scale: yScale,
         },
-      
         color: {
           field: 'id',
           type: 'nominal',
@@ -390,40 +432,24 @@ const ComparisonMetricsCharts: React.FC = () => {
           },
           legend: null,
         },
-      
-        ...(isLineChart
-          ? {
-              detail: {
-                field: 'id',
-                type: 'nominal',
-              },
-              order: {
-                field: xField,
-                type: xType,
-              },
-            }
-          : {}),
-          
-        opacity: hoveredWorkflowId
-          ? {
-              condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: 1 },
-              value: 0.35,
-            }
-          : undefined,
-          
-        ...(!isLineChart && hoveredWorkflowId
-          ? {
-              strokeWidth: {
-                condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: 3 },
-                value: 0,
-              },
-              stroke: {
-                condition: { test: `datum.id === '${hoveredWorkflowId}'`, value: '#000' },
-                value: 'transparent',
-              },
-            }
-          : {}),
-          
+        // Static highlight driven by the `hoveredId` signal: dim non-hovered
+        // marks; when nothing is hovered (signal === '') everything is full
+        // opacity. Stroke outline only for bars — for lines the colour *is* the
+        // stroke, so overriding it would hide the line.
+        opacity: {
+          condition: { test: "hoveredId === '' || datum.id === hoveredId", value: 1 },
+          value: 0.35,
+        },
+        ...(isLineChart ? {} : {
+          strokeWidth: {
+            condition: { test: "hoveredId !== '' && datum.id === hoveredId", value: 3 },
+            value: 0,
+          },
+          stroke: {
+            condition: { test: "hoveredId !== '' && datum.id === hoveredId", value: '#000' },
+            value: 'transparent',
+          },
+        }),
         tooltip: [
           ...(isGrouped ? [] : [{ field: 'id', type: 'nominal', title: 'Workflow' }]),
           ...workflowsTable.groupBy.map(field => ({
@@ -460,6 +486,7 @@ const ComparisonMetricsCharts: React.FC = () => {
         size={{ xs: isMosaic ? 6 : 12 }}
         key={metricName}
         sx={{ textAlign: 'left' }}
+        onMouseLeave={clearHover}
       >
         <ResponsiveCardVegaLite
           spec={chartSpec}
@@ -471,6 +498,7 @@ const ComparisonMetricsCharts: React.FC = () => {
           tooltip={tooltipHandler}
           enableSorting={!isLineChart}
           signalListeners={signalListeners}
+          onNewView={(view) => registerView(metricName, view)}
         />
       </Grid>
     );
