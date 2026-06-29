@@ -126,27 +126,23 @@ const ParallelCoordinatePlot = () => {
 
       setParallelData(data);
       let selected = parallel.selected;
-      let options = parallel.options;
+      const options = Array.from(
+        new Set(
+          workflows.data
+            .filter(workflow => workflow.status !== 'SCHEDULED')
+            .reduce((acc: string[], workflow) => {
+              const metrics = workflow.metrics
+                ? workflow.metrics
+                    .filter(metric => metric.name !== 'rating')
+                    .map((metric: IMetric) => metric.name)
+                : [];
+            
+              return [...acc, ...metrics];
+            }, []),
+        ),
+      );
 
       if (shapFeatures.length > 0) {
-
-        if (parallel.options.length === 0) {
-          options = Array.from(
-            new Set(
-              workflows.data
-                .filter(workflow => workflow.status !== 'SCHEDULED')
-                .reduce((acc: string[], workflow) => {
-                  const metrics = workflow.metrics
-                    ? workflow.metrics
-                        .filter(metric => metric.name !== 'rating')
-                        .map((metric: IMetric) => metric.name)
-                    : [];
-                
-                  return [...acc, ...metrics];
-                }, []),
-            ),
-          );
-        }
         
         const validShap = shapFeatures.filter(f => options.includes(f));
 
@@ -165,26 +161,7 @@ const ParallelCoordinatePlot = () => {
           foldArray.current = combined.slice(0, 10);
         }
       } else {
-        if (parallel.options.length === 0) {
-          options = Array.from(
-            new Set(
-              workflows.data
-                .filter(workflow => workflow.status !== 'SCHEDULED')
-                .reduce((acc: string[], workflow) => {
-                  const metrics = workflow.metrics
-                    ? workflow.metrics
-                        .filter(metric => metric.name !== 'rating')
-                        .map((metric: IMetric) => metric.name)
-                    : [];
-                
-                  return [...acc, ...metrics];
-                }, []),
-            ),
-          );
-        
-          selected = options[0];
-        }
-      
+        selected = options.includes(selected) ? selected : options[0] ?? '';  
         foldArray.current = allAxes
           .filter(name => name !== selected)
           .slice(0, 10);
