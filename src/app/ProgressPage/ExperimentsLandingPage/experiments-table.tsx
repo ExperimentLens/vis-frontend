@@ -31,7 +31,6 @@ import ExperimentsTableToolbar, {
 
 import ProgressBar from '../../../shared/components/prgress-bar';
 import { menuPaperSx } from '../../../shared/styles/card-surface';
-import { alpha, type Theme } from '@mui/material/styles';
 
 export type ExperimentRow = {
   id: string;
@@ -92,46 +91,6 @@ const normalizeExperimentType = (value?: string): ExperimentType => {
   if (type === 'HYBRID') return 'HYBRID';
 
   return 'UNKNOWN';
-};
-
-const experimentTypeChipColor = (type: ExperimentType, theme: Theme) => {
-  switch (type) {
-    case 'LLM':
-      return theme.palette.info.main;
-    case 'ML':
-      return theme.palette.success.main;
-    case 'HYBRID':
-      return theme.palette.secondary.main;
-    case 'UNKNOWN':
-    default:
-      return theme.palette.text.secondary;
-  }
-};
-
-const experimentTypeChipSx = (type: ExperimentType) => (theme: Theme) => {
-  const color = experimentTypeChipColor(type, theme);
-
-  return {
-    height: 26,
-    minWidth: 82,
-    borderRadius: 999,
-    fontWeight: 700,
-    fontSize: '0.72rem',
-    letterSpacing: '0.06em',
-    textTransform: 'uppercase',
-    color,
-    borderColor: alpha(color, 0.45),
-    backgroundColor: alpha(color, 0.06),
-
-    '& .MuiChip-label': {
-      px: 1.2,
-    },
-
-    '&:hover': {
-      backgroundColor: alpha(color, 0.12),
-      borderColor: alpha(color, 0.75),
-    },
-  };
 };
 
 const FilterHeader = () => (
@@ -239,7 +198,7 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
               size="small"
               variant="outlined"
               label={type}
-              sx={experimentTypeChipSx(type)}
+              className={`experiment-type-chip experiment-type-chip--${type.toLowerCase()}`}
             />
           );
         },

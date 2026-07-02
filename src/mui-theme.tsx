@@ -1,8 +1,9 @@
 // Import necessary modules
 import { grey, blue } from '@mui/material/colors';
-import { createTheme, responsiveFontSizes } from '@mui/material/styles';
+import { alpha, createTheme, responsiveFontSizes } from '@mui/material/styles';
 import type { Shadows } from '@mui/material/styles';
 import type { CSSProperties } from 'react';
+
 
 // Custom typography variants (additive — used like <Typography variant="cardTitle">)
 declare module '@mui/material/styles' {
@@ -401,9 +402,109 @@ export const createAppTheme = (mode: ThemeMode) => {
       },
       MuiChip: {
         styleOverrides: {
-          root: { fontWeight: 600 },
+          root: {
+            fontWeight: 600,
+          },
         },
-      },
+        variants: [
+          {
+            props: { className: 'experiment-type-chip experiment-type-chip--llm' },
+            style: {
+              height: 26,
+              minWidth: 82,
+              borderRadius: 999,
+              fontWeight: 700,
+              fontSize: '0.72rem',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: isDark ? '#38bdf8' : '#0284c7',
+              borderColor: alpha(isDark ? '#38bdf8' : '#0284c7', 0.45),
+              backgroundColor: alpha(isDark ? '#38bdf8' : '#0284c7', 0.07),
+            
+              '& .MuiChip-label': {
+                px: 1.2,
+              },
+            
+              '&:hover': {
+                backgroundColor: alpha(isDark ? '#38bdf8' : '#0284c7', 0.14),
+                borderColor: alpha(isDark ? '#38bdf8' : '#0284c7', 0.75),
+              },
+            },
+          },
+          {
+            props: { className: 'experiment-type-chip experiment-type-chip--ml' },
+            style: {
+              height: 26,
+              minWidth: 82,
+              borderRadius: 999,
+              fontWeight: 700,
+              fontSize: '0.72rem',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: isDark ? '#4ade80' : '#16a34a',
+              borderColor: alpha(isDark ? '#4ade80' : '#16a34a', 0.45),
+              backgroundColor: alpha(isDark ? '#4ade80' : '#16a34a', 0.07),
+            
+              '& .MuiChip-label': {
+                px: 1.2,
+              },
+            
+              '&:hover': {
+                backgroundColor: alpha(isDark ? '#4ade80' : '#16a34a', 0.14),
+                borderColor: alpha(isDark ? '#4ade80' : '#16a34a', 0.75),
+              },
+            },
+          },
+          {
+            props: { className: 'experiment-type-chip experiment-type-chip--hybrid' },
+            style: {
+              height: 26,
+              minWidth: 82,
+              borderRadius: 999,
+              fontWeight: 700,
+              fontSize: '0.72rem',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: isDark ? '#c084fc' : '#7e22ce',
+              borderColor: alpha(isDark ? '#c084fc' : '#7e22ce', 0.45),
+              backgroundColor: alpha(isDark ? '#c084fc' : '#7e22ce', 0.07),
+            
+              '& .MuiChip-label': {
+                px: 1.2,
+              },
+            
+              '&:hover': {
+                backgroundColor: alpha(isDark ? '#c084fc' : '#7e22ce', 0.14),
+                borderColor: alpha(isDark ? '#c084fc' : '#7e22ce', 0.75),
+              },
+            },
+          },
+          {
+            props: { className: 'experiment-type-chip experiment-type-chip--unknown' },
+            style: {
+              height: 26,
+              minWidth: 82,
+              borderRadius: 999,
+              fontWeight: 700,
+              fontSize: '0.72rem',
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: isDark ? '#94a3b8' : '#64748b',
+              borderColor: alpha(isDark ? '#94a3b8' : '#64748b', 0.45),
+              backgroundColor: alpha(isDark ? '#94a3b8' : '#64748b', 0.07),
+            
+              '& .MuiChip-label': {
+                px: 1.2,
+              },
+            
+              '&:hover': {
+                backgroundColor: alpha(isDark ? '#94a3b8' : '#64748b', 0.14),
+                borderColor: alpha(isDark ? '#94a3b8' : '#64748b', 0.75),
+              },
+            },
+          },
+        ],
+      },      
       // Compact form-control sizing. The app deliberately runs dense forms, so
       // make 0.8rem the default for inputs, selects, menu items and field
       // labels instead of repeating `fontSize: '0.8rem'` on every control.
