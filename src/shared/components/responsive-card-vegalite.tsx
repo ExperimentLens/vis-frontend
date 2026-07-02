@@ -333,10 +333,11 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       wrap.style.left = `${initLeft}px`;
       wrap.style.top = `${initTop}px`;
       wrap.style.zIndex = '2500';
-      wrap.style.maxWidth = 'min(90vw, 800px)';
+      wrap.style.width = `${maxW}px`;
+      wrap.style.maxWidth = 'calc(100vw - 20px)';
       wrap.style.maxHeight = '80vh';
-      wrap.style.overflow = 'auto';
-      // Theme-aware surface (matches the hover tooltip / app theme).
+      wrap.style.overflow = 'hidden';
+      wrap.style.boxSizing = 'border-box';      // Theme-aware surface (matches the hover tooltip / app theme).
       wrap.style.background = theme.palette.background.paper;
       wrap.style.color = theme.palette.text.primary;
       wrap.style.border = `1px solid ${theme.palette.customSurface.cardBorder}`;
@@ -346,15 +347,19 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       // header + close (X only)
       const head = document.createElement('div');
 
+      head.style.position = 'absolute';
+      head.style.top = '0';
+      head.style.left = '0';
+      head.style.right = '0';
+      head.style.height = '30px';
       head.style.display = 'flex';
       head.style.alignItems = 'center';
       head.style.justifyContent = 'flex-end';
-      head.style.gap = '8px';
       head.style.padding = '4px 6px';
-      head.style.position = 'sticky';
-      head.style.top = '0';
+      head.style.boxSizing = 'border-box';
       head.style.background = theme.palette.background.paper;
-      head.style.zIndex = '1';
+      head.style.zIndex = '3';
+      head.style.cursor = 'move';
 
       const btn = document.createElement('button');
 
@@ -373,7 +378,16 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       // body (copy HTML; scrollable, no mid-word breaks)
       const body = document.createElement('div');
 
+      body.style.width = '100%';
+      body.style.maxWidth = '100%';
+      body.style.maxHeight = '80vh';
+      body.style.boxSizing = 'border-box';
+
       body.style.padding = '0 10px 10px';
+
+      body.style.overflowX = 'auto';
+      body.style.overflowY = 'auto';
+
       body.style.whiteSpace = 'normal';
       body.style.wordBreak = 'normal';
       body.style.overflowWrap = 'normal';
@@ -390,10 +404,12 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
         innerBox.style.boxShadow = 'none';
         innerBox.style.padding = '0';
         innerBox.style.maxWidth = 'none';
+        innerBox.style.width = 'max-content';
+        innerBox.style.minWidth = '100%';
       }
 
-      wrap.appendChild(head);
       wrap.appendChild(body);
+      wrap.appendChild(head);
       document.body.appendChild(wrap);
 
       // close only via X (and suppress re-pin)
