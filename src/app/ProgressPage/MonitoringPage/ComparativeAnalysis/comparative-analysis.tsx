@@ -22,6 +22,12 @@ const ComparativeAnalysis = () => {
   const groupBy = useAppSelector(
     (state: RootState) => state.monitorPage.workflowsTable.groupBy,
   );
+  const isMlExperiment = useAppSelector(
+      (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'ml',
+  );
+  const isLlmExperiment = useAppSelector(
+      (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
   const capabilities = useExperimentCapabilities();
   const theme = useTheme();
 
@@ -94,18 +100,22 @@ const ComparativeAnalysis = () => {
                   iconPosition="start"
                   label="METRICS"
                 />
-                <Tab
-                  icon={<WaterfallChartRoundedIcon fontSize="small" />}
-                  iconPosition="start"
-                  label="EXECUTIONS"
-                  disabled={groupBy.length > 0 || !capabilities.traces}
-                />
-                <Tab
-                  icon={<HubRoundedIcon fontSize="small" />}
-                  iconPosition="start"
-                  label="MODELS"
-                  disabled={groupBy.length > 0 || !capabilities.explainability}
-                />
+                {!isMlExperiment && (
+                  <Tab
+                    icon={<WaterfallChartRoundedIcon fontSize="small" />}
+                    iconPosition="start"
+                    label="EXECUTIONS"
+                    disabled={groupBy.length > 0 || !capabilities.traces}
+                  />
+                )}
+                {!isLlmExperiment && (
+                  <Tab
+                    icon={<HubRoundedIcon fontSize="small" />}
+                    iconPosition="start"
+                    label="MODELS"
+                    disabled={groupBy.length > 0 || !capabilities.explainability}
+                  />
+                )}
                 <Tab
                   icon={<StorageRoundedIcon fontSize="small" />}
                   iconPosition="start"

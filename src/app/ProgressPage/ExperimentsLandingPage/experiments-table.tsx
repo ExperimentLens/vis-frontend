@@ -11,6 +11,7 @@ import {
   Typography,
   Button,
   useTheme,
+  Chip,
 } from '@mui/material';
 import {
   DataGrid,
@@ -30,11 +31,13 @@ import ExperimentsTableToolbar, {
 
 import ProgressBar from '../../../shared/components/prgress-bar';
 import { menuPaperSx } from '../../../shared/styles/card-surface';
+import { alpha, type Theme } from '@mui/material/styles';
 
 export type ExperimentRow = {
   id: string;
   name: string;
   status: string;
+  type: string;
   lastUpdateTime: number;
   creationTime: number;
   tagsString: string;
@@ -74,8 +77,61 @@ const matchesQuery = (row: ExperimentRow, q: string) => {
     row.id.toLowerCase().includes(query) ||
     row.name.toLowerCase().includes(query) ||
     row.status.toLowerCase().includes(query) ||
+    row.type.toLowerCase().includes(query) ||
     row.tagsString.toLowerCase().includes(query)
   );
+};
+
+type ExperimentType = 'LLM' | 'ML' | 'HYBRID' | 'UNKNOWN';
+
+const normalizeExperimentType = (value?: string): ExperimentType => {
+  const type = value?.trim().toUpperCase();
+
+  if (type === 'LLM') return 'LLM';
+  if (type === 'ML') return 'ML';
+  if (type === 'HYBRID') return 'HYBRID';
+
+  return 'UNKNOWN';
+};
+
+const experimentTypeChipColor = (type: ExperimentType, theme: Theme) => {
+  switch (type) {
+    case 'LLM':
+      return theme.palette.info.main;
+    case 'ML':
+      return theme.palette.success.main;
+    case 'HYBRID':
+      return theme.palette.secondary.main;
+    case 'UNKNOWN':
+    default:
+      return theme.palette.text.secondary;
+  }
+};
+
+const experimentTypeChipSx = (type: ExperimentType) => (theme: Theme) => {
+  const color = experimentTypeChipColor(type, theme);
+
+  return {
+    height: 26,
+    minWidth: 82,
+    borderRadius: 999,
+    fontWeight: 700,
+    fontSize: '0.72rem',
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    color,
+    borderColor: alpha(color, 0.45),
+    backgroundColor: alpha(color, 0.06),
+
+    '& .MuiChip-label': {
+      px: 1.2,
+    },
+
+    '&:hover': {
+      backgroundColor: alpha(color, 0.12),
+      borderColor: alpha(color, 0.75),
+    },
+  };
 };
 
 const FilterHeader = () => (
@@ -144,6 +200,7 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
         status: normalizeStatus(e.status),
         lastUpdateTime: e.lastUpdateTime ?? 0,
         creationTime: e.creationTime ?? 0,
+        type: normalizeExperimentType(e.tags?.experiment_type),
         tagsString: buildTagsString(e.tags),
       }));
   }, [experiments]);
@@ -167,6 +224,26 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
     return [
       { field: 'name', headerName: 'Name', flex: 1, minWidth: 260 },
       { field: 'id', headerName: 'ID', flex: 1, minWidth: 220 },
+      {
+        field: 'type',
+        headerName: 'Type',
+        width: 130,
+        align: 'center',
+        headerAlign: 'center',
+        sortable: true,
+        renderCell: (params: GridRenderCellParams<ExperimentRow, ExperimentType>) => {
+          const type = params.value ?? 'UNKNOWN';
+        
+          return (
+            <Chip
+              size="small"
+              variant="outlined"
+              label={type}
+              sx={experimentTypeChipSx(type)}
+            />
+          );
+        },
+      },
       {
         field: 'lastUpdateTime',
         headerName: 'Last Update',

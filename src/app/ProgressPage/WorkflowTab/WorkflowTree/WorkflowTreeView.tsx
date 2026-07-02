@@ -23,6 +23,12 @@ export default function WorkflowTreeView() {
     ),
     [tab?.workflowConfiguration.tasks, tab?.workflowConfiguration.dataAssets],
   );
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
+  const isMlExperiment = useAppSelector(
+      (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'ml',
+  );
 
   const [workflowExpanded, setWorkflowExpanded] = useState(true);
   const [modelExpanded, setModelExpanded] = useState<boolean>(hasExplainability);
@@ -70,7 +76,7 @@ export default function WorkflowTreeView() {
       {/* Both sections always render so a workflow with ML artifacts AND traces shows
           both. LLM Traces has its own empty-state; Model Insights is grayed out when
           there is no (tabular) model to explain. */}
-      {hasTraces && (
+      {!isMlExperiment && hasTraces && (
         <Accordion
           expanded={tracesExpanded}
           disableGutters
@@ -124,38 +130,40 @@ export default function WorkflowTreeView() {
         </Accordion>
       )}
 
-      <Accordion
-        expanded={modelExpanded && hasExplainability}
-        disableGutters
-        sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
-      >
-        <AccordionSummary
+      {!isLlmExperiment && (
+        <Accordion
+          expanded={modelExpanded && hasExplainability}
+          disableGutters
+          sx={{ boxShadow: 'none', '&::before': { display: 'none' } }}
+        >
+          <AccordionSummary
           disabled={!hasExplainability}
           onClick={(e) => e.stopPropagation()}
           sx={{ borderBottom: '1px solid', borderColor: 'divider', pointerEvents: 'none' }}
-        >
-          <Box
-            sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%', pointerEvents: 'auto', cursor: 'default' }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PsychologyAltRoundedIcon color="primary" />
-              <Typography fontWeight={600} sx={{ color: hasExplainability ? 'inherit' : theme.palette.text.disabled }}>
-                Model Insights
-              </Typography>
-            </Box>
             <Box
-              onClick={(e) => { e.stopPropagation(); if (hasExplainability) setModelExpanded(p => !p); }}
-              sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, width: '100%', pointerEvents: 'auto', cursor: 'default' }}
             >
-              <ExpandMoreIcon />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <PsychologyAltRoundedIcon color="primary" />
+                <Typography fontWeight={600} sx={{ color: hasExplainability ? 'inherit' : theme.palette.text.disabled }}>
+                  Model Insights
+                </Typography>
+              </Box>
+              <Box
+                onClick={(e) => { e.stopPropagation(); if (hasExplainability) setModelExpanded(p => !p); }}
+                sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              >
+                <ExpandMoreIcon />
+              </Box>
             </Box>
-          </Box>
-        </AccordionSummary>
+          </AccordionSummary>
 
-        <AccordionDetails>
-          <ModelInsightsAccordion />
-        </AccordionDetails>
-      </Accordion>
+          <AccordionDetails>
+            <ModelInsightsAccordion />
+          </AccordionDetails>
+        </Accordion>
+      )}
     </Box>
   );
 }
