@@ -36,9 +36,16 @@ const ComparativeAnalysis = () => {
   useEffect(() => {
     // Grouping only supports the Metrics view; also bail out of a subtab whose
     // capability is unavailable (Models without explainability, Executions without traces).
+    const executionsHidden = isMlExperiment;
+    const modelsHidden = isLlmExperiment;
+
     const subtabUnavailable =
-      (selectedComparisonTab === COMPARE_TAB.MODELS && !capabilities.explainability) ||
-      (selectedComparisonTab === COMPARE_TAB.EXECUTIONS && !capabilities.traces);
+      (selectedComparisonTab === COMPARE_TAB.EXECUTIONS &&
+        (executionsHidden || !capabilities.traces)) ||
+      (selectedComparisonTab === COMPARE_TAB.MODELS &&
+        (modelsHidden || !capabilities.explainability)) ||
+      (selectedComparisonTab === COMPARE_TAB.DATA &&
+        !capabilities.datasets);
 
     if ((groupBy.length > 0 || subtabUnavailable) && selectedComparisonTab !== COMPARE_TAB.METRICS) {
       dispatch(setSelectedComparisonTab(COMPARE_TAB.METRICS));
@@ -96,12 +103,14 @@ const ComparativeAnalysis = () => {
                 }}
               >
                 <Tab
+                  value={COMPARE_TAB.METRICS}
                   icon={<InsightsRoundedIcon fontSize="small" />}
                   iconPosition="start"
                   label="METRICS"
                 />
                 {!isMlExperiment && (
                   <Tab
+                    value={COMPARE_TAB.EXECUTIONS}
                     icon={<WaterfallChartRoundedIcon fontSize="small" />}
                     iconPosition="start"
                     label="EXECUTIONS"
@@ -110,6 +119,7 @@ const ComparativeAnalysis = () => {
                 )}
                 {!isLlmExperiment && (
                   <Tab
+                    value={COMPARE_TAB.MODELS}
                     icon={<HubRoundedIcon fontSize="small" />}
                     iconPosition="start"
                     label="MODELS"
@@ -117,6 +127,7 @@ const ComparativeAnalysis = () => {
                   />
                 )}
                 <Tab
+                  value={COMPARE_TAB.DATA}
                   icon={<StorageRoundedIcon fontSize="small" />}
                   iconPosition="start"
                   label="DATA"
