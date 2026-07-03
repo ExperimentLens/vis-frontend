@@ -1,28 +1,27 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
   CircularProgress,
-  Grid,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  Tab,
+  Tabs,
   Typography,
   useTheme,
 } from '@mui/material';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
-import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { Handler } from 'vega-tooltip';
-import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
-import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
+
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import { fetchSessionTraceDetails, selectSessionsMap } from '../../../../store/slices/observabilitySlice';
-import { MONO, OBSERVABILITY_PROJECT_ID, formatMs } from '../../../../shared/models/observability/agentic-conventions';
+import {
+  fetchSessionTraceDetails,
+  selectSessionsMap,
+} from '../../../../store/slices/observabilitySlice';
+import {
+  OBSERVABILITY_PROJECT_ID,
+} from '../../../../shared/models/observability/agentic-conventions';
 import {
   latencyByTraceName,
   modelUsageTable,
@@ -32,42 +31,70 @@ import {
   topTraceNames,
 } from '../../../../shared/utils/observability-aggregates';
 import InfoMessage from '../../../../shared/components/InfoMessage';
-import { Bar, EmptyNote } from './chart-kit';
 import LlmKpiStrip from './llm-kpi-strip';
-import VerdictPassRateChart from './verdict-passrate-chart';
-import PerAgentProfileChart from './per-agent-profile-chart';
-import CallFrequencyChart from './call-frequency-chart';
-import DistributionChart from './distribution-chart';
 
-const Th = ({ children, align }: { children: React.ReactNode; align?: 'left' | 'right' }) => (
-  <TableCell align={align} sx={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.4px', color: 'text.secondary', whiteSpace: 'nowrap', py: 0.75 }}>
-    {children}
-  </TableCell>
-);
+import LlmMonitoringUsageTab from './llm-monitoring-usage-tab';
+import LlmMonitoringQualityTab from './llm-monitoring-quality-tab';
+import LlmMonitoringAgentsTab from './llm-monitoring-agents-tab';
+type LlmOverviewTab = 'usage' | 'quality' | 'agents';
 
-const Td = ({ children, align }: { children: React.ReactNode; align?: 'left' | 'right' }) => (
-  <TableCell align={align} sx={{ fontSize: '0.74rem', whiteSpace: 'nowrap', py: 0.5 }}>
-    {children}
-  </TableCell>
-);
+const LLM_TABS: Array<{ value: LlmOverviewTab; label: string }> = [
+  { value: 'usage', label: 'Usage' },
+  { value: 'quality', label: 'Quality' },
+  { value: 'agents', label: 'Agents' },
+];
 
-const TruncMono = ({ children, max = 160 }: { children: string; max?: number }) => (
-  <Box component="span" sx={{ fontFamily: MONO, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: max, display: 'inline-block', verticalAlign: 'bottom' }} title={children}>
-    {children}
-  </Box>
-);
+const downloadCsv = (
+  rows: Array<Record<string, string | number | boolean | null | undefined>>,
+  filename: string,
+) => {
+  if (!rows.length) return;
 
-const BigNum = ({ value, sub }: { value: string; sub: string }) => (
-  <Box sx={{ mb: 1 }}>
-    <Typography sx={{ fontSize: '1.6rem', fontWeight: 800, lineHeight: 1.1 }}>{value}</Typography>
-    <Typography variant="caption" color="text.secondary">{sub}</Typography>
-  </Box>
-);
+  const headers = Object.keys(rows[0]);
+
+  const escapeCsv = (value: unknown) => {
+    if (value === null || value === undefined) return '';
+
+    const stringValue = String(value);
+
+    if (
+      stringValue.includes(',') ||
+      stringValue.includes('"') ||
+      stringValue.includes('\n')
+    ) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+
+    return stringValue;
+  };
+
+  const csv = [
+    headers.join(','),
+    ...rows.map(row => headers.map(header => escapeCsv(row[header])).join(',')),
+  ].join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+
+  URL.revokeObjectURL(url);
+};
 
 export default function LlmMonitoringOverview() {
   const dispatch = useAppDispatch();
   const theme = useTheme();
-  const tooltip = useMemo(() => new Handler({ sanitize: (v: unknown) => String(v) }).call, []);
+
+  const [selectedTab, setSelectedTab] = useState<LlmOverviewTab>('usage');
+
+  const tooltip = useMemo(
+    () => new Handler({ sanitize: (v: unknown) => String(v) }).call,
+    [],
+  );
+
   const { experiment, workflows } = useAppSelector((s: RootState) => s.progressPage);
   const sessions = useAppSelector(selectSessionsMap);
   const experimentId = experiment.data?.id;
@@ -76,14 +103,23 @@ export default function LlmMonitoringOverview() {
     .filter(w => w.status !== 'SCHEDULED')
     .map(w => w.id)
     .join(',');
-  const workflowIds = useMemo(() => (idKey ? idKey.split(',') : []), [idKey]);
+
+  const workflowIds = useMemo(
+    () => (idKey ? idKey.split(',') : []),
+    [idKey],
+  );
 
   useEffect(() => {
     if (!experimentId) return;
+
     workflowIds.forEach(id =>
-      dispatch(fetchSessionTraceDetails({ projectId: OBSERVABILITY_PROJECT_ID, experimentId, workflowId: id })),
+      dispatch(fetchSessionTraceDetails({
+        projectId: OBSERVABILITY_PROJECT_ID,
+        experimentId,
+        workflowId: id,
+      })),
     );
-  }, [experimentId, idKey, workflowIds]);
+  }, [dispatch, experimentId, workflowIds]);
 
   const allDetails = useMemo(
     () => workflowIds.flatMap(id => sessions[id]?.details ?? []),
@@ -93,51 +129,96 @@ export default function LlmMonitoringOverview() {
   const anyLoading = workflowIds.some(id => sessions[id]?.loading);
   const hasData = allDetails.length > 0;
 
+  const r = useMemo(
+    () => (hasData ? rollup(allDetails) : null),
+    [hasData, allDetails],
+  );
+
+  const topTraces = useMemo(
+    () => (hasData ? topTraceNames(allDetails, 5) : []),
+    [hasData, allDetails],
+  );
+
+  const models = useMemo(
+    () => (hasData ? modelUsageTable(allDetails) : []),
+    [hasData, allDetails],
+  );
+
+  const scores = useMemo(
+    () => (hasData ? scoresTable(allDetails) : []),
+    [hasData, allDetails],
+  );
+
+  const timeSeries = useMemo(
+    () => (hasData ? observationsByTime(allDetails) : []),
+    [hasData, allDetails],
+  );
+
+  const latencies = useMemo(
+    () => (hasData ? latencyByTraceName(allDetails) : []),
+    [hasData, allDetails],
+  );
+
+  const totalObservations = useMemo(
+    () => allDetails.reduce((sum, trace) => sum + trace.observations.length, 0),
+    [allDetails],
+  );
+
+  const totalScores = useMemo(
+    () => allDetails.reduce((sum, trace) => sum + trace.scores.length, 0),
+    [allDetails],
+  );
+
+  const maxTopTraceCount = topTraces.length ? topTraces[0].count : 1;
+
+  const obsSpec = useMemo(
+    () => ({
+      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
+      data: { values: timeSeries },
+      mark: { type: 'line', point: true, interpolate: 'monotone' },
+      encoding: {
+        x: { field: 'time', type: 'temporal', title: null },
+        y: { field: 'count', type: 'quantitative', title: 'observations' },
+        color: {
+          field: 'level',
+          type: 'nominal',
+          scale: {
+            domain: ['DEFAULT', 'ERROR', 'DEBUG', 'WARNING'],
+            range: [
+              theme.palette.primary.main,
+              theme.palette.error.main,
+              theme.palette.text.secondary,
+              theme.palette.warning.main,
+            ],
+          },
+          legend: { orient: 'bottom', title: null },
+        },
+        tooltip: [
+          { field: 'time', title: 'time', type: 'temporal', format: '%b %d, %H:%M' },
+          { field: 'level', title: 'level' },
+          { field: 'count', title: 'count' },
+        ],
+      },
+    }) as Record<string, unknown>,
+    [
+      timeSeries,
+      theme.palette.primary.main,
+      theme.palette.error.main,
+      theme.palette.text.secondary,
+      theme.palette.warning.main,
+    ],
+  );
+
   const refresh = () => {
     if (!experimentId) return;
+
     workflowIds.forEach(id =>
-      dispatch(fetchSessionTraceDetails({ projectId: OBSERVABILITY_PROJECT_ID, experimentId, workflowId: id })),
+      dispatch(fetchSessionTraceDetails({
+        projectId: OBSERVABILITY_PROJECT_ID,
+        experimentId,
+        workflowId: id,
+      })),
     );
-  };
-
-  const downloadCsv = (
-    rows: Array<Record<string, string | number | boolean | null | undefined>>,
-    filename: string
-  ) => {
-    if (!rows.length) return;
-
-    const headers = Object.keys(rows[0]);
-
-    const escapeCsv = (value: unknown) => {
-      if (value === null || value === undefined) return '';
-
-      const stringValue = String(value);
-
-      if (
-        stringValue.includes(',') ||
-        stringValue.includes('"') ||
-        stringValue.includes('\n')
-      ) {
-        return `"${stringValue.replace(/"/g, '""')}"`;
-      }
-
-      return stringValue;
-    };
-
-    const csv = [
-      headers.join(','),
-      ...rows.map(row => headers.map(header => escapeCsv(row[header])).join(',')),
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-
-    URL.revokeObjectURL(url);
   };
 
   const handleDownloadTracesCsv = () => {
@@ -146,7 +227,7 @@ export default function LlmMonitoringOverview() {
         trace: t.name,
         count: t.count,
       })),
-      'traces.csv'
+      'traces.csv',
     );
   };
 
@@ -157,7 +238,7 @@ export default function LlmMonitoringOverview() {
         generations: m.generations,
         tokens: m.tokens,
       })),
-      'model-usage.csv'
+      'model-usage.csv',
     );
   };
 
@@ -170,7 +251,7 @@ export default function LlmMonitoringOverview() {
         zeros: s.zeros ?? 0,
         ones: s.ones ?? 0,
       })),
-      'scores.csv'
+      'scores.csv',
     );
   };
 
@@ -184,7 +265,7 @@ export default function LlmMonitoringOverview() {
         p95: l.p95,
         p99: l.p99,
       })),
-      'trace-latency-percentiles.csv'
+      'trace-latency-percentiles.csv',
     );
   };
 
@@ -199,51 +280,61 @@ export default function LlmMonitoringOverview() {
     );
   }
 
-  const r = hasData ? rollup(allDetails) : null;
-  const topTraces = hasData ? topTraceNames(allDetails, 5) : [];
-  const models = hasData ? modelUsageTable(allDetails) : [];
-  const scores = hasData ? scoresTable(allDetails) : [];
-  const timeSeries = hasData ? observationsByTime(allDetails) : [];
-  const latencies = hasData ? latencyByTraceName(allDetails) : [];
-  const totalObservations = allDetails.reduce((s, t) => s + t.observations.length, 0);
-  const totalScores = allDetails.reduce((s, t) => s + t.scores.length, 0);
-  const maxTopTraceCount = topTraces.length ? topTraces[0].count : 1;
-
-  const obsSpec = {
-    $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-    data: { values: timeSeries },
-    mark: { type: 'line', point: true, interpolate: 'monotone' },
-    encoding: {
-      x: { field: 'time', type: 'temporal', title: null },
-      y: { field: 'count', type: 'quantitative', title: 'observations' },
-      color: {
-        field: 'level',
-        type: 'nominal',
-        scale: {
-          domain: ['DEFAULT', 'ERROR', 'DEBUG', 'WARNING'],
-          range: [theme.palette.primary.main, theme.palette.error.main, theme.palette.text.secondary, theme.palette.warning.main],
-        },
-        legend: { orient: 'bottom', title: null },
-      },
-      tooltip: [
-        { field: 'time', title: 'time', type: 'temporal', format: '%b %d, %H:%M' },
-        { field: 'level', title: 'level' },
-        { field: 'count', title: 'count' },
-      ],
-    },
-  } as Record<string, unknown>;
-
   return (
     <Stack spacing={1.5} sx={{ flex: 1, minHeight: 0 }}>
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <HubRoundedIcon color="primary" fontSize="small" />
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Agentic Overview</Typography>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          minHeight: 44,
+        }}
+      >
+        <Tabs
+          value={selectedTab}
+          onChange={(_, value) => setSelectedTab(value as LlmOverviewTab)}
+          sx={{
+            minHeight: 44,
+            '& .MuiTabs-indicator': {
+              height: 3,
+              borderRadius: 2,
+            },
+            '& .MuiTab-root': {
+              minHeight: 44,
+              px: 0,
+              mr: 3,
+              textTransform: 'none',
+              fontWeight: 800,
+              fontSize: '0.9rem',
+            },
+          }}
+        >
+          {LLM_TABS.map(tab => (
+            <Tab
+              key={tab.value}
+              value={tab.value}
+              label={tab.label}
+              disableRipple
+            />
+          ))}
+        </Tabs>
+
+        <Box sx={{ flexGrow: 1 }} />
+
         <Typography variant="caption" color="text.secondary">
           {workflowIds.length} session{workflowIds.length === 1 ? '' : 's'}
         </Typography>
+
         {anyLoading && <CircularProgress size={14} />}
-        <Box sx={{ flexGrow: 1 }} />
-        <Button size="small" startIcon={<RefreshRoundedIcon />} onClick={refresh} disabled={anyLoading}>
+
+        <Button
+          size="small"
+          startIcon={<RefreshRoundedIcon />}
+          onClick={refresh}
+          disabled={anyLoading}
+        >
           Refresh
         </Button>
       </Stack>
@@ -251,7 +342,9 @@ export default function LlmMonitoringOverview() {
       {!hasData && anyLoading && (
         <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, py: 6, gap: 1.5 }}>
           <CircularProgress size={22} />
-          <Typography variant="body2" color="text.secondary">Fetching session traces…</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Fetching session traces…
+          </Typography>
         </Stack>
       )}
 
@@ -268,155 +361,36 @@ export default function LlmMonitoringOverview() {
         <>
           <LlmKpiStrip details={allDetails} sessionCount={workflowIds.length} />
 
-          {/* Top row: Traces / Model usage / Scores */}
-          <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
-              <ResponsiveCardTable title="Traces" showSettings={true} onDownload={handleDownloadTracesCsv} downloadLabel="Download as CSV" downloadSecondaryText="Save traces as CSV">
-                <BigNum value={r.traceCount.toLocaleString()} sub="Total traces tracked" />
-                {topTraces.length === 0 ? <EmptyNote>No traces.</EmptyNote> : (
-                  <Stack spacing={0.5}>
-                    {topTraces.map(t => (
-                      <Stack key={t.name} direction="row" alignItems="center" spacing={1}>
-                        <TruncMono max={130}>{t.name}</TruncMono>
-                        <Bar value={t.count / maxTopTraceCount} color={theme.palette.primary.main} width={100} />
-                        <Typography variant="caption" sx={{ fontFamily: MONO, ml: 'auto' }}>{t.count}</Typography>
-                      </Stack>
-                    ))}
-                  </Stack>
-                )}
-              </ResponsiveCardTable>
-            </Grid>
+          {selectedTab === 'usage' && (
+            <LlmMonitoringUsageTab
+              details={allDetails}
+              rollupData={r}
+              topTraces={topTraces}
+              models={models}
+              timeSeries={timeSeries}
+              latencies={latencies}
+              maxTopTraceCount={maxTopTraceCount}
+              totalObservations={totalObservations}
+              obsSpec={obsSpec}
+              tooltip={tooltip}
+              onDownloadTracesCsv={handleDownloadTracesCsv}
+              onDownloadModelUsageCsv={handleDownloadModelUsageCsv}
+              onDownloadTraceLatencyCsv={handleDownloadTraceLatencyCsv}
+            />
+          )}
 
-            <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
-              <ResponsiveCardTable title="Model usage" showSettings={true} onDownload={handleDownloadModelUsageCsv} downloadLabel="Download as CSV" downloadSecondaryText="Save model usage as CSV">
-                <BigNum
-                  value={r.totalTokens ? r.totalTokens.toLocaleString() : '—'}
-                  sub={`Total tokens · $${r.totalCost.toFixed(4)} cost`}
-                />
-                {models.length === 0 ? <EmptyNote>No generations.</EmptyNote> : (
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <Th>Model</Th>
-                        <Th align="right">Gens</Th>
-                        <Th align="right">Tokens</Th>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {models.slice(0, 6).map(m => (
-                        <TableRow key={m.model}>
-                          <Td><TruncMono max={170}>{m.model}</TruncMono></Td>
-                          <Td align="right">{m.generations}</Td>
-                          <Td align="right"><Box component="span" sx={{ fontFamily: MONO }}>{m.tokens.toLocaleString()}</Box></Td>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </ResponsiveCardTable>
-            </Grid>
+          {selectedTab === 'quality' && (
+            <LlmMonitoringQualityTab
+              details={allDetails}
+              scores={scores}
+              totalScores={totalScores}
+              onDownloadScoresCsv={handleDownloadScoresCsv}
+            />
+          )}
 
-            <Grid size={{ xs: 12, md: 4 }} sx={{ textAlign: 'left' }}>
-              <ResponsiveCardTable title="Scores" showSettings={true} onDownload={handleDownloadScoresCsv} downloadLabel="Download as CSV" downloadSecondaryText="Save scores as CSV">
-                <BigNum value={totalScores.toLocaleString()} sub="Total scores tracked" />
-                {scores.length === 0 ? <EmptyNote>No scores.</EmptyNote> : (
-                  <Table size="small">
-                    <TableHead>
-                      <TableRow>
-                        <Th>Name</Th>
-                        <Th align="right">#</Th>
-                        <Th align="right">Avg</Th>
-                        <Th align="right">0</Th>
-                        <Th align="right">1</Th>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {scores.slice(0, 6).map(s => (
-                        <TableRow key={s.name}>
-                          <Td><TruncMono max={140}>{s.name}</TruncMono></Td>
-                          <Td align="right">{s.count}</Td>
-                          <Td align="right"><Box component="span" sx={{ fontFamily: MONO }}>{s.avg.toFixed(2)}</Box></Td>
-                          <Td align="right">{s.zeros || '—'}</Td>
-                          <Td align="right">{s.ones || '—'}</Td>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-              </ResponsiveCardTable>
-            </Grid>
-          </Grid>
-
-          {/* Quality, latency & frequency — all derived from the trace payload you already fetch */}
-          <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><VerdictPassRateChart details={allDetails} /></Grid>
-            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><PerAgentProfileChart details={allDetails} /></Grid>
-            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><CallFrequencyChart details={allDetails} /></Grid>
-            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}><DistributionChart details={allDetails} /></Grid>
-          </Grid>
-
-          {/* Bottom row: Observations by time / Trace latency percentiles */}
-          <Grid container spacing={1.5}>
-            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', mb: {xs: 0, md: 1.5} }}>
-              <ResponsiveCardVegaLite
-                title="Observations by time"
-                details={
-                  timeSeries.length > 0
-                    ? `${totalObservations.toLocaleString()} observations tracked`
-                    : 'No observations tracked.'
-                }
-                spec={timeSeries.length > 0 ? obsSpec : {}}
-                actions={false}
-                isStatic={false}
-                tooltip={tooltip}
-                showSettings={timeSeries.length > 0}
-                showInfoMessage={timeSeries.length === 0}
-                infoMessage={
-                  <InfoMessage
-                    message="No observations to plot."
-                    icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
-                    type="info"
-                    fullHeight
-                  />
-                }
-                maxHeight={260}
-                aspectRatio={1.7}
-              />            
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', mb: 1.5 }}>
-              <ResponsiveCardTable title="Trace latency percentiles" showSettings={true} onDownload={handleDownloadTraceLatencyCsv} downloadLabel="Download as CSV" downloadSecondaryText="Save latency percentiles as CSV">
-                {latencies.length === 0 ? <EmptyNote>No latency data.</EmptyNote> : (
-                  <Box sx={{ overflow: 'auto' }}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <Th>Trace name</Th>
-                          <Th align="right">#</Th>
-                          <Th align="right">p50</Th>
-                          <Th align="right">p90</Th>
-                          <Th align="right">p95</Th>
-                          <Th align="right">p99</Th>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {latencies.slice(0, 8).map(l => (
-                          <TableRow key={l.name}>
-                            <Td><TruncMono max={160}>{l.name}</TruncMono></Td>
-                            <Td align="right">{l.count}</Td>
-                            <Td align="right"><Box component="span" sx={{ fontFamily: MONO }}>{formatMs(l.p50)}</Box></Td>
-                            <Td align="right"><Box component="span" sx={{ fontFamily: MONO }}>{formatMs(l.p90)}</Box></Td>
-                            <Td align="right"><Box component="span" sx={{ fontFamily: MONO }}>{formatMs(l.p95)}</Box></Td>
-                            <Td align="right"><Box component="span" sx={{ fontFamily: MONO }}>{formatMs(l.p99)}</Box></Td>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </Box>
-                )}
-              </ResponsiveCardTable>
-            </Grid>
-          </Grid>
+          {selectedTab === 'agents' && (
+            <LlmMonitoringAgentsTab details={allDetails} />
+          )}
         </>
       )}
     </Stack>
