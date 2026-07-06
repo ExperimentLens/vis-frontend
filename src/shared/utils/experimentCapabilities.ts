@@ -63,11 +63,25 @@ export function hasModelExplainability(
   tasks: ITask[] | null | undefined,
   dataAssets: IDataAsset[] | null | undefined,
 ): boolean {
+  /* eslint-disable no-console */
+  console.log('[hasModelExplainability] tasks:', tasks);
+  console.log('[hasModelExplainability] dataAssets:', dataAssets);
+
   const byTask = Boolean(tasks?.some(t => typeof t.name === 'string' && /explainability/i.test(t.name)));
+
   const byAsset = Boolean(
-    dataAssets?.some(a => MODEL_ARTIFACTS.includes(a.name) || a.folder === EXPLAINABILITY_FOLDER),
+    dataAssets?.some(a => {
+      const nameMatch = MODEL_ARTIFACTS.includes(a.name);
+      const folderMatch = a.folder === EXPLAINABILITY_FOLDER;
+      console.log(
+        `[hasModelExplainability] asset — name: ${JSON.stringify(a.name)}, folder: ${JSON.stringify(a.folder)} | nameMatch: ${nameMatch}, folderMatch: ${folderMatch}`,
+      );
+      return nameMatch || folderMatch;
+    }),
   );
 
+  console.log(`[hasModelExplainability] result — byTask: ${byTask}, byAsset: ${byAsset}`);
+  /* eslint-enable no-console */
   return byTask || byAsset;
 }
 
