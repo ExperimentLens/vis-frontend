@@ -6,115 +6,30 @@ import { useTheme } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
-
-type TraceHourRow = {
-  hourStart: string;
-  hourLabel: string;
-  traces: number;
-};
+import { paletteFromTheme } from '../ComparativeAnalysis/workflow-info-tooltip';
+import {
+  buildTraceHourBuckets,
+  createTraceHourTooltipHandler,
+  dayKey,
+} from './trace-hour-tooltip';
 
 type TraceCountByHourChartProps = {
   details: TraceDetail[];
-  tooltip: ComponentProps<typeof ResponsiveCardVegaLite>['tooltip'];
-};
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null;
-
-const parseDate = (value: unknown): Date | null => {
-  if (typeof value !== 'string' && typeof value !== 'number') return null;
-
-  const date = new Date(value);
-
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const traceDate = (trace: TraceDetail): Date | null => {
-  const row = trace as unknown;
-
-  if (!isRecord(row)) return null;
-
-  return (
-    parseDate(row.timestamp) ??
-    parseDate(row.startTime) ??
-    parseDate(row.createdAt) ??
-    parseDate(row.created_at) ??
-    parseDate(row.start_time) ??
-    null
-  );
-};
-
-const floorToHour = (date: Date) => {
-  const copy = new Date(date);
-
-  copy.setMinutes(0, 0, 0);
-
-  return copy;
-};
-
-const dayKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
-};
-
-const formatHourLabel = (date: Date, showDate: boolean) => {
-  if (!showDate) {
-    return date.toLocaleTimeString(undefined, {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  }
-
-  return date.toLocaleString(undefined, {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-};
-
-const tracesByHour = (details: TraceDetail[]): TraceHourRow[] => {
-  const counts = new Map<number, number>();
-
-  details.forEach(trace => {
-    const date = traceDate(trace);
-
-    if (!date) return;
-
-    const hourStart = floorToHour(date).getTime();
-
-    counts.set(hourStart, (counts.get(hourStart) ?? 0) + 1);
-  });
-
-  const sortedHours = [...counts.keys()].sort((a, b) => a - b);
-
-  const uniqueDays = new Set(
-    sortedHours.map(hour => dayKey(new Date(hour))),
-  );
-
-  const showDate = uniqueDays.size > 1;
-
-  return sortedHours.map(hour => {
-    const date = new Date(hour);
-
-    return {
-      hourStart: date.toISOString(),
-      hourLabel: formatHourLabel(date, showDate),
-      traces: counts.get(hour) ?? 0,
-    };
-  });
+  experimentId?: string;
+  tooltip?: ComponentProps<typeof ResponsiveCardVegaLite>['tooltip'];
 };
 
 export default function TraceCountByHourChart({
   details,
+  experimentId,
   tooltip,
 }: TraceCountByHourChartProps) {
   const theme = useTheme();
 
-  const rows = useMemo(() => tracesByHour(details), [details]);
+  const { rows, tracesByHour } = useMemo(
+    () => buildTraceHourBuckets(details),
+    [details],
+  );
 
   const totalTraces = useMemo(
     () => rows.reduce((sum, row) => sum + row.traces, 0),
@@ -130,13 +45,23 @@ export default function TraceCountByHourChart({
   }, [rows]);
 
   const barCount = useMemo(
-    () => new Set(rows.map(row => row.hourStart)).size,
+    () => new Set(rows.map(row => row.hourKey)).size,
     [rows],
   );
 
   const barPaddingOuter = useMemo(
     () => Math.max(0.05, (2.1 - barCount) / 2),
     [barCount],
+  );
+
+  const traceHourTooltip = useMemo(
+    () =>
+      createTraceHourTooltipHandler({
+        tracesByHour,
+        experimentId,
+        palette: paletteFromTheme(theme),
+      }),
+    [tracesByHour, experimentId, theme],
   );
 
   const spec = useMemo(
@@ -148,6 +73,7 @@ export default function TraceCountByHourChart({
           type: 'bar',
           cornerRadiusTopLeft: 4,
           cornerRadiusTopRight: 4,
+          color: theme.palette.success.main,
         },
         encoding: {
           x: {
@@ -169,7 +95,7 @@ export default function TraceCountByHourChart({
               domainColor: theme.palette.divider,
               grid: false,
             },
-          },          
+          },
           y: {
             field: 'traces',
             type: 'quantitative',
@@ -182,9 +108,14 @@ export default function TraceCountByHourChart({
             },
           },
           color: {
-            value: theme.palette.primary.main,
+            value: theme.palette.success.main,
           },
           tooltip: [
+            {
+              field: 'hourKey',
+              title: 'hourKey',
+              type: 'nominal',
+            },
             {
               field: 'hourStart',
               title: 'Hour',
@@ -207,9 +138,6 @@ export default function TraceCountByHourChart({
     [
       rows,
       hasMultipleDays,
-      theme.palette.primary.main,
-      theme.palette.text.secondary,
-      theme.palette.divider,
       barPaddingOuter,
     ],
   );
@@ -221,7 +149,7 @@ export default function TraceCountByHourChart({
       spec={rows.length > 0 ? spec : {}}
       actions={false}
       isStatic={false}
-      tooltip={tooltip}
+      tooltip={rows.length > 0 ? traceHourTooltip : tooltip}
       showSettings={rows.length > 0}
       showInfoMessage={rows.length === 0}
       infoMessage={

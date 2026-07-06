@@ -175,7 +175,7 @@ export default function LlmMonitoringOverview() {
     () => ({
       $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
       data: { values: timeSeries },
-      mark: { type: 'line', point: true, interpolate: 'monotone' },
+      mark: { type: 'line', point: true, interpolate: 'monotone', color: theme.palette.success.main },
       encoding: {
         x: { field: 'time', type: 'temporal', title: null },
         y: { field: 'count', type: 'quantitative', title: 'observations' },
@@ -185,7 +185,7 @@ export default function LlmMonitoringOverview() {
           scale: {
             domain: ['DEFAULT', 'ERROR', 'DEBUG', 'WARNING'],
             range: [
-              theme.palette.primary.main,
+              theme.palette.success.main,
               theme.palette.error.main,
               theme.palette.text.secondary,
               theme.palette.warning.main,

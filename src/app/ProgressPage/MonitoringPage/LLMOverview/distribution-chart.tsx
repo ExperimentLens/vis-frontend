@@ -155,7 +155,7 @@ export default function DistributionChart({
                 scale: { scheme: 'tableau20' },
               }
             : {
-                value: theme.palette.primary.main,
+                value: theme.palette.success.main,
               },
           order: {
             field: field.key,

@@ -24,6 +24,7 @@ import { Bar, EmptyNote } from './chart-kit';
 import DistributionChart from './distribution-chart';
 import { BigNum, Td, Th, TruncMono } from './llm-monitoring-shared';
 import TraceCountByHourChart from './trace-count-by-hour-chart';
+import { useParams } from 'react-router';
 
 type UsageTabProps = {
   details: TraceDetail[];
@@ -75,6 +76,7 @@ export default function LlmMonitoringUsageTab({
   onDownloadTraceLatencyCsv,
 }: UsageTabProps) {
   const theme = useTheme();
+  const { experimentId } = useParams();
 
   return (
     <>
@@ -165,7 +167,7 @@ export default function LlmMonitoringUsageTab({
       </Grid>
       <Grid container spacing={1.5}>
         <Grid size={{ xs: 12 }} sx={{ textAlign: 'left' }}>
-          <TraceCountByHourChart details={details} tooltip={tooltip} />
+          <TraceCountByHourChart details={details} experimentId={experimentId} tooltip={tooltip} />
         </Grid>
       </Grid>
 
