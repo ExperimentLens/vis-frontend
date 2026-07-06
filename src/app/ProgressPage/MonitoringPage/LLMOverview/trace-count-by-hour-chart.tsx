@@ -129,6 +129,16 @@ export default function TraceCountByHourChart({
     return days.size > 1;
   }, [rows]);
 
+  const barCount = useMemo(
+    () => new Set(rows.map(row => row.hourStart)).size,
+    [rows],
+  );
+
+  const barPaddingOuter = useMemo(
+    () => Math.max(0.05, (2.1 - barCount) / 2),
+    [barCount],
+  );
+
   const spec = useMemo(
     () =>
       ({
@@ -148,6 +158,10 @@ export default function TraceCountByHourChart({
               field: 'hourStart',
               order: 'ascending',
             },
+            scale: {
+              paddingInner: 0.1,
+              paddingOuter: barPaddingOuter,
+            },
             axis: {
               labelAngle: hasMultipleDays ? -30 : 0,
               labelColor: theme.palette.text.secondary,
@@ -155,7 +169,7 @@ export default function TraceCountByHourChart({
               domainColor: theme.palette.divider,
               grid: false,
             },
-          },
+          },          
           y: {
             field: 'traces',
             type: 'quantitative',
@@ -196,6 +210,7 @@ export default function TraceCountByHourChart({
       theme.palette.primary.main,
       theme.palette.text.secondary,
       theme.palette.divider,
+      barPaddingOuter,
     ],
   );
 
