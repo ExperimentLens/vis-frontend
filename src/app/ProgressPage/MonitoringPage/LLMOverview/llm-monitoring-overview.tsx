@@ -287,10 +287,15 @@ export default function LlmMonitoringOverview() {
         alignItems="center"
         spacing={1}
         sx={{
+          position: 'sticky',
+          top: 0,
+          zIndex: theme.zIndex.appBar - 1,
+          bgcolor: 'background.paper',
           borderBottom: 1,
           borderColor: 'divider',
           minHeight: 44,
-        }}
+          flexShrink: 0,
+        }}      
       >
         <Tabs
           value={selectedTab}
