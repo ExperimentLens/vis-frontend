@@ -9,6 +9,7 @@ import {
 import type { GenInput, GenOutput } from '../../../shared/models/observability/agentic-conventions';
 import { colorForType } from './trace-observation-waterfall';
 import { CodeBlock, CopyButton, MetaChip, PassFailChip, SectionLabel } from './trace-ui';
+import CounterfactualReplayPanel from './counterfactual-replay-panel';
 
 const omitPrompt = (value: unknown): Record<string, unknown> | undefined => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
@@ -31,6 +32,7 @@ const SpanDetail = ({ obs }: { obs: Observation }) => {
   const model = modelOf(obs);
   const tokens = output?.tokens;
   const color = colorForType(obs.type);
+  console.log("model", model);
 
   const inputWithoutPrompt = omitPrompt(obs.input);
 
@@ -107,6 +109,10 @@ const SpanDetail = ({ obs }: { obs: Observation }) => {
           )}
         </Box>
       </Box>
+
+      {model && input?.prompt && (
+        <CounterfactualReplayPanel traceId={obs.traceId} observationId={obs.id} prompt={input.prompt} />
+      )}
     </Paper>
   );
 };
