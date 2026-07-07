@@ -11,7 +11,7 @@ import {
   buildTraceHourBuckets,
   createTraceHourTooltipHandler,
   dayKey,
-} from './trace-hour-tooltip';
+} from './trace-tooltip';
 
 type TraceCountByHourChartProps = {
   details: TraceDetail[];
@@ -145,7 +145,7 @@ export default function TraceCountByHourChart({
   return (
     <ResponsiveCardVegaLite
       title="Traces"
-      details={`${totalTraces.toLocaleString()} traces by hour`}
+      details={`${totalTraces.toLocaleString()} traces tracked`}
       spec={rows.length > 0 ? spec : {}}
       actions={false}
       isStatic={false}

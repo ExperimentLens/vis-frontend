@@ -173,7 +173,7 @@ export default function LlmMonitoringUsageTab({
 
       <Grid container spacing={1.5}>
         <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}>
-          <DistributionChart details={details} />
+          <DistributionChart details={details} experimentId={experimentId}/>
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}>
