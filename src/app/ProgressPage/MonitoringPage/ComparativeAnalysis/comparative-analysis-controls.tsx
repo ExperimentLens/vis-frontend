@@ -28,6 +28,7 @@ import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
 import SelectionPopover from '../../../../shared/components/selection-popover';
 import PillToggle from '../../../../shared/components/pill-toggle';
 import SortIcon from '@mui/icons-material/Sort';
+import { COMPARE_TAB } from '../../../../shared/utils/experimentCapabilities';
 
 const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
@@ -61,6 +62,11 @@ const ComparativeAnalysisControls = ()=> {
   );
   const commonColumns = dataAssetsControlPanel?.commonColumns ?? [];
   const selectedColumns = dataAssetsControlPanel?.selectedColumns ?? [];
+  const isMetricsTab = selectedComparisonTab === COMPARE_TAB.METRICS;
+  const isExecutionsTab = selectedComparisonTab === COMPARE_TAB.EXECUTIONS;
+  const isModelsTab = selectedComparisonTab === COMPARE_TAB.MODELS;
+  const isDataTab = selectedComparisonTab === COMPARE_TAB.DATA;
+  
 
   const datasetNames = useMemo(
     () =>
@@ -84,7 +90,7 @@ const ComparativeAnalysisControls = ()=> {
   );
 
   const showDataComparisonViewModeToggle = (() => {
-    if (selectedComparisonTab !== 2) return false;
+    if (!isDataTab) return false;
     if (!selectedDataset) return true;
 
     const assets = commonDataAssets[selectedDataset];
@@ -160,7 +166,7 @@ const ComparativeAnalysisControls = ()=> {
           overflowX: 'auto',
         }}
       >
-        {selectedComparisonTab === 0 && (
+        {isMetricsTab && (
           <Box>
             <Tooltip title="Select Metrics">
               <IconButton onClick={handleOpenMetricsMenu} size="small">
@@ -187,23 +193,37 @@ const ComparativeAnalysisControls = ()=> {
             />
           </Box>
         )}
-        {selectedComparisonTab === 1 ? (
+        {isExecutionsTab && (
           <SegmentedToggle
             uppercase
-            aria-label={isLlmExperiment ? 'executions view' : 'model comparison chart'}
-            value={isLlmExperiment ? selectedExecutionsView : selectedModelComparisonChart}
+            aria-label="executions view"
+            value={selectedExecutionsView}
             onChange={(value) =>
-              isLlmExperiment
-                ? dispatch(setSelectedExecutionsView(value as 'summary' | 'timeline' | 'verdicts'))
-                : dispatch(setSelectedModelComparisonChart(value))
+              dispatch(setSelectedExecutionsView(value as 'summary' | 'timeline' | 'verdicts'))
             }
-            options={(isLlmExperiment ? llmExecutionsOptions : options1).map(option => ({
+            options={llmExecutionsOptions.map(option => ({
               value: option.label,
               label: option.name.replace('\n', ' '),
               icon: option.icon,
             }))}
           />
-        ) : selectedComparisonTab === 2 && workflowsTable.selectedWorkflows.length > 0 && (
+        )}
+
+        {isModelsTab && (
+          <SegmentedToggle
+            uppercase
+            aria-label="model comparison chart"
+            value={selectedModelComparisonChart}
+            onChange={(value) => dispatch(setSelectedModelComparisonChart(value))}
+            options={options1.map(option => ({
+              value: option.label,
+              label: option.name.replace('\n', ' '),
+              icon: option.icon,
+            }))}
+          />
+        )}
+
+        {isDataTab && workflowsTable.selectedWorkflows.length > 0 && (          
           <>
             <Box display="flex" flexWrap="wrap" gap={0.2}>
               <Tooltip title="Select Dataset">
@@ -273,7 +293,7 @@ const ComparativeAnalysisControls = ()=> {
           sx={{ ml: 'auto' }}
         >
 
-          {showDataComparisonViewModeToggle && selectedComparisonTab === 2 && (
+          {showDataComparisonViewModeToggle && isDataTab && (
             <SegmentedToggle
               aria-label="data comparison view mode"
               value={dataComparisonViewMode === 'boxplot' ? 'boxplot' : 'overlay'}
@@ -292,8 +312,8 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedComparisonTab !== 2
-            && !(isLlmExperiment && selectedComparisonTab === 1 && selectedExecutionsView === 'verdicts') && (
+          {!isDataTab
+            && !(isExecutionsTab && selectedExecutionsView === 'verdicts') && (
             <SegmentedToggle
               uppercase
               aria-label="view mode"
@@ -305,7 +325,7 @@ const ComparativeAnalysisControls = ()=> {
               ]}
             />
           )}
-          {!isLlmExperiment && selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
+          {isModelsTab && selectedModelComparisonChart === 'confusionMatrix' && (
             <PillToggle
               checked={sortConfusionByF1}
               onChange={(c) => dispatch(setSortConfusionByF1(c))}
@@ -315,7 +335,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {!isLlmExperiment && selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
+          {isModelsTab  && selectedModelComparisonChart === 'rocCurve' && (
             <PillToggle
               checked={sortRocByAuc}
               onChange={(c) => dispatch(setSortRocByAuc(c))}
@@ -325,7 +345,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {!isLlmExperiment && selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
+          {isModelsTab && selectedModelComparisonChart === 'instanceView' && (
             <>
               <IconButton
                 aria-label="settings"
