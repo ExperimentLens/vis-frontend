@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Alert,
   Box,
@@ -51,6 +51,14 @@ const CounterfactualReplayPanel = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReplayResult | null>(null);
+
+  useEffect(() => {
+    setOpen(false);
+    setEditedPrompt(prompt);
+    setLoading(false);
+    setError(null);
+    setResult(null);
+  }, [traceId, observationId, prompt]);
 
   const hasChangedPrompt = editedPrompt !== prompt;
 
