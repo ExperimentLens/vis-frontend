@@ -328,7 +328,7 @@ const renderTraceCards = ({
   sanitize: (value: unknown) => string;
 }) =>
   traces
-    .map(trace => {
+    .map((trace, index) => {
       const time = formatTooltipTime(traceDate(trace));
       const workflowId = traceWorkflowId(trace);
       const latency = formatLatency(numericValue(trace.latency));
@@ -344,8 +344,13 @@ const renderTraceCards = ({
         <div style="padding:8px 0;border-bottom:1px solid ${palette.border};">
           <div style="display:flex;gap:8px;align-items:flex-start;justify-content:space-between;">
             <div style="min-width:0;">
-              <div style="font-weight:800;font-size:0.72rem;">
-                ${sanitize(trace.name || 'Trace')}
+              <div style="display:flex;gap:6px;align-items:center;font-weight:800;font-size:0.72rem;">
+                <span style="font-size:0.6rem;">
+                  #${index + 1}
+                </span>
+                <span>
+                  ${sanitize(trace.name || 'Trace')}
+                </span>
               </div>
 
               <div style="font-size:0.66rem;color:${palette.secondaryText};margin-top:2px;">
