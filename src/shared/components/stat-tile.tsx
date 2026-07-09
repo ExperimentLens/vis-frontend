@@ -1,5 +1,4 @@
 import { Box, Paper, Stack, Typography, alpha, useTheme } from '@mui/material';
-import { MONO } from '../models/observability/agentic-conventions';
 
 export type Tone = 'default' | 'success' | 'warning' | 'error';
 
@@ -30,8 +29,7 @@ const StatTile = ({ icon, label, value, sub, tone = 'default' }: StatTileProps) 
     <Paper
       elevation={0}
       sx={{
-        flex: '1 1 96px',
-        minWidth: 96,
+        flex: 1,
         p: 1,
         borderRadius: 2,
         background: alpha(color, 0.06),
@@ -40,15 +38,15 @@ const StatTile = ({ icon, label, value, sub, tone = 'default' }: StatTileProps) 
     >
       <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.25 }}>
         <Box sx={{ color, display: 'inline-flex' }}>{icon}</Box>
-        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3px', color: 'text.secondary', fontSize: '0.58rem' }}>
+        <Typography variant="captionLabel" sx={{ color: 'text.secondary' }}>
           {label}
         </Typography>
       </Stack>
-      <Typography sx={{ fontWeight: 700, fontFamily: MONO, fontSize: '1rem', color, lineHeight: 1.2 }}>
+      <Typography variant="statValue" sx={{ color }}>
         {value}
       </Typography>
       {sub && (
-        <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.58rem', display: 'block' }}>
+        <Typography variant="bodySm" sx={{ color: 'text.secondary', fontSize: '0.58rem', display: 'block' }}>
           {sub}
         </Typography>
       )}

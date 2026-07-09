@@ -1,9 +1,11 @@
-import { Chip, Stack, Typography } from '@mui/material';
+import { Chip, Stack } from '@mui/material';
 import type { Observation } from '../../../shared/models/observability/observation';
 import type { GenInput } from '../../../shared/models/observability/agentic-conventions';
 import { modelOf, tokensOf } from '../../../shared/models/observability/agentic-conventions';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
 import { CodeBlock, Collapsible, CopyButton, MetaChip } from './trace-ui';
+import InfoMessage from '../../../shared/components/InfoMessage';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 type PromptsTabProps = {
   promptObs: Observation[];
@@ -48,9 +50,12 @@ const PromptsTab = ({ promptObs }: PromptsTabProps) => {
         })}
 
         {promptObs.length === 0 && (
-          <Typography variant="caption" color="text.secondary">
-            No prompts captured for this trace.
-          </Typography>
+          <InfoMessage
+            message="No prompts captured for this trace."
+            type="info"
+            icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
+            fullHeight
+          />
         )}
       </Stack>
     </ResponsiveCardTable>

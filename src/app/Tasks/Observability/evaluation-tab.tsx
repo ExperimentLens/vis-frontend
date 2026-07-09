@@ -8,9 +8,11 @@ import QueryStatsRoundedIcon from '@mui/icons-material/QueryStatsRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
 import type { Score } from '../../../shared/models/observability/score';
 import type { GenOutput } from '../../../shared/models/observability/agentic-conventions';
-import { MONO, prettyName, tokensOf } from '../../../shared/models/observability/agentic-conventions';
+import { prettyName, tokensOf } from '../../../shared/models/observability/agentic-conventions';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
 import { SectionLabel } from './trace-ui';
+import InfoMessage from '../../../shared/components/InfoMessage';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 type EvaluationTabProps = {
   judges: Observation[];
@@ -101,9 +103,12 @@ const EvaluationTab = ({ judges, checks, metrics }: EvaluationTabProps) => {
       showFullScreenButton={false}
     >
       {allItems.length === 0 ? (
-        <Typography variant="caption" color="text.secondary">
-          No evaluation data for this trace.
-        </Typography>
+        <InfoMessage
+          message="No evaluation data for this trace."
+          type="info"
+          icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
+          fullHeight
+        />
       ) : (
         <Stack spacing={1.5}>
           {passRate !== null && (
@@ -161,14 +166,14 @@ const PassRateBar = ({ passRate, passed, total }: { passRate: number; passed: nu
   return (
     <Paper variant="outlined" sx={{ borderRadius: 2, p: 1.25 }}>
       <Stack direction="row" alignItems="baseline" sx={{ mb: 0.75 }}>
-        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'text.secondary' }}>
+        <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'uppercase', color: 'text.secondary' }}>
           Pass rate
         </Typography>
         <Box sx={{ flexGrow: 1 }} />
-        <Typography sx={{ fontFamily: MONO, fontWeight: 700, fontSize: '1rem', color }}>
+        <Typography sx={{ fontWeight: 700, fontSize: '1rem', color }}>
           {Math.round(passRate * 100)}%
         </Typography>
-        <Typography variant="caption" sx={{ color: 'text.secondary', ml: 0.75, fontFamily: MONO }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', ml: 0.75 }}>
           {passed}/{total} passed
         </Typography>
       </Stack>
@@ -263,17 +268,15 @@ const BoolCell = ({
           </Box>
           <Box sx={{ flexGrow: 1 }} />
           {typeof item.tokens === 'number' && (
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: MONO, fontSize: '0.55rem' }}>
+            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.55rem' }}>
               {item.tokens}t
             </Typography>
           )}
         </Stack>
         <Typography
+          variant="statLabel"
           sx={{
             mt: 0.5,
-            fontFamily: MONO,
-            fontSize: '0.72rem',
-            fontWeight: 700,
             color,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -319,7 +322,7 @@ const MetricCell = ({
           '&:hover': { transform: 'translateY(-1px)' },
         }}
       >
-        <Typography sx={{ fontFamily: MONO, fontWeight: 700, fontSize: '1rem', color: theme.palette.text.primary, lineHeight: 1.2 }}>
+        <Typography variant="statValue" sx={{ color: theme.palette.text.primary }}>
           {Number.isInteger(value) ? value : value.toFixed(2)}
         </Typography>
         <Typography
@@ -366,7 +369,7 @@ const RationalePanel = ({ selected }: { selected: Assessment | undefined }) => {
         {selected && (
           <>
             <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 0.5 }}>
-              <Typography sx={{ fontFamily: MONO, fontWeight: 700, fontSize: '0.8rem' }}>{selected.name}</Typography>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>{selected.name}</Typography>
               <Box
                 sx={{
                   px: 0.75,
@@ -374,7 +377,6 @@ const RationalePanel = ({ selected }: { selected: Assessment | undefined }) => {
                   borderRadius: 999,
                   bgcolor: alpha(color, 0.14),
                   color,
-                  fontFamily: MONO,
                   fontWeight: 700,
                   fontSize: '0.62rem',
                 }}
@@ -382,14 +384,14 @@ const RationalePanel = ({ selected }: { selected: Assessment | undefined }) => {
                 {verdict}
               </Box>
             </Stack>
-            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.8rem', lineHeight: 1.5 }}>
+            <Typography variant="bodySm" sx={{ color: 'text.secondary' }}>
               {selected.detail || 'No rationale recorded for this assessment.'}
             </Typography>
           </>
         )}
       </Collapse>
       {!selected && (
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="bodySm" color="text.secondary">
           Select a cell above to read its rationale.
         </Typography>
       )}

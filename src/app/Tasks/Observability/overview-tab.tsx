@@ -4,7 +4,7 @@ import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
 import type { GenOutput } from '../../../shared/models/observability/agentic-conventions';
-import { MONO, prettyName } from '../../../shared/models/observability/agentic-conventions';
+import { prettyName } from '../../../shared/models/observability/agentic-conventions';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
 import { CopyButton, PassFailChip, SectionLabel } from './trace-ui';
 
@@ -72,13 +72,13 @@ const VerdictBanner = ({ passRate, judges }: { passRate: number; judges: Observa
             {label}
           </Typography>
           {judges.length > 0 && (
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: MONO }}>
+            <Typography variant="bodySm" sx={{ color: 'text.secondary' }}>
               {passed}/{judges.length} judges
             </Typography>
           )}
         </Box>
         <Box sx={{ flexGrow: 1 }} />
-        <Typography sx={{ fontFamily: MONO, fontWeight: 700, fontSize: '1.25rem', color }}>
+        <Typography variant="statValue" sx={{ fontSize: '1.25rem', color }}>
           {Math.round(passRate * 100)}%
         </Typography>
       </Stack>

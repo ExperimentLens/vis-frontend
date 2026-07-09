@@ -1,6 +1,5 @@
 import { Box, Chip, Paper, Stack, Typography, alpha, useTheme } from '@mui/material';
 import SmartToyRoundedIcon from '@mui/icons-material/SmartToyRounded';
-import { MONO } from '../../../shared/models/observability/agentic-conventions';
 import { MetaChip } from './trace-ui';
 
 type TraceHeaderProps = {
@@ -42,12 +41,14 @@ const TraceHeader = ({ id, question, headerModel, configEntries, tags }: TraceHe
         </Box>
 
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          <Typography variant="statValue">
             {question}
           </Typography>
-          <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: MONO, fontSize: '0.6rem' }}>
+          <Typography variant="bodySm" sx={{ color: 'text.secondary' }}>
             {id}
           </Typography>
+          </Box>
 
           <Stack direction="row" spacing={0.5} sx={{ mt: 0.75, flexWrap: 'wrap', rowGap: 0.5 }}>
             {headerModel && <MetaChip label="model" value={headerModel} />}

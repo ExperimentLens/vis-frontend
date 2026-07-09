@@ -24,7 +24,6 @@ export const SectionLabel = ({ children, action }: { children: ReactNode; action
       sx={{
         fontWeight: 700,
         textTransform: 'uppercase',
-        letterSpacing: '0.5px',
         color: 'text.secondary',
       }}
     >
@@ -84,9 +83,8 @@ export const PassFailChip = ({ passed, label, tooltip }: { passed: boolean; labe
         bgcolor: alpha(color, 0.12),
         color,
         border: `1px solid ${alpha(color, 0.3)}`,
-        fontFamily: MONO,
-        fontSize: '0.68rem',
-        fontWeight: 700,
+        fontSize: '0.7rem',
+        fontWeight: 600,
         maxWidth: '100%',
       }}
     >
@@ -104,23 +102,26 @@ export const PassFailChip = ({ passed, label, tooltip }: { passed: boolean; labe
   ) : chip;
 };
 
-export const MetaChip = ({ label, value }: { label: string; value: ReactNode }) => (
-  <Tooltip title={label} arrow>
-    <Chip
-      size="small"
-      label={
-        <Box component="span" sx={{ fontFamily: MONO, fontSize: '0.62rem' }}>
-          <Box component="span" sx={{ opacity: 0.6, mr: 0.5 }}>
-            {label}
+export const MetaChip = ({ label, value }: { label: string; value: ReactNode }) => {
+  const theme = useTheme();
+  return (
+    <Tooltip title={label} arrow>
+      <Chip
+        size="small"
+        label={
+          <Box component="span" sx={{ fontFamily: theme.typography.fontFamily, fontSize: '0.62rem' }}>
+            <Box component="span" sx={{ opacity: 0.6, mr: 0.5 }}>
+              {label}
+            </Box>
+            {value}
           </Box>
-          {value}
-        </Box>
-      }
-      variant="outlined"
-      sx={{ height: 20 }}
-    />
-  </Tooltip>
-);
+        }
+        variant="outlined"
+        sx={{ height: 20 }}
+      />
+    </Tooltip>
+  );
+};
 
 export const Collapsible = ({
   title,
@@ -155,7 +156,7 @@ export const Collapsible = ({
             transform: open ? 'rotate(0deg)' : 'rotate(-90deg)',
           }}
         />
-        <Typography variant="caption" sx={{ fontWeight: 700, fontFamily: MONO }}>
+        <Typography variant="bodyCompact" sx={{ fontWeight: 700 }}>
           {title}
         </Typography>
         {meta}

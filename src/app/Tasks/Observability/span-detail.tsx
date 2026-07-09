@@ -32,7 +32,6 @@ const SpanDetail = ({ obs }: { obs: Observation }) => {
   const model = modelOf(obs);
   const tokens = output?.tokens;
   const color = colorForType(obs.type);
-  console.log("model", model);
 
   const inputWithoutPrompt = omitPrompt(obs.input);
 
@@ -51,7 +50,7 @@ const SpanDetail = ({ obs }: { obs: Observation }) => {
       </Stack>
 
       {tokens && (typeof tokens.prompt_tokens === 'number' || typeof tokens.completion_tokens === 'number') && (
-        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1, fontFamily: 'monospace', fontSize: '0.62rem' }}>
+        <Typography variant="mono" sx={{ color: 'text.secondary', display: 'block', mb: 1, fontSize: '0.62rem' }}>
           prompt tokens {tokens.prompt_tokens ?? 0} · completion tokens {tokens.completion_tokens ?? 0} · total tokens {tokens.total_tokens ?? 0}
         </Typography>
       )}

@@ -1,8 +1,8 @@
 import { Box, Stack, Typography, Tooltip, useTheme, alpha } from '@mui/material';
 import type { Observation } from '../../../shared/models/observability/observation';
 import { CHART_NEUTRAL } from '../../../mui-theme';
-
-const MONO = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+import InfoMessage from '../../../shared/components/InfoMessage';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 export const TYPE_COLORS: Record<string, string> = {
   GENERATION: '#10b981',
@@ -44,9 +44,12 @@ const ObservationWaterfall = ({ observations, selectedId, onSelect }: Props) => 
 
   if (parsed.length === 0) {
     return (
-      <Typography variant="caption" color="text.secondary">
-        No observations recorded for this trace.
-      </Typography>
+      <InfoMessage
+        message="No observations recorded for this trace."
+        type="info"
+        icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
+        fullHeight
+      />
     );
   }
 
@@ -64,7 +67,7 @@ const ObservationWaterfall = ({ observations, selectedId, onSelect }: Props) => 
         {presentTypes.map(tp => (
           <Stack key={tp} direction="row" spacing={0.5} alignItems="center">
             <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: colorForType(tp) }} />
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.6rem', fontFamily: MONO }}>
+            <Typography variant="mono" sx={{ color: 'text.secondary', fontSize: '0.6rem', fontWeight: 400 }}>
               {tp}
             </Typography>
           </Stack>
@@ -90,7 +93,6 @@ const ObservationWaterfall = ({ observations, selectedId, onSelect }: Props) => 
                   flex: 1,
                   fontSize: '0.62rem',
                   color: 'text.secondary',
-                  fontFamily: MONO,
                   textAlign: i === 0 ? 'left' : 'right',
                   pr: i === 5 ? 0.5 : 0,
                 }}
@@ -140,10 +142,9 @@ const ObservationWaterfall = ({ observations, selectedId, onSelect }: Props) => 
                 >
                   <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: color, flexShrink: 0 }} />
                   <Typography
-                    variant="caption"
+                    variant="statLabel"
                     sx={{
-                      fontFamily: MONO,
-                      fontWeight: isSelected ? 700 : 600,
+                      fontWeight: isSelected ? 600 : 400,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -197,11 +198,11 @@ const ObservationWaterfall = ({ observations, selectedId, onSelect }: Props) => 
                 </Box>
 
                 <Typography
-                  variant="caption"
+                  variant="statLabel"
                   sx={{
                     width: 60,
+                    fontWeight: isSelected ? 600 : 400,
                     textAlign: 'right',
-                    fontFamily: MONO,
                     color: 'text.secondary',
                     flexShrink: 0,
                     pr: 1,

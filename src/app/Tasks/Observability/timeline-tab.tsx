@@ -1,7 +1,6 @@
 import { Box, Stack, Typography, alpha, useTheme } from '@mui/material';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
-import { MONO } from '../../../shared/models/observability/agentic-conventions';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
 import ObservationWaterfall, { colorForType } from './trace-observation-waterfall';
 import SpanDetail from './span-detail';
@@ -81,10 +80,10 @@ const CountPill = ({
     }}
   >
     {icon ?? <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: color }} />}
-    <Typography component="span" sx={{ fontFamily: MONO, fontSize: '0.62rem', fontWeight: 700, color }}>
+    <Typography component="span" sx={{ fontSize: '0.62rem', fontWeight: 700, color }}>
       {value}
     </Typography>
-    <Typography component="span" sx={{ fontFamily: MONO, fontSize: '0.58rem', color: 'text.secondary', letterSpacing: '0.3px' }}>
+    <Typography component="span" sx={{ fontSize: '0.58rem', color: 'text.secondary'}}>
       {label}
     </Typography>
   </Box>
