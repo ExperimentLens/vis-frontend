@@ -99,12 +99,14 @@ export default function TraceCountByHourChart({
           y: {
             field: 'traces',
             type: 'quantitative',
-            title: null,
+            title: 'Number of traces',
             axis: {
-              labels: false,
-              ticks: false,
+              labels: true,
+              ticks: true,
               domain: false,
               gridColor: theme.palette.divider,
+              labelColor: theme.palette.text.secondary,
+              titleColor: theme.palette.text.secondary,
             },
           },
           color: {
