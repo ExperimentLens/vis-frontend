@@ -18,12 +18,12 @@ type OverviewTabProps = {
 const OverviewTab = ({ question, answer, passRate, judges }: OverviewTabProps) => {
   const theme = useTheme();
 
-  return (
-    <Stack spacing={1.5}>
-      {passRate !== null && <VerdictBanner passRate={passRate} judges={judges} />}
-
+  return (      
       <ResponsiveCardTable title="Question & Answer" showSettings={false} showFullScreenButton={false}>
         <Stack spacing={1.25}>
+          
+          {passRate !== null && <VerdictBanner passRate={passRate} judges={judges} />}
+        
           <Box>
             <SectionLabel>Question</SectionLabel>
             <Typography variant="body2">{question}</Typography>
@@ -50,7 +50,6 @@ const OverviewTab = ({ question, answer, passRate, judges }: OverviewTabProps) =
           </Box>
         </Stack>
       </ResponsiveCardTable>
-    </Stack>
   );
 };
 

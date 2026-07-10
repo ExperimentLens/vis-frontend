@@ -14,14 +14,23 @@ type TimelineTabProps = {
 };
 
 const TimelineTab = ({ observations, selectedSpanId, defaultSpanId, selectedObs, onSelectSpan }: TimelineTabProps) => (
-  <Stack spacing={1.25}>
-    {observations.length > 0 && <TimelineSummary observations={observations} />}
+  <Stack spacing={1.5} height="99%" width="100%" overflow="hidden">
+    <Box width="100%" height="40%">
+      <ResponsiveCardTable title="Observation Waterfall" showSettings={false} showFullScreenButton={false}>
+        <Stack spacing={1.25}>
+        {observations.length > 0 && <TimelineSummary observations={observations} />}
+        <ObservationWaterfall observations={observations} selectedId={selectedSpanId ?? defaultSpanId} onSelect={onSelectSpan} />
 
-    <ResponsiveCardTable title="Observation Waterfall" showSettings={false} showFullScreenButton={false}>
-      <ObservationWaterfall observations={observations} selectedId={selectedSpanId ?? defaultSpanId} onSelect={onSelectSpan} />
+        </Stack>
+      </ResponsiveCardTable>
+    </Box>
+    {selectedObs &&  
+    <Box width="100%" height="58%">
+    <ResponsiveCardTable title="Selected Observation" showSettings={false} showFullScreenButton={false}>
+      <SpanDetail obs={selectedObs} />
     </ResponsiveCardTable>
-
-    {selectedObs && <SpanDetail obs={selectedObs} />}
+    </Box>
+    }
   </Stack>
 );
 
