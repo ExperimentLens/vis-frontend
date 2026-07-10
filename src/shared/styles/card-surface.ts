@@ -83,8 +83,8 @@ export const cardHeaderSx =
     display: 'flex',
     alignItems: 'center',
     gap: 0.75,
-    background: theme.palette.customSurface.cardHeader,
-    borderBottom: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper
+    // borderBottom: `1px solid ${theme.palette.divider}`,
   });
 
 export interface MenuPaperOptions {

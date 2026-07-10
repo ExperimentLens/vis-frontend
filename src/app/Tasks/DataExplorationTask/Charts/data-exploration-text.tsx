@@ -143,7 +143,6 @@ const TextCard = () => {
             height: '100%',
             display: 'flex',
             flexDirection: 'column',
-            bgcolor: 'background.default',
           }}
         >
           {loading && <Loader />}

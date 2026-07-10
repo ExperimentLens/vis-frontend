@@ -24,7 +24,7 @@ const PromptsTab = ({ promptObs }: PromptsTabProps) => {
       showSettings={false}
       showFullScreenButton={false}
     >
-      <Stack spacing={0.75}>
+      <Stack spacing={0.75} height="100%">
         {promptObs.map((observation, index) => {
           const prompt = (observation.input as GenInput).prompt ?? '';
           const model = modelOf(observation);
