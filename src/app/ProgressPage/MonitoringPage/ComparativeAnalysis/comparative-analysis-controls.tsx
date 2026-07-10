@@ -82,7 +82,7 @@ const ComparativeAnalysisControls = ()=> {
             const normalized = rawFormat.trim().toLowerCase()
               .replace(/^\./, '');
 
-            return normalized === 'csv' || normalized === 'parquet';
+            return normalized === 'csv' || normalized === 'parquet' || normalized === 'txt';
           })
         )
         .map(([name]) => name),

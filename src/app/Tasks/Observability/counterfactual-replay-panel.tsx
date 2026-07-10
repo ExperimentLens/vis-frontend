@@ -158,7 +158,7 @@ const CounterfactualReplayPanel = ({
               color: 'inherit',
             }}
           >
-            Counterfactual replay
+             Conversation Replay
           </Typography>
 
           {result && (
@@ -336,7 +336,7 @@ const CounterfactualReplayPanel = ({
                     spacing={1}
                     sx={{ mb: 0.5 }}
                   >
-                    <SectionLabel>Counterfactual output</SectionLabel>
+                    <SectionLabel>Replay output</SectionLabel>
 
                     <Box
                       sx={{

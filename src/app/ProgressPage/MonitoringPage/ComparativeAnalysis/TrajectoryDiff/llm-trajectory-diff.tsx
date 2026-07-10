@@ -26,7 +26,8 @@ import { EmptyNote } from '../../LLMOverview/chart-kit';
 import { alignByQuestion } from './trajectory-alignment';
 import Loader from '../../../../../shared/components/loader';
 import VerdictMatrix from './verdict-matrix';
-import PerTaskAnalysis from './per-task-analysis';
+// import PerTaskAnalysis from './per-task-analysis';
+import CumulativeRaceChart from './cumulative-race-chart';
 // import SummaryKpiStrip from './summary-kpi-strip';
 import { JudgePassRateChart, TokenSplitChart, LatencyCostChart } from './summary-comparisons';
 import { exportElementToPng } from '../../../../../shared/utils/export-png';
@@ -347,8 +348,10 @@ export default function LlmTrajectoryDiff() {
           </Grid>
           )}
 
-          {/* Per-task analysis — inline bars, metric toggle, regression sort */}
-          <PerTaskAnalysis byRun={selectedQ.byRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} />
+          {/* <PerTaskAnalysis byRun={selectedQ.byRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} /> */}
+
+          {/* Cumulative race — running total time as tasks complete, in order */}
+          <CumulativeRaceChart byRun={selectedQ.byRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} />
         </>
       )}
 
