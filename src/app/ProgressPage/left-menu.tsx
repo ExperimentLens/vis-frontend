@@ -7,8 +7,6 @@ import {
   Paper,
   IconButton,
   ListItemButton,
-  Button,
-  useTheme,
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import ListRoundedIcon from '@mui/icons-material/ListRounded';
@@ -23,11 +21,8 @@ import { setMenuOptions } from '../../store/slices/progressPageSlice';
 import { toggleThemeMode } from '../../store/slices/uiSlice';
 import { logoutUser } from '../../store/slices/authSlice';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
+import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-
-const COLLAPSED_MENU_WIDTH = 64;
-const EXPANDED_MENU_WIDTH = 240;
 
 const LeftMenu = () => {
   const { experimentId } = useParams();
@@ -37,45 +32,6 @@ const LeftMenu = () => {
   );
   const themeMode = useAppSelector((state: RootState) => state.ui.themeMode);
   const dispatch = useAppDispatch();
-  const theme = useTheme();
-
-  const [isMenuHovered, setIsMenuHovered] = useState(false);
-
-  const isHoverExpanded = menuOptions.collapsed && isMenuHovered;
-  const isCollapsed = menuOptions.collapsed && !isMenuHovered;
-
-  const collapsedActionSx = {
-    backgroundColor: theme.palette.customGrey.light,
-    borderRadius: '50%',
-    width: '36px',
-    height: '36px',
-    boxShadow: theme.customShadows.card,
-    transition: theme.transitions.create(['transform', 'box-shadow', 'background-color'], { duration: 160 }),
-  };
-
-  const expandedActionSx = {
-    width: '100%',
-    height: 44,
-    justifyContent: 'flex-start',
-    borderRadius: 2,
-    px: 1.5,
-    textTransform: 'none',
-    fontWeight: 700,
-    backgroundColor: theme.palette.customGrey.light,
-    color: 'text.primary',
-    boxShadow: theme.customShadows.card,
-    transition: theme.transitions.create(['transform', 'box-shadow', 'background-color', 'color'], {
-        duration: 160,
-      }),
-    '& .MuiButton-startIcon': {
-      mr: 1.25,
-    },
-    '&:hover': {
-      backgroundColor: theme.palette.customGrey.main,
-      transform: 'translateX(2px)',
-      boxShadow: theme.customShadows.cardHover,
-    },
-  };
 
   const navItems = [
     {
@@ -105,29 +61,20 @@ const LeftMenu = () => {
   ];
 
   return (
-<Paper
-  elevation={3}
-  onMouseEnter={() => setIsMenuHovered(true)}
-  onMouseLeave={() => setIsMenuHovered(false)}
-  sx={{
-    height: '100%',
-    width: isCollapsed ? COLLAPSED_MENU_WIDTH : EXPANDED_MENU_WIDTH,
-    minWidth: isCollapsed ? COLLAPSED_MENU_WIDTH : EXPANDED_MENU_WIDTH,
-    overflow: 'hidden',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    position: 'relative',
-    borderRight: theme => `1px solid ${theme.palette.divider}`,
-    borderRadius: 0,
-    zIndex: theme => theme.zIndex.appBar,
-    transition: theme =>
-      theme.transitions.create(['width', 'min-width'], {
-        duration: 180,
-        easing: theme.transitions.easing.easeOut,
-      }),
-  }}
->      <Box>
+    <Paper
+      elevation={3}
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        position: 'relative',
+        borderRight: theme => `1px solid ${theme.palette.divider}`,
+        borderRadius: 0,
+        zIndex: theme => theme.zIndex.appBar,
+      }}
+    >
+      <Box>
         {/* <Box
           sx={{
             display: "flex",
@@ -166,7 +113,7 @@ const LeftMenu = () => {
             </Box>
           )}
         </Box> */}
-        {isCollapsed && (
+        {menuOptions.collapsed && (
           <Box
             sx={{
               display: 'flex',
@@ -192,7 +139,7 @@ const LeftMenu = () => {
             />
           </Box>
         )}
-        {!isCollapsed && (
+        {!menuOptions.collapsed && (
           <Box
             sx={{
               display: 'flex',
@@ -230,7 +177,7 @@ const LeftMenu = () => {
                     to={disabled ? undefined : to}
                     selected={selected}
                     sx={{
-                      justifyContent: isCollapsed ? 'center' : 'flex-start',
+                      justifyContent: menuOptions.collapsed ? 'center' : 'flex-start',
                       height: '46px',
                       opacity: disabled ? 0.5 : 1,
                       pointerEvents: disabled ? 'none' : 'auto',
@@ -259,14 +206,14 @@ const LeftMenu = () => {
                     }}
                   >
                     {icon}
-                    {!isCollapsed && (
+                    {!menuOptions.collapsed && (
                       <ListItemText sx={{ ml: 1.5 }} primary={label} />
                     )}
                   </ListItemButton>
                 </ListItem>
               );
 
-              return isCollapsed ? (
+              return menuOptions.collapsed ? (
                 <Tooltip key={path} title={label} arrow placement="right">
                   {item}
                 </Tooltip>
@@ -282,125 +229,78 @@ const LeftMenu = () => {
         sx={{
           display: 'flex',
           flexDirection: 'column',
-          alignItems: isCollapsed ? 'center' : 'stretch',
+          alignItems: menuOptions.collapsed ? 'center' : 'flex-end',
           padding: 1,
           marginBottom: 1,
           gap: 1,
         }}
       >
-        {isCollapsed ? (
-          <>
-            <Tooltip title="Logout" placement="right" arrow>
-              <IconButton
-                onClick={() => {
-                  dispatch(logoutUser()).then(() => {
-                    navigate('/login', { replace: true });
-                  });
-                }}
-                sx={{
-                  ...collapsedActionSx,
-                  '&:hover': {
-                    backgroundColor: theme => theme.palette.error.light,
-                    color: 'common.white',
-                    transform: 'translateY(-1px)',
-                    boxShadow: theme => theme.customShadows.cardHover,
-                  },
-                }}
-              >
-                <LogoutRoundedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-              
-            <Tooltip title={themeMode === 'light' ? 'Dark mode' : 'Light mode'} placement="right" arrow>
-              <IconButton
-                onClick={() => dispatch(toggleThemeMode())}
-                sx={{
-                  ...collapsedActionSx,
-                  '&:hover': {
-                    backgroundColor: theme => theme.palette.customGrey.main,
-                    transform: 'translateY(-1px)',
-                    boxShadow: theme => theme.customShadows.cardHover,
-                  },
-                }}
-              >
-                {themeMode === 'light' ? (
-                  <DarkModeRoundedIcon fontSize="small" />
-                ) : (
-                  <LightModeRoundedIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-              
-            {/* <Tooltip title="Expand menu" placement="right" arrow>
-              <IconButton
-                onClick={() =>
-                  dispatch(setMenuOptions({ ...menuOptions, collapsed: !isCollapsed }))
-                }
-                sx={{
-                  ...collapsedActionSx,
-                  '&:hover': {
-                    backgroundColor: theme => theme.palette.customGrey.main,
-                    transform: 'translateY(-1px)',
-                    boxShadow: theme => theme.customShadows.cardHover,
-                  },
-                }}
-              >
-                <ChevronRightRoundedIcon fontSize="small" />
-              </IconButton>
-            </Tooltip> */}
-          </>
-        ) : (
-          <>
-            <Button
-              startIcon={<LogoutRoundedIcon />}
-              onClick={() => {
-                dispatch(logoutUser()).then(() => {
-                  navigate('/login', { replace: true });
-                });
-              }}
-              sx={{
-                ...expandedActionSx,
-                '&:hover': {
-                  backgroundColor: theme => theme.palette.error.light,
-                  color: 'common.white',
-                  transform: 'translateX(2px)',
-                  boxShadow: theme => theme.customShadows.cardHover,
-                },
-              }}
-            >
-              Logout
-            </Button>
-            
-            <Button
-              startIcon={
-                themeMode === 'light' ? <DarkModeRoundedIcon /> : <LightModeRoundedIcon />
-              }
-              onClick={() => dispatch(toggleThemeMode())}
-              sx={expandedActionSx}
-            >
-              {themeMode === 'light' ? 'Dark mode' : 'Light mode'}
-            </Button>
-            
-{/* <Button
-  startIcon={isHoverExpanded ? <ChevronRightRoundedIcon /> : <ChevronLeftRoundedIcon />}
-  onClick={() =>
-    dispatch(setMenuOptions({ ...menuOptions, collapsed: !menuOptions.collapsed }))
-  }
-  sx={{
-    ...expandedActionSx,
-    backgroundColor: theme => theme.palette.primary.main,
-    color: 'primary.contrastText',
-    '&:hover': {
-      backgroundColor: theme => theme.palette.primary.dark,
-      transform: 'translateX(2px)',
-      boxShadow: theme => theme.customShadows.cardHover,
-    },
-  }}
->
-  {isHoverExpanded ? 'Pin menu' : 'Collapse menu'}
-</Button> */}
-          </>
-        )}
+        <Tooltip title="Logout" placement="right" arrow>
+          <IconButton
+            onClick={() => {
+              dispatch(logoutUser()).then(() => {
+                navigate('/login', { replace: true });
+              });
+            }}
+            sx={{
+              backgroundColor: theme => theme.palette.customGrey.light,
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              '&:hover': {
+                backgroundColor: theme => theme.palette.error.light,
+                color: 'common.white',
+                transform: 'translateY(-1px)',
+                boxShadow: theme => theme.customShadows.cardHover,
+              },
+              boxShadow: theme => theme.customShadows.card,
+            }}
+          >
+            <LogoutRoundedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title={themeMode === 'light' ? 'Dark mode' : 'Light mode'} placement="right" arrow>
+          <IconButton
+            onClick={() => dispatch(toggleThemeMode())}
+            sx={{
+              backgroundColor: theme => theme.palette.customGrey.light,
+              borderRadius: '50%',
+              width: '36px',
+              height: '36px',
+              '&:hover': {
+                backgroundColor: theme => theme.palette.customGrey.main,
+                transform: 'translateY(-1px)',
+                boxShadow: theme => theme.customShadows.cardHover,
+              },
+              boxShadow: theme => theme.customShadows.card,
+            }}
+          >
+            {themeMode === 'light'
+              ? <DarkModeRoundedIcon fontSize="small" />
+              : <LightModeRoundedIcon fontSize="small" />
+            }
+          </IconButton>
+        </Tooltip>
+        <IconButton
+          onClick={() => dispatch(setMenuOptions({ ...menuOptions, collapsed: !menuOptions.collapsed }))}
+          sx={{
+            backgroundColor: theme => theme.palette.customGrey.light,
+            borderRadius: '50%',
+            width: '36px',
+            height: '36px',
+            '&:hover': {
+              backgroundColor: theme => theme.palette.customGrey.main,
+            },
+            boxShadow: theme => theme.customShadows.card,
+            transition: theme =>
+              theme.transitions.create(['transform', 'box-shadow', 'background-color'], { duration: 160 }),
+          }}
+        >
+          {menuOptions.collapsed ?
+            <ChevronRightRoundedIcon fontSize="small" /> :
+            <ChevronLeftRoundedIcon fontSize="small" />
+          }
+        </IconButton>
       </Box>
     </Paper>
   );
