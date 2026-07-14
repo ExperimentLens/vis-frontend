@@ -37,12 +37,14 @@ type DistributionChartProps = {
   details: TraceDetail[];
   experimentId?: string;
   tooltip?: ComponentProps<typeof ResponsiveCardVegaLite>['tooltip'];
+  isLoading: boolean;
 };
 
 export default function DistributionChart({
   details,
   experimentId,
   tooltip,
+  isLoading,
 }: DistributionChartProps) {
   const theme = useTheme();
   const config = useVegaThemeConfig();
@@ -314,6 +316,7 @@ export default function DistributionChart({
       aspectRatio={2.6}
       actions={false}
       isStatic={false}
+      loading={isLoading}
     />
   );
 }

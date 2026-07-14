@@ -369,6 +369,7 @@ export default function LlmMonitoringOverview() {
           {selectedTab === 'usage' && (
             <LlmMonitoringUsageTab
               details={allDetails}
+              isLoading={anyLoading}
               rollupData={r}
               topTraces={topTraces}
               models={models}

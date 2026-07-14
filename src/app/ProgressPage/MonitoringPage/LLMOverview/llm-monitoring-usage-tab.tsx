@@ -28,6 +28,7 @@ import { useParams } from 'react-router';
 
 type UsageTabProps = {
   details: TraceDetail[];
+  isLoading: boolean;
   rollupData: {
     traceCount: number;
     totalTokens: number;
@@ -62,6 +63,7 @@ type UsageTabProps = {
 
 export default function LlmMonitoringUsageTab({
   details,
+  isLoading,
   rollupData,
   topTraces,
   models,
@@ -166,17 +168,17 @@ export default function LlmMonitoringUsageTab({
         </Grid>
       </Grid>
       <Grid container spacing={1.5}>
-        <Grid size={{ xs: 12 }} sx={{ textAlign: 'left' }}>
-          <TraceCountByHourChart details={details} experimentId={experimentId} tooltip={tooltip} />
+        <Grid size={{ xs: 12 }} sx={{ textAlign: 'left', height: 350 }}>
+          <TraceCountByHourChart details={details} experimentId={experimentId} tooltip={tooltip} isLoading={isLoading} />
         </Grid>
       </Grid>
 
       <Grid container spacing={1.5}>
-        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}>
-          <DistributionChart details={details} experimentId={experimentId}/>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 300 }}>
+          <DistributionChart details={details} experimentId={experimentId} isLoading={isLoading} />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 300 }}>
           <ResponsiveCardVegaLite
             title="Observations by time"
             details={
@@ -198,8 +200,9 @@ export default function LlmMonitoringUsageTab({
                 fullHeight
               />
             }
-            maxHeight={260}
+            maxHeight={240}
             aspectRatio={1.7}
+            loading={isLoading}
           />
         </Grid>
       </Grid>

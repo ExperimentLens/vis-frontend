@@ -17,12 +17,14 @@ type TraceCountByHourChartProps = {
   details: TraceDetail[];
   experimentId?: string;
   tooltip?: ComponentProps<typeof ResponsiveCardVegaLite>['tooltip'];
+  isLoading: boolean;
 };
 
 export default function TraceCountByHourChart({
   details,
   experimentId,
   tooltip,
+  isLoading,
 }: TraceCountByHourChartProps) {
   const theme = useTheme();
 
@@ -164,6 +166,7 @@ export default function TraceCountByHourChart({
       }
       maxHeight={300}
       aspectRatio={2.8}
+      loading={isLoading}
     />
   );
 }
