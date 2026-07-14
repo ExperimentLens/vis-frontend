@@ -92,9 +92,6 @@ export default function TraceCountByHourChart({
             },
             axis: {
               labelAngle: hasMultipleDays ? -30 : 0,
-              labelColor: theme.palette.text.secondary,
-              tickColor: theme.palette.divider,
-              domainColor: theme.palette.divider,
               grid: false,
             },
           },
@@ -106,9 +103,6 @@ export default function TraceCountByHourChart({
               labels: true,
               ticks: true,
               domain: false,
-              gridColor: theme.palette.divider,
-              labelColor: theme.palette.text.secondary,
-              titleColor: theme.palette.text.secondary,
             },
           },
           color: {
