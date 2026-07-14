@@ -2,10 +2,6 @@ import {
   Box,
   Grid,
   Stack,
-  Table,
-  TableBody,
-  TableHead,
-  TableRow,
   Typography,
   useTheme,
 } from '@mui/material';
@@ -21,7 +17,7 @@ import type { TraceDetail } from '../../../../shared/models/observability/trace-
 
 import { Bar, EmptyNote } from './chart-kit';
 import DistributionChart from './distribution-chart';
-import { BigNum, Td, Th, TruncMono } from './llm-monitoring-shared';
+import { BigNum, TruncMono } from './llm-monitoring-shared';
 import TraceCountByHourChart from './trace-count-by-hour-chart';
 import { useParams } from 'react-router';
 import { styled } from '@mui/material/styles';
@@ -37,6 +33,14 @@ type LatencyPercentileRow = {
   p95: number;
   p99: number;
 };
+
+type ModelUsageRow = {
+  id: string;
+  model: string;
+  generations: number;
+  tokens: number;
+};
+
 
 const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
   '&.MuiDataGrid-root': {
@@ -145,6 +149,56 @@ export default function LlmMonitoringUsageTab({
 }: UsageTabProps) {
   const theme = useTheme();
   const { experimentId } = useParams();
+
+  const modelUsageColumns: GridColDef[] = [
+    {
+      field: 'model',
+      headerName: 'Model',
+      flex: 1,
+      minWidth: 220,
+      headerAlign: 'left',
+      align: 'left',
+      sortable: true,
+      resizable: false,
+      renderCell: params => (
+          String(params.value ?? '')
+      ),
+    },
+    {
+      field: 'generations',
+      headerName: 'Gens',
+      width: 120,
+      type: 'number',
+      headerAlign: 'right',
+      align: 'right',
+      sortable: true,
+      resizable: false,
+    },
+    {
+      field: 'tokens',
+      headerName: 'Tokens',
+      width: 160,
+      type: 'number',
+      headerAlign: 'right',
+      align: 'right',
+      sortable: true,
+      resizable: false,
+      renderCell: params => (
+        <Box component="span">
+          {Number(params.value ?? 0).toLocaleString()}
+        </Box>
+      ),
+    },
+  ];
+
+  const modelUsageRows: ModelUsageRow[] = models
+    .slice(0, 6)
+    .map((model, index) => ({
+      id: `${model.model}-${index}`,
+      model: model.model,
+      generations: model.generations,
+      tokens: model.tokens,
+    }));
 
   const latencyRows: LatencyPercentileRow[] = latencies
     .slice(0, 8)
@@ -276,48 +330,53 @@ export default function LlmMonitoringUsageTab({
         <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left' }}>
           <ResponsiveCardTable
             title="Model usage"
-            showSettings={true}
+            showSettings
             onDownload={onDownloadModelUsageCsv}
             downloadLabel="Download as CSV"
             downloadSecondaryText="Save model usage as CSV"
+            noPadding
           >
-            <BigNum
-              value={rollupData.totalTokens ? rollupData.totalTokens.toLocaleString() : '—'}
-              sub={`Total tokens · $${rollupData.totalCost.toFixed(4)} cost`}
-            />
-
-            {models.length === 0 ? (
-              <EmptyNote>No generations.</EmptyNote>
+            <Box sx={{ px: 2, pt: 2, pb: modelUsageRows.length > 0 ? 1.5 : 2 }}>
+              <BigNum
+                value={
+                  rollupData.totalTokens
+                    ? rollupData.totalTokens.toLocaleString()
+                    : '—'
+                }
+                sub={`Total tokens · $${rollupData.totalCost.toFixed(4)} cost`}
+              />
+            </Box>
+              
+            {modelUsageRows.length === 0 ? (
+              <Box sx={{ px: 2, pb: 2 }}>
+                <EmptyNote>No generations.</EmptyNote>
+              </Box>
             ) : (
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <Th>Model</Th>
-                    <Th align="right">Gens</Th>
-                    <Th align="right">Tokens</Th>
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {models.slice(0, 6).map(m => (
-                    <TableRow key={m.model}>
-                      <Td>
-                        {m.model}
-                      </Td>
-
-                      <Td align="right">{m.generations}</Td>
-
-                      <Td align="right">
-                        <Box component="span">
-                          {m.tokens.toLocaleString()}
-                        </Box>
-                      </Td>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <StyledDataGrid
+                autoHeight
+                hideFooter
+                disableColumnMenu
+                disableColumnResize
+                disableRowSelectionOnClick
+                rows={modelUsageRows}
+                columns={modelUsageColumns}
+                rowHeight={44}
+                columnHeaderHeight={44}
+                sx={{
+                  width: '100%',
+                
+                  '& .MuiDataGrid-cell:focus, & .MuiDataGrid-columnHeader:focus': {
+                    outline: 'none',
+                  },
+                
+                  '& .MuiDataGrid-cell:focus-within, & .MuiDataGrid-columnHeader:focus-within':
+                    {
+                      outline: 'none',
+                    },
+                }}
+              />
             )}
-          </ResponsiveCardTable>
+          </ResponsiveCardTable>        
         </Grid>
       </Grid>
       <Grid container spacing={1.5}>
