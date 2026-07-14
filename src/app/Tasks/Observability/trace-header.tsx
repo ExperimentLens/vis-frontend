@@ -195,34 +195,14 @@ const TraceHeader = ({
           <Tooltip title={question} arrow>
             <Stack
               direction="row"
-              spacing={0.85}
+              spacing={0.75}
               alignItems="center"
               sx={{
                 minWidth: 0,
                 maxWidth: 420,
               }}
             >
-              <Box
-                sx={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  bgcolor: alpha(
-                    theme.palette.primary.main,
-                    0.12,
-                  ),
-                  color: 'primary.main',
-                  flexShrink: 0,
-                }}
-              >
-                <SmartToyRoundedIcon
-                  sx={{ fontSize: 17 }}
-                />
-              </Box>
-
+              <SmartToyRoundedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
               <Box sx={{ minWidth: 0 }}>
                 <Typography
                   variant="statValue"
