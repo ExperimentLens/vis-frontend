@@ -15,7 +15,6 @@ import ResponsiveCardTable from '../../../../shared/components/responsive-card-t
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import {
-  MONO,
   formatMs,
 } from '../../../../shared/models/observability/agentic-conventions';
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
@@ -25,6 +24,73 @@ import DistributionChart from './distribution-chart';
 import { BigNum, Td, Th, TruncMono } from './llm-monitoring-shared';
 import TraceCountByHourChart from './trace-count-by-hour-chart';
 import { useParams } from 'react-router';
+import { styled } from '@mui/material/styles';
+import { DataGrid } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+
+type LatencyPercentileRow = {
+  id: string;
+  name: string;
+  count: number;
+  p50: number;
+  p90: number;
+  p95: number;
+  p99: number;
+};
+
+const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
+  '&.MuiDataGrid-root': {
+    border: 'none',
+    borderRadius: '0 0 12px 12px',
+  },
+
+  '& .MuiDataGrid-columnHeaders': {
+    position: 'sticky',
+    top: 0,
+    zIndex: 2,
+  },
+
+  '& .MuiDataGrid-columnHeader': {
+    backgroundColor: theme.palette.customGrey.main,
+    borderRight: `1px solid ${theme.palette.divider}`,
+  },
+
+  '& .MuiDataGrid-scrollbarFiller': {
+    backgroundColor: theme.palette.customGrey.main,
+  },
+
+  '& .MuiDataGrid-columnHeaderTitle': {
+    fontWeight: 600,
+    whiteSpace: 'nowrap',
+    overflow: 'visible',
+  },
+
+  '& .MuiDataGrid-cell': {
+    borderRight: `1px solid ${theme.palette.divider}`,
+    borderBottom: `1px solid ${theme.palette.divider}`,
+  },
+
+  '& .MuiDataGrid-row:hover': {
+    backgroundColor: theme.palette.action.hover,
+  },
+
+  '& .MuiDataGrid-row.Mui-selected': {
+    backgroundColor: `${theme.palette.primary.light}40`,
+
+    '&:hover': {
+      backgroundColor: `${theme.palette.primary.light}60`,
+    },
+  },
+
+  '& .MuiDataGrid-footerContainer': {
+    borderTop: `1px solid ${theme.palette.divider}`,
+    backgroundColor: theme.palette.background.paper,
+  },
+
+  '& .MuiDataGrid-selectedRowCount': {
+    visibility: 'hidden',
+  },
+}));
 
 type UsageTabProps = {
   details: TraceDetail[];
@@ -80,6 +146,93 @@ export default function LlmMonitoringUsageTab({
   const theme = useTheme();
   const { experimentId } = useParams();
 
+  const latencyRows: LatencyPercentileRow[] = latencies
+    .slice(0, 8)
+    .map((latency, index) => ({
+      id: `${latency.name}-${index}`,
+      name: latency.name,
+      count: latency.count,
+      p50: latency.p50,
+      p90: latency.p90,
+      p95: latency.p95,
+      p99: latency.p99,
+    }));
+
+  const latencyColumns: GridColDef[] = [
+    {
+      field: 'name',
+      headerName: 'Trace name',
+      flex: 1,
+      minWidth: 180,
+      headerAlign: 'left',
+      align: 'left',
+      sortable: true,
+      renderCell: params => (
+        String(params.value ?? '')
+      ),
+    },
+    {
+      field: 'count',
+      headerName: '#',
+      width: 80,
+      type: 'number',
+      headerAlign: 'right',
+      align: 'right',
+    },
+    {
+      field: 'p50',
+      headerName: 'p50',
+      width: 110,
+      type: 'number',
+      headerAlign: 'right',
+      align: 'right',
+      renderCell: params => (
+        <Box component="span">
+          {formatMs(Number(params.value))}
+        </Box>
+      ),
+    },
+    {
+      field: 'p90',
+      headerName: 'p90',
+      width: 110,
+      type: 'number',
+      headerAlign: 'right',
+      align: 'right',
+      renderCell: params => (
+        <Box component="span">
+          {formatMs(Number(params.value))}
+        </Box>
+      ),
+    },
+    {
+      field: 'p95',
+      headerName: 'p95',
+      width: 110,
+      type: 'number',
+      headerAlign: 'right',
+      align: 'right',
+      renderCell: params => (
+        <Box component="span">
+          {formatMs(Number(params.value))}
+        </Box>
+      ),
+    },
+    {
+      field: 'p99',
+      headerName: 'p99',
+      width: 110,
+      type: 'number',
+      headerAlign: 'right',
+      align: 'right',
+      renderCell: params => (
+        <Box component="span">
+          {formatMs(Number(params.value))}
+        </Box>
+      ),
+    },
+  ];
+
   return (
     <>
       <Grid container spacing={1.5}>
@@ -110,7 +263,7 @@ export default function LlmMonitoringUsageTab({
                       width={100}
                     />
 
-                    <Typography variant="caption" sx={{ fontFamily: MONO, ml: 'auto' }}>
+                    <Typography variant="caption" sx={{ml: 'auto' }}>
                       {t.count}
                     </Typography>
                   </Stack>
@@ -149,13 +302,13 @@ export default function LlmMonitoringUsageTab({
                   {models.slice(0, 6).map(m => (
                     <TableRow key={m.model}>
                       <Td>
-                        <TruncMono max={170}>{m.model}</TruncMono>
+                        {m.model}
                       </Td>
 
                       <Td align="right">{m.generations}</Td>
 
                       <Td align="right">
-                        <Box component="span" sx={{ fontFamily: MONO }}>
+                        <Box component="span">
                           {m.tokens.toLocaleString()}
                         </Box>
                       </Td>
@@ -211,64 +364,38 @@ export default function LlmMonitoringUsageTab({
         <Grid size={{ xs: 12 }} sx={{ textAlign: 'left', mb: 1.5 }}>
           <ResponsiveCardTable
             title="Trace latency percentiles"
-            showSettings={true}
+            showSettings
             onDownload={onDownloadTraceLatencyCsv}
             downloadLabel="Download as CSV"
             downloadSecondaryText="Save latency percentiles as CSV"
+            noPadding
           >
             {latencies.length === 0 ? (
               <EmptyNote>No latency data.</EmptyNote>
             ) : (
-              <Box sx={{ overflow: 'auto' }}>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <Th>Trace name</Th>
-                      <Th align="right">#</Th>
-                      <Th align="right">p50</Th>
-                      <Th align="right">p90</Th>
-                      <Th align="right">p95</Th>
-                      <Th align="right">p99</Th>
-                    </TableRow>
-                  </TableHead>
-
-                  <TableBody>
-                    {latencies.slice(0, 8).map(l => (
-                      <TableRow key={l.name}>
-                        <Td>
-                          <TruncMono max={160}>{l.name}</TruncMono>
-                        </Td>
-
-                        <Td align="right">{l.count}</Td>
-
-                        <Td align="right">
-                          <Box component="span" sx={{ fontFamily: MONO }}>
-                            {formatMs(l.p50)}
-                          </Box>
-                        </Td>
-
-                        <Td align="right">
-                          <Box component="span" sx={{ fontFamily: MONO }}>
-                            {formatMs(l.p90)}
-                          </Box>
-                        </Td>
-
-                        <Td align="right">
-                          <Box component="span" sx={{ fontFamily: MONO }}>
-                            {formatMs(l.p95)}
-                          </Box>
-                        </Td>
-
-                        <Td align="right">
-                          <Box component="span" sx={{ fontFamily: MONO }}>
-                            {formatMs(l.p99)}
-                          </Box>
-                        </Td>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
+              <StyledDataGrid
+                autoHeight
+                hideFooter
+                disableRowSelectionOnClick
+                disableColumnResize
+                disableColumnMenu
+                rows={latencyRows}
+                columns={latencyColumns}
+                rowHeight={44}
+                columnHeaderHeight={44}
+                sx={{
+                  width: '100%',
+                
+                  '& .MuiDataGrid-cell:focus, & .MuiDataGrid-columnHeader:focus': {
+                    outline: 'none',
+                  },
+                
+                  '& .MuiDataGrid-cell:focus-within, & .MuiDataGrid-columnHeader:focus-within':
+                    {
+                      outline: 'none',
+                    },
+                }}
+              />
             )}
           </ResponsiveCardTable>
         </Grid>
