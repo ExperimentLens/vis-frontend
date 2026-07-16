@@ -378,6 +378,14 @@ export const MetricCards = () => {
     return bins.map(b => ({ label: b.label, count: b.count, isYou: b.isYou }));
   }, [currentValue, filteredWorkflows]);
 
+    const barCount = histogram.length;
+
+    const barPaddingOuter = useMemo(
+      () => Math.max(0.1, (3 - barCount) / 2),
+      [barCount],
+    );
+
+
   const distributionSpec = useMemo(() => {
     if (!histogram.length) return null;
 
@@ -391,6 +399,10 @@ export const MetricCards = () => {
               type: 'ordinal',
               axis: { title: null, labelAngle: 315, labelPadding: 6 },
               sort: null,
+              scale: {
+                paddingInner: 0.1,
+                paddingOuter: barPaddingOuter,
+              },
             },
             y: { field: 'count', type: 'quantitative', axis: { title: 'Workflows' } },
             color: {
