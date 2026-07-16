@@ -506,6 +506,10 @@ const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
   );
 };
 
+const metricNumberFormatter = new Intl.NumberFormat('en-US', {
+  maximumFractionDigits: 3,
+});
+
 export default function WorkflowTable() {
   const { workflows, createdWorkflow } = useAppSelector(
     (state: RootState) => state.progressPage,
@@ -979,7 +983,15 @@ export default function WorkflowTable() {
                   }
                 }, matchingMetrics[0]);
 
-                acc[variant] = latestMetric?.value !== null && latestMetric?.value !== undefined ? latestMetric.value : 'n/a';
+                const value = latestMetric?.value;
+                const numericValue = Number(value);
+
+                acc[variant] = 
+                  latestMetric?.value !== null && 
+                  latestMetric?.value !== undefined &&
+                  Number.isFinite(numericValue)
+                    ? metricNumberFormatter.format(numericValue)
+                    : value ?? 'n/a';
               } else {
                 acc[variant] = 'n/a';
               }

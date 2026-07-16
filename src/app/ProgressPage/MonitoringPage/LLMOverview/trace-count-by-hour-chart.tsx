@@ -52,7 +52,7 @@ export default function TraceCountByHourChart({
   );
 
   const barPaddingOuter = useMemo(
-    () => Math.max(0.05, (2.1 - barCount) / 2),
+    () => Math.max(0.1, (3 - barCount) / 2),
     [barCount],
   );
 
