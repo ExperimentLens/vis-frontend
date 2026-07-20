@@ -108,7 +108,7 @@ const TraceGraph = ({ observations, selectedId, onSelect }: Props) => {
     );
   }
 
-  const arrowColor = theme.palette.customGrey.main;
+  const arrowColor = theme.palette.customGrey.dark;
 
   return (
     <Box sx={{ width: '100%', height: '100%', overflow: 'auto', p: 1.5 }}>
