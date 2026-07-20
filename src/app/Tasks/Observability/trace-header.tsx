@@ -2,12 +2,10 @@ import type { ReactNode } from 'react';
 import {
   Box,
   Chip,
-  Divider,
   Paper,
   Stack,
   Tooltip,
   Typography,
-  alpha,
   useTheme,
 } from '@mui/material';
 
@@ -19,8 +17,8 @@ import TokenRoundedIcon from '@mui/icons-material/TokenRounded';
 import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import RuleRoundedIcon from '@mui/icons-material/RuleRounded';
 
-import { MetaChip } from './trace-ui';
-import { formatMs } from '../../../shared/models/observability/agentic-conventions';
+import { CopyButton, MetaChip } from './trace-ui';
+import { formatMs, MONO } from '../../../shared/models/observability/agentic-conventions';
 
 export type TraceSectionOption = {
   value: string;
@@ -65,27 +63,16 @@ const SummaryChip = ({
         display: 'inline-flex',
         alignItems: 'center',
         gap: 0.5,
-        px: 0.85,
-        py: 0.25,
-        borderRadius: '999px',
-        bgcolor:
-          tone === 'default'
-            ? 'transparent'
-            : alpha(toneColor, 0.1),
         color: toneColor,
-        border:
-          tone === 'default'
-            ? 'none'
-            : `1px solid ${alpha(toneColor, 0.2)}`,
-        fontSize: '0.72rem',
-        fontWeight: 600,
+        fontSize: '0.74rem',
+        fontWeight: tone === 'default' ? 500 : 700,
         lineHeight: 1.4,
-        letterSpacing: '0.2px',
         whiteSpace: 'nowrap',
         fontFeatureSettings: '"tnum" 1, "lnum" 1',
 
         '& .MuiSvgIcon-root': {
           fontSize: 14,
+          opacity: tone === 'default' ? 0.7 : 1,
         },
       }}
     >
@@ -94,6 +81,19 @@ const SummaryChip = ({
     </Box>
   );
 };
+
+const Dot = () => (
+  <Box
+    component="span"
+    sx={{
+      width: 3,
+      height: 3,
+      borderRadius: '50%',
+      bgcolor: 'text.disabled',
+      flexShrink: 0,
+    }}
+  />
+);
 
 type TraceHeaderProps = {
   id: string;
@@ -159,141 +159,52 @@ const TraceHeader = ({
       variant="outlined"
       sx={{
         px: 1.5,
-        py: 0.75,
+        py: 1,
         borderRadius: 2,
         background: theme.palette.customSurface.cardHeader,
         borderColor: theme.palette.customGrey.main,
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          flexWrap: 'wrap',
-          rowGap: 0.75,
-        }}
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        sx={{ flexWrap: 'wrap', rowGap: 0.75 }}
       >
-        <Stack
-          direction="row"
-          spacing={1.25}
-          alignItems="center"
-          divider={
-            <Divider
-              orientation="vertical"
-              flexItem
-              sx={{ my: 0.5 }}
-            />
-          }
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            flexWrap: 'wrap',
-            rowGap: 0.5,
-          }}
-        >
-          <Tooltip title={question} arrow>
-            <Stack
-              direction="row"
-              spacing={0.75}
-              alignItems="center"
-              sx={{
-                minWidth: 0,
-                maxWidth: 420,
-              }}
-            >
-              <SmartToyRoundedIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-              <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  variant="statValue"
-                  sx={{
-                    display: 'block',
-                    fontSize: '0.85rem',
-                    lineHeight: 1.35,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {question}
-                </Typography>
+        <SmartToyRoundedIcon sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0 }} />
 
-                <Typography
-                  variant="bodySm"
-                  sx={{
-                    display: 'block',
-                    color: 'text.secondary',
-                    fontSize: '0.68rem',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {id}
-                </Typography>
-              </Box>
-            </Stack>
-          </Tooltip>
+        <Tooltip title={question} arrow>
+          <Typography
+            sx={{
+              flex: 1,
+              minWidth: 120,
+              fontSize: '0.92rem',
+              fontWeight: 700,
+              lineHeight: 1.3,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {question}
+          </Typography>
+        </Tooltip>
 
-          <SummaryChip
-            icon={<TimerOutlinedIcon />}
-            label={formatMs(durationMs)}
-          />
-
-          <SummaryChip
-            icon={<TokenRoundedIcon />}
-            label={
-              totalTokens
-                ? `${totalTokens.toLocaleString()} tokens`
-                : '— tokens'
-            }
-          />
-
-          <SummaryChip
-            icon={<PaymentsRoundedIcon />}
-            label={`$${(totalCost ?? 0).toFixed(4)}`}
-          />
-
-          <SummaryChip
-            icon={<GavelRoundedIcon />}
-            label={
-              judgesCount
-                ? `${judgesPassed}/${judgesCount} judges`
-                : '— judges'
-            }
-            tone={judgesTone}
-          />
-
-          <SummaryChip
-            icon={<RuleRoundedIcon />}
-            label={
-              checksCount
-                ? `${checksPassed}/${checksCount} checks`
-                : '— checks'
-            }
-            tone={checksTone}
-          />
+        <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0 }}>
+          <Typography
+            variant="bodySm"
+            sx={{
+              color: 'text.secondary',
+              fontFamily: MONO,
+              fontSize: '0.66rem',
+            }}
+          >
+            {id}
+          </Typography>
+          <CopyButton text={id} />
         </Stack>
 
-        <Divider
-          orientation="vertical"
-          flexItem
-          sx={{
-            my: 0.5,
-            display: {
-              xs: 'none',
-              lg: 'block',
-            },
-          }}
-        />
-
-        <Box
-          sx={{
-            flexShrink: 0,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
+        <Box sx={{ flexShrink: 0 }}>
           <SegmentedToggle
             size="small"
             value={tab}
@@ -301,8 +212,55 @@ const TraceHeader = ({
             options={tabs}
             aria-label="Trace section"
           />
-        </Box>      
-      </Box>
+        </Box>
+      </Stack>
+
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        divider={<Dot />}
+        sx={{ mt: 0.75, flexWrap: 'wrap', rowGap: 0.5 }}
+      >
+        <SummaryChip
+          icon={<TimerOutlinedIcon />}
+          label={formatMs(durationMs)}
+        />
+
+        <SummaryChip
+          icon={<TokenRoundedIcon />}
+          label={
+            totalTokens
+              ? `${totalTokens.toLocaleString()} tokens`
+              : '— tokens'
+          }
+        />
+
+        <SummaryChip
+          icon={<PaymentsRoundedIcon />}
+          label={`$${(totalCost ?? 0).toFixed(4)}`}
+        />
+
+        <SummaryChip
+          icon={<GavelRoundedIcon />}
+          label={
+            judgesCount
+              ? `${judgesPassed}/${judgesCount} judges`
+              : '— judges'
+          }
+          tone={judgesTone}
+        />
+
+        <SummaryChip
+          icon={<RuleRoundedIcon />}
+          label={
+            checksCount
+              ? `${checksPassed}/${checksCount} checks`
+              : '— checks'
+          }
+          tone={checksTone}
+        />
+      </Stack>
 
       {hasMetadata && (
         <Stack

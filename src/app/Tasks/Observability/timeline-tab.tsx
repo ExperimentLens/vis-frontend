@@ -1,8 +1,16 @@
+import { useState } from 'react';
 import { Box, Stack, Typography, alpha, useTheme } from '@mui/material';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import TouchAppRoundedIcon from '@mui/icons-material/TouchAppRounded';
+import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
+import SchemaRoundedIcon from '@mui/icons-material/SchemaRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
-import ObservationWaterfall, { colorForType } from './trace-observation-waterfall';
+import InfoMessage from '../../../shared/components/InfoMessage';
+import SegmentedToggle from '../../../shared/components/segmented-toggle';
+import { colorForType } from './trace-observation-waterfall';
+import SpanTree from './span-tree';
+import TraceGraph from './trace-graph';
 import SpanDetail from './span-detail';
 
 type TimelineTabProps = {
@@ -13,26 +21,81 @@ type TimelineTabProps = {
   onSelectSpan: (id: string | null) => void;
 };
 
-const TimelineTab = ({ observations, selectedSpanId, defaultSpanId, selectedObs, onSelectSpan }: TimelineTabProps) => (
-  <Stack spacing={1.5} height="99%" width="100%" overflow="hidden">
-    <Box width="100%" height="40%">
-      <ResponsiveCardTable title="Observation Waterfall" showSettings={false} showFullScreenButton={false}>
-        <Stack spacing={1.25}>
-        {observations.length > 0 && <TimelineSummary observations={observations} />}
-        <ObservationWaterfall observations={observations} selectedId={selectedSpanId ?? defaultSpanId} onSelect={onSelectSpan} />
+const TREE_VIEW_OPTIONS = [
+  { value: 'list', icon: <ViewListRoundedIcon fontSize="small" />, tooltip: 'List' },
+  { value: 'graph', icon: <SchemaRoundedIcon fontSize="small" />, tooltip: 'Graph' },
+];
 
-        </Stack>
-      </ResponsiveCardTable>
-    </Box>
-    {selectedObs &&  
-    <Box width="100%" height="58%">
-    <ResponsiveCardTable title="Selected Observation" showSettings={false} showFullScreenButton={false}>
-      <SpanDetail obs={selectedObs} />
-    </ResponsiveCardTable>
-    </Box>
-    }
-  </Stack>
-);
+const TimelineTab = ({ observations, selectedSpanId, defaultSpanId, selectedObs, onSelectSpan }: TimelineTabProps) => {
+  const [view, setView] = useState<'list' | 'graph'>('graph');
+  const activeId = selectedSpanId ?? defaultSpanId;
+
+  return (
+    <Stack
+      direction="row"
+      spacing={1.5}
+      height="99%"
+      width="100%"
+      overflow="hidden"
+    >
+      <Box
+        sx={{
+          width: 340,
+          minWidth: 280,
+          maxWidth: 400,
+          flexShrink: 0,
+          height: '100%',
+        }}
+      >
+        <ResponsiveCardTable
+          title="Trace"
+          showSettings={false}
+          showFullScreenButton={false}
+          noPadding
+          headerActions={
+            <SegmentedToggle
+              size="small"
+              value={view}
+              onChange={value => setView(value as 'list' | 'graph')}
+              options={TREE_VIEW_OPTIONS}
+              aria-label="Trace view"
+            />
+          }
+        >
+          <Stack spacing={0} sx={{ height: '100%' }}>
+            {observations.length > 0 && (
+              <Box sx={{ px: 1.5, pt: 1.25, pb: 1 }}>
+                <TimelineSummary observations={observations} />
+              </Box>
+            )}
+            <Box sx={{ flex: 1, overflow: 'auto', px: view === 'list' ? 0.75 : 0, pb: 1 }}>
+              {view === 'list' ? (
+                <SpanTree observations={observations} selectedId={activeId} onSelect={onSelectSpan} />
+              ) : (
+                <TraceGraph observations={observations} selectedId={activeId} onSelect={onSelectSpan} />
+              )}
+            </Box>
+          </Stack>
+        </ResponsiveCardTable>
+      </Box>
+
+      <Box sx={{ flex: 1, minWidth: 0, height: '100%' }}>
+        <ResponsiveCardTable title="Selected Observation" showSettings={false} showFullScreenButton={false}>
+          {selectedObs ? (
+            <SpanDetail obs={selectedObs} />
+          ) : (
+            <InfoMessage
+              message="Select a span from the trace to inspect its input, output and metadata."
+              type="info"
+              icon={<TouchAppRoundedIcon sx={{ fontSize: 32, color: 'info.main' }} />}
+              fullHeight
+            />
+          )}
+        </ResponsiveCardTable>
+      </Box>
+    </Stack>
+  );
+};
 
 const TimelineSummary = ({ observations }: { observations: Observation[] }) => {
   const theme = useTheme();

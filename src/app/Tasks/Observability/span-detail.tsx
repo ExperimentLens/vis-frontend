@@ -10,6 +10,12 @@ import type { GenInput, GenOutput } from '../../../shared/models/observability/a
 import { colorForType } from './trace-observation-waterfall';
 import { CodeBlock, CopyButton, MetaChip, PassFailChip, SectionLabel } from './trace-ui';
 import CounterfactualReplayPanel from './counterfactual-replay-panel';
+import JsonTree from './json-tree';
+
+const renderValue = (value: unknown, maxHeight = 180) =>
+  value && typeof value === 'object'
+    ? <JsonTree data={value} maxHeight={maxHeight} />
+    : <CodeBlock maxHeight={maxHeight}>{asText(value)}</CodeBlock>;
 
 const omitPrompt = (value: unknown): Record<string, unknown> | undefined => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
@@ -78,13 +84,11 @@ const SpanDetail = ({ obs }: { obs: Observation }) => {
 
           {inputWithoutPrompt && (
             <Box sx={{ mb: 1 }}>
-              <CodeBlock maxHeight={180}>{JSON.stringify(inputWithoutPrompt, null, 2)}</CodeBlock>
+              {renderValue(inputWithoutPrompt)}
             </Box>
           )}
 
-          {!input?.prompt && !inputWithoutPrompt && (
-            <CodeBlock maxHeight={180}>{asText(obs.input)}</CodeBlock>
-          )}
+          {!input?.prompt && !inputWithoutPrompt && renderValue(obs.input)}
         </Box>
 
         <Box>
@@ -103,9 +107,7 @@ const SpanDetail = ({ obs }: { obs: Observation }) => {
             <Typography variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 500 }}>
               {output.answer}
             </Typography>
-          ) : (
-            <CodeBlock maxHeight={180}>{asText(obs.output)}</CodeBlock>
-          )}
+          ) : renderValue(obs.output)}
         </Box>
       </Box>
 

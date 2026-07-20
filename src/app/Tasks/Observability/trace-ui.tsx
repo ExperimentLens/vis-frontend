@@ -140,7 +140,7 @@ export const Collapsible = ({
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+    <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
       <Stack
         direction="row"
         alignItems="center"
