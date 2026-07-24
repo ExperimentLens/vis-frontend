@@ -95,6 +95,54 @@ const formatHour = (
         minute: '2-digit',
       });
 
+const formatDay = (date: Date): string =>
+  date.toLocaleDateString(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+
+/**
+ * Candidate bucket widths, finest first. `pickBucketMs` returns the finest
+ * one that still keeps the chart to a readable number of bars — so a burst
+ * of traces inside a single hour buckets by minute instead of collapsing
+ * into one or two hour-wide bars, while a multi-day experiment still buckets
+ * by hour/day instead of exploding into hundreds of bars.
+ */
+const BUCKET_CANDIDATES_MS = [
+  MINUTE_MS,
+  5 * MINUTE_MS,
+  15 * MINUTE_MS,
+  30 * MINUTE_MS,
+  HOUR_MS,
+  3 * HOUR_MS,
+  6 * HOUR_MS,
+  12 * HOUR_MS,
+  DAY_MS,
+  7 * DAY_MS,
+];
+
+const MAX_BARS = 24;
+
+const pickBucketMs = (spanMs: number): number => {
+  if (spanMs <= 0) return BUCKET_CANDIDATES_MS[0];
+
+  const fit = BUCKET_CANDIDATES_MS.find(size => spanMs / size <= MAX_BARS);
+
+  return fit ?? BUCKET_CANDIDATES_MS[BUCKET_CANDIDATES_MS.length - 1];
+};
+
+const formatBucketLabel = (
+  date: Date,
+  bucketMs: number,
+  includeDate: boolean,
+): string =>
+  bucketMs >= DAY_MS ? formatDay(date) : formatHour(date, includeDate);
+
 const formatTooltipHour = (
   date: Date | null,
 ): string =>
@@ -255,6 +303,17 @@ const renderTooltip = ({
 export const buildTraceHourBuckets = (
   details: TraceDetail[],
 ): TraceHourBuckets => {
+  const times = details
+    .map(traceDate)
+    .filter((date): date is Date => date !== null)
+    .map(date => date.getTime());
+
+  const spanMs = times.length
+    ? Math.max(...times) - Math.min(...times)
+    : 0;
+
+  const bucketMs = pickBucketMs(spanMs);
+
   const tracesByHour = new Map<
     string,
     TraceDetail[]
@@ -265,9 +324,9 @@ export const buildTraceHourBuckets = (
 
     if (!date) return;
 
-    date.setMinutes(0, 0, 0);
-
-    const hourKey = String(date.getTime());
+    const bucketStart =
+      Math.floor(date.getTime() / bucketMs) * bucketMs;
+    const hourKey = String(bucketStart);
     const bucket =
       tracesByHour.get(hourKey) ?? [];
 
@@ -295,8 +354,9 @@ export const buildTraceHourBuckets = (
     return {
       hourKey,
       hourStart: date.toISOString(),
-      hourLabel: formatHour(
+      hourLabel: formatBucketLabel(
         date,
+        bucketMs,
         includeDate,
       ),
       traces:

@@ -24,11 +24,8 @@ import {
 } from '../../../../shared/models/observability/agentic-conventions';
 import {
   latencyByTraceName,
-  modelUsageTable,
   observationsByTime,
-  rollup,
   scoresTable,
-  topTraceNames,
 } from '../../../../shared/utils/observability-aggregates';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import LlmKpiStrip from './llm-kpi-strip';
@@ -129,21 +126,6 @@ export default function LlmMonitoringOverview() {
   const anyLoading = workflowIds.some(id => sessions[id]?.loading);
   const hasData = allDetails.length > 0;
 
-  const r = useMemo(
-    () => (hasData ? rollup(allDetails) : null),
-    [hasData, allDetails],
-  );
-
-  const topTraces = useMemo(
-    () => (hasData ? topTraceNames(allDetails, 5) : []),
-    [hasData, allDetails],
-  );
-
-  const models = useMemo(
-    () => (hasData ? modelUsageTable(allDetails) : []),
-    [hasData, allDetails],
-  );
-
   const scores = useMemo(
     () => (hasData ? scoresTable(allDetails) : []),
     [hasData, allDetails],
@@ -168,8 +150,6 @@ export default function LlmMonitoringOverview() {
     () => allDetails.reduce((sum, trace) => sum + trace.scores.length, 0),
     [allDetails],
   );
-
-  const maxTopTraceCount = topTraces.length ? topTraces[0].count : 1;
 
   const obsSpec = useMemo(
     () => ({
@@ -218,27 +198,6 @@ export default function LlmMonitoringOverview() {
         experimentId,
         workflowId: id,
       })),
-    );
-  };
-
-  const handleDownloadTracesCsv = () => {
-    downloadCsv(
-      topTraces.map(t => ({
-        trace: t.name,
-        count: t.count,
-      })),
-      'traces.csv',
-    );
-  };
-
-  const handleDownloadModelUsageCsv = () => {
-    downloadCsv(
-      models.map(m => ({
-        model: m.model,
-        generations: m.generations,
-        tokens: m.tokens,
-      })),
-      'model-usage.csv',
     );
   };
 
@@ -362,7 +321,7 @@ export default function LlmMonitoringOverview() {
         />
       )}
 
-      {hasData && r && (
+      {hasData && (
         <>
           <LlmKpiStrip details={allDetails} sessionCount={workflowIds.length} />
 
@@ -370,17 +329,11 @@ export default function LlmMonitoringOverview() {
             <LlmMonitoringUsageTab
               details={allDetails}
               isLoading={anyLoading}
-              rollupData={r}
-              topTraces={topTraces}
-              models={models}
               timeSeries={timeSeries}
               latencies={latencies}
-              maxTopTraceCount={maxTopTraceCount}
               totalObservations={totalObservations}
               obsSpec={obsSpec}
               tooltip={tooltip}
-              onDownloadTracesCsv={handleDownloadTracesCsv}
-              onDownloadModelUsageCsv={handleDownloadModelUsageCsv}
               onDownloadTraceLatencyCsv={handleDownloadTraceLatencyCsv}
             />
           )}

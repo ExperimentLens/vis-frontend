@@ -18,6 +18,7 @@ type TraceCountByHourChartProps = {
   experimentId?: string;
   tooltip?: ComponentProps<typeof ResponsiveCardVegaLite>['tooltip'];
   isLoading: boolean;
+  onSelectBucket?: (traceIds: string[] | null) => void;
 };
 
 export default function TraceCountByHourChart({
@@ -25,12 +26,37 @@ export default function TraceCountByHourChart({
   experimentId,
   tooltip,
   isLoading,
+  onSelectBucket,
 }: TraceCountByHourChartProps) {
   const theme = useTheme();
 
   const { rows, tracesByHour } = useMemo(
     () => buildTraceHourBuckets(details),
     [details],
+  );
+
+  const signalListeners = useMemo(
+    () => ({
+      select_bucket: (_name: string, value: unknown) => {
+        if (!onSelectBucket) return;
+
+        const v = value as { hourKey?: string | string[] } | null | undefined;
+        const hourKey = v?.hourKey
+          ? (Array.isArray(v.hourKey) ? v.hourKey[0] : v.hourKey)
+          : null;
+
+        if (!hourKey) {
+          onSelectBucket(null);
+
+          return;
+        }
+
+        const traces = tracesByHour.get(hourKey) ?? [];
+
+        onSelectBucket(traces.map(t => t.id));
+      },
+    }),
+    [tracesByHour, onSelectBucket],
   );
 
   const totalTraces = useMemo(
@@ -71,11 +97,15 @@ export default function TraceCountByHourChart({
       ({
         $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
         data: { values: rows },
+        params: [
+          { name: 'select_bucket', select: { type: 'point', fields: ['hourKey'] } },
+        ],
         mark: {
           type: 'bar',
           cornerRadiusTopLeft: 4,
           cornerRadiusTopRight: 4,
           color: theme.palette.success.main,
+          cursor: 'pointer',
         },
         encoding: {
           x: {
@@ -107,6 +137,10 @@ export default function TraceCountByHourChart({
           },
           color: {
             value: theme.palette.success.main,
+          },
+          opacity: {
+            condition: { param: 'select_bucket', value: 1 },
+            value: 0.55,
           },
           tooltip: [
             {
@@ -142,12 +176,14 @@ export default function TraceCountByHourChart({
 
   return (
     <ResponsiveCardVegaLite
-      title="Traces"
+      title="Traces by time"
       details={`${totalTraces.toLocaleString()} traces tracked`}
       spec={rows.length > 0 ? spec : {}}
       actions={false}
       isStatic={false}
       tooltip={rows.length > 0 ? traceHourTooltip : tooltip}
+      signalListeners={signalListeners}
+      disableTooltipPin
       showSettings={rows.length > 0}
       showInfoMessage={rows.length === 0}
       infoMessage={

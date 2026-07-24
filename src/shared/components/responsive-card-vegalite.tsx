@@ -56,6 +56,8 @@ interface ResponsiveCardVegaLiteProps {
   signalListeners?: Parameters<typeof VegaLite>[0]['signalListeners'];
   /** Receives the live Vega view of the inline chart (for imperative signal updates). */
   onNewView?: Parameters<typeof VegaLite>[0]['onNewView'];
+  /** Disable click-to-pin-tooltip — set this when a click on a mark already drives its own interaction (e.g. a selection signal) and a stuck tooltip would just get in the way. */
+  disableTooltipPin?: boolean;
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type VLSpec = Record<string, any>;
@@ -120,6 +122,7 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
   initialSortDirection = 'none',
   signalListeners,
   onNewView,
+  disableTooltipPin = false,
   ...otherProps
 }) => {
   const [width, setWidth] = useState(minWidth);
@@ -500,8 +503,10 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
     window.addEventListener('pointermove', onPointerMove, { passive: true });
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule, { passive: true });
-    // Disabled for now
-    window.addEventListener('click', onWindowClick); // bubble phase
+
+    if (!disableTooltipPin) {
+      window.addEventListener('click', onWindowClick); // bubble phase
+    }
 
     schedule();
 
@@ -509,14 +514,18 @@ const ResponsiveCardVegaLite: React.FC<ResponsiveCardVegaLiteProps> = ({
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
-      window.removeEventListener('click', onWindowClick);
+
+      if (!disableTooltipPin) {
+        window.removeEventListener('click', onWindowClick);
+      }
+
       rootObserver.disconnect();
       if (raf !== null) cancelAnimationFrame(raf);
 
       closePinned();
 
     };
-  }, [theme]);
+  }, [theme, disableTooltipPin]);
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);

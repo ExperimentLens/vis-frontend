@@ -113,7 +113,7 @@ const ComparativeAnalysis = () => {
                     value={COMPARE_TAB.EXECUTIONS}
                     icon={<WaterfallChartRoundedIcon fontSize="small" />}
                     iconPosition="start"
-                    label="EXECUTIONS"
+                    label="SESSIONS"
                     disabled={groupBy.length > 0 || !capabilities.traces}
                   />
                 )}

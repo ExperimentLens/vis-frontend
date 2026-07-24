@@ -5,7 +5,7 @@ import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
@@ -16,6 +16,8 @@ export default function TracesAccordion() {
   const dispatch = useAppDispatch();
   const theme = useTheme();
   const { experimentId: experimentIdParam } = useParams();
+  const [searchParams] = useSearchParams();
+  const traceIdParam = searchParams.get('traceId');
 
   const { tab } = useAppSelector((s: RootState) => s.workflowPage);
   const workflowId = tab?.workflowId;
@@ -33,6 +35,15 @@ export default function TracesAccordion() {
       getTraces({ projectId: OBSERVABILITY_PROJECT_ID, userId: experimentId, sessionId: workflowId }),
     );
   }, [dispatch, experimentId, workflowId]);
+
+  // Deep link from the "All traces" table: land directly on the selected trace
+  // instead of requiring an extra click in this tree once it loads.
+  useEffect(() => {
+    if (!traceIdParam) return;
+    dispatch(setSelectedId(traceIdParam));
+    dispatch(setSelectedItem({ type: 'trace', data: { traceId: traceIdParam } }));
+    dispatch(getTrace(traceIdParam));
+  }, [dispatch, traceIdParam]);
 
   const traces = data?.data ?? [];
 
