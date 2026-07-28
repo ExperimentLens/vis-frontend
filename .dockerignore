@@ -1,0 +1,12 @@
+# Keep build context small and secrets OUT of the image layers.
+# Excluding node_modules is important: the Dockerfile runs `npm i` itself, and a
+# host node_modules copied in via `COPY . .` would clobber the freshly installed one.
+.git/
+.gitignore
+node_modules/
+dist/
+.env
+.env.local
+.DS_Store
+*.log
+eslint-errors.log

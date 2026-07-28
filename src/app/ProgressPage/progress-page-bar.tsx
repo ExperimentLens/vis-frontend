@@ -47,12 +47,29 @@ const StatDivider = () => (
   <Box sx={{ width: 1, height: 18, bgcolor: 'divider', mx: 0.5 }} />
 );
 
+type ExperimentType = 'LLM' | 'ML' | 'HYBRID' | 'UNKNOWN';
+
+const normalizeExperimentType = (value?: string): ExperimentType => {
+  const type = value?.trim().toUpperCase();
+
+  if (type === 'LLM') return 'LLM';
+  if (type === 'ML') return 'ML';
+  if (type === 'HYBRID') return 'HYBRID';
+
+  return 'UNKNOWN';
+};
+
 const ProgressPageBar = () => {
   const { experimentId } = useParams();
   const { progressBar, experiment } = useAppSelector((state: RootState) => state.progressPage);
   const theme = useTheme();
   const matches = useMediaQuery(theme.breakpoints.up('md'));
   const isKilled = experiment?.data?.status === 'killed';
+  const experimentType = normalizeExperimentType(
+    experiment?.data?.tags?.experiment_type
+  );
+
+  const showExperimentType = experimentType !== 'UNKNOWN';
 
   return (
     <Box>
@@ -83,6 +100,15 @@ const ProgressPageBar = () => {
             }}
           />
           <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+            {showExperimentType && (
+              <Chip
+                size="small"
+                variant="outlined"
+                label={experimentType}
+                className={`experiment-type-chip experiment-type-chip--${experimentType.toLowerCase()}`}
+                sx={{minWidth: 'auto', mr: 0.5}}
+              />
+            )}
             <Typography
               variant="body2"
               fontWeight="medium"

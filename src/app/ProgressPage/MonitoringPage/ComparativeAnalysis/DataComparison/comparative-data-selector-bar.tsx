@@ -16,6 +16,7 @@ import type { RootState } from '../../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../../store/store';
 import { setSelectedDataset } from '../../../../../store/slices/monitorPageSlice';
 import ClearAllIcon from '@mui/icons-material/ClearAll';
+import { isComparableDataAsset } from '../../../../../shared/utils/dataAssetFormat';
 
 export default function DatasetSelectorBar() {
   const dispatch = useAppDispatch();
@@ -27,16 +28,7 @@ export default function DatasetSelectorBar() {
     .filter(([, entries]) =>
       Array.isArray(entries) &&
       entries.length > 0 &&
-      entries.every(({ dataAsset }) => {
-        const rawFormat = (dataAsset as { format?: unknown } | null | undefined)?.format;
-
-        if (typeof rawFormat !== 'string') return false;
-
-        const normalized = rawFormat.trim().toLowerCase()
-          .replace(/^\./, '');
-
-        return normalized === 'csv' || normalized === 'parquet';
-      })
+      entries.every(({ dataAsset }) => isComparableDataAsset(dataAsset))
     )
     .map(([name]) => name);
   const [inputValue, setInputValue] = useState('');

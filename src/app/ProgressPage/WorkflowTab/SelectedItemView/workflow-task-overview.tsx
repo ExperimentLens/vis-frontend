@@ -5,7 +5,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import { DetailsCard, DetailsCardItem } from '../../../../shared/components/details-card';
-import UserInteractiveTask from '../../../../deprecated/UserInteractiveTask/user-interactive-task';
+import UserInteractiveTask from '../../../Tasks/UserInteractiveTask/user-interactive-task';
 import type { IRun } from '../../../../shared/models/experiment/run.model';
 
 type ParamStats =

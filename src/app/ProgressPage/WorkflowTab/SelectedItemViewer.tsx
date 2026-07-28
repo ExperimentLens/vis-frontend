@@ -22,6 +22,8 @@ import CommitIcon from '@mui/icons-material/Commit';
 
 
 import CGlanceExecution from './SelectedItemView/workflow-global-counterfactuals';
+import WorkflowTraceView from './SelectedItemView/workflow-trace-view';
+import HubRoundedIcon from '@mui/icons-material/HubRounded';
 
 const SelectedItemViewer = () => {
   const { selectedItem, selectedTask } = useAppSelector(
@@ -173,6 +175,20 @@ const SelectedItemViewer = () => {
         />
         <Box sx={{ px: 3, py: 2, flexGrow: 1, overflow: 'auto' }}>
           <HyperparameterImpact />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (selectedItem?.type === 'trace') {
+    return (
+      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Header
+          title={'Trace Detail'}
+          icon={<HubRoundedIcon color="primary" />}
+        />
+        <Box sx={{ px: 3, py: 2, flexGrow: 1, overflow: 'auto' }}>
+          <WorkflowTraceView />
         </Box>
       </Box>
     );

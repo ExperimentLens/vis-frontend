@@ -37,24 +37,28 @@ const InstanceClassificationUmap = (props: Umapi) => {
 
   const dispatch = useAppDispatch();
 
-  useEffect(() => {
-    if (raw) {
-      // Ensure payload is proper 2D array of numbers
-      const umapPayload = parsedData.map((row: { [s: string]: unknown } | ArrayLike<unknown>) =>
-        Object.values(row).map(val => parseFloat(val as string)),
-      );
+  const umapRows = Array.isArray(parsedData)
+  ? parsedData.slice(0, 2000)
+  : [];
 
-      dispatch(
-        fetchUmap({
-          data: umapPayload.slice(0, 2000), // Limit to first 1000 rows
-          metadata: {
-            workflowId: tab?.workflowId,
-            query: 'umap',
-          },
-        }),
-      );
-    }
-  }, [raw, dispatch]);
+  useEffect(() => {
+    if (!umapRows.length) return;
+
+    const umapPayload = umapRows.map((row) =>
+      Object.values(row).map((val) => parseFloat(String(val))),
+    );
+
+    dispatch(
+      fetchUmap({
+        data: umapPayload,
+        metadata: {
+          workflowId: tab?.workflowId || '',
+          query: 'umap',
+        },
+      }),
+    );
+  }, [raw]);
+
   const getVegaData = (data: unknown) => {
     return Array.isArray(data) && data?.map((originalRow) => {
       const id = hashRow(originalRow?.original);
@@ -69,20 +73,38 @@ const InstanceClassificationUmap = (props: Umapi) => {
   };
 
   const umapResult = tab?.workflowTasks.dataExploration?.umap?.data ?? [];
-  const combinedPlotData = umapResult.map((point: number[], index: number) => {
-    const original = parsedData[index];
-    const actual = original?.actual ?? '?';
-    const predicted = original?.predicted ?? '?';
-
-    return {
-      x: point[0],
-      y: point[1],
-      original,
-      actual,
-      predicted,
-      index,
-    };
-  });
+  const umapLoading = tab?.workflowTasks.dataExploration?.umap?.loading;
+  
+  const canRenderUmap =
+    !umapLoading &&
+    Array.isArray(umapResult) &&
+    umapResult.length <= umapRows.length;
+  
+  const combinedPlotData = canRenderUmap
+    ? umapResult
+        .map((point: number[], index: number) => {
+          const original = umapRows[index];
+        
+          if (!original) return null;
+        
+          return {
+            x: point[0],
+            y: point[1],
+            original,
+            actual: original.actual ?? '?',
+            predicted: original.predicted ?? '?',
+            index,
+          };
+        })
+        .filter((row): row is {
+          x: number;
+          y: number;
+          original: TestInstance;
+          actual: unknown;
+          predicted: unknown;
+          index: number;
+        } => row !== null)
+    : [];
 
   const predictedValues = Array.from(
     new Set(combinedPlotData.map((d) => String(d.predicted)))
@@ -124,7 +146,7 @@ const InstanceClassificationUmap = (props: Umapi) => {
   const info = (
     <Loader/>
   );
-  const shouldShowInfoMessage = tab?.workflowTasks.dataExploration?.umap.loading && !tab?.workflowTasks.dataExploration?.umap.data;
+  const shouldShowInfoMessage = umapLoading || !canRenderUmap;
 
   return (
     <ResponsiveCardVegaLite

@@ -1,4 +1,17 @@
-# ExtremeXP Visualization Page
+# Experiment Lens Visualization Page
+
+**Important**
+
+This branch is not the active development branch.
+  
+To run Experiment Lens Visualization Page, switch to:
+
+**`experiment-lens`**
+
+ ```bash
+ git checkout experiment-lens
+ ```
+
 
 *Frontend dashboard for exploring, monitoring, and explaining AI pipelines*
 

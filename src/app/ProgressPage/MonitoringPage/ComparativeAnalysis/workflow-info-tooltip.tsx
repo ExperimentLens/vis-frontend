@@ -17,6 +17,7 @@ export interface WorkflowTooltipRow {
   id: string;
   color?: string;
   value?: number | null;
+  valueText?: string;
   params: { name: string; value: string }[];
 }
 
@@ -53,12 +54,13 @@ export function buildWorkflowInfoHTML(opts: {
   experimentId: string;
   palette: WorkflowTooltipPalette;
   showValue?: boolean;
+  valueLabel?: string;
   /** Optional bold title line, e.g. "Metric: accuracy". */
   title?: string;
   /** Optional muted line above the table, e.g. "Step: 5". */
   topLine?: string;
 }): string {
-  const { rows, experimentId, palette, showValue = false, title, topLine } = opts;
+  const { rows, experimentId, palette, showValue = false, valueLabel = 'Value', title, topLine } = opts;
 
   const paramNames = Array.from(
     new Set(rows.flatMap(r => r.params.map(p => p.name))),
@@ -69,7 +71,7 @@ export function buildWorkflowInfoHTML(opts: {
 
   const headerCells = [
     th('Workflow'),
-    ...(showValue ? [th('Value', 'right')] : []),
+    ...(showValue ? [th(valueLabel, 'right')] : []),
     ...paramNames.map(n => th(n)),
   ].join('');
 
@@ -83,7 +85,9 @@ export function buildWorkflowInfoHTML(opts: {
         )
         .join('');
       const valueTd = showValue
-        ? `<td style="padding:3px 8px;text-align:right;vertical-align:top;color:${palette.text};font-variant-numeric:tabular-nums;">${typeof row.value === 'number' ? esc(row.value.toFixed(4)) : '—'}</td>`
+        ? `<td style="padding:3px 8px;text-align:right;vertical-align:top;color:${palette.text};font-variant-numeric:tabular-nums;">${
+            row.valueText ?? (typeof row.value === 'number' ? esc(row.value.toFixed(4)) : '—')
+          }</td>`
         : '';
       const swatch = `<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background-color:${esc(row.color ?? palette.link)};margin-right:6px;vertical-align:middle;flex-shrink:0;"></span>`;
 
@@ -203,6 +207,134 @@ export function createWorkflowTooltipHandler(opts: {
         topLine: isLineChart
           ? `${xField === 'step' ? 'Step' : 'Timestamp'}: ${String(raw[xField] ?? '')}`
           : undefined,
+      });
+    },
+  }).call;
+}
+
+type LLMSummaryMetricPoint = {
+  id: string;
+  value: number;
+  runName?: string;
+  [k: string]: unknown;
+};
+
+export function createLLMSummaryMetricTooltipHandler(opts: {
+  metricName: string;
+  summaryData: LLMSummaryMetricPoint[];
+  workflowsData: IRun[];
+  experimentId: string;
+  palette: WorkflowTooltipPalette;
+  colorMapping?: Record<string, string>;
+}) {
+  const {
+    metricName,
+    summaryData,
+    workflowsData,
+    experimentId,
+    palette,
+    colorMapping = {},
+  } = opts;
+
+  const getHoveredId = (v: Record<string, unknown>) =>
+    String(
+      v.id ??
+      v.Workflow ??
+      v.workflow ??
+      v['Workflow ID'] ??
+      v['workflow id'] ??
+      '',
+    );
+
+  return new Handler({
+    sanitize: (v: unknown) => String(v),
+    formatTooltip: (value: Record<string, unknown>) => {
+      const hoveredId = getHoveredId(value);
+
+      const matched = summaryData.filter(d => String(d.id) === hoveredId);
+
+      const rows: WorkflowTooltipRow[] = matched.map(row => ({
+        id: row.id,
+        color: colorMapping[row.id],
+        value: typeof row.value === 'number' ? row.value : null,
+        params: workflowsData.find(w => w.id === row.id)?.params ?? [],
+      }));
+
+      return buildWorkflowInfoHTML({
+        rows,
+        experimentId,
+        palette,
+        showValue: true,
+        title: `Metric: ${metricName}`,
+      });
+    },
+  }).call;
+}
+
+type WorkflowDatumTooltipPoint = {
+  id: string;
+  value?: number | null;
+  [k: string]: unknown;
+};
+
+export function createWorkflowDatumTooltipHandler<T extends WorkflowDatumTooltipPoint>(opts: {
+  title: string;
+  data: T[];
+  workflowsData: IRun[];
+  experimentId: string;
+  palette: WorkflowTooltipPalette;
+  colorMapping?: Record<string, string>;
+  valueLabel?: string;
+  getValue?: (row: T) => number | null | undefined;
+  getTopLine?: (row: T) => string | undefined;
+  match?: (row: T, raw: Record<string, unknown>) => boolean;
+  formatValue?: (value: number | null | undefined, row: T) => string;
+  getExtraParams?: (row: T) => { name: string; value: string }[];
+}) {
+  const {
+    title,
+    data,
+    workflowsData,
+    experimentId,
+    palette,
+    colorMapping = {},
+    valueLabel = 'Value',
+    getValue = row => row.value,
+    getTopLine,
+    match = (row, raw) => String(row.id) === String(raw.id ?? ''),
+    formatValue,
+    getExtraParams = () => [],
+  } = opts;
+
+  return new Handler({
+    sanitize: (v: unknown) => String(v),
+    formatTooltip: (value: Record<string, unknown>) => {
+      const matched = data.filter(row => match(row, value));
+      const first = matched[0];
+
+      const rows: WorkflowTooltipRow[] = matched.map(row => {
+        const numericValue = getValue(row) ?? null;
+      
+        return {
+          id: row.id,
+          color: colorMapping[row.id],
+          value: numericValue,
+          valueText: formatValue ? formatValue(numericValue, row) : undefined,
+          params: [
+            ...getExtraParams(row),
+            ...(workflowsData.find(w => w.id === row.id)?.params ?? []),
+          ],
+        };
+      });
+
+      return buildWorkflowInfoHTML({
+        rows,
+        experimentId,
+        palette,
+        showValue: true,
+        valueLabel,
+        title,
+        topLine: first ? getTopLine?.(first) : undefined,
       });
     },
   }).call;

@@ -1,17 +1,21 @@
-import { Box, Chip, Divider, IconButton, Menu, Tooltip } from '@mui/material';
+import { Box, Divider, IconButton, Menu, Tooltip } from '@mui/material';
 import CompactMenuItem from '../../../../shared/components/compact-menu-item';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedDataset, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
+import { setComparativeModelInstanceControlPanel, setComparativeVisibleMetrics, setDataComparisonSelectedColumns, setDataComparisonViewMode, setIsMosaic, setSelectedDataset, setSelectedExecutionsView, setSelectedModelComparisonChart, setShowMisclassifiedOnly, setSortConfusionByF1, setSortRocByAuc } from '../../../../store/slices/monitorPageSlice';
 import WindowRoundedIcon from '@mui/icons-material/WindowRounded';
 import RoundedCornerRoundedIcon from '@mui/icons-material/RoundedCornerRounded';
 import BlurLinearIcon from '@mui/icons-material/BlurLinear';
+import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded';
+import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
+import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
+import { menuPaperSx } from '../../../../shared/styles/card-surface';
 import MisclassifiedToggle from '../../../../shared/components/misclassified-toggle';
 import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import InstanceScatterControls from '../../../../shared/components/instance-scatter-controls';
 import SettingsIcon from '@mui/icons-material/Settings';
-import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
+import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import { useMemo, useState } from 'react';
 import DownloadIcon from '@mui/icons-material/Download';
 import CodeIcon from '@mui/icons-material/Code';
@@ -24,10 +28,15 @@ import CandlestickChartIcon from '@mui/icons-material/CandlestickChart';
 import SelectionPopover from '../../../../shared/components/selection-popover';
 import PillToggle from '../../../../shared/components/pill-toggle';
 import SortIcon from '@mui/icons-material/Sort';
+import { COMPARE_TAB } from '../../../../shared/utils/experimentCapabilities';
 
 const ComparativeAnalysisControls = ()=> {
   const isMosaic = useAppSelector((state: RootState) => state.monitorPage.isMosaic);
   const selectedModelComparisonChart = useAppSelector((state: RootState) => state.monitorPage.selectedModelComparisonChart);
+  const selectedExecutionsView = useAppSelector((state: RootState) => state.monitorPage.selectedExecutionsView);
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
   const showMisclassifiedOnly = useAppSelector((state: RootState) => state.monitorPage.showMisclassifiedOnly);
   const sortRocByAuc = useAppSelector((state: RootState) => state.monitorPage.sortRocByAuc);
   const sortConfusionByF1 = useAppSelector((state: RootState) => state.monitorPage.sortConfusionByF1);
@@ -53,6 +62,11 @@ const ComparativeAnalysisControls = ()=> {
   );
   const commonColumns = dataAssetsControlPanel?.commonColumns ?? [];
   const selectedColumns = dataAssetsControlPanel?.selectedColumns ?? [];
+  const isMetricsTab = selectedComparisonTab === COMPARE_TAB.METRICS;
+  const isExecutionsTab = selectedComparisonTab === COMPARE_TAB.EXECUTIONS;
+  const isModelsTab = selectedComparisonTab === COMPARE_TAB.MODELS;
+  const isDataTab = selectedComparisonTab === COMPARE_TAB.DATA;
+  
 
   const datasetNames = useMemo(
     () =>
@@ -68,7 +82,7 @@ const ComparativeAnalysisControls = ()=> {
             const normalized = rawFormat.trim().toLowerCase()
               .replace(/^\./, '');
 
-            return normalized === 'csv' || normalized === 'parquet';
+            return normalized === 'csv' || normalized === 'parquet' || normalized === 'txt';
           })
         )
         .map(([name]) => name),
@@ -76,7 +90,7 @@ const ComparativeAnalysisControls = ()=> {
   );
 
   const showDataComparisonViewModeToggle = (() => {
-    if (selectedComparisonTab !== 2) return false;
+    if (!isDataTab) return false;
     if (!selectedDataset) return true;
 
     const assets = commonDataAssets[selectedDataset];
@@ -120,9 +134,15 @@ const ComparativeAnalysisControls = ()=> {
   };
 
   const options1 = [
-    { label: 'confusionMatrix', name: 'Confusion\nMatrix', icon: <WindowRoundedIcon /> },
-    { label: 'rocCurve', name: 'Roc\nCurve', icon: <RoundedCornerRoundedIcon /> },
-    { label: 'instanceView', name: 'Instance\nView', icon: <BlurLinearIcon /> }
+    { label: 'confusionMatrix', name: 'Confusion\nMatrix', icon: <WindowRoundedIcon fontSize="small" /> },
+    { label: 'rocCurve', name: 'Roc\nCurve', icon: <RoundedCornerRoundedIcon fontSize="small" /> },
+    { label: 'instanceView', name: 'Instance\nView', icon: <BlurLinearIcon fontSize="small" /> }
+  ];
+
+  const llmExecutionsOptions = [
+    { label: 'summary' as const, name: 'Summary', icon: <SummarizeRoundedIcon fontSize="small" /> },
+    { label: 'timeline' as const, name: 'Timeline', icon: <TimelineRoundedIcon fontSize="small" /> },
+    { label: 'verdicts' as const, name: 'Verdicts', icon: <GavelRoundedIcon fontSize="small" /> },
   ];
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -146,7 +166,7 @@ const ComparativeAnalysisControls = ()=> {
           overflowX: 'auto',
         }}
       >
-        {selectedComparisonTab === 0 && (
+        {isMetricsTab && (
           <Box>
             <Tooltip title="Select Metrics">
               <IconButton onClick={handleOpenMetricsMenu} size="small">
@@ -173,42 +193,37 @@ const ComparativeAnalysisControls = ()=> {
             />
           </Box>
         )}
-        {selectedComparisonTab === 1 ? (
-          <Box display="flex" flexWrap="wrap" gap={0.75}>
-            {options1.map(option => {
-              const isSelected = selectedModelComparisonChart === option.label;
+        {isExecutionsTab && (
+          <SegmentedToggle
+            uppercase
+            aria-label="executions view"
+            value={selectedExecutionsView}
+            onChange={(value) =>
+              dispatch(setSelectedExecutionsView(value as 'summary' | 'timeline' | 'verdicts'))
+            }
+            options={llmExecutionsOptions.map(option => ({
+              value: option.label,
+              label: option.name.replace('\n', ' '),
+              icon: option.icon,
+            }))}
+          />
+        )}
 
-              return (
-                <Chip
-                  key={option.label}
-                  label={option.name.replace('\n', ' ')}
-                  icon={option.icon}
-                  clickable
-                  size="small"
-                  sx={{
-                    height: 30,
-                    px: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: '0.8rem',
-                    textTransform: 'uppercase',
-                    background: isSelected
-                      ? undefined
-                      : theme => theme.palette.customGrey.light,
-                    '& .MuiChip-icon': {
-                      fontSize: 18,
-                      marginLeft: 0.25,
-                      marginRight: -0.5,
-                    },
-                  }}
-                  color={isSelected ? 'primary' : 'default'}
-                  variant={isSelected ? 'filled' : 'outlined'}
-                  onClick={() => dispatch(setSelectedModelComparisonChart(option.label))}
-                />
-              );
-            })}
-          </Box>
-        ) : selectedComparisonTab === 2 && workflowsTable.selectedWorkflows.length > 0 && (
+        {isModelsTab && (
+          <SegmentedToggle
+            uppercase
+            aria-label="model comparison chart"
+            value={selectedModelComparisonChart}
+            onChange={(value) => dispatch(setSelectedModelComparisonChart(value))}
+            options={options1.map(option => ({
+              value: option.label,
+              label: option.name.replace('\n', ' '),
+              icon: option.icon,
+            }))}
+          />
+        )}
+
+        {isDataTab && workflowsTable.selectedWorkflows.length > 0 && (          
           <>
             <Box display="flex" flexWrap="wrap" gap={0.2}>
               <Tooltip title="Select Dataset">
@@ -278,7 +293,7 @@ const ComparativeAnalysisControls = ()=> {
           sx={{ ml: 'auto' }}
         >
 
-          {showDataComparisonViewModeToggle && selectedComparisonTab === 2 && (
+          {showDataComparisonViewModeToggle && isDataTab && (
             <SegmentedToggle
               aria-label="data comparison view mode"
               value={dataComparisonViewMode === 'boxplot' ? 'boxplot' : 'overlay'}
@@ -290,14 +305,15 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
+          {!isLlmExperiment && selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
             <MisclassifiedToggle
               checked={showMisclassifiedOnly}
               onChange={(checked) => dispatch(setShowMisclassifiedOnly(checked))}
             />
           )}
 
-          {selectedComparisonTab !== 2 && (
+          {!isDataTab
+            && !(isExecutionsTab && selectedExecutionsView === 'verdicts') && (
             <SegmentedToggle
               uppercase
               aria-label="view mode"
@@ -309,7 +325,7 @@ const ComparativeAnalysisControls = ()=> {
               ]}
             />
           )}
-          {selectedModelComparisonChart === 'confusionMatrix' && selectedComparisonTab === 1 && (
+          {isModelsTab && selectedModelComparisonChart === 'confusionMatrix' && (
             <PillToggle
               checked={sortConfusionByF1}
               onChange={(c) => dispatch(setSortConfusionByF1(c))}
@@ -319,7 +335,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedModelComparisonChart === 'rocCurve' && selectedComparisonTab === 1 && (
+          {isModelsTab  && selectedModelComparisonChart === 'rocCurve' && (
             <PillToggle
               checked={sortRocByAuc}
               onChange={(c) => dispatch(setSortRocByAuc(c))}
@@ -329,7 +345,7 @@ const ComparativeAnalysisControls = ()=> {
             />
           )}
 
-          {selectedModelComparisonChart === 'instanceView' && selectedComparisonTab === 1 && (
+          {isModelsTab && selectedModelComparisonChart === 'instanceView' && (
             <>
               <IconButton
                 aria-label="settings"
@@ -351,20 +367,12 @@ const ComparativeAnalysisControls = ()=> {
                 transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 PaperProps={{
                   elevation: 0,
-                  sx: {
-                    width: 240,
-                    maxHeight: 380,
-                    overflow: 'hidden',
-                    borderRadius: 2,
-                    mt: 0.5,
-                    boxShadow: theme => theme.customShadows.popover,
-                    border: theme => `1px solid ${theme.palette.customSurface.cardBorder}`,
-                  },
+                  sx: menuPaperSx(),
                 }}
                 MenuListProps={{ sx: { pt: 0, pb: 0 } }}
               >
                 <SectionHeader
-                  icon={<SettingsSuggestIcon fontSize="small" />}
+                  icon={<TuneRoundedIcon fontSize="small" />}
                   title="Chart Options"
                 />
                 <Box sx={{ px: 1.25, pt: 1.25, pb: 0.5 }}>

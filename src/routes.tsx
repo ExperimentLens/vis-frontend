@@ -10,7 +10,6 @@ import LoginPage from './app/LoginPage/login-page';
 import TokenAuthHandler from './token-auth-handler';
 import ExperimentsLandingPage from './app/ProgressPage/ExperimentsLandingPage/experiments-landing-page';
 import HighlightsPage from './app/ProgressPage/HighlightsPage/highlights-page';
-import LLMObservabilityPage from './app/ProgressPage/LLMObservabilityPage/llm-observability-page';
 
 const routes = createBrowserRouter([
   {
@@ -82,17 +81,6 @@ const routes = createBrowserRouter([
       // <ProtectedRoute>
         <ProgressPage>
           <HighlightsPage />
-        </ProgressPage>
-      // </ProtectedRoute>
-    ),
-    errorElement: <ErrorPage />
-  },
-  {
-    path: '/:experimentId/llm-observability',
-    element: (
-      // <ProtectedRoute>
-        <ProgressPage>
-          <LLMObservabilityPage />
         </ProgressPage>
       // </ProtectedRoute>
     ),

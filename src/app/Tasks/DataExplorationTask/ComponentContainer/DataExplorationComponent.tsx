@@ -26,6 +26,7 @@ import TableExpand from '../Charts/data-exploration-data-table';
 import HeatMap from '../Charts/data-exploration-heatmap';
 import MapCardWrapper from '../Charts/map-wrap';
 import ImageCard from '../Charts/data-exploration-image';
+import TextCard from '../Charts/data-exploration-text';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import { setControls } from '../../../../store/slices/workflowPageSlice';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -101,6 +102,7 @@ const DataExplorationComponent = () => {
   const selectedDataset = dataset?.source || '';
   const meta = tab?.workflowTasks.dataExploration?.metaData;
   const isImage = !!meta?.data?.datasetType?.match('IMAGE');
+  const isText = !!meta?.data?.datasetType?.match('TEXT');
   const cardRef = useRef<HTMLDivElement>(null);
 
   const triggerFetchMeta = () => {
@@ -292,7 +294,7 @@ const DataExplorationComponent = () => {
           )}
         </Stack>
 
-        {!isImage && (
+        {!isImage && !isText && (
           <>
             <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
             <LeftPanel />
@@ -315,6 +317,22 @@ const DataExplorationComponent = () => {
       >
         {summaryBanner}
         <ImageCard />
+      </Box>
+    );
+
+  if (isText)
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          rowGap: 1,
+          height: '100%',
+          overflow: 'auto',
+        }}
+      >
+        {summaryBanner}
+        <TextCard />
       </Box>
     );
 

@@ -123,6 +123,14 @@ export interface IMetaDataSummary {
 }
 export interface IDataExplorationMetaDataResponse {
   datasetType: string
+  /** Opaque, server-issued id for the cached file (image/text datasets). */
+  fileId?: string
+  /** Server-issued URL to fetch the cached file by id, e.g. `/api/data/file/{id}`. */
+  fileUrl?: string
+  /**
+   * @deprecated Raw server-side file path. Kept only until the backend stops emitting it;
+   * use {@link fileUrl} to fetch a file — never build a `?path=` URL from this.
+   */
   fileNames: string[] | string
   originalColumns: VisualColumn[]
   totalItems: number

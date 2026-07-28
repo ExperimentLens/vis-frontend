@@ -11,6 +11,7 @@ import {
   Typography,
   Button,
   useTheme,
+  Chip,
 } from '@mui/material';
 import {
   DataGrid,
@@ -29,11 +30,13 @@ import ExperimentsTableToolbar, {
 } from './experiment-table-toolbar';
 
 import ProgressBar from '../../../shared/components/prgress-bar';
+import { menuPaperSx } from '../../../shared/styles/card-surface';
 
 export type ExperimentRow = {
   id: string;
   name: string;
   status: string;
+  type: string;
   lastUpdateTime: number;
   creationTime: number;
   tagsString: string;
@@ -73,8 +76,21 @@ const matchesQuery = (row: ExperimentRow, q: string) => {
     row.id.toLowerCase().includes(query) ||
     row.name.toLowerCase().includes(query) ||
     row.status.toLowerCase().includes(query) ||
+    row.type.toLowerCase().includes(query) ||
     row.tagsString.toLowerCase().includes(query)
   );
+};
+
+type ExperimentType = 'LLM' | 'ML' | 'HYBRID' | 'UNKNOWN';
+
+const normalizeExperimentType = (value?: string): ExperimentType => {
+  const type = value?.trim().toUpperCase();
+
+  if (type === 'LLM') return 'LLM';
+  if (type === 'ML') return 'ML';
+  if (type === 'HYBRID') return 'HYBRID';
+
+  return 'UNKNOWN';
 };
 
 const FilterHeader = () => (
@@ -82,7 +98,7 @@ const FilterHeader = () => (
     sx={{
       display: 'flex',
       alignItems: 'center',
-      borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+      borderBottom: theme => `1px solid ${theme.palette.divider}`,
       px: 2,
       py: 1.5,
       background: theme => theme.palette.customSurface.sectionHeader,
@@ -143,6 +159,7 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
         status: normalizeStatus(e.status),
         lastUpdateTime: e.lastUpdateTime ?? 0,
         creationTime: e.creationTime ?? 0,
+        type: normalizeExperimentType(e.tags?.experiment_type),
         tagsString: buildTagsString(e.tags),
       }));
   }, [experiments]);
@@ -166,6 +183,26 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
     return [
       { field: 'name', headerName: 'Name', flex: 1, minWidth: 260 },
       { field: 'id', headerName: 'ID', flex: 1, minWidth: 220 },
+      {
+        field: 'type',
+        headerName: 'Type',
+        width: 130,
+        align: 'center',
+        headerAlign: 'center',
+        sortable: true,
+        renderCell: (params: GridRenderCellParams<ExperimentRow, ExperimentType>) => {
+          const type = params.value ?? 'UNKNOWN';
+        
+          return (
+            <Chip
+              size="small"
+              variant="outlined"
+              label={type}
+              className={`experiment-type-chip experiment-type-chip--${type.toLowerCase()}`}
+            />
+          );
+        },
+      },
       {
         field: 'lastUpdateTime',
         headerName: 'Last Update',
@@ -346,17 +383,8 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
           onClose={() => setFiltersAnchorEl(null)}
           anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
           PaperProps={{
-            elevation: 3,
-            sx: {
-              width: 420,
-              maxHeight: 380,
-              overflow: 'hidden',
-              padding: 0,
-              borderRadius: '12px',
-              boxShadow: theme => theme.customShadows.popover,
-              border: theme => `1px solid ${theme.palette.divider}`,
-              mt: 1,
-            },
+            elevation: 0,
+            sx: [menuPaperSx({ width: 420 }), { padding: 0 }],
           }}
         >
           <ClickAwayListener
@@ -402,7 +430,7 @@ export default function ExperimentsTable(props: ExperimentsTableProps) {
               <Box
                 sx={{
                   p: 1,
-                  borderTop: '1px solid rgba(0,0,0,0.08)',
+                  borderTop: theme => `1px solid ${theme.palette.divider}`,
                   backgroundColor: 'background.paper',
                   display: 'flex',
                   justifyContent: 'center',

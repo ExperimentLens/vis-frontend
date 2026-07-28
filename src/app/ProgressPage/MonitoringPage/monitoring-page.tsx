@@ -1,6 +1,6 @@
-import { Box, Tab, Tabs, Paper, useTheme } from '@mui/material';
+import { Box, Tab, Tabs, Paper } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import ParallelCoordinatePlot from './ParalleleCoodrinates/parallel-coordinate-plot';
 import WorkflowTable from './WorkFlowTables/workflow-table';
 import ScheduleTable from './WorkFlowTables/schedule-table';
@@ -20,33 +20,48 @@ import { getCache } from '../../../shared/utils/localStorageCache';
 import { useLocation } from 'react-router-dom';
 import ComparativeAnalysis from './ComparativeAnalysis/comparative-analysis';
 import ExperimentExplainability from './ExperimentExplainability';
-import type { IDataAsset } from '../../../shared/models/experiment/data-asset.model';
+import LlmMonitoringOverview from './LLMOverview/llm-monitoring-overview';
+import { useExperimentCapabilities } from '../../../shared/utils/experimentCapabilities';
 
 const MonitoringPage = () => {
   const { visibleTable, selectedTab, workflowsTable } = useAppSelector(
     (state: RootState) => state.monitorPage,
   );
-  const { workflows } = useAppSelector((state: RootState) => state.progressPage);
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
+  const isMlExperiment = useAppSelector(
+      (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'ml',
+  );
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const theme = useTheme();
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const compareId = queryParams.get('compareId');
   const tabParam = queryParams.get('tab');
   const compareWorkflowsRef = useRef<string[] | null>(null);
 
-  const hasExplainability = useMemo(() => {
-    const firstWorkflow = workflows.data?.[0];
-    const tasks = firstWorkflow?.tasks;
-    const dataAssets = firstWorkflow?.dataAssets;
+  const capabilities = useExperimentCapabilities();
+  const hasExplainability = capabilities.explainability;
+  const hasTraces = capabilities.traces;
+  const TAB = {
+    OVERVIEW: 0,
+    COMPARE: 1,
+    TRACES: 2,
+    EXPLAINABILITY: 3,
+  } as const;
 
-    if (!tasks) return true;
+  const canShowTraces = !isMlExperiment;
+  const canShowExplainability = !isLlmExperiment;
 
-    return tasks.some(t => typeof t.name === 'string' && /explainability/i.test(t.name)) &&
-      !dataAssets?.some((asset: IDataAsset) => asset.name === 'model.pt');
-  }, [workflows]);
+  const isAllowedTab = (tab: number) => {
+    if (tab === TAB.OVERVIEW) return true;
+    if (tab === TAB.COMPARE) return true;
+    if (tab === TAB.TRACES) return canShowTraces;
+    if (tab === TAB.EXPLAINABILITY) return canShowExplainability;
 
+    return false;
+  };
   useEffect(() => {
     if (compareId) {
       const parsed = getCache<{ workflowIds: string[] }>(compareId);
@@ -57,7 +72,8 @@ const MonitoringPage = () => {
     }
 
     if (tabParam) {
-      dispatch(setSelectedTab(Number(tabParam)));
+      const nextTab = Number(tabParam);
+      dispatch(setSelectedTab(isAllowedTab(nextTab) ? nextTab : TAB.OVERVIEW));
     }
   }, [compareId, tabParam]);
 
@@ -87,6 +103,8 @@ const MonitoringPage = () => {
         <Tabs
           value={selectedTab}
           onChange={(_event, newValue) => {
+            if (!isAllowedTab(newValue)) return;
+
             const searchParams = new URLSearchParams(location.search);
 
             searchParams.delete('compareId');
@@ -96,7 +114,7 @@ const MonitoringPage = () => {
               search: searchParams.toString(),
             }, { replace: true });
 
-            if (newValue === 1) {
+            if (newValue === TAB.COMPARE) {
               dispatch(setVisibleTable('workflows'));
             }
           }}
@@ -111,21 +129,35 @@ const MonitoringPage = () => {
           }}
         >
           <Tab
+            value={TAB.OVERVIEW}
             icon={<DashboardRoundedIcon fontSize="small" />}
             iconPosition="start"
             label="Overview"
           />
           <Tab
+            value={TAB.COMPARE}
             icon={<CompareArrowsRoundedIcon fontSize="small" />}
             iconPosition="start"
             label="Compare"
           />
-          <Tab
-            icon={<LightbulbOutlinedIcon fontSize="small" />}
-            iconPosition="start"
-            label="Explainability"
-            disabled={!hasExplainability}
-          />
+          {!isMlExperiment && (
+            <Tab
+              value={TAB.TRACES}
+              icon={<MoreVertRoundedIcon fontSize="small" />}
+              iconPosition="start"
+              label="Traces"
+              disabled={!hasTraces}
+            />
+          )}
+          {!isLlmExperiment && (
+            <Tab
+              value={TAB.EXPLAINABILITY}
+              icon={<LightbulbOutlinedIcon fontSize="small" />}
+              iconPosition="start"
+              label="Explainability"
+              disabled={!hasExplainability}
+            />
+          )}
         </Tabs>
       </Box>
       <Box
@@ -140,21 +172,23 @@ const MonitoringPage = () => {
           pb: 1.5,
         }}
       >
-        {selectedTab === 0 && (
-          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            <Box sx={{ flex: '0 0 60%', minHeight: 320 }}>
-              {visibleTable === 'workflows' ? (
-                <WorkflowTable />
-              ) : (
-                <ScheduleTable />
-              )}
+        {selectedTab === TAB.OVERVIEW && (
+         
+            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box sx={{ flex: '0 0 60%', minHeight: 320 }}>
+                {visibleTable === 'workflows' ? (
+                  <WorkflowTable />
+                ) : (
+                  <ScheduleTable />
+                )}
+              </Box>
+              <Box sx={{ flex: 1, minHeight: 220 }}>
+                <ParallelCoordinatePlot />
+              </Box>
             </Box>
-            <Box sx={{ flex: 1, minHeight: 220 }}>
-              <ParallelCoordinatePlot />
-            </Box>
-          </Box>
+          
         )}
-        {selectedTab === 1 && (
+        {selectedTab === TAB.COMPARE && (
           <Box
             sx={{
               flex: 1,
@@ -204,7 +238,7 @@ const MonitoringPage = () => {
                       cursor: 'ew-resize',
                     }}
                   >
-                    <MoreVertRoundedIcon style={{ color: theme.palette.action.active }} />
+                    <MoreVertRoundedIcon sx={{ color: 'action.active' }} />
                   </Box>
                 )
               }}
@@ -216,7 +250,13 @@ const MonitoringPage = () => {
             </Paper>
           </Box>
         )}
-        {selectedTab === 2 && <ExperimentExplainability />}
+        {selectedTab === TAB.TRACES && !isMlExperiment && (
+          <LlmMonitoringOverview />
+        )}
+
+        {selectedTab === TAB.EXPLAINABILITY && !isLlmExperiment && (
+          <ExperimentExplainability />
+        )}      
       </Box>
     </>
   );

@@ -1,5 +1,5 @@
-import { Observation } from './observation';
-import { Score } from './score';
+import type { Observation } from './observation';
+import type { Score } from './score';
 
 export interface TraceDetail {
     id: string;

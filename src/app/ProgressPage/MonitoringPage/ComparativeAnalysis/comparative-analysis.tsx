@@ -6,9 +6,12 @@ import ComparisonMetricsCharts from './comparison-metrics-charts';
 import ComparisonModelsCharts from './comparison-models-charts';
 import ComparisonDataCharts from './comparison-data-charts';
 import ComparativeAnalysisControls from './comparative-analysis-controls';
-import { useEffect, useMemo } from 'react';
+import LlmTrajectoryDiff from './TrajectoryDiff/llm-trajectory-diff';
+import { useEffect } from 'react';
+import { useExperimentCapabilities, COMPARE_TAB } from '../../../../shared/utils/experimentCapabilities';
 import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
+import WaterfallChartRoundedIcon from '@mui/icons-material/WaterfallChartRounded';
 import StorageRoundedIcon from '@mui/icons-material/StorageRounded';
 import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
 
@@ -19,103 +22,150 @@ const ComparativeAnalysis = () => {
   const groupBy = useAppSelector(
     (state: RootState) => state.monitorPage.workflowsTable.groupBy,
   );
-  const { workflows } = useAppSelector(
-    (state: RootState) => state.progressPage,
+  const isMlExperiment = useAppSelector(
+      (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'ml',
   );
+  const isLlmExperiment = useAppSelector(
+      (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
+  const capabilities = useExperimentCapabilities();
   const theme = useTheme();
 
   const dispatch = useAppDispatch();
 
-  const hasExplainability = useMemo(() => {
-    if (workflows.data.every(workflow => !workflow.tasks)) return true;
-
-    return workflows.data.some(workflow => workflow.tasks?.some(t => typeof t.name === 'string' && /explainability/i.test(t.name)))
-      && !workflows.data.some(workflow => workflow.dataAssets?.some(asset => asset.name === 'model.pt'));
-  }, [workflows]);
-
   useEffect(() => {
-    if (groupBy.length > 0 && selectedComparisonTab !== 0) {
-      dispatch(setSelectedComparisonTab(0));
+    // Grouping only supports the Metrics view; also bail out of a subtab whose
+    // capability is unavailable (Models without explainability, Executions without traces).
+    const executionsHidden = isMlExperiment;
+    const modelsHidden = isLlmExperiment;
+
+    const subtabUnavailable =
+      (selectedComparisonTab === COMPARE_TAB.EXECUTIONS &&
+        (executionsHidden || !capabilities.traces)) ||
+      (selectedComparisonTab === COMPARE_TAB.MODELS &&
+        (modelsHidden || !capabilities.explainability)) ||
+      (selectedComparisonTab === COMPARE_TAB.DATA &&
+        !capabilities.datasets);
+
+    if ((groupBy.length > 0 || subtabUnavailable) && selectedComparisonTab !== COMPARE_TAB.METRICS) {
+      dispatch(setSelectedComparisonTab(COMPARE_TAB.METRICS));
     }
-  }, [groupBy, selectedComparisonTab]);
+  }, [groupBy, selectedComparisonTab, capabilities.explainability, capabilities.traces]);
 
   const numSelected = workflowsTable.selectedWorkflows.length;
 
   return (
     <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box
-        sx={{
-          borderColor: theme => theme.palette.customGrey.main,
-          borderBottomWidth: 1,
-          borderBottomStyle: 'solid',
-          width: '100%',
-          pr: 1.5,
-        }}
-      >
+      <Box sx={{ px: 1.5, pt: 1.25 }}>
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 1.5,
-            flexWrap: 'wrap',
+            border: theme => `1px solid ${theme.palette.customGrey.main}`,
+            borderRadius: 2.5,
+            overflow: 'hidden',
+            backgroundColor: theme.palette.background.paper,
           }}
         >
-          <Tabs
-            value={selectedComparisonTab}
-            onChange={(_event, newValue) => {
-              dispatch(setSelectedComparisonTab(newValue));
+          <Box
+            sx={{
+              pr: 1.5,
+              backgroundColor: theme => theme.palette.customGrey.light,
+              borderBottom: theme => `1px solid ${theme.palette.customGrey.main}`,
             }}
-            variant="scrollable"
-            scrollButtons="auto"
-            sx={{ '& .MuiTab-root': { gap: 0.5, px: 1.5 } }}
           >
-            <Tab
-              icon={<InsightsRoundedIcon fontSize="small" />}
-              iconPosition="start"
-              label="METRICS"
-            />
-            <Tab
-              icon={<HubRoundedIcon fontSize="small" />}
-              iconPosition="start"
-              label="MODELS"
-              disabled={groupBy.length > 0 || !hasExplainability}
-            />
-            <Tab
-              icon={<StorageRoundedIcon fontSize="small" />}
-              iconPosition="start"
-              label="DATA"
-              disabled={groupBy.length > 0}
-            />
-          </Tabs>
-
-          {numSelected > 0 && (
-            <Tooltip title="Workflows being compared" arrow>
-              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pr: 0.5 }}>
-                <CompareArrowsRoundedIcon sx={{ fontSize: 16, color: theme.palette.primary.main }} />
-                <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                  {numSelected}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                  comparing
-                </Typography>
-                {groupBy.length > 0 && (
-                  <Chip
-                    size="small"
-                    label={`grouped by ${groupBy.length}`}
-                    sx={{ ml: 0.5, height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1.5,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Tabs
+                value={selectedComparisonTab}
+                onChange={(_event, newValue) => {
+                  dispatch(setSelectedComparisonTab(newValue));
+                }}
+                variant="scrollable"
+                scrollButtons="auto"
+                sx={{
+                  '& .MuiTab-root': {
+                    gap: 0.5,
+                    px: 1.5,
+                    borderTopLeftRadius: 10,
+                    borderTopRightRadius: 10,
+                  },
+                  '& .Mui-selected': {
+                    backgroundColor: theme => theme.palette.background.paper,
+                    border: theme => `1px solid ${theme.palette.customGrey.main}`,
+                    borderBottomColor: theme => theme.palette.background.paper,
+                  },
+                }}
+              >
+                <Tab
+                  value={COMPARE_TAB.METRICS}
+                  icon={<InsightsRoundedIcon fontSize="small" />}
+                  iconPosition="start"
+                  label="METRICS"
+                />
+                {!isMlExperiment && (
+                  <Tab
+                    value={COMPARE_TAB.EXECUTIONS}
+                    icon={<WaterfallChartRoundedIcon fontSize="small" />}
+                    iconPosition="start"
+                    label="SESSIONS"
+                    disabled={groupBy.length > 0 || !capabilities.traces}
                   />
                 )}
-              </Stack>
-            </Tooltip>
-          )}
+                {!isLlmExperiment && (
+                  <Tab
+                    value={COMPARE_TAB.MODELS}
+                    icon={<HubRoundedIcon fontSize="small" />}
+                    iconPosition="start"
+                    label="MODELS"
+                    disabled={groupBy.length > 0 || !capabilities.explainability}
+                  />
+                )}
+                <Tab
+                  value={COMPARE_TAB.DATA}
+                  icon={<StorageRoundedIcon fontSize="small" />}
+                  iconPosition="start"
+                  label="DATA"
+                  disabled={groupBy.length > 0 || !capabilities.datasets}
+                />
+              </Tabs>
+              
+              {numSelected > 0 && (
+                <Tooltip title="Workflows being compared" arrow>
+                  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pr: 0.5 }}>
+                    <CompareArrowsRoundedIcon sx={{ fontSize: 16, color: theme.palette.primary.main }} />
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                      {numSelected}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                      comparing
+                    </Typography>
+                    {groupBy.length > 0 && (
+                      <Chip
+                        size="small"
+                        label={`grouped by ${groupBy.length}`}
+                        sx={{ ml: 0.5, height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                      />
+                    )}
+                  </Stack>
+                </Tooltip>
+              )}
+            </Box>
+          </Box>
+            
+          <ComparativeAnalysisControls />
         </Box>
       </Box>
-      <ComparativeAnalysisControls />
       <Box sx={{ width: '100%', flexGrow: 1, overflow: 'auto' }}>
-        {selectedComparisonTab === 0 && <ComparisonMetricsCharts />}
-        {selectedComparisonTab === 1 && <ComparisonModelsCharts />}
-        {selectedComparisonTab === 2 && <ComparisonDataCharts />}
+        {selectedComparisonTab === COMPARE_TAB.METRICS && <ComparisonMetricsCharts />}
+        {selectedComparisonTab === COMPARE_TAB.EXECUTIONS && <LlmTrajectoryDiff />}
+        {selectedComparisonTab === COMPARE_TAB.MODELS && <ComparisonModelsCharts />}
+        {selectedComparisonTab === COMPARE_TAB.DATA && <ComparisonDataCharts />}
       </Box>
     </Box>
   );

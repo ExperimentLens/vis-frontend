@@ -154,6 +154,7 @@ interface IMonitoringPageSlice {
         [workflowId: string]: { data: TestInstance[] | null; loading: boolean; error: string | null }
       }
       selectedModelComparisonChart: string
+      selectedExecutionsView: 'summary' | 'timeline' | 'verdicts'
       comparativeDataExploration: {
         commonDataAssets: CommonDataAssets
         dataAssetsMetaData: DataAssetsMetaData
@@ -270,6 +271,7 @@ const initialState: IMonitoringPageSlice = {
   comparativeModelRocCurve: {},
   comparativeModelInstance: {},
   selectedModelComparisonChart: 'confusionMatrix',
+  selectedExecutionsView: 'summary',
   comparativeDataExploration: {
     commonDataAssets: {},
     dataAssetsMetaData: {},
@@ -498,6 +500,9 @@ export const monitoringPageSlice = createSlice({
     },
     setSelectedModelComparisonChart: (state, action) => {
       state.selectedModelComparisonChart = action.payload;
+    },
+    setSelectedExecutionsView: (state, action: { payload: 'summary' | 'timeline' | 'verdicts' }) => {
+      state.selectedExecutionsView = action.payload;
     },
     setSortRocByAuc: (state, action: { payload: boolean }) => {
       state.sortRocByAuc = action.payload;
@@ -1041,6 +1046,6 @@ export const fetchComparativeUmap = createAsyncThunk(
 );
 
 export const { setParallel, setWorkflowsTable, setScheduledTable, setVisibleTable, setSelectedTab, setSelectedComparisonTab, toggleWorkflowSelection, bulkToggleWorkflowSelection, setGroupBy,
-  setHoveredWorkflow, updateWorkflowRatingLocally, setSelectedModelComparisonChart, setCommonDataAssets, setDataAssetsControlPanel, setIsMosaic, setShowMisclassifiedOnly, setComparativeModelInstanceControlPanel,
+  setHoveredWorkflow, updateWorkflowRatingLocally, setSelectedModelComparisonChart, setSelectedExecutionsView, setCommonDataAssets, setDataAssetsControlPanel, setIsMosaic, setShowMisclassifiedOnly, setComparativeModelInstanceControlPanel,
   setExpandedGroup, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces, setSortRocByAuc, setSortConfusionByF1, resetMonitoringPage
 } = monitoringPageSlice.actions;
