@@ -38,7 +38,7 @@ const SpanDetail = ({ obs }: { obs: Observation }) => {
   const model = modelOf(obs);
   const tokens = output?.tokens;
   const color = colorForType(obs.type);
-
+  const promptText = asText(input?.prompt);
   const inputWithoutPrompt = omitPrompt(obs.input);
 
   return (
@@ -75,10 +75,10 @@ const SpanDetail = ({ obs }: { obs: Observation }) => {
         <Box>
           <SectionLabel>Input</SectionLabel>
 
-          {input?.prompt && (
+          {promptText && (
             <Box sx={{ mb: 1 }}>
-              <SectionLabel action={<CopyButton text={input.prompt} />}>Prompt</SectionLabel>
-              <CodeBlock maxHeight={180}>{input.prompt}</CodeBlock>
+              <SectionLabel action={<CopyButton text={promptText} />}>Prompt</SectionLabel>
+              <CodeBlock maxHeight={180}>{promptText}</CodeBlock>
             </Box>
           )}
 

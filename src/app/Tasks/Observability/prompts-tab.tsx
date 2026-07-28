@@ -1,9 +1,18 @@
 import { Chip, Stack } from '@mui/material';
 import type { Observation } from '../../../shared/models/observability/observation';
 import type { GenInput } from '../../../shared/models/observability/agentic-conventions';
-import { modelOf, tokensOf } from '../../../shared/models/observability/agentic-conventions';
+import {
+  asText,
+  modelOf,
+  tokensOf,
+} from '../../../shared/models/observability/agentic-conventions';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
-import { CodeBlock, Collapsible, CopyButton, MetaChip } from './trace-ui';
+import {
+  CodeBlock,
+  Collapsible,
+  CopyButton,
+  MetaChip,
+} from './trace-ui';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 
@@ -26,7 +35,8 @@ const PromptsTab = ({ promptObs }: PromptsTabProps) => {
     >
       <Stack spacing={0.75} height="100%">
         {promptObs.map((observation, index) => {
-          const prompt = (observation.input as GenInput).prompt ?? '';
+          const input = observation.input as GenInput | null | undefined;
+          const prompt = asText(input?.prompt);
           const model = modelOf(observation);
           const tokens = tokensOf(observation);
 

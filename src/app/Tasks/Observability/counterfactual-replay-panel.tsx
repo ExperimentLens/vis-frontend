@@ -24,7 +24,7 @@ import { CodeBlock, MetaChip, SectionLabel } from './trace-ui';
 type CounterfactualReplayPanelProps = {
   traceId: string;
   observationId: string;
-  prompt: string;
+  prompt: unknown;
 };
 
 const diffColor = (theme: Theme, ratio: number) => {
@@ -45,30 +45,30 @@ const CounterfactualReplayPanel = ({
   prompt,
 }: CounterfactualReplayPanelProps) => {
   const theme = useTheme();
-
+  const originalPrompt = asText(prompt);
   const [open, setOpen] = useState(false);
-  const [editedPrompt, setEditedPrompt] = useState(prompt);
+  const [editedPrompt, setEditedPrompt] = useState(originalPrompt);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<ReplayResult | null>(null);
 
   useEffect(() => {
     setOpen(false);
-    setEditedPrompt(prompt);
+    setEditedPrompt(originalPrompt);
     setLoading(false);
     setError(null);
     setResult(null);
-  }, [traceId, observationId, prompt]);
+  }, [traceId, observationId, originalPrompt]);
 
-  const hasChangedPrompt = editedPrompt !== prompt;
+  const hasChangedPrompt = editedPrompt !== originalPrompt;
 
   const handleToggle = () => {
     setOpen(o => !o);
-    if (!open && !editedPrompt) setEditedPrompt(prompt);
+    if (!open && !editedPrompt) setEditedPrompt(originalPrompt);
   };
 
   const handleReset = () => {
-    setEditedPrompt(prompt);
+    setEditedPrompt(originalPrompt);
     setResult(null);
     setError(null);
   };
