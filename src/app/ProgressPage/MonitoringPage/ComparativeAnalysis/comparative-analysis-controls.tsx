@@ -9,6 +9,9 @@ import BlurLinearIcon from '@mui/icons-material/BlurLinear';
 import SummarizeRoundedIcon from '@mui/icons-material/SummarizeRounded';
 import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
 import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
+import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
+import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
+import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
 import { menuPaperSx } from '../../../../shared/styles/card-surface';
 import MisclassifiedToggle from '../../../../shared/components/misclassified-toggle';
@@ -143,6 +146,9 @@ const ComparativeAnalysisControls = ()=> {
     { label: 'summary' as const, name: 'Summary', icon: <SummarizeRoundedIcon fontSize="small" /> },
     { label: 'timeline' as const, name: 'Timeline', icon: <TimelineRoundedIcon fontSize="small" /> },
     { label: 'verdicts' as const, name: 'Verdicts', icon: <GavelRoundedIcon fontSize="small" /> },
+    { label: 'responses' as const, name: 'Responses', icon: <CompareArrowsRoundedIcon fontSize="small" /> },
+    { label: 'graph' as const, name: 'Graph', icon: <AccountTreeRoundedIcon fontSize="small" /> },
+    { label: 'stepprofile' as const, name: 'Step Profile', icon: <TableChartRoundedIcon fontSize="small" /> }
   ];
 
   const handleMenuClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -199,7 +205,7 @@ const ComparativeAnalysisControls = ()=> {
             aria-label="executions view"
             value={selectedExecutionsView}
             onChange={(value) =>
-              dispatch(setSelectedExecutionsView(value as 'summary' | 'timeline' | 'verdicts'))
+              dispatch(setSelectedExecutionsView(value as 'summary' | 'timeline' | 'verdicts' | 'responses' | 'graph' | 'stepprofile'))
             }
             options={llmExecutionsOptions.map(option => ({
               value: option.label,
@@ -313,7 +319,7 @@ const ComparativeAnalysisControls = ()=> {
           )}
 
           {!isDataTab
-            && !(isExecutionsTab && selectedExecutionsView === 'verdicts') && (
+            && !(isExecutionsTab && (selectedExecutionsView === 'verdicts' || selectedExecutionsView === 'responses' || selectedExecutionsView === 'stepprofile')) && (
             <SegmentedToggle
               uppercase
               aria-label="view mode"

@@ -154,7 +154,7 @@ interface IMonitoringPageSlice {
         [workflowId: string]: { data: TestInstance[] | null; loading: boolean; error: string | null }
       }
       selectedModelComparisonChart: string
-      selectedExecutionsView: 'summary' | 'timeline' | 'verdicts'
+      selectedExecutionsView: 'summary' | 'timeline' | 'verdicts' | 'responses' | 'graph' | 'stepprofile'
       comparativeDataExploration: {
         commonDataAssets: CommonDataAssets
         dataAssetsMetaData: DataAssetsMetaData
@@ -501,7 +501,7 @@ export const monitoringPageSlice = createSlice({
     setSelectedModelComparisonChart: (state, action) => {
       state.selectedModelComparisonChart = action.payload;
     },
-    setSelectedExecutionsView: (state, action: { payload: 'summary' | 'timeline' | 'verdicts' }) => {
+    setSelectedExecutionsView: (state, action: { payload: 'summary' | 'timeline' | 'verdicts' | 'responses' | 'graph' | 'stepprofile'}) => {
       state.selectedExecutionsView = action.payload;
     },
     setSortRocByAuc: (state, action: { payload: boolean }) => {

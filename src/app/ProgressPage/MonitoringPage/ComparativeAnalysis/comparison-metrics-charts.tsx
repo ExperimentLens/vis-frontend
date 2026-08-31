@@ -7,6 +7,14 @@ import {
   Grid,
   Container,
   Box,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
+  alpha,
   useTheme,
 } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
@@ -16,6 +24,7 @@ import { fetchWorkflowMetrics, setComparativeVisibleMetrics, setHoveredWorkflow 
 import Loader from '../../../../shared/components/loader';
 import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
 import { createWorkflowTooltipHandler, paletteFromTheme } from './workflow-info-tooltip';
+import type { IMetric } from '../../../../shared/models/experiment/metric.model';
 
 interface BaseMetric {
   id: string
@@ -293,6 +302,82 @@ const ComparisonMetricsCharts: React.FC = () => {
 
   const metricNames = comparativeVisibleMetrics.filter((m) => groupedMetrics[m]);
 
+  // --- Hyperparameter × metric pivot table --------------------------------
+  // One row per selected workflow, one column per distinct param it logged
+  // plus the currently-visible metrics — so differences across many runs
+  // (e.g. a grid search) can be scanned at a glance instead of paging
+  // through a separate chart per metric. Only meaningful per-workflow, so
+  // it sits out when rows are grouped into aggregates.
+  const isGroupedView = workflowsTable.groupBy.length > 0;
+  const selectedWorkflowIds = workflowsTable.selectedWorkflows;
+
+  const pickLatestMetricValue = (series: IMetric[] | undefined): number | null => {
+    if (!series || series.length === 0) return null;
+
+    const latest = series.reduce((best, current) => {
+      if (current.step !== null && current.step !== undefined && best.step !== null && best.step !== undefined) {
+        return current.step > best.step ? current : best;
+      }
+
+      return current.timestamp > best.timestamp ? current : best;
+    }, series[0]);
+
+    return Number.isFinite(latest.value) ? latest.value : null;
+  };
+
+  const pivotParamNames = !isGroupedView
+    ? Array.from(
+      new Set(
+        selectedWorkflowIds.flatMap(id =>
+          (workflows.data.find(wf => wf.id === id)?.params ?? []).map(p => p.name),
+        ),
+      ),
+    )
+    : [];
+
+  const pivotRows = !isGroupedView
+    ? selectedWorkflowIds.map(id => {
+      const workflow = workflows.data.find(wf => wf.id === id);
+      const metricsForWorkflow = selectedWorkflowsMetrics.data?.[id] ?? [];
+
+      return {
+        id,
+        name: workflow?.name || id,
+        color: workflowsTable.workflowColors[id] || '#000000',
+        params: Object.fromEntries(
+          pivotParamNames.map(p => [p, workflow?.params?.find(param => param.name === p)?.value ?? null]),
+        ),
+        metrics: Object.fromEntries(
+          metricNames.map(m => [
+            m,
+            pickLatestMetricValue(metricsForWorkflow.find(entry => entry.name === m)?.seriesMetric),
+          ]),
+        ),
+      };
+    })
+    : [];
+
+  const metricColumnRanges = Object.fromEntries(
+    metricNames.map(m => {
+      const values = pivotRows.map(row => row.metrics[m]).filter((v): v is number => v !== null);
+
+      return [m, values.length ? { min: Math.min(...values), max: Math.max(...values) } : null];
+    }),
+  );
+
+  const heatmapColor = (value: number | null, range: { min: number; max: number } | null) => {
+    if (value === null || !range) return undefined;
+
+    const span = range.max - range.min;
+    const normalized = span === 0 ? 0.5 : (value - range.min) / span;
+
+    // Sequential, one hue, light → dark — magnitude only (not a good/bad
+    // judgment, since polarity differs by metric, e.g. latency vs. accuracy).
+    return alpha(theme.palette.primary.main, 0.08 + normalized * 0.42);
+  };
+
+  const showPivotTable = !isGroupedView && pivotRows.length > 0;
+
   const renderCharts = metricNames.map((metricName) => {
     const metricSeries = groupedMetrics[metricName];
 
@@ -528,6 +613,76 @@ const ComparisonMetricsCharts: React.FC = () => {
 
   return (
     <Container maxWidth={false} sx={{ padding: 2 }} >
+
+      {showPivotTable && (
+        <Box sx={{ mb: 2 }}>
+          <ResponsiveCardTable title="Hyperparameter comparison" showSettings={false} noPadding>
+            <TableContainer sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+              <Table size="small" stickyHeader>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>Workflow</TableCell>
+                    {pivotParamNames.map(p => (
+                      <TableCell key={p} align="center" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                        {p}
+                      </TableCell>
+                    ))}
+                    {metricNames.map(m => (
+                      <TableCell key={m} align="center" sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>
+                        {m}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {pivotRows.map(row => (
+                    <TableRow
+                      key={row.id}
+                      hover
+                      onMouseEnter={() => dispatch(setHoveredWorkflow(row.id))}
+                      onMouseLeave={clearHover}
+                    >
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              bgcolor: row.color,
+                              flexShrink: 0,
+                            }}
+                          />
+                          <Typography variant="body2" noWrap sx={{ maxWidth: 220 }} title={row.name}>
+                            {row.name}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      {pivotParamNames.map(p => (
+                        <TableCell key={p} align="center" sx={{ whiteSpace: 'nowrap' }}>
+                          {row.params[p] ?? '—'}
+                        </TableCell>
+                      ))}
+                      {metricNames.map(m => (
+                        <TableCell
+                          key={m}
+                          align="center"
+                          sx={{
+                            whiteSpace: 'nowrap',
+                            bgcolor: heatmapColor(row.metrics[m], metricColumnRanges[m]),
+                          }}
+                        >
+                          {row.metrics[m] === null ? '—' : row.metrics[m]}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </ResponsiveCardTable>
+        </Box>
+      )}
 
       <Grid
         container

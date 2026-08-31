@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import type { RootState } from '../../../../../store/store';
+import type { TraceDetail } from '../../../../../shared/models/observability/trace-detail';
 import { useAppDispatch, useAppSelector } from '../../../../../store/store';
 import { fetchSessionTraceDetails, selectSessionsMap } from '../../../../../store/slices/observabilitySlice';
 import { setHoveredWorkflow } from '../../../../../store/slices/monitorPageSlice';
@@ -26,6 +27,10 @@ import { EmptyNote } from '../../LLMOverview/chart-kit';
 import { alignByQuestion } from './trajectory-alignment';
 import Loader from '../../../../../shared/components/loader';
 import VerdictMatrix from './verdict-matrix';
+import ResponseDiff from './response-diff';
+import GraphComparison from './graph-comparison';
+import StepProfile from './step-profile';
+import SegmentedToggle from '../../../../../shared/components/segmented-toggle';
 // import PerTaskAnalysis from './per-task-analysis';
 import CumulativeRaceChart from './cumulative-race-chart';
 // import SummaryKpiStrip from './summary-kpi-strip';
@@ -81,6 +86,14 @@ export default function LlmTrajectoryDiff() {
 
   const aligned = useMemo(() => alignByQuestion(detailsByRun), [detailsByRun]);
   const [questionIdx, setQuestionIdx] = useState(0);
+
+  // Timeline/Verdicts/Responses default to the exact-question-text alignment
+  // above, but that alignment loses information the moment two runs' prompts
+  // don't match word-for-word. "Independent" mode lets each run's session be
+  // picked on its own instead — useful for experiments where the same
+  // question text isn't expected to repeat across runs.
+  const [alignMode, setAlignMode] = useState<'aligned' | 'independent'>('aligned');
+  const [manualTraceByRun, setManualTraceByRun] = useState<Record<string, string>>({});
 
   useEffect(() => setQuestionIdx(0), [idKey]);
 
@@ -172,6 +185,21 @@ export default function LlmTrajectoryDiff() {
   }
 
   const selectedQ = aligned.length ? aligned[Math.min(questionIdx, aligned.length - 1)] : undefined;
+
+  const manualByRun: Record<string, TraceDetail> = Object.fromEntries(
+    runIds
+      .map(id => {
+        const traces = detailsByRun[id] ?? [];
+        const chosenId = manualTraceByRun[id] ?? traces[0]?.id;
+        const trace = traces.find(t => t.id === chosenId);
+
+        return trace ? [id, trace] as const : null;
+      })
+      .filter((entry): entry is [string, TraceDetail] => entry !== null),
+  );
+
+  const effectiveByRun = alignMode === 'aligned' ? (selectedQ?.byRun ?? {}) : manualByRun;
+  const hasEffectiveByRun = Object.keys(effectiveByRun).length > 0;
 
   const summaryChartProps = { detailsByRun, runIds, runNameById, summaryColor, signalListeners, hoveredWorkflowId, workflowsData: workflows.data, experimentId, workflowColors };
 
@@ -292,48 +320,93 @@ export default function LlmTrajectoryDiff() {
         </>
       )}
 
-      {/* Question selector — TIMELINE / VERDICTS */}
-      {(selectedExecutionsView === 'timeline' || selectedExecutionsView === 'verdicts') && (
-      <FormControl size="small" sx={{ maxWidth: 560 }}>
-        <InputLabel id="traj-q">Aligned question</InputLabel>
-        <Select
-          labelId="traj-q"
-          label="Aligned question"
-          value={aligned.length ? Math.min(questionIdx, aligned.length - 1) : ''}
-          onChange={e => setQuestionIdx(Number(e.target.value))}
-        >
-          {aligned.map((aq, i) => (
-            <MenuItem key={aq.question} value={i} sx={{ fontSize: '0.78rem' }}>
-              <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 440 }}>
-                {aq.question}
-              </Box>
-              <Chip size="small" label={`${aq.runCount}/${runIds.length}`} sx={{ ml: 1, height: 16, fontSize: '0.55rem' }} />
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+      {/* Alignment mode — TIMELINE / VERDICTS / RESPONSES.
+          "Aligned" keeps the original behavior: one question index shared
+          across all runs, via alignByQuestion's exact string match. That
+          match only works when prompts repeat word-for-word across runs, so
+          "Independent" lets each run's session be picked on its own instead —
+          useful for experiments where prompts aren't expected to line up. */}
+      {(selectedExecutionsView === 'timeline' || selectedExecutionsView === 'verdicts' || selectedExecutionsView === 'responses') && (
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+          <SegmentedToggle
+            aria-label="alignment mode"
+            value={alignMode}
+            onChange={(v) => setAlignMode(v as 'aligned' | 'independent')}
+            options={[
+              { value: 'aligned', label: 'Aligned question' },
+              { value: 'independent', label: 'Independent per run' },
+            ]}
+          />
+
+          {alignMode === 'aligned' && (
+            <FormControl size="small" sx={{ maxWidth: 560, minWidth: 280 }}>
+              <InputLabel id="traj-q">Aligned question</InputLabel>
+              <Select
+                labelId="traj-q"
+                label="Aligned question"
+                value={aligned.length ? Math.min(questionIdx, aligned.length - 1) : ''}
+                onChange={e => setQuestionIdx(Number(e.target.value))}
+              >
+                {aligned.map((aq, i) => (
+                  <MenuItem key={aq.question} value={i} sx={{ fontSize: '0.78rem' }}>
+                    <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 440 }}>
+                      {aq.question}
+                    </Box>
+                    <Chip size="small" label={`${aq.runCount}/${runIds.length}`} sx={{ ml: 1, height: 16, fontSize: '0.55rem' }} />
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {alignMode === 'independent' && runIds.map(id => {
+            const traces = detailsByRun[id] ?? [];
+            const chosenId = manualTraceByRun[id] ?? traces[0]?.id ?? '';
+
+            return (
+              <FormControl key={id} size="small" sx={{ minWidth: 200, maxWidth: 320 }}>
+                <InputLabel id={`traj-manual-${id}`}>{id}</InputLabel>
+                <Select
+                  labelId={`traj-manual-${id}`}
+                  label={id}
+                  value={chosenId}
+                  disabled={traces.length === 0}
+                  onChange={e => setManualTraceByRun(prev => ({ ...prev, [id]: e.target.value }))}
+                >
+                  {traces.map(t => (
+                    <MenuItem key={t.id} value={t.id} sx={{ fontSize: '0.78rem' }}>
+                      <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 260 }}>
+                        {(t.input as { question?: string } | null | undefined)?.question ?? t.name}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            );
+          })}
+        </Stack>
       )}
 
-      {selectedQ && selectedExecutionsView === 'timeline' && (
+      {hasEffectiveByRun && selectedExecutionsView === 'timeline' && (
         <>
           {/* Side-by-side trajectory waterfalls — temporarily hidden; flip SHOW_TIMELINE_WATERFALLS to restore. */}
           {SHOW_TIMELINE_WATERFALLS && (
           <Grid container spacing={1.5}>
             {runIds.map((id, i) => {
-              const trace = selectedQ.byRun[id];
+              const trace = effectiveByRun[id];
               const mosaicSize = runIds.length >= 3 ? 4 : 6;
               const size = isMosaic ? mosaicSize : 12;
 
               return (
                 <Grid key={id} size={{ xs: 12, md: size }} sx={{ textAlign: 'left' }}>
-                  <ResponsiveCardTable 
-                    title={runNameById[id] ?? id} 
+                  <ResponsiveCardTable
+                    title={runNameById[id] ?? id}
                     details={id === baseline ? 'baseline' : 'execution'}
                     showDownloadButton={true}
                     onDownload={() => handleDownloadTrajectoryPng(id)}
                     downloadLabel="Download as PNG"
                   >
-                    <Box 
+                    <Box
                       ref={(el: HTMLDivElement | null) => { if (el) trajectoryRefs.current[id] = el; }}
                       sx={{ borderTop: `2px solid ${colorOf(id, i)}`, pt: 1 }}
                     >
@@ -348,22 +421,57 @@ export default function LlmTrajectoryDiff() {
           </Grid>
           )}
 
-          {/* <PerTaskAnalysis byRun={selectedQ.byRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} /> */}
+          {/* <PerTaskAnalysis byRun={effectiveByRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} /> */}
 
           {/* Cumulative race — running total time as tasks complete, in order */}
-          <CumulativeRaceChart byRun={selectedQ.byRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} />
+          <CumulativeRaceChart byRun={effectiveByRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} />
         </>
       )}
 
-      {selectedQ && selectedExecutionsView === 'verdicts' && (
+      {hasEffectiveByRun && selectedExecutionsView === 'verdicts' && (
         <VerdictMatrix
-          byRun={selectedQ.byRun}
+          byRun={effectiveByRun}
           runIds={runIds}
           runNameById={runNameById}
           colorById={colorById}
           baselineId={baseline}
         />
       )}
+
+      {hasEffectiveByRun && selectedExecutionsView === 'responses' && (
+        <ResponseDiff
+          byRun={effectiveByRun}
+          runIds={runIds}
+          runNameById={runNameById}
+          colorById={colorById}
+          baselineId={baseline}
+        />
+      )}
+
+      {/* Graph — always independent per run, regardless of alignMode above:
+          it never had a question-aligned mode to begin with. */}
+      {selectedExecutionsView === 'graph' && (
+        <GraphComparison
+          detailsByRun={detailsByRun}
+          runIds={runIds}
+          colorById={colorById}
+          isMosaic={isMosaic}
+        />
+      )}
+
+      {/* Step Profile — run-level rollup across every session in the run, not
+          scoped to a single question at all. */}
+      {selectedExecutionsView === 'stepprofile' && (
+        <StepProfile
+          detailsByRun={detailsByRun}
+          runIds={runIds}
+          colorById={colorById}
+          baselineId={baseline}
+        />
+      )}
+
+      
+      
     </Stack>
   );
 }
