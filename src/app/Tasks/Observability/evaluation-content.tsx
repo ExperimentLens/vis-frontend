@@ -1,29 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Collapse, Paper, Stack, Tooltip, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Collapse, IconButton, Paper, Stack, Tooltip, Typography, alpha, useTheme } from '@mui/material';
 import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import RuleRoundedIcon from '@mui/icons-material/RuleRounded';
 import QueryStatsRoundedIcon from '@mui/icons-material/QueryStatsRounded';
 import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
+import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
 import type { Score } from '../../../shared/models/observability/score';
 import type { GenOutput } from '../../../shared/models/observability/agentic-conventions';
 import { prettyName, tokensOf } from '../../../shared/models/observability/agentic-conventions';
-import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
 import { SectionLabel } from './trace-ui';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import AnnotateForm from './annotate-form';
 import type { AnnotationSavePayload } from './annotate-form';
 
-type EvaluationTabProps = {
+type EvaluationContentProps = {
   judges: Observation[];
   checks: Score[];
   metrics: Score[];
   humanScores: Score[];
   onAnnotateTrace: (payload: AnnotationSavePayload) => void;
   savingAnnotation: boolean;
+  /** Jump to the span an assessment was produced for/against (judge call or scored observation). */
+  onJumpToSpan?: (observationId: string) => void;
 };
 
 /** Normalized assessment so judges, checks and metrics share one selection model. */
@@ -35,9 +37,11 @@ type Assessment = {
   value?: number;
   detail?: string;
   tokens?: number;
+  /** Span this assessment links to: the judge's own call, or a check/metric's scored observation. */
+  observationId?: string;
 };
 
-const EvaluationTab = ({ judges, checks, metrics, humanScores, onAnnotateTrace, savingAnnotation }: EvaluationTabProps) => {
+const EvaluationContent = ({ judges, checks, metrics, humanScores, onAnnotateTrace, savingAnnotation, onJumpToSpan }: EvaluationContentProps) => {
   const judgeItems = useMemo<Assessment[]>(
     () =>
       judges.map(judge => {
@@ -49,6 +53,7 @@ const EvaluationTab = ({ judges, checks, metrics, humanScores, onAnnotateTrace, 
           passed: output?.passed === true,
           detail: output?.rationale,
           tokens: tokensOf(judge),
+          observationId: judge.id,
         };
       }),
     [judges],
@@ -62,6 +67,7 @@ const EvaluationTab = ({ judges, checks, metrics, humanScores, onAnnotateTrace, 
         name: prettyName(score.name),
         passed: score.value === 1,
         detail: score.comment,
+        observationId: score.observationId || undefined,
       })),
     [checks],
   );
@@ -74,6 +80,7 @@ const EvaluationTab = ({ judges, checks, metrics, humanScores, onAnnotateTrace, 
         name: prettyName(score.name),
         value: score.value ?? undefined,
         detail: score.comment,
+        observationId: score.observationId || undefined,
       })),
     [metrics],
   );
@@ -101,70 +108,66 @@ const EvaluationTab = ({ judges, checks, metrics, humanScores, onAnnotateTrace, 
 
   const onSelect = (key: string) => setSelectedKey(prev => (prev === key ? null : key));
 
+  if (allItems.length === 0 && humanScores.length === 0) {
+    return (
+      <InfoMessage
+        message="No evaluation data for this trace."
+        type="info"
+        icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
+        fullHeight
+      />
+    );
+  }
+
   return (
-    <ResponsiveCardTable
-      title="Evaluation"
-      details="Judges and checks render as pass/fail heat cells and metrics as a value gradient. Select any cell to read its rationale."
-      showSettings={false}
-      showFullScreenButton={false}
-    >
-      {allItems.length === 0 && humanScores.length === 0 ? (
-        <InfoMessage
-          message="No evaluation data for this trace."
-          type="info"
-          icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
-          fullHeight
-        />
-      ) : (
-        <Stack spacing={1.5}>
-          <Section icon={<RateReviewRoundedIcon sx={{ fontSize: 15 }} />} title="Human Annotations" count={humanScores.length}>
-            <AnnotateForm scores={humanScores} targetLabel="trace" onSave={onAnnotateTrace} saving={savingAnnotation} />
-          </Section>
+    <Stack spacing={1.5}>
+      <Section icon={<RateReviewRoundedIcon sx={{ fontSize: 15 }} />} title="Human Annotations" count={humanScores.length}>
+        <AnnotateForm scores={humanScores} targetLabel="trace" onSave={onAnnotateTrace} saving={savingAnnotation} />
+      </Section>
 
-          {passRate !== null && (
-            <PassRateBar passRate={passRate} passed={passed} total={boolItems.length} />
-          )}
-
-          {judgeItems.length > 0 && (
-            <Section icon={<GavelRoundedIcon sx={{ fontSize: 15 }} />} title="Judges" count={judgeItems.length}>
-              <HeatGrid>
-                {judgeItems.map(item => (
-                  <BoolCell key={item.key} item={item} selected={item.key === selectedKey} onSelect={onSelect} />
-                ))}
-              </HeatGrid>
-            </Section>
-          )}
-
-          {checkItems.length > 0 && (
-            <Section icon={<RuleRoundedIcon sx={{ fontSize: 15 }} />} title="Checks" count={checkItems.length}>
-              <HeatGrid>
-                {checkItems.map(item => (
-                  <BoolCell key={item.key} item={item} selected={item.key === selectedKey} onSelect={onSelect} />
-                ))}
-              </HeatGrid>
-            </Section>
-          )}
-
-          {metricItems.length > 0 && (
-            <Section icon={<QueryStatsRoundedIcon sx={{ fontSize: 15 }} />} title="Metrics" count={metricItems.length}>
-              <HeatGrid minCell={130}>
-                {metricItems.map(item => (
-                  <MetricCell
-                    key={item.key}
-                    item={item}
-                    range={metricRange}
-                    selected={item.key === selectedKey}
-                    onSelect={onSelect}
-                  />
-                ))}
-              </HeatGrid>
-            </Section>
-          )}
-
-          <RationalePanel selected={selected} />
-        </Stack>
+      {passRate !== null && (
+        <PassRateBar passRate={passRate} passed={passed} total={boolItems.length} />
       )}
-    </ResponsiveCardTable>
+
+      {judgeItems.length > 0 && (
+        <Section icon={<GavelRoundedIcon sx={{ fontSize: 15 }} />} title="Judges" count={judgeItems.length}>
+          <HeatGrid>
+            {judgeItems.map(item => (
+              <BoolCell key={item.key} item={item} selected={item.key === selectedKey} onSelect={onSelect} onJumpToSpan={onJumpToSpan} />
+            ))}
+          </HeatGrid>
+        </Section>
+      )}
+
+      {checkItems.length > 0 && (
+        <Section icon={<RuleRoundedIcon sx={{ fontSize: 15 }} />} title="Checks" count={checkItems.length}>
+          <HeatGrid>
+            {checkItems.map(item => (
+              <BoolCell key={item.key} item={item} selected={item.key === selectedKey} onSelect={onSelect} onJumpToSpan={onJumpToSpan} />
+            ))}
+          </HeatGrid>
+        </Section>
+      )}
+
+      {metricItems.length > 0 && (
+        <Section icon={<QueryStatsRoundedIcon sx={{ fontSize: 15 }} />} title="Metrics" count={metricItems.length}>
+          <HeatGrid minCell={130}>
+            {metricItems.map(item => (
+              <MetricCell
+                key={item.key}
+                item={item}
+                range={metricRange}
+                selected={item.key === selectedKey}
+                onSelect={onSelect}
+                onJumpToSpan={onJumpToSpan}
+              />
+            ))}
+          </HeatGrid>
+        </Section>
+      )}
+
+      <RationalePanel selected={selected} onJumpToSpan={onJumpToSpan} />
+    </Stack>
   );
 };
 
@@ -233,6 +236,8 @@ const HeatGrid = ({ children, minCell = 120 }: { children: React.ReactNode; minC
 
 const cellSx = (color: string, selected: boolean) => ({
   position: 'relative' as const,
+  minWidth: 0,
+  overflow: 'hidden',
   p: 1,
   borderRadius: 1.5,
   cursor: 'pointer',
@@ -244,14 +249,35 @@ const cellSx = (color: string, selected: boolean) => ({
   '&:hover': { transform: 'translateY(-1px)', bgcolor: alpha(color, 0.18) },
 });
 
+const JumpButton = ({ observationId, onJumpToSpan }: { observationId?: string; onJumpToSpan?: (id: string) => void }) => {
+  if (!observationId || !onJumpToSpan) return null;
+
+  return (
+    <Tooltip title="View span" arrow disableInteractive>
+      <IconButton
+        size="small"
+        onClick={event => {
+          event.stopPropagation();
+          onJumpToSpan(observationId);
+        }}
+        sx={{ p: 0.25, ml: 0.25 }}
+      >
+        <LaunchRoundedIcon sx={{ fontSize: 12 }} />
+      </IconButton>
+    </Tooltip>
+  );
+};
+
 const BoolCell = ({
   item,
   selected,
   onSelect,
+  onJumpToSpan,
 }: {
   item: Assessment;
   selected: boolean;
   onSelect: (key: string) => void;
+  onJumpToSpan?: (id: string) => void;
 }) => {
   const theme = useTheme();
   const pass = item.passed === true;
@@ -282,12 +308,14 @@ const BoolCell = ({
               {item.tokens}t
             </Typography>
           )}
+          <JumpButton observationId={item.observationId} onJumpToSpan={onJumpToSpan} />
         </Stack>
         <Typography
           variant="statLabel"
           sx={{
             mt: 0.5,
             color,
+            display: 'block',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
@@ -305,11 +333,13 @@ const MetricCell = ({
   range,
   selected,
   onSelect,
+  onJumpToSpan,
 }: {
   item: Assessment;
   range: { min: number; max: number };
   selected: boolean;
   onSelect: (key: string) => void;
+  onJumpToSpan?: (id: string) => void;
 }) => {
   const theme = useTheme();
   const color = theme.palette.primary.main;
@@ -332,9 +362,13 @@ const MetricCell = ({
           '&:hover': { transform: 'translateY(-1px)' },
         }}
       >
-        <Typography variant="statValue" sx={{ color: theme.palette.text.primary }}>
-          {Number.isInteger(value) ? value : value.toFixed(2)}
-        </Typography>
+        <Stack direction="row" alignItems="baseline">
+          <Typography variant="statValue" sx={{ color: theme.palette.text.primary }}>
+            {Number.isInteger(value) ? value : value.toFixed(2)}
+          </Typography>
+          <Box sx={{ flexGrow: 1 }} />
+          <JumpButton observationId={item.observationId} onJumpToSpan={onJumpToSpan} />
+        </Stack>
         <Typography
           variant="caption"
           sx={{
@@ -353,7 +387,7 @@ const MetricCell = ({
   );
 };
 
-const RationalePanel = ({ selected }: { selected: Assessment | undefined }) => {
+const RationalePanel = ({ selected, onJumpToSpan }: { selected: Assessment | undefined; onJumpToSpan?: (id: string) => void }) => {
   const theme = useTheme();
 
   const color = !selected
@@ -393,6 +427,25 @@ const RationalePanel = ({ selected }: { selected: Assessment | undefined }) => {
               >
                 {verdict}
               </Box>
+              <Box sx={{ flexGrow: 1 }} />
+              {selected.observationId && onJumpToSpan && (
+                <Box
+                  onClick={() => onJumpToSpan(selected.observationId!)}
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.4,
+                    cursor: 'pointer',
+                    color: 'primary.main',
+                    fontSize: '0.68rem',
+                    fontWeight: 600,
+                    '&:hover': { textDecoration: 'underline' },
+                  }}
+                >
+                  <LaunchRoundedIcon sx={{ fontSize: 13 }} />
+                  View span
+                </Box>
+              )}
             </Stack>
             <Typography variant="bodySm" sx={{ color: 'text.secondary' }}>
               {selected.detail || 'No rationale recorded for this assessment.'}
@@ -409,4 +462,4 @@ const RationalePanel = ({ selected }: { selected: Assessment | undefined }) => {
   );
 };
 
-export default EvaluationTab;
+export default EvaluationContent;

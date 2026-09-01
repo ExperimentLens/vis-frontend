@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Paper } from '@mui/material';
+import { Box } from '@mui/material';
 import TouchAppRoundedIcon from '@mui/icons-material/TouchAppRounded';
-import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
-import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
-import TextSnippetRoundedIcon from '@mui/icons-material/TextSnippetRounded';
 
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
@@ -24,10 +21,7 @@ import { isHumanScoreName } from '../../../Tasks/Observability/score-dimensions'
 import type { AnnotationSavePayload } from '../../../Tasks/Observability/annotate-form';
 
 import TraceHeader from '../../../Tasks/Observability/trace-header';
-import type { TraceSectionOption } from '../../../Tasks/Observability/trace-header';
-import TimelineTab from '../../../Tasks/Observability/timeline-tab';
-import EvaluationTab from '../../../Tasks/Observability/evaluation-tab';
-import PromptsTab from '../../../Tasks/Observability/prompts-tab';
+import TraceWorkspace from '../../../Tasks/Observability/trace-workspace';
 
 export default function WorkflowTraceView() {
   const dispatch = useAppDispatch();
@@ -35,7 +29,6 @@ export default function WorkflowTraceView() {
     (state: RootState) => state.observability.trace,
   );
 
-  const [tab, setTab] = useState('timeline');
   const [selectedSpanId, setSelectedSpanId] = useState<string | null>(null);
   const [savingAnnotation, setSavingAnnotation] = useState(false);
 
@@ -148,7 +141,7 @@ export default function WorkflowTraceView() {
 
   const scores = data.scores ?? [];
 
-  // Human-authored annotations get their own section (EvaluationTab) and
+  // Human-authored annotations get their own section (EvaluationContent) and
   // their own docked form (SpanDetail) — kept out of the judge/check/metric
   // heat cells below, which are for automated evaluation only.
   const automatedScores = scores.filter(score => !isHumanScoreName(score.name));
@@ -183,23 +176,6 @@ export default function WorkflowTraceView() {
       observation.id === (selectedSpanId ?? defaultSpanId),
   );
 
-const tabs: TraceSectionOption[] = [
-  {
-    value: 'timeline',
-    icon: <AccountTreeRoundedIcon fontSize="small" />,
-    tooltip: `Timeline (${observations.length})`,
-  },
-  {
-    value: 'eval',
-    icon: <FactCheckRoundedIcon fontSize="small" />,
-    tooltip: `Evaluation (${judges.length + scores.length})`,
-  },
-  {
-    value: 'prompts',
-    icon: <TextSnippetRoundedIcon fontSize="small" />,
-    tooltip: `Prompts (${promptObs.length})`,
-  },
-];
   return (
     <Box
       sx={{
@@ -224,49 +200,25 @@ const tabs: TraceSectionOption[] = [
         judgesPassed={judgesPassed}
         checksCount={checks.length}
         checksPassed={checksPassed}
-        tab={tab}
-        tabs={tabs}
-        onTabChange={setTab}
       />
-      <Paper
-        elevation={1}
-        sx={{
-          flex: 1,
-          overflow: 'auto',
-          height: '100%',
-          width: '100%',
-          position: 'relative',
-        }}
-      >
-
-        {tab === 'timeline' && (
-          <TimelineTab
-            observations={observations}
-            selectedSpanId={selectedSpanId}
-            defaultSpanId={defaultSpanId}
-            selectedObs={selectedObs}
-            onSelectSpan={setSelectedSpanId}
-            spanScores={scores.filter(score => isHumanScoreName(score.name) && score.observationId === selectedObs?.id)}
-            onAnnotateSpan={payload => handleAnnotate(selectedObs?.id ?? null, payload)}
-            savingAnnotation={savingAnnotation}
-          />
-        )}
-
-        {tab === 'eval' && (
-          <EvaluationTab
-            judges={judges}
-            checks={checks}
-            metrics={metrics}
-            humanScores={humanScores}
-            onAnnotateTrace={payload => handleAnnotate(null, payload)}
-            savingAnnotation={savingAnnotation}
-          />
-        )}
-
-        {tab === 'prompts' && (
-          <PromptsTab promptObs={promptObs} />
-        )}
-      </Paper>
+      <Box sx={{ flex: 1, overflow: 'auto', height: '100%', width: '100%', position: 'relative' }}>
+        <TraceWorkspace
+          observations={observations}
+          selectedSpanId={selectedSpanId}
+          defaultSpanId={defaultSpanId}
+          selectedObs={selectedObs}
+          onSelectSpan={setSelectedSpanId}
+          spanScores={scores.filter(score => isHumanScoreName(score.name) && score.observationId === selectedObs?.id)}
+          onAnnotateSpan={payload => handleAnnotate(selectedObs?.id ?? null, payload)}
+          savingAnnotation={savingAnnotation}
+          judges={judges}
+          checks={checks}
+          metrics={metrics}
+          humanScores={humanScores}
+          onAnnotateTrace={payload => handleAnnotate(null, payload)}
+          promptObs={promptObs}
+        />
+      </Box>
     </Box>
   );
 }

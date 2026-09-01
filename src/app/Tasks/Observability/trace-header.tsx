@@ -10,7 +10,6 @@ import {
   useTheme,
 } from '@mui/material';
 
-import SegmentedToggle from '../../../shared/components/segmented-toggle';
 import SmartToyRoundedIcon from '@mui/icons-material/SmartToyRounded';
 import TimerOutlinedIcon from '@mui/icons-material/TimerOutlined';
 import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
@@ -21,12 +20,6 @@ import RuleRoundedIcon from '@mui/icons-material/RuleRounded';
 import { CopyButton, MetaChip } from './trace-ui';
 import { formatMs, MONO } from '../../../shared/models/observability/agentic-conventions';
 
-export type TraceSectionOption = {
-  value: string;
-  label?: string;
-  icon?: ReactNode;
-  tooltip?: string;
-};
 type SummaryChipTone =
   | 'default'
   | 'primary'
@@ -110,10 +103,6 @@ type TraceHeaderProps = {
   judgesPassed: number;
   checksCount: number;
   checksPassed: number;
-
-  tab: string;
-  tabs: TraceSectionOption[];
-  onTabChange: (tab: string) => void;
 };
 
 const TraceHeader = ({
@@ -129,9 +118,6 @@ const TraceHeader = ({
   judgesPassed,
   checksCount,
   checksPassed,
-  tab,
-  tabs,
-  onTabChange,
 }: TraceHeaderProps) => {
   const theme = useTheme();
   const [showAllTags, setShowAllTags] = useState(false);
@@ -221,16 +207,6 @@ const TraceHeader = ({
           </Typography>
           <CopyButton text={id} />
         </Stack>
-
-        <Box sx={{ flexShrink: 0 }}>
-          <SegmentedToggle
-            size="small"
-            value={tab}
-            onChange={onTabChange}
-            options={tabs}
-            aria-label="Trace section"
-          />
-        </Box>
       </Stack>
 
       <Stack
