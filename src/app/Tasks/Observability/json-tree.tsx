@@ -7,14 +7,36 @@ import { MONO } from '../../../shared/models/observability/agentic-conventions';
 const isExpandable = (value: unknown): value is Record<string, unknown> | unknown[] =>
   typeof value === 'object' && value !== null;
 
+// Long string values (a claim, a prompt fragment, ...) used to render fully
+// inline, which is what turned one flat object into several wrapped lines —
+// truncate and let the user expand just that value, in place, on click.
+const STRING_TRUNCATE_AT = 80;
+
 const PrimitiveValue = ({ value }: { value: unknown }) => {
   const theme = useTheme();
+  const [expanded, setExpanded] = useState(false);
 
   if (value === null || value === undefined) {
     return <Box component="span" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>null</Box>;
   }
   if (typeof value === 'string') {
-    return <Box component="span" sx={{ color: theme.palette.success.main }}>&quot;{value}&quot;</Box>;
+    const isLong = value.length > STRING_TRUNCATE_AT;
+    const shown = isLong && !expanded ? `${value.slice(0, STRING_TRUNCATE_AT)}…` : value;
+
+    return (
+      <Box
+        component="span"
+        onClick={isLong ? () => setExpanded(e => !e) : undefined}
+        sx={{
+          color: theme.palette.success.main,
+          cursor: isLong ? 'pointer' : 'default',
+          ...(isLong && { '&:hover': { textDecoration: 'underline' } }),
+        }}
+        title={isLong ? (expanded ? 'Click to collapse' : 'Click to expand') : undefined}
+      >
+        &quot;{shown}&quot;
+      </Box>
+    );
   }
   if (typeof value === 'number') {
     return <Box component="span" sx={{ color: theme.palette.info.main }}>{value}</Box>;

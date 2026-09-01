@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Box,
@@ -133,11 +134,28 @@ const TraceHeader = ({
   onTabChange,
 }: TraceHeaderProps) => {
   const theme = useTheme();
+  const [showAllTags, setShowAllTags] = useState(false);
 
   const hasMetadata =
     Boolean(headerModel) ||
     configEntries.length > 0 ||
     Boolean(tags?.length);
+
+  // Config values (claim/prediction/temperature/...) plus dataset/workflow
+  // tags used to render as one unbroken row that wrapped across 2+ lines —
+  // cap what's visible by default and let the rest expand behind one chip,
+  // same overflow pattern as a crowded nav or a long filter-chip row.
+  const TAG_VISIBLE_COUNT = 5;
+  type TagItem =
+    | { kind: 'meta'; key: string; label: string; value: string }
+    | { kind: 'tag'; key: string; label: string };
+  const allTagItems: TagItem[] = [
+    ...(headerModel ? [{ kind: 'meta' as const, key: 'model', label: 'model', value: headerModel }] : []),
+    ...configEntries.map(([key, value]) => ({ kind: 'meta' as const, key, label: key, value: String(value) })),
+    ...(tags ?? []).map(t => ({ kind: 'tag' as const, key: t, label: t })),
+  ];
+  const visibleTagItems = showAllTags ? allTagItems : allTagItems.slice(0, TAG_VISIBLE_COUNT);
+  const hiddenTagCount = allTagItems.length - visibleTagItems.length;
 
   const judgesTone: SummaryChipTone =
     judgesCount === 0
@@ -274,33 +292,45 @@ const TraceHeader = ({
             rowGap: 0.5,
           }}
         >
-          {headerModel && (
-            <MetaChip
-              label="model"
-              value={headerModel}
-            />
-          )}
-
-          {configEntries.map(([key, value]) => (
-            <MetaChip
-              key={key}
-              label={key}
-              value={String(value)}
-            />
+          {visibleTagItems.map(item => (
+            item.kind === 'meta'
+              ? <MetaChip key={item.key} label={item.label} value={item.value} />
+              : (
+                <Chip
+                  key={item.key}
+                  size="small"
+                  label={item.label}
+                  variant="outlined"
+                  sx={{ height: 20, fontSize: '0.62rem' }}
+                />
+              )
           ))}
 
-          {tags?.map(tag => (
+          {hiddenTagCount > 0 && (
             <Chip
-              key={tag}
               size="small"
-              label={tag}
-              variant="outlined"
+              label={`+${hiddenTagCount} more`}
+              onClick={() => setShowAllTags(true)}
               sx={{
                 height: 20,
                 fontSize: '0.62rem',
+                fontWeight: 700,
+                color: 'primary.main',
+                bgcolor: 'transparent',
+                border: `1px dashed ${theme.palette.primary.main}`,
+                cursor: 'pointer',
               }}
             />
-          ))}
+          )}
+
+          {showAllTags && allTagItems.length > TAG_VISIBLE_COUNT && (
+            <Chip
+              size="small"
+              label="Show less"
+              onClick={() => setShowAllTags(false)}
+              sx={{ height: 20, fontSize: '0.62rem', cursor: 'pointer' }}
+            />
+          )}
         </Stack>
       )}
     </Paper>
