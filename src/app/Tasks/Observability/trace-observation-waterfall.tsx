@@ -74,8 +74,8 @@ const ObservationWaterfall = ({ observations, selectedId, onSelect }: Props) => 
         ))}
       </Stack>
 
-      <Box sx={{ width: '100%', overflow: 'auto' }}>
-        <Box sx={{ position: 'relative', minWidth: 560 }}>
+      <Box sx={{ width: '100%' }}>
+        <Box sx={{ position: 'relative' }}>
           {/* Time axis */}
           <Box
             sx={{
