@@ -5,6 +5,7 @@ import TouchAppRoundedIcon from '@mui/icons-material/TouchAppRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 import SchemaRoundedIcon from '@mui/icons-material/SchemaRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
+import type { Score } from '../../../shared/models/observability/score';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import SegmentedToggle from '../../../shared/components/segmented-toggle';
@@ -12,6 +13,7 @@ import { colorForType } from './trace-observation-waterfall';
 import SpanTree from './span-tree';
 import TraceGraph from './trace-graph';
 import SpanDetail from './span-detail';
+import type { AnnotationSavePayload } from './annotate-form';
 
 type TimelineTabProps = {
   observations: Observation[];
@@ -19,6 +21,9 @@ type TimelineTabProps = {
   defaultSpanId: string | null;
   selectedObs?: Observation;
   onSelectSpan: (id: string | null) => void;
+  spanScores?: Score[];
+  onAnnotateSpan?: (payload: AnnotationSavePayload) => void;
+  savingAnnotation?: boolean;
 };
 
 const TREE_VIEW_OPTIONS = [
@@ -26,7 +31,16 @@ const TREE_VIEW_OPTIONS = [
   { value: 'graph', icon: <SchemaRoundedIcon fontSize="small" />, tooltip: 'Graph' },
 ];
 
-const TimelineTab = ({ observations, selectedSpanId, defaultSpanId, selectedObs, onSelectSpan }: TimelineTabProps) => {
+const TimelineTab = ({
+  observations,
+  selectedSpanId,
+  defaultSpanId,
+  selectedObs,
+  onSelectSpan,
+  spanScores,
+  onAnnotateSpan,
+  savingAnnotation,
+}: TimelineTabProps) => {
   const [view, setView] = useState<'list' | 'graph'>('graph');
   const activeId = selectedSpanId ?? defaultSpanId;
 
@@ -82,7 +96,12 @@ const TimelineTab = ({ observations, selectedSpanId, defaultSpanId, selectedObs,
       <Box sx={{ flex: 1, minWidth: 0, height: '100%' }}>
         <ResponsiveCardTable title="Selected Observation" showSettings={false} showFullScreenButton={false}>
           {selectedObs ? (
-            <SpanDetail obs={selectedObs} />
+            <SpanDetail
+              obs={selectedObs}
+              scores={spanScores}
+              onAnnotate={onAnnotateSpan}
+              savingAnnotation={savingAnnotation}
+            />
           ) : (
             <InfoMessage
               message="Select a span from the trace to inspect its input, output and metadata."

@@ -1,16 +1,44 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Box, Chip, CircularProgress, Typography, useTheme } from '@mui/material';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
-import { getTrace, getTraces } from '../../../../store/slices/observabilitySlice';
+import { fetchAnnotations, getTrace, getTraces, selectAnnotations } from '../../../../store/slices/observabilitySlice';
 import { MONO, OBSERVABILITY_PROJECT_ID } from '../../../../shared/models/observability/agentic-conventions';
+import { isHumanScoreName } from '../../../Tasks/Observability/score-dimensions';
+
+// The trace LIST endpoint's `scores` field only carries score ids, not full
+// objects (unlike a single trace's own detail fetch), so it can't tell us
+// which traces have human annotations. Instead this reuses the same
+// `/api/observability/scores` listing that powers the Annotations browse tab,
+// and groups it by traceId locally.
+
+const AnnotationBadge = ({ count, title }: { count: number; title: string }) => (
+  <Box
+    title={title}
+    sx={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 0.25,
+      px: 0.5,
+      py: 0.1,
+      borderRadius: 999,
+      bgcolor: 'rgba(55,102,175,0.1)',
+      color: '#3766AF',
+      flexShrink: 0,
+    }}
+  >
+    <RateReviewRoundedIcon sx={{ fontSize: 12 }} />
+    <Typography sx={{ fontSize: '0.62rem', fontWeight: 700 }}>{count}</Typography>
+  </Box>
+);
 
 export default function TracesAccordion() {
   const dispatch = useAppDispatch();
@@ -27,6 +55,7 @@ export default function TracesAccordion() {
   const experimentId = run?.experimentId ?? experimentIdParam;
 
   const { data, loading, error } = useAppSelector((s: RootState) => s.observability.traces);
+  const { data: annotations } = useAppSelector(selectAnnotations);
   const selectedId = tab?.dataTaskTable?.selectedId ?? null;
 
   useEffect(() => {
@@ -35,6 +64,10 @@ export default function TracesAccordion() {
       getTraces({ projectId: OBSERVABILITY_PROJECT_ID, userId: experimentId, sessionId: workflowId }),
     );
   }, [dispatch, experimentId, workflowId]);
+
+  useEffect(() => {
+    dispatch(fetchAnnotations({ projectId: OBSERVABILITY_PROJECT_ID }));
+  }, [dispatch]);
 
   // Deep link from the "All traces" table: land directly on the selected trace
   // instead of requiring an extra click in this tree once it loads.
@@ -46,6 +79,20 @@ export default function TracesAccordion() {
   }, [dispatch, traceIdParam]);
 
   const traces = data?.data ?? [];
+
+  const annotationCountByTraceId = useMemo(() => {
+    const map: Record<string, number> = {};
+
+    annotations.forEach(s => {
+      if (isHumanScoreName(s.name)) {
+        map[s.traceId] = (map[s.traceId] ?? 0) + 1;
+      }
+    });
+
+    return map;
+  }, [annotations]);
+
+  const totalAnnotated = traces.reduce((sum, t) => sum + (annotationCountByTraceId[t.id] ?? 0), 0);
 
   const handleSelect = (traceId: string) => {
     dispatch(setSelectedId(traceId));
@@ -63,6 +110,12 @@ export default function TracesAccordion() {
             <HubRoundedIcon fontSize="small" sx={{ color: theme.palette.primary.main }} />
             <Typography sx={{ mr: 1 }}>Session Traces</Typography>
             <Chip size="small" label={loading ? '…' : traces.length} sx={{ height: 18, fontSize: '0.65rem' }} />
+            {!loading && totalAnnotated > 0 && (
+              <AnnotationBadge
+                count={totalAnnotated}
+                title={`${totalAnnotated} human annotation${totalAnnotated === 1 ? '' : 's'} in this session`}
+              />
+            )}
           </Box>
         }
       >
@@ -86,35 +139,51 @@ export default function TracesAccordion() {
           </Typography>
         )}
 
-        {traces.map(t => (
-          <TreeItem
-            key={t.id}
-            itemId={t.id}
-            label={
-              <Box
-                sx={{ px: 1, py: 0.5, borderRadius: 1, cursor: 'pointer' }}
-                onClick={(e) => { e.stopPropagation(); handleSelect(t.id); }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
-                  <AccountTreeRoundedIcon fontSize="small" sx={{ color: theme.palette.secondary.main, flexShrink: 0 }} />
+        {traces.map(t => {
+          const annotated = annotationCountByTraceId[t.id] ?? 0;
+
+          return (
+            <TreeItem
+              key={t.id}
+              itemId={t.id}
+              label={
+                <Box
+                  sx={{
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 1,
+                    cursor: 'pointer',
+                    borderLeft: annotated ? `2px solid #3766AF` : '2px solid transparent',
+                  }}
+                  onClick={(e) => { e.stopPropagation(); handleSelect(t.id); }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, minWidth: 0 }}>
+                    <AccountTreeRoundedIcon fontSize="small" sx={{ color: theme.palette.secondary.main, flexShrink: 0 }} />
+                    <Typography
+                      sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexGrow: 1, minWidth: 0 }}
+                      title={t.name || t.id}
+                    >
+                      {t.name || t.id}
+                    </Typography>
+                    {annotated > 0 && (
+                      <AnnotationBadge
+                        count={annotated}
+                        title={`${annotated} human annotation${annotated === 1 ? '' : 's'}`}
+                      />
+                    )}
+                  </Box>
                   <Typography
-                    sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                    title={t.name || t.id}
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', pl: 3, fontFamily: MONO, fontSize: '0.62rem' }}
                   >
-                    {t.name || t.id}
+                    {new Date(t.timestamp).toLocaleTimeString()} · {t.observations?.length ?? 0} obs
                   </Typography>
                 </Box>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ display: 'block', pl: 3, fontFamily: MONO, fontSize: '0.62rem' }}
-                >
-                  {new Date(t.timestamp).toLocaleTimeString()} · {t.observations?.length ?? 0} obs
-                </Typography>
-              </Box>
-            }
-          />
-        ))}
+              }
+            />
+          );
+        })}
       </TreeItem>
     </SimpleTreeView>
   );

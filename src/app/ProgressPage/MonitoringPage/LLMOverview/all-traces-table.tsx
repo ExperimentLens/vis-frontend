@@ -5,6 +5,7 @@ import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import WorkspacesRoundedIcon from '@mui/icons-material/WorkspacesRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
+import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
 import { useNavigate } from 'react-router-dom';
 
 import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
@@ -13,6 +14,7 @@ import { StyledDataGrid, TruncMono } from './llm-monitoring-shared';
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
 import type { GenOutput } from '../../../../shared/models/observability/agentic-conventions';
 import { formatMs, isJudge, modelOf, prettyName } from '../../../../shared/models/observability/agentic-conventions';
+import { isHumanScoreName } from '../../../Tasks/Observability/score-dimensions';
 
 type JudgeVerdict = 'pass' | 'fail' | null;
 
@@ -27,8 +29,12 @@ type Row = {
   cost?: number;
   timestamp?: string;
   count?: number;
+  annotatedCount?: number;
   [judgeField: string]: unknown;
 };
+
+const humanAnnotationCount = (t: TraceDetail): number =>
+  (t.scores ?? []).filter(s => isHumanScoreName(s.name)).length;
 
 const traceLatencyMs = (t: TraceDetail): number => {
   const times = t.observations
@@ -56,12 +62,14 @@ export default function AllTracesTable({
   experimentId,
   selectedTraceIds,
   onClearSelection,
+  runNameById,
 }: {
   details: TraceDetail[];
   experimentId: string | undefined;
   /** When set, only these trace ids are shown — e.g. traces from a bucket clicked in the time chart. */
   selectedTraceIds?: string[] | null;
   onClearSelection?: () => void;
+  runNameById?: Record<string, string>;
 }) {
   const navigate = useNavigate();
   const [groupBySession, setGroupBySession] = useState(false);
@@ -139,6 +147,7 @@ export default function AllTracesTable({
             tokens: traceTokens(t),
             cost: t.totalCost ?? 0,
             timestamp: t.timestamp,
+            annotatedCount: humanAnnotationCount(t),
           };
 
           judgeMeta.forEach((j, i) => {
@@ -195,6 +204,7 @@ export default function AllTracesTable({
       tokens: rows.reduce((s, r) => s + (r.tokens ?? 0), 0),
       cost: rows.reduce((s, r) => s + (r.cost ?? 0), 0),
       timestamp: timestamps.length ? new Date(Math.max(...timestamps)).toISOString() : undefined,
+      annotatedCount: rows.reduce((s, r) => s + (r.annotatedCount ?? 0), 0),
     };
 
     judgeMeta.forEach((_, i) => {
@@ -242,7 +252,21 @@ export default function AllTracesTable({
         );
       }
 
-      return <TruncMono max={320}>{String(params.value ?? '')}</TruncMono>;
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+          <TruncMono max={row.annotatedCount ? 260 : 320}>{String(params.value ?? '')}</TruncMono>
+          {Boolean(row.annotatedCount) && (
+            <Tooltip title={`${row.annotatedCount} human annotation${row.annotatedCount === 1 ? '' : 's'}`}>
+              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, flexShrink: 0, color: '#3766AF' }}>
+                <RateReviewRoundedIcon sx={{ fontSize: 13 }} />
+                <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.62rem' }}>
+                  {row.annotatedCount}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
+        </Box>
+      );
     },
   };
 
@@ -253,7 +277,11 @@ export default function AllTracesTable({
     headerAlign: 'left',
     align: 'left',
     sortable: !groupBySession,
-    renderCell: params => <TruncMono max={120}>{String(params.value ?? '')}</TruncMono>,
+    renderCell: params => {
+      const sessionId = String(params.value ?? '');
+
+      return <TruncMono max={120}>{runNameById?.[sessionId] ?? sessionId}</TruncMono>;
+    },
   };
 
   const modelColumn: GridColDef = {

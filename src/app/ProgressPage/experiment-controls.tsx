@@ -311,7 +311,6 @@ const ExperimentControls = () => {
                     Workflow
                   </Typography>
                   <Typography
-                    variant="mono"
                     sx={{
                       fontWeight: 700,
                       fontSize: '0.95rem',
@@ -324,7 +323,7 @@ const ExperimentControls = () => {
                     }}
                     title={workflowId ?? ''}
                   >
-                    {workflowId}
+                    {workflow?.name ?? workflowId}
                   </Typography>
 
                   {isRunning && (

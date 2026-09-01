@@ -5,6 +5,7 @@ import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import RuleRoundedIcon from '@mui/icons-material/RuleRounded';
 import QueryStatsRoundedIcon from '@mui/icons-material/QueryStatsRounded';
+import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
 import type { Score } from '../../../shared/models/observability/score';
 import type { GenOutput } from '../../../shared/models/observability/agentic-conventions';
@@ -13,11 +14,16 @@ import ResponsiveCardTable from '../../../shared/components/responsive-card-tabl
 import { SectionLabel } from './trace-ui';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import AnnotateForm from './annotate-form';
+import type { AnnotationSavePayload } from './annotate-form';
 
 type EvaluationTabProps = {
   judges: Observation[];
   checks: Score[];
   metrics: Score[];
+  humanScores: Score[];
+  onAnnotateTrace: (payload: AnnotationSavePayload) => void;
+  savingAnnotation: boolean;
 };
 
 /** Normalized assessment so judges, checks and metrics share one selection model. */
@@ -31,7 +37,7 @@ type Assessment = {
   tokens?: number;
 };
 
-const EvaluationTab = ({ judges, checks, metrics }: EvaluationTabProps) => {
+const EvaluationTab = ({ judges, checks, metrics, humanScores, onAnnotateTrace, savingAnnotation }: EvaluationTabProps) => {
   const judgeItems = useMemo<Assessment[]>(
     () =>
       judges.map(judge => {
@@ -66,7 +72,7 @@ const EvaluationTab = ({ judges, checks, metrics }: EvaluationTabProps) => {
         key: score.id,
         group: 'metric',
         name: prettyName(score.name),
-        value: score.value,
+        value: score.value ?? undefined,
         detail: score.comment,
       })),
     [metrics],
@@ -102,7 +108,7 @@ const EvaluationTab = ({ judges, checks, metrics }: EvaluationTabProps) => {
       showSettings={false}
       showFullScreenButton={false}
     >
-      {allItems.length === 0 ? (
+      {allItems.length === 0 && humanScores.length === 0 ? (
         <InfoMessage
           message="No evaluation data for this trace."
           type="info"
@@ -111,6 +117,10 @@ const EvaluationTab = ({ judges, checks, metrics }: EvaluationTabProps) => {
         />
       ) : (
         <Stack spacing={1.5}>
+          <Section icon={<RateReviewRoundedIcon sx={{ fontSize: 15 }} />} title="Human Annotations" count={humanScores.length}>
+            <AnnotateForm scores={humanScores} targetLabel="trace" onSave={onAnnotateTrace} saving={savingAnnotation} />
+          </Section>
+
           {passRate !== null && (
             <PassRateBar passRate={passRate} passed={passed} total={boolItems.length} />
           )}

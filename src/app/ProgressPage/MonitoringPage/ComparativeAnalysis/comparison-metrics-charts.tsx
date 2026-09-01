@@ -376,7 +376,9 @@ const ComparisonMetricsCharts: React.FC = () => {
     return alpha(theme.palette.primary.main, 0.08 + normalized * 0.42);
   };
 
-  const showPivotTable = !isGroupedView && pivotRows.length > 0;
+  // const showPivotTable = !isGroupedView && pivotRows.length > 0;
+    const showPivotTable = false;
+
 
   const renderCharts = metricNames.map((metricName) => {
     const metricSeries = groupedMetrics[metricName];

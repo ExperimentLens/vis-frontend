@@ -169,7 +169,10 @@ export default function ResponseDiff({ byRun, runIds, runNameById, colorById, ba
                 <Stack direction="row" flexWrap="wrap" gap={0.5}>
                   {scores.map(sc => {
                     const baseValue = baselineScores.get(sc.name);
-                    const delta = id !== baselineId && baseValue !== undefined ? sc.value - baseValue : 0;
+                    const delta =
+                      id !== baselineId && baseValue !== undefined && baseValue !== null && sc.value !== null
+                        ? sc.value - baseValue
+                        : 0;
                     const tone =
                       delta > 0 ? theme.palette.success.main : delta < 0 ? theme.palette.error.main : theme.palette.text.secondary;
 

@@ -5,6 +5,11 @@ import type { TraceDetail } from '../../../../../shared/models/observability/tra
 import ResponsiveCardTable from '../../../../../shared/components/responsive-card-table';
 import ObservationWaterfall from '../../../../Tasks/Observability/trace-observation-waterfall';
 import { EmptyNote } from '../../LLMOverview/chart-kit';
+import { useAppDispatch } from '../../../../../store/store';
+import { createAnnotation } from '../../../../../store/slices/observabilitySlice';
+import AnnotateForm from '../../../../Tasks/Observability/annotate-form';
+import type { AnnotationSavePayload } from '../../../../Tasks/Observability/annotate-form';
+import { isHumanScoreName } from '../../../../Tasks/Observability/score-dimensions';
 
 // Unlike the rest of TrajectoryDiff (which pivots on `alignByQuestion` — an
 // exact string match on trace.input.question), this view intentionally does
@@ -15,6 +20,7 @@ import { EmptyNote } from '../../LLMOverview/chart-kit';
 interface Props {
   detailsByRun: Record<string, TraceDetail[]>
   runIds: string[]
+  runNameById: Record<string, string>
   colorById: Record<string, string>
   isMosaic: boolean
 }
@@ -25,10 +31,16 @@ const questionOf = (t: TraceDetail) => {
   return typeof q === 'string' && q.length > 0 ? q : t.name;
 };
 
-const GraphComparison = ({ detailsByRun, runIds, colorById, isMosaic }: Props) => {
+const GraphComparison = ({ detailsByRun, runIds, runNameById, colorById, isMosaic }: Props) => {
+  const dispatch = useAppDispatch();
+
   // Per-run selected trace id — deliberately local/independent per run rather
   // than a single shared "aligned question" index.
   const [selectedByRun, setSelectedByRun] = useState<Record<string, string>>({});
+  // Per-run selected observation id, for span-level annotation via the
+  // waterfall's click-to-select. `null` (the default) targets the whole trace.
+  const [selectedObsByRun, setSelectedObsByRun] = useState<Record<string, string | null>>({});
+  const [savingRun, setSavingRun] = useState<Record<string, boolean>>({});
 
   // Always 2 per row in mosaic mode, regardless of how many runs are selected.
   const size = isMosaic ? 6 : 12;
@@ -39,15 +51,34 @@ const GraphComparison = ({ detailsByRun, runIds, colorById, isMosaic }: Props) =
         const traces = detailsByRun[runId] ?? [];
         const selectedId = selectedByRun[runId] ?? traces[0]?.id;
         const trace = traces.find(t => t.id === selectedId);
+        const selectedObsId = selectedObsByRun[runId] ?? null;
 
         const handleChange = (e: SelectChangeEvent) => {
           setSelectedByRun(prev => ({ ...prev, [runId]: e.target.value }));
+          setSelectedObsByRun(prev => ({ ...prev, [runId]: null }));
+        };
+
+        const targetScores = trace
+          ? (trace.scores ?? []).filter(s => isHumanScoreName(s.name) && (selectedObsId ? s.observationId === selectedObsId : !s.observationId))
+          : [];
+
+        const handleSaveAnnotation = (payload: AnnotationSavePayload) => {
+          if (!trace) return;
+          setSavingRun(prev => ({ ...prev, [runId]: true }));
+          dispatch(createAnnotation({
+            workflowId: runId,
+            request: {
+              traceId: trace.id,
+              observationId: selectedObsId ?? undefined,
+              ...payload,
+            },
+          })).finally(() => setSavingRun(prev => ({ ...prev, [runId]: false })));
         };
 
         return (
           <Box key={runId} sx={{ gridColumn: `span ${size}`, minWidth: 0 }}>
             <ResponsiveCardTable
-              title={runId}
+              title={runNameById[runId] ?? runId}
               details={i === 0 ? 'baseline' : 'execution'}
               headerActions={
                 traces.length > 0 ? (
@@ -92,7 +123,17 @@ const GraphComparison = ({ detailsByRun, runIds, colorById, isMosaic }: Props) =
                         sx={{ height: 16, fontSize: '0.55rem' }}
                       />
                     </Box>
-                    <ObservationWaterfall observations={trace.observations} />
+                    <ObservationWaterfall
+                      observations={trace.observations}
+                      selectedId={selectedObsId}
+                      onSelect={(id) => setSelectedObsByRun(prev => ({ ...prev, [runId]: prev[runId] === id ? null : id }))}
+                    />
+                    <AnnotateForm
+                      scores={targetScores}
+                      targetLabel={selectedObsId ? 'step' : 'trace'}
+                      saving={Boolean(savingRun[runId])}
+                      onSave={handleSaveAnnotation}
+                    />
                   </>
                 )}
               </Box>

@@ -16,6 +16,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 interface Props {
   detailsByRun: Record<string, TraceDetail[]>
   runIds: string[]
+  runNameById: Record<string, string>
   colorById: Record<string, string>
   baselineId: string
 }
@@ -84,7 +85,7 @@ const metricValue = (metric: Metric, agg: StepAgg | undefined): number | null =>
   return agg.avgTokens;
 };
 
-const StepProfile = ({ detailsByRun, runIds, colorById, baselineId }: Props) => {
+const StepProfile = ({ detailsByRun, runIds, runNameById, colorById, baselineId }: Props) => {
   const theme = useTheme();
   const [metric, setMetric] = useState<Metric>('avgMs');
 
@@ -153,7 +154,7 @@ const StepProfile = ({ detailsByRun, runIds, colorById, baselineId }: Props) => 
                 sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                 title={id}
               >
-                {id}
+                {runNameById[id] ?? id}
                 {id === baselineId ? ' (baseline)' : ''}
               </Typography>
             </Box>

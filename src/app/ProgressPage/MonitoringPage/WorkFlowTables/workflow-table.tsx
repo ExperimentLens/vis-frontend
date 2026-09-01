@@ -501,7 +501,7 @@ const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       {selectedTab === 1 && <WorkflowColorDot color={color} selected={isSelected} />}
-      <span>{workflowId}</span>
+      <span title={row.workflowName ?? workflowId}>{workflowId}</span>
     </Box>
   );
 };
@@ -952,6 +952,7 @@ export default function WorkflowTable() {
           return {
             id: workflow.id,
             workflowId: workflow.id,
+            workflowName: workflow.name ?? workflow.id,
             space: workflow.space,
             ...Array.from(uniqueTasks).reduce((acc, variant) => {
               acc[variant] =

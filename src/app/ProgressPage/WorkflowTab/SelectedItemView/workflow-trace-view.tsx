@@ -1,16 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Paper } from '@mui/material';
 import TouchAppRoundedIcon from '@mui/icons-material/TouchAppRounded';
-import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 import TextSnippetRoundedIcon from '@mui/icons-material/TextSnippetRounded';
 
-import { useAppSelector } from '../../../../store/store';
+import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import {
-  asText,
   isJudge,
   modelOf,
   tokensOf,
@@ -19,24 +17,27 @@ import type {
   GenInput,
   GenOutput,
   TraceInput,
-  TraceOutput,
 } from '../../../../shared/models/observability/agentic-conventions';
 import Loader from '../../../../shared/components/loader';
+import { createAnnotation } from '../../../../store/slices/observabilitySlice';
+import { isHumanScoreName } from '../../../Tasks/Observability/score-dimensions';
+import type { AnnotationSavePayload } from '../../../Tasks/Observability/annotate-form';
 
 import TraceHeader from '../../../Tasks/Observability/trace-header';
 import type { TraceSectionOption } from '../../../Tasks/Observability/trace-header';
-import OverviewTab from '../../../Tasks/Observability/overview-tab';
 import TimelineTab from '../../../Tasks/Observability/timeline-tab';
 import EvaluationTab from '../../../Tasks/Observability/evaluation-tab';
 import PromptsTab from '../../../Tasks/Observability/prompts-tab';
 
 export default function WorkflowTraceView() {
+  const dispatch = useAppDispatch();
   const { data, loading, error } = useAppSelector(
     (state: RootState) => state.observability.trace,
   );
 
-  const [tab, setTab] = useState('overview');
+  const [tab, setTab] = useState('timeline');
   const [selectedSpanId, setSelectedSpanId] = useState<string | null>(null);
+  const [savingAnnotation, setSavingAnnotation] = useState(false);
 
   const observations = useMemo(
     () => data?.observations ?? [],
@@ -108,17 +109,11 @@ export default function WorkflowTraceView() {
   }
 
   const input = data.input as TraceInput;
-  const output = data.output as TraceOutput;
 
   const question =
     typeof input?.question === 'string'
       ? input.question
       : data.name;
-
-  const answer =
-    typeof output?.answer === 'string'
-      ? output.answer
-      : asText(data.output);
 
   const configEntries = Object.entries(input ?? {}).filter(
     ([key]) => key !== 'question',
@@ -153,24 +148,35 @@ export default function WorkflowTraceView() {
 
   const scores = data.scores ?? [];
 
-  const checks = scores.filter(
+  // Human-authored annotations get their own section (EvaluationTab) and
+  // their own docked form (SpanDetail) — kept out of the judge/check/metric
+  // heat cells below, which are for automated evaluation only.
+  const automatedScores = scores.filter(score => !isHumanScoreName(score.name));
+  const humanScores = scores.filter(score => isHumanScoreName(score.name) && !score.observationId);
+
+  const checks = automatedScores.filter(
     score => score.value === 0 || score.value === 1,
   );
 
-  const metrics = scores.filter(
+  const metrics = automatedScores.filter(
     score => score.value !== 0 && score.value !== 1,
   );
+
+  const handleAnnotate = (observationId: string | null, payload: AnnotationSavePayload) => {
+    setSavingAnnotation(true);
+    dispatch(createAnnotation({
+      workflowId: data.sessionId,
+      request: {
+        traceId: data.id,
+        observationId: observationId ?? undefined,
+        ...payload,
+      },
+    })).finally(() => setSavingAnnotation(false));
+  };
 
   const checksPassed = checks.filter(
     score => score.value === 1,
   ).length;
-
-  const passRate =
-    typeof output?.judge_pass_rate === 'number'
-      ? output.judge_pass_rate
-      : judges.length
-        ? judgesPassed / judges.length
-        : null;
 
   const selectedObs = observations.find(
     observation =>
@@ -178,11 +184,6 @@ export default function WorkflowTraceView() {
   );
 
 const tabs: TraceSectionOption[] = [
-  {
-    value: 'overview',
-    icon: <DashboardRoundedIcon fontSize="small" />,
-    tooltip: 'Overview',
-  },
   {
     value: 'timeline',
     icon: <AccountTreeRoundedIcon fontSize="small" />,
@@ -238,15 +239,6 @@ const tabs: TraceSectionOption[] = [
         }}
       >
 
-        {tab === 'overview' && (
-          <OverviewTab
-            question={question}
-            answer={answer}
-            passRate={passRate}
-            judges={judges}
-          />
-        )}
-
         {tab === 'timeline' && (
           <TimelineTab
             observations={observations}
@@ -254,6 +246,9 @@ const tabs: TraceSectionOption[] = [
             defaultSpanId={defaultSpanId}
             selectedObs={selectedObs}
             onSelectSpan={setSelectedSpanId}
+            spanScores={scores.filter(score => isHumanScoreName(score.name) && score.observationId === selectedObs?.id)}
+            onAnnotateSpan={payload => handleAnnotate(selectedObs?.id ?? null, payload)}
+            savingAnnotation={savingAnnotation}
           />
         )}
 
@@ -262,6 +257,9 @@ const tabs: TraceSectionOption[] = [
             judges={judges}
             checks={checks}
             metrics={metrics}
+            humanScores={humanScores}
+            onAnnotateTrace={payload => handleAnnotate(null, payload)}
+            savingAnnotation={savingAnnotation}
           />
         )}
 

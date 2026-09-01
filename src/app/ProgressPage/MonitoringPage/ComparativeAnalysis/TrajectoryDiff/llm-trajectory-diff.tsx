@@ -30,6 +30,7 @@ import VerdictMatrix from './verdict-matrix';
 import ResponseDiff from './response-diff';
 import GraphComparison from './graph-comparison';
 import StepProfile from './step-profile';
+import AnnotationsBrowser from './annotations-browser';
 import SegmentedToggle from '../../../../../shared/components/segmented-toggle';
 // import PerTaskAnalysis from './per-task-analysis';
 import CumulativeRaceChart from './cumulative-race-chart';
@@ -454,6 +455,7 @@ export default function LlmTrajectoryDiff() {
         <GraphComparison
           detailsByRun={detailsByRun}
           runIds={runIds}
+          runNameById={runNameById}
           colorById={colorById}
           isMosaic={isMosaic}
         />
@@ -461,17 +463,19 @@ export default function LlmTrajectoryDiff() {
 
       {/* Step Profile — run-level rollup across every session in the run, not
           scoped to a single question at all. */}
-      {selectedExecutionsView === 'stepprofile' && (
+      {/* {selectedExecutionsView === 'stepprofile' && (
         <StepProfile
           detailsByRun={detailsByRun}
           runIds={runIds}
+          runNameById={runNameById}
           colorById={colorById}
           baselineId={baseline}
         />
-      )}
+      )} */}
 
-      
-      
+      {/* Annotations — every human annotation in this Langfuse project, not
+          scoped to the currently selected runs; add one from the Graph tab. */}
+      {selectedExecutionsView === 'annotations' && <AnnotationsBrowser />}
     </Stack>
   );
 }

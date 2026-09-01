@@ -96,6 +96,11 @@ export default function LlmMonitoringOverview() {
   const sessions = useAppSelector(selectSessionsMap);
   const experimentId = experiment.data?.id;
 
+  const runNameById = useMemo(
+    () => Object.fromEntries(workflows.data.map(w => [w.id, w.name ?? w.id])),
+    [workflows.data],
+  );
+
   const idKey = workflows.data
     .filter(w => w.status !== 'SCHEDULED')
     .map(w => w.id)
@@ -335,6 +340,7 @@ export default function LlmMonitoringOverview() {
               obsSpec={obsSpec}
               tooltip={tooltip}
               onDownloadTraceLatencyCsv={handleDownloadTraceLatencyCsv}
+              runNameById={runNameById}
             />
           )}
 

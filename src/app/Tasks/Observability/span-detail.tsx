@@ -1,5 +1,6 @@
 import { Box, Chip, Paper, Stack, Typography, alpha, useTheme } from '@mui/material';
 import type { Observation } from '../../../shared/models/observability/observation';
+import type { Score } from '../../../shared/models/observability/score';
 import {
   asText,
   durationOf,
@@ -10,6 +11,8 @@ import type { GenInput, GenOutput } from '../../../shared/models/observability/a
 import { colorForType } from './trace-observation-waterfall';
 import { CodeBlock, CopyButton, MetaChip, PassFailChip, SectionLabel } from './trace-ui';
 import CounterfactualReplayPanel from './counterfactual-replay-panel';
+import AnnotateForm from './annotate-form';
+import type { AnnotationSavePayload } from './annotate-form';
 import JsonTree from './json-tree';
 
 const renderValue = (value: unknown, maxHeight = 180) =>
@@ -31,7 +34,14 @@ const omitPrompt = (value: unknown): Record<string, unknown> | undefined => {
   return Object.keys(rest).length > 0 ? rest : undefined;
 };
 
-const SpanDetail = ({ obs }: { obs: Observation }) => {
+interface SpanDetailProps {
+  obs: Observation
+  scores?: Score[]
+  onAnnotate?: (payload: AnnotationSavePayload) => void
+  savingAnnotation?: boolean
+}
+
+const SpanDetail = ({ obs, scores = [], onAnnotate, savingAnnotation = false }: SpanDetailProps) => {
   const theme = useTheme();
   const input = obs.input as GenInput;
   const output = obs.output as GenOutput;
@@ -110,6 +120,10 @@ const SpanDetail = ({ obs }: { obs: Observation }) => {
           ) : renderValue(obs.output)}
         </Box>
       </Box>
+
+      {onAnnotate && (
+        <AnnotateForm scores={scores} targetLabel="step" onSave={onAnnotate} saving={savingAnnotation} />
+      )}
 
       {model && input?.prompt && (
         <CounterfactualReplayPanel traceId={obs.traceId} observationId={obs.id} prompt={input.prompt} />

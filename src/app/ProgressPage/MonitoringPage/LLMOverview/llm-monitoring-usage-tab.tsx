@@ -47,6 +47,7 @@ type UsageTabProps = {
   obsSpec: Record<string, unknown>;
   tooltip: React.ComponentProps<typeof ResponsiveCardVegaLite>['tooltip'];
   onDownloadTraceLatencyCsv: () => void;
+  runNameById: Record<string, string>;
 };
 
 export default function LlmMonitoringUsageTab({
@@ -58,6 +59,7 @@ export default function LlmMonitoringUsageTab({
   obsSpec,
   tooltip,
   onDownloadTraceLatencyCsv,
+  runNameById,
 }: UsageTabProps) {
   const { experimentId } = useParams();
   const [selectedTraceIds, setSelectedTraceIds] = useState<string[] | null>(null);
@@ -158,6 +160,7 @@ export default function LlmMonitoringUsageTab({
             experimentId={experimentId}
             selectedTraceIds={selectedTraceIds}
             onClearSelection={() => setSelectedTraceIds(null)}
+            runNameById={runNameById}
           />
         </Grid>
       </Grid>

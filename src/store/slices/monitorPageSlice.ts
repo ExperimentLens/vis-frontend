@@ -12,6 +12,7 @@ import type { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 export interface WorkflowTableRow {
   id: string;
   workflowId: string;
+  workflowName?: string;
   space?: string;
   status?: string;
   isGroupSummary?: boolean;
@@ -154,7 +155,7 @@ interface IMonitoringPageSlice {
         [workflowId: string]: { data: TestInstance[] | null; loading: boolean; error: string | null }
       }
       selectedModelComparisonChart: string
-      selectedExecutionsView: 'summary' | 'timeline' | 'verdicts' | 'responses' | 'graph' | 'stepprofile'
+      selectedExecutionsView: 'summary' | 'timeline' | 'verdicts' | 'responses' | 'graph' | 'stepprofile' | 'annotations'
       comparativeDataExploration: {
         commonDataAssets: CommonDataAssets
         dataAssetsMetaData: DataAssetsMetaData
@@ -501,7 +502,7 @@ export const monitoringPageSlice = createSlice({
     setSelectedModelComparisonChart: (state, action) => {
       state.selectedModelComparisonChart = action.payload;
     },
-    setSelectedExecutionsView: (state, action: { payload: 'summary' | 'timeline' | 'verdicts' | 'responses' | 'graph' | 'stepprofile'}) => {
+    setSelectedExecutionsView: (state, action: { payload: 'summary' | 'timeline' | 'verdicts' | 'responses' | 'graph' | 'stepprofile' | 'annotations'}) => {
       state.selectedExecutionsView = action.payload;
     },
     setSortRocByAuc: (state, action: { payload: boolean }) => {
