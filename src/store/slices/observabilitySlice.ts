@@ -7,6 +7,21 @@ import type { Score } from '../../shared/models/observability/score';
 import type { ScoreCreateRequest } from '../../shared/models/observability/score-create-request';
 import type { ScoresResponse } from '../../shared/models/observability/scores-response';
 
+// The API's error body is a Spring-style object ({ timestamp, status, error,
+// message, path, ... }), not a plain string — pull the human-readable message
+// out of it so slice state (typed `string | null`) never ends up holding an
+// object that React would choke on if rendered directly.
+const extractErrorMessage = (error: unknown, fallback: string): string => {
+    const data = (error as { response?: { data?: unknown } })?.response?.data;
+
+    if (typeof data === 'string' && data.length > 0) return data;
+    if (data && typeof data === 'object' && typeof (data as { message?: unknown }).message === 'string') {
+        return (data as { message: string }).message;
+    }
+
+    return fallback;
+};
+
 export interface SessionTraces {
     traceIds: string[];
     details: TraceDetail[];
@@ -66,7 +81,7 @@ export const getTraces = createAsyncThunk<TracesResponse, { projectId: string; s
             });
             return response.data;
         } catch (error) {
-            return rejectWithValue((error as { response?: { data?: unknown } })?.response?.data);
+            return rejectWithValue(extractErrorMessage(error, 'Failed to load traces'));
         }
     }
 );
@@ -78,7 +93,7 @@ export const getTrace = createAsyncThunk<TraceDetail, string>(
             const response = await api.get(`/observability/traces/${traceId}`);
             return response.data;
         } catch (error) {
-            return rejectWithValue((error as { response?: { data?: unknown } })?.response?.data);
+            return rejectWithValue(extractErrorMessage(error, 'Failed to load trace'));
         }
     }
 );
@@ -103,9 +118,7 @@ export const fetchSessionTraceDetails = createAsyncThunk<
 
             return { workflowId, details };
         } catch (error) {
-            return rejectWithValue(
-                (error as { response?: { data?: string } })?.response?.data ?? 'Failed to load session traces',
-            );
+            return rejectWithValue(extractErrorMessage(error, 'Failed to load session traces'));
         }
     },
     {
@@ -133,9 +146,7 @@ export const createAnnotation = createAsyncThunk<
 
             return response.data as Score;
         } catch (error) {
-            return rejectWithValue(
-                (error as { response?: { data?: string } })?.response?.data ?? 'Failed to save annotation',
-            );
+            return rejectWithValue(extractErrorMessage(error, 'Failed to save annotation'));
         }
     },
 );
@@ -156,9 +167,7 @@ export const fetchAnnotations = createAsyncThunk<
 
             return response.data as ScoresResponse;
         } catch (error) {
-            return rejectWithValue(
-                (error as { response?: { data?: string } })?.response?.data ?? 'Failed to load annotations',
-            );
+            return rejectWithValue(extractErrorMessage(error, 'Failed to load annotations'));
         }
     },
 );
