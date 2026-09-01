@@ -41,6 +41,7 @@ const TimelineTab = ({
   onAnnotateSpan,
   savingAnnotation,
 }: TimelineTabProps) => {
+  const theme = useTheme();
   const [view, setView] = useState<'list' | 'graph'>('graph');
   const activeId = selectedSpanId ?? defaultSpanId;
 
@@ -93,24 +94,32 @@ const TimelineTab = ({
         </ResponsiveCardTable>
       </Box>
 
-      <Box sx={{ flex: 1, minWidth: 0, height: '100%' }}>
-        <ResponsiveCardTable title="Selected Observation" showSettings={false} showFullScreenButton={false}>
-          {selectedObs ? (
-            <SpanDetail
-              obs={selectedObs}
-              scores={spanScores}
-              onAnnotate={onAnnotateSpan}
-              savingAnnotation={savingAnnotation}
-            />
-          ) : (
-            <InfoMessage
-              message="Select a span from the trace to inspect its input, output and metadata."
-              type="info"
-              icon={<TouchAppRoundedIcon sx={{ fontSize: 32, color: 'info.main' }} />}
-              fullHeight
-            />
-          )}
-        </ResponsiveCardTable>
+      <Box
+        sx={{
+          flex: 1,
+          minWidth: 0,
+          height: '100%',
+          overflow: 'auto',
+          borderRadius: 2,
+          border: `1px solid ${theme.palette.divider}`,
+          p: 1.25,
+        }}
+      >
+        {selectedObs ? (
+          <SpanDetail
+            obs={selectedObs}
+            scores={spanScores}
+            onAnnotate={onAnnotateSpan}
+            savingAnnotation={savingAnnotation}
+          />
+        ) : (
+          <InfoMessage
+            message="Select a span from the trace to inspect its input, output and metadata."
+            type="info"
+            icon={<TouchAppRoundedIcon sx={{ fontSize: 32, color: 'info.main' }} />}
+            fullHeight
+          />
+        )}
       </Box>
     </Stack>
   );
