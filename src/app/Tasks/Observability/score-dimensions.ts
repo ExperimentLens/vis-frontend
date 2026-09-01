@@ -29,9 +29,18 @@ export const SCORE_DIMENSIONS: ScoreDimension[] = [
 
 export const HUMAN_SCORE_PREFIX = 'human_';
 
-export const isHumanScoreName = (name: string): boolean => name.startsWith(HUMAN_SCORE_PREFIX);
+// Some scores in the wild (automated/system ones, mostly) come back from
+// Langfuse with `name: null` rather than an empty string — guard against
+// that here so every caller gets a safe `false`/fallback instead of a
+// TypeError, rather than each call site having to remember to check first.
+export const isHumanScoreName = (name: string | null | undefined): boolean =>
+    typeof name === 'string' && name.startsWith(HUMAN_SCORE_PREFIX);
 
-export const dimensionByName = (name: string): ScoreDimension | undefined =>
-    SCORE_DIMENSIONS.find(d => d.name === name);
+export const dimensionByName = (name: string | null | undefined): ScoreDimension | undefined =>
+    typeof name === 'string' ? SCORE_DIMENSIONS.find(d => d.name === name) : undefined;
 
-export const dimensionLabel = (name: string): string => dimensionByName(name)?.label ?? name.replace(HUMAN_SCORE_PREFIX, '').replace(/_/g, ' ');
+export const dimensionLabel = (name: string | null | undefined): string => {
+    if (typeof name !== 'string') return 'unknown';
+
+    return dimensionByName(name)?.label ?? name.replace(HUMAN_SCORE_PREFIX, '').replace(/_/g, ' ');
+};

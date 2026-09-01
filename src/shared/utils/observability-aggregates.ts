@@ -295,13 +295,14 @@ export const scoresTable = (details: TraceDetail[]): ScoresRow[] => {
 
   details.forEach(t =>
     t.scores.forEach(sc => {
-      const e = m.get(sc.name) ?? { count: 0, sum: 0, zeros: 0, ones: 0 };
+      const key = sc.name ?? 'unnamed';
+      const e = m.get(key) ?? { count: 0, sum: 0, zeros: 0, ones: 0 };
 
       e.count++;
       e.sum += sc.value ?? 0;
       if (sc.value === 0) e.zeros++;
       if (sc.value === 1) e.ones++;
-      m.set(sc.name, e);
+      m.set(key, e);
     }),
   );
 

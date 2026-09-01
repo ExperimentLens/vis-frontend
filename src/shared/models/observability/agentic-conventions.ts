@@ -49,4 +49,8 @@ export const isJudge = (o: Observation) =>
 export const isErrorLevel = (o: Observation) =>
   (o.level ?? '').toUpperCase() === 'ERROR' || Boolean(o.statusMessage);
 
-export const prettyName = (name: string) => name.replace(/^judge_/i, '').replace(/_/g, ' ');
+// `name` is nullable on some entities (a Score most notably — see the note
+// on Score.name) even though most callers only ever pass an Observation's
+// name, which is never null. Guard once here rather than at every call site.
+export const prettyName = (name: string | null | undefined) =>
+  typeof name === 'string' ? name.replace(/^judge_/i, '').replace(/_/g, ' ') : 'unnamed';
