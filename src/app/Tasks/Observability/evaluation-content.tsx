@@ -6,6 +6,7 @@ import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import RuleRoundedIcon from '@mui/icons-material/RuleRounded';
 import QueryStatsRoundedIcon from '@mui/icons-material/QueryStatsRounded';
 import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
+import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
 import type { Score } from '../../../shared/models/observability/score';
@@ -16,6 +17,7 @@ import InfoMessage from '../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import AnnotateForm from './annotate-form';
 import type { AnnotationSavePayload } from './annotate-form';
+import { TONE_COLOR, scoreTone, worstTone } from './score-dimensions';
 
 type EvaluationContentProps = {
   judges: Observation[];
@@ -121,9 +123,22 @@ const EvaluationContent = ({ judges, checks, metrics, humanScores, onAnnotateTra
 
   return (
     <Stack spacing={1.5}>
-      <Section icon={<RateReviewRoundedIcon sx={{ fontSize: 15 }} />} title="Human Annotations" count={humanScores.length}>
-        <AnnotateForm scores={humanScores} targetLabel="trace" onSave={onAnnotateTrace} saving={savingAnnotation} />
-      </Section>
+      {(() => {
+        const tone = worstTone(humanScores.map(scoreTone));
+        const toneColor = TONE_COLOR[tone];
+
+        return (
+          <Section
+            icon={tone === 'bad'
+              ? <FlagRoundedIcon sx={{ fontSize: 15, color: toneColor }} />
+              : <RateReviewRoundedIcon sx={{ fontSize: 15, color: humanScores.length ? toneColor : undefined }} />}
+            title="Human Annotations"
+            count={humanScores.length}
+          >
+            <AnnotateForm scores={humanScores} targetLabel="trace" onSave={onAnnotateTrace} saving={savingAnnotation} />
+          </Section>
+        );
+      })()}
 
       {passRate !== null && (
         <PassRateBar passRate={passRate} passed={passed} total={boolItems.length} />

@@ -6,13 +6,15 @@ import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
+import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 import { fetchAnnotations, getTrace, getTraces, selectAnnotations } from '../../../../store/slices/observabilitySlice';
 import { MONO, OBSERVABILITY_PROJECT_ID } from '../../../../shared/models/observability/agentic-conventions';
-import { isHumanScoreName } from '../../../Tasks/Observability/score-dimensions';
+import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
+import { TONE_COLOR, TONE_LABEL, isHumanScoreName, scoreTone, worstTone } from '../../../Tasks/Observability/score-dimensions';
 
 // The trace LIST endpoint's `scores` field only carries score ids, not full
 // objects (unlike a single trace's own detail fetch), so it can't tell us
@@ -20,25 +22,31 @@ import { isHumanScoreName } from '../../../Tasks/Observability/score-dimensions'
 // `/api/observability/scores` listing that powers the Annotations browse tab,
 // and groups it by traceId locally.
 
-const AnnotationBadge = ({ count, title }: { count: number; title: string }) => (
-  <Box
-    title={title}
-    sx={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 0.25,
-      px: 0.5,
-      py: 0.1,
-      borderRadius: 999,
-      bgcolor: 'rgba(55,102,175,0.1)',
-      color: '#3766AF',
-      flexShrink: 0,
-    }}
-  >
-    <RateReviewRoundedIcon sx={{ fontSize: 12 }} />
-    <Typography sx={{ fontSize: '0.62rem', fontWeight: 700 }}>{count}</Typography>
-  </Box>
-);
+const AnnotationBadge = ({ count, tone, title }: { count: number; tone: ReviewTone; title: string }) => {
+  const color = TONE_COLOR[tone];
+
+  return (
+    <Box
+      title={title}
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.25,
+        px: 0.5,
+        py: 0.1,
+        borderRadius: 999,
+        bgcolor: `${color}1a`,
+        color,
+        flexShrink: 0,
+      }}
+    >
+      {tone === 'bad'
+        ? <FlagRoundedIcon sx={{ fontSize: 12 }} />
+        : <RateReviewRoundedIcon sx={{ fontSize: 12 }} />}
+      <Typography sx={{ fontSize: '0.62rem', fontWeight: 700 }}>{count}</Typography>
+    </Box>
+  );
+};
 
 export default function TracesAccordion() {
   const dispatch = useAppDispatch();
@@ -80,19 +88,27 @@ export default function TracesAccordion() {
 
   const traces = data?.data ?? [];
 
-  const annotationCountByTraceId = useMemo(() => {
-    const map: Record<string, number> = {};
+  // Grouped by trace, not just counted — a badge needs to know the WORST
+  // tone among a trace's annotations (a "Missed escalation" should read
+  // very differently from a "Correctly escalated"), not just how many there are.
+  const humanScoresByTraceId = useMemo(() => {
+    const map: Record<string, typeof annotations> = {};
 
     annotations.forEach(s => {
       if (isHumanScoreName(s.name)) {
-        map[s.traceId] = (map[s.traceId] ?? 0) + 1;
+        (map[s.traceId] ??= []).push(s);
       }
     });
 
     return map;
   }, [annotations]);
 
-  const totalAnnotated = traces.reduce((sum, t) => sum + (annotationCountByTraceId[t.id] ?? 0), 0);
+  const allHumanScores = useMemo(
+    () => traces.flatMap(t => humanScoresByTraceId[t.id] ?? []),
+    [traces, humanScoresByTraceId],
+  );
+  const totalAnnotated = allHumanScores.length;
+  const sessionTone = worstTone(allHumanScores.map(scoreTone));
 
   const handleSelect = (traceId: string) => {
     dispatch(setSelectedId(traceId));
@@ -113,7 +129,8 @@ export default function TracesAccordion() {
             {!loading && totalAnnotated > 0 && (
               <AnnotationBadge
                 count={totalAnnotated}
-                title={`${totalAnnotated} human annotation${totalAnnotated === 1 ? '' : 's'} in this session`}
+                tone={sessionTone}
+                title={`${totalAnnotated} human annotation${totalAnnotated === 1 ? '' : 's'} in this session — ${TONE_LABEL[sessionTone]}`}
               />
             )}
           </Box>
@@ -140,7 +157,10 @@ export default function TracesAccordion() {
         )}
 
         {traces.map(t => {
-          const annotated = annotationCountByTraceId[t.id] ?? 0;
+          const traceScores = humanScoresByTraceId[t.id] ?? [];
+          const annotated = traceScores.length;
+          const tone = worstTone(traceScores.map(scoreTone));
+          const borderColor = annotated ? TONE_COLOR[tone] : 'transparent';
 
           return (
             <TreeItem
@@ -153,7 +173,7 @@ export default function TracesAccordion() {
                     py: 0.5,
                     borderRadius: 1,
                     cursor: 'pointer',
-                    borderLeft: annotated ? `2px solid #3766AF` : '2px solid transparent',
+                    borderLeft: `2px solid ${borderColor}`,
                   }}
                   onClick={(e) => { e.stopPropagation(); handleSelect(t.id); }}
                 >
@@ -168,7 +188,8 @@ export default function TracesAccordion() {
                     {annotated > 0 && (
                       <AnnotationBadge
                         count={annotated}
-                        title={`${annotated} human annotation${annotated === 1 ? '' : 's'}`}
+                        tone={tone}
+                        title={`${annotated} human annotation${annotated === 1 ? '' : 's'} — ${TONE_LABEL[tone]}`}
                       />
                     )}
                   </Box>

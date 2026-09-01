@@ -6,6 +6,7 @@ import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import WorkspacesRoundedIcon from '@mui/icons-material/WorkspacesRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
+import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import { useNavigate } from 'react-router-dom';
 
 import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
@@ -14,7 +15,8 @@ import { StyledDataGrid, TruncMono } from './llm-monitoring-shared';
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
 import type { GenOutput } from '../../../../shared/models/observability/agentic-conventions';
 import { formatMs, isJudge, modelOf, prettyName } from '../../../../shared/models/observability/agentic-conventions';
-import { isHumanScoreName } from '../../../Tasks/Observability/score-dimensions';
+import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
+import { TONE_COLOR, TONE_LABEL, isHumanScoreName, scoreTone, worstTone } from '../../../Tasks/Observability/score-dimensions';
 
 type JudgeVerdict = 'pass' | 'fail' | null;
 
@@ -30,11 +32,11 @@ type Row = {
   timestamp?: string;
   count?: number;
   annotatedCount?: number;
+  annotationTone?: ReviewTone;
   [judgeField: string]: unknown;
 };
 
-const humanAnnotationCount = (t: TraceDetail): number =>
-  (t.scores ?? []).filter(s => isHumanScoreName(s.name)).length;
+const humanScoresOf = (t: TraceDetail) => (t.scores ?? []).filter(s => isHumanScoreName(s.name));
 
 const traceLatencyMs = (t: TraceDetail): number => {
   const times = t.observations
@@ -138,6 +140,7 @@ export default function AllTracesTable({
     () =>
       details
         .map(t => {
+          const humanScores = humanScoresOf(t);
           const row: Row = {
             id: t.id,
             name: t.name || t.id,
@@ -147,7 +150,8 @@ export default function AllTracesTable({
             tokens: traceTokens(t),
             cost: t.totalCost ?? 0,
             timestamp: t.timestamp,
-            annotatedCount: humanAnnotationCount(t),
+            annotatedCount: humanScores.length,
+            annotationTone: worstTone(humanScores.map(scoreTone)),
           };
 
           judgeMeta.forEach((j, i) => {
@@ -205,6 +209,7 @@ export default function AllTracesTable({
       cost: rows.reduce((s, r) => s + (r.cost ?? 0), 0),
       timestamp: timestamps.length ? new Date(Math.max(...timestamps)).toISOString() : undefined,
       annotatedCount: rows.reduce((s, r) => s + (r.annotatedCount ?? 0), 0),
+      annotationTone: worstTone(rows.map(r => r.annotationTone ?? 'good')),
     };
 
     judgeMeta.forEach((_, i) => {
@@ -256,9 +261,11 @@ export default function AllTracesTable({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
           <TruncMono max={row.annotatedCount ? 260 : 320}>{String(params.value ?? '')}</TruncMono>
           {Boolean(row.annotatedCount) && (
-            <Tooltip title={`${row.annotatedCount} human annotation${row.annotatedCount === 1 ? '' : 's'}`}>
-              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, flexShrink: 0, color: '#3766AF' }}>
-                <RateReviewRoundedIcon sx={{ fontSize: 13 }} />
+            <Tooltip title={`${row.annotatedCount} human annotation${row.annotatedCount === 1 ? '' : 's'} — ${TONE_LABEL[row.annotationTone ?? 'good']}`}>
+              <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, flexShrink: 0, color: TONE_COLOR[row.annotationTone ?? 'good'] }}>
+                {row.annotationTone === 'bad'
+                  ? <FlagRoundedIcon sx={{ fontSize: 13 }} />
+                  : <RateReviewRoundedIcon sx={{ fontSize: 13 }} />}
                 <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.62rem' }}>
                   {row.annotatedCount}
                 </Typography>

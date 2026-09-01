@@ -3,7 +3,7 @@ import { Box, Button, Chip, TextField, Typography, alpha } from '@mui/material';
 import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
 import type { Score } from '../../../shared/models/observability/score';
 import type { ScoreDimension } from './score-dimensions';
-import { SCORE_DIMENSIONS, dimensionByName, dimensionLabel } from './score-dimensions';
+import { SCORE_DIMENSIONS, TONE_COLOR, dimensionByName, dimensionLabel, scoreTone } from './score-dimensions';
 
 // Shared docked "Annotate" control — config-driven score dimensions
 // (numeric/categorical/boolean), not a single free-typed rating. Used both
@@ -75,14 +75,26 @@ const AnnotateForm = ({ scores, targetLabel, onSave, saving }: Props) => {
   return (
     <Box sx={{ mt: 1 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-        {scores.map(s => (
-          <Chip
-            key={s.id}
-            size="small"
-            label={scoreDisplay(s) + (s.comment ? ` — ${s.comment}` : '')}
-            sx={{ height: 18, fontSize: '0.62rem', bgcolor: alpha('#3766AF', 0.08), color: '#3766AF' }}
-          />
-        ))}
+        {scores.map(s => {
+          const tone = scoreTone(s);
+          const color = TONE_COLOR[tone];
+
+          return (
+            <Chip
+              key={s.id}
+              size="small"
+              label={scoreDisplay(s) + (s.comment ? ` — ${s.comment}` : '')}
+              sx={{
+                height: 18,
+                fontSize: '0.62rem',
+                fontWeight: tone === 'good' ? 400 : 700,
+                bgcolor: alpha(color, 0.1),
+                color,
+                border: tone === 'bad' ? `1px solid ${alpha(color, 0.4)}` : 'none',
+              }}
+            />
+          );
+        })}
         <Button
           size="small"
           startIcon={<RateReviewRoundedIcon sx={{ fontSize: '14px !important' }} />}
