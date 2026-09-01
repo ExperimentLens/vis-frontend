@@ -92,7 +92,7 @@ const GraphComparison = ({ detailsByRun, runIds, runNameById, colorById, isMosai
 
                       return (
                         <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-                          {t ? questionOf(t) : 'Select session…'}
+                          {t ? t.name : 'Select session…'}
                         </Box>
                       );
                     }}
@@ -100,7 +100,7 @@ const GraphComparison = ({ detailsByRun, runIds, runNameById, colorById, isMosai
                     {traces.map(t => (
                       <MenuItem key={t.id} value={t.id} sx={{ fontSize: '0.78rem' }}>
                         <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 300 }}>
-                          {questionOf(t)}
+                          {t.name}
                         </Box>
                       </MenuItem>
                     ))}

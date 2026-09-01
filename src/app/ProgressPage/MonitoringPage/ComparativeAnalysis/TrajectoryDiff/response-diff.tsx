@@ -7,7 +7,6 @@ import ResponsiveCardTable from '../../../../../shared/components/responsive-car
 type Props = {
   byRun: Record<string, TraceDetail>;
   runIds: string[];
-  runNameById: Record<string, string>;
   colorById: Record<string, string>;
   baselineId: string;
 };
@@ -73,7 +72,7 @@ const judgeVerdictOf = (t: TraceDetail): { passed: boolean; rationale?: string; 
 const tokensOfTrace = (t: TraceDetail): number =>
   t.observations.reduce((sum, o) => sum + (tokensOf(o) ?? 0), 0);
 
-export default function ResponseDiff({ byRun, runIds, runNameById, colorById, baselineId }: Props) {
+export default function ResponseDiff({ byRun, runIds, colorById, baselineId }: Props) {
   const theme = useTheme();
 
   const baselineScores = new Map((byRun[baselineId]?.scores ?? []).map(s => [s.name, s.value]));
@@ -112,9 +111,9 @@ export default function ResponseDiff({ byRun, runIds, runNameById, colorById, ba
                 <Typography
                   component="span"
                   sx={{ fontFamily: MONO, fontSize: '0.68rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                  title={runNameById[id] ?? id}
+                  title={id}
                 >
-                  {runNameById[id] ?? id}
+                  {id}
                 </Typography>
                 {id === baselineId && <Chip label="base" size="small" sx={{ height: 16, fontSize: '0.55rem' }} />}
                 <Box sx={{ flexGrow: 1 }} />
