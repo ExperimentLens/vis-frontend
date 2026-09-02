@@ -89,6 +89,8 @@ export default function CumulativeRaceChart({ byRun, runIds, colorById }: Props)
       isStatic={false}
       sx={{ width: '100%', maxWidth: '100%' }}
       minHeight={260}
+      maxHeight={480}
+      aspectRatio={2.4}
       showSettings={true}
       showInfoMessage={data.length === 0}
       infoMessage={
