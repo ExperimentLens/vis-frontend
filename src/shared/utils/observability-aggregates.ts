@@ -9,6 +9,8 @@ import {
   tokensOf,
 } from '../models/observability/agentic-conventions';
 import type { GenOutput, TraceInput } from '../models/observability/agentic-conventions';
+import type { ReviewTone } from '../../app/Tasks/Observability/score-dimensions';
+import { worstTone } from '../../app/Tasks/Observability/score-dimensions';
 
 const quantile = (sorted: number[], q: number): number => {
   if (sorted.length === 0) return 0;
@@ -92,6 +94,19 @@ export const rollup = (details: TraceDetail[]): ExperimentRollup => {
     checkPassRate: checkTotal ? checkPass / checkTotal : null,
     errorRate: traceCount ? errorTraces / traceCount : 0,
   };
+};
+
+// A trace/session is flagged 'bad'/'warn' if its judges/checks fail often,
+// it has any error-level observations, or a human reviewer flagged it —
+// whichever signal is worst wins.
+export const toneFromRollup = (r: ExperimentRollup, annotationTone: ReviewTone): ReviewTone => {
+  const tones: ReviewTone[] = [annotationTone];
+
+  if (r.errorRate > 0) tones.push('bad');
+  if (r.judgePassRate !== null) tones.push(r.judgePassRate >= 0.75 ? 'good' : r.judgePassRate >= 0.5 ? 'warn' : 'bad');
+  if (r.checkPassRate !== null) tones.push(r.checkPassRate >= 0.75 ? 'good' : r.checkPassRate >= 0.5 ? 'warn' : 'bad');
+
+  return worstTone(tones);
 };
 
 export interface AgentProfile {

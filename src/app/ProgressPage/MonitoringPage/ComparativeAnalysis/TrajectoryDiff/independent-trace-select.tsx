@@ -16,6 +16,7 @@ import type { TraceDetail } from '../../../../../shared/models/observability/tra
 
 interface IndependentTraceSelectProps {
   runIds: string[];
+  runNameById: Record<string, string>;
   colorById: Record<string, string>;
   detailsByRun: Record<string, TraceDetail[]>;
   selectedIdByRun: Record<string, string>;
@@ -33,6 +34,7 @@ const Dot = ({ color }: { color: string }) => (
 // trace for one run doesn't require a separate Select per run.
 export default function IndependentTraceSelect({
   runIds,
+  runNameById,
   colorById,
   detailsByRun,
   selectedIdByRun,
@@ -121,7 +123,7 @@ export default function IndependentTraceSelect({
           const header = (
             <ListSubheader key={`h-${id}`} sx={{ display: 'flex', alignItems: 'center', gap: 1, lineHeight: '32px' }}>
               <Dot color={colorById[id] ?? '#999'} />
-              {id}
+              {runNameById[id] ?? id}
             </ListSubheader>
           );
 

@@ -11,11 +11,12 @@ import type { AlignedVerdictDetail } from './trajectory-alignment';
 type Props = {
   byRun: Record<string, TraceDetail>;
   runIds: string[];
+  runNameById: Record<string, string>;
   colorById: Record<string, string>;
   baselineId: string;
 };
 
-export default function VerdictMatrix({ byRun, runIds, colorById, baselineId }: Props) {
+export default function VerdictMatrix({ byRun, runIds, runNameById, colorById, baselineId }: Props) {
   const theme = useTheme();
   const gridRef = useRef<HTMLDivElement | null>(null);
   const [changesOnly, setChangesOnly] = useState(false);
@@ -65,8 +66,8 @@ export default function VerdictMatrix({ byRun, runIds, colorById, baselineId }: 
   const RunHead = ({ id }: { id: string }) => (
     <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center" sx={{ minWidth: 0, py: 0.5 }}>
       <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: colorById[id], flexShrink: 0 }} />
-      <Typography component="span" sx={{ fontFamily: MONO, fontSize: '0.6rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={id}>
-        {id}
+      <Typography component="span" sx={{ fontFamily: MONO, fontSize: '0.6rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={runNameById[id] ?? id}>
+        {runNameById[id] ?? id}
       </Typography>
       {id === baselineId && <Chip label="base" size="small" sx={{ height: 14, fontSize: '0.5rem' }} />}
     </Stack>
@@ -142,7 +143,7 @@ export default function VerdictMatrix({ byRun, runIds, colorById, baselineId }: 
                     <Box key={id} sx={{ borderRadius: 1.5, border: `1px solid ${theme.palette.divider}`, borderLeft: `3px solid ${color}`, p: 1 }}>
                       <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
                         <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: colorById[id] }} />
-                        <Typography component="span" sx={{ fontFamily: MONO, fontSize: '0.6rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{id}</Typography>
+                        <Typography component="span" sx={{ fontFamily: MONO, fontSize: '0.6rem', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{runNameById[id] ?? id}</Typography>
                         <Box sx={{ flexGrow: 1 }} />
                         <Typography component="span" sx={{ fontFamily: MONO, fontSize: '0.6rem', fontWeight: 700, color }}>
                           {cell?.passed === undefined ? '—' : cell.passed ? 'PASS' : 'FAIL'}

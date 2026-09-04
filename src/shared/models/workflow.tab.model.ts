@@ -26,6 +26,7 @@ type SelectedItem = {
     variant?: string;
     model?: string;
     traceId?: string;
+    workflowId?: string;
   }
 } | null;
 

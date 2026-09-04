@@ -314,6 +314,7 @@ export default function LlmTrajectoryDiff() {
         <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
           <IndependentTraceSelect
             runIds={runIds}
+            runNameById={runNameById}
             colorById={colorById}
             detailsByRun={detailsByRun}
             selectedIdByRun={selectedIdByRun}
@@ -359,7 +360,7 @@ export default function LlmTrajectoryDiff() {
           {/* <PerTaskAnalysis byRun={effectiveByRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} /> */}
 
           {/* Cumulative race — running total time as tasks complete, in order */}
-          <CumulativeRaceChart byRun={effectiveByRun} runIds={runIds} colorById={colorById} baselineId={baseline} />
+          <CumulativeRaceChart byRun={effectiveByRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} />
         </>
       )}
 
@@ -367,6 +368,7 @@ export default function LlmTrajectoryDiff() {
         <VerdictMatrix
           byRun={effectiveByRun}
           runIds={runIds}
+          runNameById={runNameById}
           colorById={colorById}
           baselineId={baseline}
         />
@@ -376,6 +378,7 @@ export default function LlmTrajectoryDiff() {
         <ResponseDiff
           byRun={effectiveByRun}
           runIds={runIds}
+          runNameById={runNameById}
           colorById={colorById}
           baselineId={baseline}
         />

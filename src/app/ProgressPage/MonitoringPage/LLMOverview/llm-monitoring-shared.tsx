@@ -3,12 +3,17 @@ import {
   alpha,
   Box,
   TableCell,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { DataGrid } from '@mui/x-data-grid';
+import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
+import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 
 import { MONO } from '../../../../shared/models/observability/agentic-conventions';
+import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
+import { TONE_COLOR, TONE_LABEL } from '../../../Tasks/Observability/score-dimensions';
 
 // Mirrors the Overview workflow table's look (borderless, softened row
 // dividers, underline-accented column-group bands) so the LLM tables read as
@@ -187,6 +192,27 @@ export const TruncMono = ({
     {children}
   </Box>
 );
+
+/** Small badge showing a trace/session's human-annotation count, colored by
+ * the worst tone among those annotations — reused by every table that lists
+ * traces or sessions so the "which one needs a look" signal reads the same
+ * way everywhere. */
+export const AnnotationBadge = ({ count, tone }: { count: number; tone: ReviewTone }) => {
+  if (!count) return null;
+
+  return (
+    <Tooltip title={`${count} human annotation${count === 1 ? '' : 's'} — ${TONE_LABEL[tone]}`}>
+      <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, flexShrink: 0, color: TONE_COLOR[tone] }}>
+        {tone === 'bad'
+          ? <FlagRoundedIcon sx={{ fontSize: 13 }} />
+          : <RateReviewRoundedIcon sx={{ fontSize: 13 }} />}
+        <Typography variant="caption" sx={{ fontWeight: 700, fontSize: '0.62rem' }}>
+          {count}
+        </Typography>
+      </Box>
+    </Tooltip>
+  );
+};
 
 export const BigNum = ({
   value,

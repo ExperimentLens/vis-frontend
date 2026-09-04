@@ -16,6 +16,14 @@ export interface WorkflowTableRow {
   space?: string;
   status?: string;
   isGroupSummary?: boolean;
+  /** True for a synthetic row rendering one trace nested under an expanded workflow row. */
+  isTraceRow?: boolean;
+  /** Set on a synthetic placeholder row (loading/empty/error) nested under an expanded workflow row. */
+  isTraceStatus?: 'loading' | 'empty' | 'error';
+  /** Set on trace/placeholder rows — the workflow (session) id they're nested under. */
+  parentWorkflowId?: string;
+  /** Set on trace rows only — the individual trace's id. */
+  traceId?: string;
   [key: string]: string | number | boolean | null | undefined;
 }
 
@@ -95,6 +103,7 @@ interface IMonitoringPageSlice {
         aggregatedRows: WorkflowTableRow[]
         groupBy: string[]
         expandedGroups: string[]
+        expandedTraceWorkflows: string[]
         grouppedWorkflows: Record<string, string[]>
         uniqueMetrics: string[]
         uniqueParameters: string[]
@@ -226,6 +235,7 @@ const initialState: IMonitoringPageSlice = {
     aggregatedRows: [],
     groupBy: [],
     expandedGroups: [],
+    expandedTraceWorkflows: [],
     grouppedWorkflows: {},
     uniqueMetrics: [],
     uniqueParameters: [],
@@ -550,6 +560,15 @@ export const monitoringPageSlice = createSlice({
         state.workflowsTable.expandedGroups = state.workflowsTable.expandedGroups.filter(id => id !== groupId);
       } else {
         state.workflowsTable.expandedGroups.push(groupId);
+      }
+    },
+    setExpandedWorkflowTrace: (state, action) => {
+      const workflowId = action.payload;
+
+      if (state.workflowsTable.expandedTraceWorkflows.includes(workflowId)) {
+        state.workflowsTable.expandedTraceWorkflows = state.workflowsTable.expandedTraceWorkflows.filter(id => id !== workflowId);
+      } else {
+        state.workflowsTable.expandedTraceWorkflows.push(workflowId);
       }
     },
     setSelectedDataset: (state, action) => {
@@ -1048,5 +1067,5 @@ export const fetchComparativeUmap = createAsyncThunk(
 
 export const { setParallel, setWorkflowsTable, setScheduledTable, setVisibleTable, setSelectedTab, setSelectedComparisonTab, toggleWorkflowSelection, bulkToggleWorkflowSelection, setGroupBy,
   setHoveredWorkflow, updateWorkflowRatingLocally, setSelectedModelComparisonChart, setSelectedExecutionsView, setCommonDataAssets, setDataAssetsControlPanel, setIsMosaic, setShowMisclassifiedOnly, setComparativeModelInstanceControlPanel,
-  setExpandedGroup, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces, setSortRocByAuc, setSortConfusionByF1, resetMonitoringPage
+  setExpandedGroup, setExpandedWorkflowTrace, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces, setSortRocByAuc, setSortConfusionByF1, resetMonitoringPage
 } = monitoringPageSlice.actions;

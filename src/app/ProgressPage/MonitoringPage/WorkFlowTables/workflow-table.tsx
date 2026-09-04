@@ -12,11 +12,11 @@ import StopIcon from '@mui/icons-material/Stop';
 import LaunchIcon from '@mui/icons-material/Launch';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { setSelectedTab, setWorkflowsTable, bulkToggleWorkflowSelection, setHoveredWorkflow, setVisibleTable, setExpandedGroup } from '../../../../store/slices/monitorPageSlice';
+import { setSelectedTab, setWorkflowsTable, bulkToggleWorkflowSelection, setHoveredWorkflow, setVisibleTable, setExpandedGroup, setExpandedWorkflowTrace } from '../../../../store/slices/monitorPageSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, alpha, Badge,  Button,  FormControl,  IconButton, Popover, Snackbar, styled, TextField, Tooltip, useTheme } from '@mui/material';
+import { Alert, alpha, Badge,  Button, Chip, CircularProgress,  FormControl,  IconButton, Popover, Snackbar, styled, TextField, Tooltip, Typography, useTheme } from '@mui/material';
 import FilterBar from '../../../../shared/components/filter-bar';
 import ProgressBar from '../../../../shared/components/prgress-bar';
 import debounce from 'lodash/debounce';
@@ -33,6 +33,13 @@ import { SectionHeader } from '../../../../shared/components/responsive-card-tab
 import { menuPaperSx } from '../../../../shared/styles/card-surface';
 import SearchableSelect from '../../../../shared/components/searchable-select';
 import { getCache } from '../../../../shared/utils/localStorageCache';
+import { fetchSessionTraceDetails, selectSessionsMap } from '../../../../store/slices/observabilitySlice';
+import type { SessionTraces } from '../../../../store/slices/observabilitySlice';
+import { OBSERVABILITY_PROJECT_ID, formatMs, modelOf } from '../../../../shared/models/observability/agentic-conventions';
+import { rollup, toneFromRollup } from '../../../../shared/utils/observability-aggregates';
+import { isHumanScoreName, scoreTone, worstTone, TONE_COLOR, TONE_LABEL } from '../../../Tasks/Observability/score-dimensions';
+import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
+import { AnnotationBadge, TruncMono } from '../LLMOverview/llm-monitoring-shared';
 
 export interface Data {
   [key: string]: string | number | boolean | null | undefined;
@@ -470,12 +477,27 @@ const WorkflowColorDot = styled('span')<{
   border: `1px solid ${theme.palette.grey[500]}`,
 }));
 
-const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
+const TRACE_STATUS_LABEL: Record<NonNullable<WorkflowTableRow['isTraceStatus']>, string> = {
+  loading: 'Loading traces…',
+  empty: 'No traces for this workflow.',
+  error: 'Failed to load traces.',
+};
+
+const WorkflowIdCell = ({
+  row,
+  experimentId,
+  isLlmExperiment,
+}: {
+  row: WorkflowTableRow;
+  experimentId?: string;
+  isLlmExperiment?: boolean;
+}) => {
   const dispatch = useAppDispatch();
-  const { selectedWorkflows, workflowColors, expandedGroups } = useAppSelector(
+  const { selectedWorkflows, workflowColors, expandedGroups, expandedTraceWorkflows } = useAppSelector(
     (s: RootState) => s.monitorPage.workflowsTable
   );
   const { selectedTab } = useAppSelector((s: RootState) => s.monitorPage);
+  const sessionsMap = useAppSelector(selectSessionsMap);
 
   if (row.isGroupSummary) {
     const isExpanded = expandedGroups.includes(row.id);
@@ -494,12 +516,75 @@ const WorkflowIdCell = ({ row }: { row: WorkflowTableRow }) => {
     );
   }
 
+  if (row.isTraceStatus) {
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, pl: 4, width: '100%', height: '100%', color: row.isTraceStatus === 'error' ? 'error.main' : 'text.secondary' }}>
+        {row.isTraceStatus === 'loading' && <CircularProgress size={12} />}
+        <Typography variant="caption">{TRACE_STATUS_LABEL[row.isTraceStatus]}</Typography>
+      </Box>
+    );
+  }
+
+  if (row.isTraceRow) {
+    const annotationTone = (row.annotationTone as ReviewTone | undefined) ?? 'good';
+    const cost = typeof row.cost === 'number' ? row.cost : 0;
+    const tokens = typeof row.tokens === 'number' ? row.tokens : 0;
+    const latencyMs = typeof row.latencyMs === 'number' ? row.latencyMs : 0;
+    const judgeRate = row.judgePassRate as number | null | undefined;
+    const checkRate = row.checkPassRate as number | null | undefined;
+    const errorRate = typeof row.errorRate === 'number' ? row.errorRate : 0;
+
+    const rateColor = (rate: number | null | undefined) =>
+      rate === null || rate === undefined ? undefined : rate >= 0.75 ? TONE_COLOR.good : rate >= 0.5 ? TONE_COLOR.warn : TONE_COLOR.bad;
+    const rateLabel = (rate: number | null | undefined) => (rate === null || rate === undefined ? '—' : `${Math.round(rate * 100)}%`);
+
+    const stat = (label: string, color?: string) => (
+      <Typography key={label} variant="caption" sx={{ color: color ?? 'text.secondary', fontWeight: color ? 700 : 400, fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+        {label}
+      </Typography>
+    );
+
+    return (
+      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 1.5, rowGap: 0.25, pl: 4, width: '100%', minWidth: 0, py: 0.5 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flexShrink: 0 }}>
+          <TruncMono max={260}>{String(row.name ?? row.traceId ?? '')}</TruncMono>
+          {typeof row.annotatedCount === 'number' && <AnnotationBadge count={row.annotatedCount} tone={annotationTone} />}
+        </Box>
+        {stat(String(row.model ?? '—'))}
+        {stat(formatMs(latencyMs))}
+        {stat(`${tokens.toLocaleString()} tok`)}
+        {stat(`$${cost.toFixed(4)}`)}
+        {stat(`Judges ${rateLabel(judgeRate)}`, rateColor(judgeRate))}
+        {stat(`Checks ${rateLabel(checkRate)}`, rateColor(checkRate))}
+        {errorRate > 0 && stat(`Errors ${Math.round(errorRate * 100)}%`, TONE_COLOR.bad)}
+      </Box>
+    );
+  }
+
   const workflowId = row.workflowId;
   const isSelected = selectedWorkflows.includes(workflowId);
   const color = workflowColors[workflowId];
+  const canExpandTraces = Boolean(isLlmExperiment && experimentId);
+  const isTraceExpanded = expandedTraceWorkflows.includes(workflowId);
+
+  const handleToggleTraces = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    dispatch(setExpandedWorkflowTrace(workflowId));
+
+    if (!isTraceExpanded && !sessionsMap[workflowId] && experimentId) {
+      dispatch(fetchSessionTraceDetails({ projectId: OBSERVABILITY_PROJECT_ID, experimentId, workflowId }));
+    }
+  };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+      {canExpandTraces && (
+        <Tooltip title={isTraceExpanded ? 'Hide traces' : 'Show traces'}>
+          <IconButton size="small" onClick={handleToggleTraces} sx={{ p: 0.25 }}>
+            {isTraceExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+          </IconButton>
+        </Tooltip>
+      )}
       {selectedTab === 1 && <WorkflowColorDot color={color} selected={isSelected} />}
       <span title={row.workflowName ?? workflowId}>{workflowId}</span>
     </Box>
@@ -510,6 +595,54 @@ const metricNumberFormatter = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 3,
 });
 
+// Synthetic rows nested under an expanded workflow row — one per trace, or a
+// single loading/empty/error placeholder while a session's traces aren't
+// available yet. Reuses the same rollup/tone logic as the Traces tab so
+// "which trace is good" reads identically in both places.
+const buildTraceRows = (workflowId: string, session: SessionTraces | undefined): WorkflowTableRow[] => {
+  if (!session || session.loading) {
+    return [{ id: `trace-status-${workflowId}`, workflowId: '', parentWorkflowId: workflowId, isTraceStatus: 'loading' }];
+  }
+
+  if (session.error) {
+    return [{ id: `trace-status-${workflowId}`, workflowId: '', parentWorkflowId: workflowId, isTraceStatus: 'error' }];
+  }
+
+  if (session.details.length === 0) {
+    return [{ id: `trace-status-${workflowId}`, workflowId: '', parentWorkflowId: workflowId, isTraceStatus: 'empty' }];
+  }
+
+  return [...session.details]
+    .sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp))
+    .map(t => {
+      const r = rollup([t]);
+      const humanScores = (t.scores ?? []).filter(s => isHumanScoreName(s.name));
+      const annotationTone = worstTone(humanScores.map(scoreTone));
+      const gen = t.observations.find(o => (o.type ?? '').toUpperCase() === 'GENERATION');
+
+      const row: WorkflowTableRow = {
+        id: `trace-${workflowId}-${t.id}`,
+        workflowId: '',
+        parentWorkflowId: workflowId,
+        isTraceRow: true,
+        traceId: t.id,
+        name: t.name || t.id,
+        model: gen ? (modelOf(gen) ?? '—') : '—',
+        latencyMs: r.avgLatencyMs,
+        tokens: r.totalTokens,
+        cost: r.totalCost,
+        judgePassRate: r.judgePassRate,
+        checkPassRate: r.checkPassRate,
+        errorRate: r.errorRate,
+        annotatedCount: humanScores.length,
+        annotationTone,
+        tone: toneFromRollup(r, annotationTone),
+      };
+
+      return row;
+    });
+};
+
 export default function WorkflowTable() {
   const { workflows, createdWorkflow } = useAppSelector(
     (state: RootState) => state.progressPage,
@@ -517,6 +650,10 @@ export default function WorkflowTable() {
   const { workflowsTable, selectedTab } = useAppSelector(
     (state: RootState) => state.monitorPage
   );
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
+  const sessionsMap = useAppSelector(selectSessionsMap);
   const [isFilterOpen, setFilterOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const lastHoveredIdRef = useRef<string | null>(null);
@@ -1061,20 +1198,61 @@ export default function WorkflowTable() {
           if (key === 'status') {
             return {
               ...base,
-              renderCell: params => (
-                <ProgressBar
-                  workflowStatus={params.value}
-                  workflowId={params.row.workflowId}
-                  hasPercentage={true}
-                />
-              ),
+              renderCell: params => {
+                if (params.row.isTraceStatus) return null;
+
+                if (params.row.isTraceRow) {
+                  const tone = (params.row.tone as ReviewTone | undefined) ?? 'good';
+                  const judgeRate = params.row.judgePassRate as number | null;
+                  const checkRate = params.row.checkPassRate as number | null;
+                  const errorRate = typeof params.row.errorRate === 'number' ? params.row.errorRate : 0;
+
+                  return (
+                    <Tooltip
+                      title={`Judge pass ${judgeRate === null || judgeRate === undefined ? '—' : `${Math.round(judgeRate * 100)}%`} · Check pass ${checkRate === null || checkRate === undefined ? '—' : `${Math.round(checkRate * 100)}%`} · Errors ${Math.round(errorRate * 100)}%`}
+                    >
+                      <Chip
+                        size="small"
+                        label={TONE_LABEL[tone]}
+                        sx={{
+                          fontSize: '0.65rem',
+                          height: 20,
+                          fontWeight: 700,
+                          bgcolor: alpha(TONE_COLOR[tone], 0.12),
+                          color: TONE_COLOR[tone],
+                        }}
+                      />
+                    </Tooltip>
+                  );
+                }
+
+                return (
+                  <ProgressBar
+                    workflowStatus={params.value}
+                    workflowId={params.row.workflowId}
+                    hasPercentage={true}
+                  />
+                );
+              },
             };
           }
           if (key === 'action') {
             return {
               ...base,
               renderCell: params => {
-                if (params.row.isGroupSummary) return null;
+                if (params.row.isGroupSummary || params.row.isTraceStatus) return null;
+
+                if (params.row.isTraceRow) {
+                  return (
+                    <Link to={`/${experimentId}/workflow?workflowId=${params.row.parentWorkflowId}&traceId=${params.row.traceId}`}>
+                      <Tooltip title="Open trace">
+                        <IconButton size="small" color="primary">
+                          <LaunchIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Link>
+                  );
+                }
 
                 const currentStatus = params.row.status;
 
@@ -1091,19 +1269,38 @@ export default function WorkflowTable() {
           if (key === 'rating') {
             return {
               ...base,
-              renderCell: params => (
-                <WorkflowRating
-                  currentRating={params.row.rating}
-                  experimentId={experimentId || ''}
-                  workflowId={params.row.id}
-                />
-              ),
+              renderCell: params => {
+                if (params.row.isTraceRow || params.row.isTraceStatus) return null;
+
+                return (
+                  <WorkflowRating
+                    currentRating={params.row.rating}
+                    experimentId={experimentId || ''}
+                    workflowId={params.row.id}
+                  />
+                );
+              },
             };
           }
           if (key === 'workflowId') {
             return {
               ...base,
-              renderCell: (params) => <WorkflowIdCell row={params.row} />,
+              renderCell: (params) => <WorkflowIdCell row={params.row} experimentId={experimentId} isLlmExperiment={isLlmExperiment} />,
+              // Trace/placeholder rows leave every param/metric/task column blank, so
+              // borrow that space instead of squeezing trace details into one narrow
+              // column — span from workflowId up to (not including) the status column.
+              colSpan: (_value, row, _column, apiRef) => {
+                if (!row.isTraceRow && !row.isTraceStatus) return undefined;
+
+                const visibleCols = apiRef.current.getVisibleColumns();
+                const startIndex = visibleCols.findIndex(c => c.field === 'workflowId');
+                let endIndex = visibleCols.findIndex(c => c.field === 'status');
+
+                if (endIndex === -1) endIndex = visibleCols.findIndex(c => c.field === 'action');
+                if (endIndex === -1) endIndex = visibleCols.length;
+
+                return Math.max(1, endIndex - startIndex);
+              },
             };
           }
 
@@ -1211,6 +1408,24 @@ export default function WorkflowTable() {
       workflowIds.includes(id)
     );
   };
+
+  // Nests trace rows (or a loading/empty/error placeholder) directly beneath
+  // each expanded workflow row, computed on top of the already filtered/
+  // sorted/paginated grid rows rather than folded into that redux pipeline —
+  // keeps the trace-expansion feature independent of grouping/filtering/sort.
+  const rowsWithTraces = useMemo(() => {
+    if (!isLlmExperiment || workflowsTable.expandedTraceWorkflows.length === 0) {
+      return workflowsTable.visibleRows;
+    }
+
+    return workflowsTable.visibleRows.flatMap(row => {
+      if (row.isGroupSummary || !workflowsTable.expandedTraceWorkflows.includes(row.workflowId)) {
+        return [row];
+      }
+
+      return [row, ...buildTraceRows(row.workflowId, sessionsMap[row.workflowId])];
+    });
+  }, [workflowsTable.visibleRows, workflowsTable.expandedTraceWorkflows, sessionsMap, isLlmExperiment]);
 
   const valueSuggestions = useMemo(() => {
     const valueSets: Record<string, Set<string>> = {};
@@ -1357,8 +1572,9 @@ export default function WorkflowTable() {
             disableVirtualization
             disableColumnMenu
             density="compact"
-            rows={workflowsTable.visibleRows}
-            sortModel={workflowsTable.sortModel}
+            rows={rowsWithTraces}
+            getRowHeight={(params) => ((params.model as WorkflowTableRow).isTraceRow ? 52 : null)}
+            sortModel={workflowsTable.expandedTraceWorkflows.length > 0 ? [] : workflowsTable.sortModel}
             onSortModelChange={(newSortModel) => dispatch(setWorkflowsTable({ sortModel: newSortModel }))}
             disableColumnFilter
             columns={workflowsTable.visibleColumns as CustomGridColDef[]}
@@ -1372,6 +1588,7 @@ export default function WorkflowTable() {
               dispatch(setWorkflowsTable({ columnsVisibilityModel: nextModel }));
             }}
             isRowSelectable={(params) => {
+              if (params.row.isTraceRow || params.row.isTraceStatus) return false;
               if (workflowsTable.groupBy.length === 0) return true;
 
               return !isGroupedWorkflow(params.row.id);
@@ -1399,11 +1616,13 @@ export default function WorkflowTable() {
             checkboxSelection
             onRowSelectionModelChange={handleSelectionChange}
             rowSelectionModel={{ type: 'include', ids: new Set(workflowsTable.selectedWorkflows) }}
-            getRowClassName={(params) =>
-              selectedTab === 1 && workflowsTable.hoveredWorkflowId && params.id === workflowsTable.hoveredWorkflowId
+            getRowClassName={(params) => {
+              if (params.row.isTraceRow || params.row.isTraceStatus) return 'workflow-trace-row';
+
+              return selectedTab === 1 && workflowsTable.hoveredWorkflowId && params.id === workflowsTable.hoveredWorkflowId
                 ? 'workflow-hovered-row'
-                : ''
-            }
+                : '';
+            }}
             sx={{
               '& .MuiDataGrid-selectedRowCount': {
                 visibility: 'hidden', // Remove the selection count text on the bottom because we implement it in the header
@@ -1445,6 +1664,9 @@ export default function WorkflowTable() {
               '& .workflow-hovered-row': {
                 outline: theme =>  `2px solid ${theme.palette.primary.main}`,
                 outlineOffset: -2,
+              },
+              '& .workflow-trace-row': {
+                backgroundColor: theme => theme.palette.action.hover,
               },
             }}
             pageSizeOptions={[10, 25, 50]}

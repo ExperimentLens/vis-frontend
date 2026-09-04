@@ -23,7 +23,9 @@ import CommitIcon from '@mui/icons-material/Commit';
 
 import CGlanceExecution from './SelectedItemView/workflow-global-counterfactuals';
 import WorkflowTraceView from './SelectedItemView/workflow-trace-view';
+import WorkflowTracesOverview from './SelectedItemView/workflow-traces-overview';
 import HubRoundedIcon from '@mui/icons-material/HubRounded';
+import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 
 const SelectedItemViewer = () => {
   const { selectedItem, selectedTask } = useAppSelector(
@@ -189,6 +191,20 @@ const SelectedItemViewer = () => {
         />
         <Box sx={{ px: 3, py: 2, flexGrow: 1, overflow: 'auto' }}>
           <WorkflowTraceView />
+        </Box>
+      </Box>
+    );
+  }
+
+  if (selectedItem?.type === 'traces-overview') {
+    return (
+      <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Header
+          title={'Session Traces Overview'}
+          icon={<ViewListRoundedIcon color="primary" />}
+        />
+        <Box sx={{ px: 3, py: 2, flexGrow: 1, overflow: 'auto' }}>
+          <WorkflowTracesOverview />
         </Box>
       </Box>
     );

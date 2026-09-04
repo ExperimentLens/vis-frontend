@@ -11,7 +11,7 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
-import { fetchAnnotations, getTrace, getTraces, selectAnnotations } from '../../../../store/slices/observabilitySlice';
+import { fetchAnnotations, fetchSessionTraceDetails, getTrace, getTraces, selectAnnotations } from '../../../../store/slices/observabilitySlice';
 import { MONO, OBSERVABILITY_PROJECT_ID } from '../../../../shared/models/observability/agentic-conventions';
 import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
 import { TONE_COLOR, TONE_LABEL, isHumanScoreName, scoreTone, worstTone } from '../../../Tasks/Observability/score-dimensions';
@@ -116,13 +116,39 @@ export default function TracesAccordion() {
     dispatch(getTrace(traceId));
   };
 
+  // The root "Session Traces" node opens its own side view — an overview of
+  // every trace in the session with input/output at a glance — rather than
+  // only ever letting you drill into one trace at a time.
+  const handleSelectOverview = () => {
+    if (!workflowId || workflowId === 'none') return;
+    dispatch(setSelectedId('traces-root'));
+    dispatch(setSelectedItem({ type: 'traces-overview', data: { workflowId } }));
+    if (experimentId) {
+      dispatch(fetchSessionTraceDetails({ projectId: OBSERVABILITY_PROJECT_ID, experimentId, workflowId }));
+    }
+  };
+
+  // LLM workflows land here with nothing selected otherwise — default to the
+  // traces overview so opening a workflow immediately shows something useful,
+  // unless a deep link (e.g. from the "All traces" table) already picked a
+  // specific trace, or a selection already exists (e.g. navigating back).
+  useEffect(() => {
+    if (!workflowId || workflowId === 'none') return;
+    if (traceIdParam) return;
+    if (tab?.dataTaskTable?.selectedItem) return;
+    handleSelectOverview();
+  }, [workflowId, traceIdParam]);
+
   return (
     <SimpleTreeView defaultExpandedItems={['traces-root']} selectedItems={selectedId}>
       <TreeItem
         itemId="traces-root"
         slotProps={{ content: { style: { paddingTop: 0, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 } } }}
         label={
-          <Box sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{ px: 1, py: 0.5, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}
+            onClick={() => handleSelectOverview()}
+          >
             <HubRoundedIcon fontSize="small" sx={{ color: theme.palette.primary.main }} />
             <Typography sx={{ mr: 1 }}>Session Traces</Typography>
             <Chip size="small" label={loading ? '…' : traces.length} sx={{ height: 18, fontSize: '0.65rem' }} />

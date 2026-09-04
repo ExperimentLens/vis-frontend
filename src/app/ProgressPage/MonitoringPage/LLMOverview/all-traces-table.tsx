@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react';
-import { Box, Chip, IconButton, ToggleButton, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
-import WorkspacesRoundedIcon from '@mui/icons-material/WorkspacesRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
 import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
@@ -74,12 +73,16 @@ export default function AllTracesTable({
   runNameById?: Record<string, string>;
 }) {
   const navigate = useNavigate();
-  const [groupBySession, setGroupBySession] = useState(false);
   const [collapsedSessions, setCollapsedSessions] = useState<Set<string>>(new Set());
 
   const goToTrace = (row: Row) => {
     if (!experimentId || !row.sessionId) return;
     navigate(`/${experimentId}/workflow?workflowId=${row.sessionId}&traceId=${row.id}`);
+  };
+
+  const goToWorkflow = (sessionId: string) => {
+    if (!experimentId || !sessionId) return;
+    navigate(`/${experimentId}/workflow?workflowId=${sessionId}`);
   };
 
   const toggleSession = (sessionId: string) => {
@@ -222,15 +225,15 @@ export default function AllTracesTable({
     return row;
   };
 
-  const displayRows: Row[] = useMemo(() => {
-    if (!groupBySession) return filteredRows;
+  const displayRows: Row[] = useMemo(
+    () =>
+      sessionGroups.flatMap(([sessionId, rows]) => {
+        const header = buildGroupRow(sessionId, rows);
 
-    return sessionGroups.flatMap(([sessionId, rows]) => {
-      const header = buildGroupRow(sessionId, rows);
-
-      return collapsedSessions.has(sessionId) ? [header] : [header, ...rows];
-    });
-  }, [groupBySession, filteredRows, sessionGroups, collapsedSessions]);
+        return collapsedSessions.has(sessionId) ? [header] : [header, ...rows];
+      }),
+    [sessionGroups, collapsedSessions],
+  );
 
   const nameColumn: GridColDef = {
     field: 'name',
@@ -239,7 +242,7 @@ export default function AllTracesTable({
     minWidth: 220,
     headerAlign: 'left',
     align: 'left',
-    sortable: !groupBySession,
+    sortable: false,
     renderCell: params => {
       const row = params.row as Row;
 
@@ -248,7 +251,10 @@ export default function AllTracesTable({
 
         return (
           <Box
-            onClick={() => toggleSession(row.sessionId)}
+            onClick={e => {
+              e.stopPropagation();
+              toggleSession(row.sessionId);
+            }}
             sx={{ display: 'flex', alignItems: 'center', gap: 0.75, width: '100%', height: '100%', cursor: 'pointer' }}
           >
             {collapsed ? <ChevronRightRoundedIcon fontSize="small" /> : <ExpandMoreRoundedIcon fontSize="small" />}
@@ -283,7 +289,7 @@ export default function AllTracesTable({
     width: 140,
     headerAlign: 'left',
     align: 'left',
-    sortable: !groupBySession,
+    sortable: false,
     renderCell: params => {
       const sessionId = String(params.value ?? '');
 
@@ -297,7 +303,7 @@ export default function AllTracesTable({
     width: 160,
     headerAlign: 'left',
     align: 'left',
-    sortable: !groupBySession,
+    sortable: false,
   };
 
   const judgeColumns: GridColDef[] = judgeMeta.map((j, i) => ({
@@ -376,7 +382,7 @@ export default function AllTracesTable({
     type: 'number',
     headerAlign: 'right',
     align: 'right',
-    sortable: !groupBySession,
+    sortable: false,
     renderCell: params => formatMs(Number(params.value ?? 0)),
   };
 
@@ -387,7 +393,7 @@ export default function AllTracesTable({
     type: 'number',
     headerAlign: 'right',
     align: 'right',
-    sortable: !groupBySession,
+    sortable: false,
     renderCell: params => Number(params.value ?? 0).toLocaleString(),
   };
 
@@ -398,7 +404,7 @@ export default function AllTracesTable({
     type: 'number',
     headerAlign: 'right',
     align: 'right',
-    sortable: !groupBySession,
+    sortable: false,
     renderCell: params => `$${Number(params.value ?? 0).toFixed(4)}`,
   };
 
@@ -408,7 +414,7 @@ export default function AllTracesTable({
     width: 170,
     headerAlign: 'right',
     align: 'right',
-    sortable: !groupBySession,
+    sortable: false,
     renderCell: params => (params.value ? new Date(String(params.value)).toLocaleString() : ''),
   };
 
@@ -425,7 +431,21 @@ export default function AllTracesTable({
     renderCell: params => {
       const row = params.row as Row;
 
-      if (row.isGroupHeader) return null;
+      if (row.isGroupHeader) {
+        return (
+          <Tooltip title="Open">
+            <IconButton
+              size="small"
+              onClick={e => {
+                e.stopPropagation();
+                goToWorkflow(row.sessionId);
+              }}
+            >
+              <LaunchRoundedIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        );
+      }
 
       return (
         <Tooltip title="Open trace">
@@ -496,16 +516,6 @@ export default function AllTracesTable({
               onDelete={onClearSelection}
             />
           )}
-          <ToggleButton
-            value="groupBySession"
-            selected={groupBySession}
-            onChange={() => setGroupBySession(v => !v)}
-            size="small"
-            sx={{ textTransform: 'none', px: 1.25, py: 0.25, gap: 0.5 }}
-          >
-            <WorkspacesRoundedIcon fontSize="small" />
-            Group by session
-          </ToggleButton>
         </Box>
       }
     >
@@ -531,13 +541,6 @@ export default function AllTracesTable({
             rowHeight={44}
             initialState={{ pagination: { paginationModel: { pageSize: 25, page: 0 } } }}
             pageSizeOptions={[10, 25, 50]}
-            onRowClick={params => {
-              const row = params.row as Row;
-
-              if (row.isGroupHeader) {
-                toggleSession(row.sessionId);
-              }
-            }}
             sx={{
               width: '100%',
               height: '100%',
@@ -545,7 +548,6 @@ export default function AllTracesTable({
               '& .trace-group-row': {
                 bgcolor: 'action.hover',
                 fontWeight: 700,
-                cursor: 'pointer',
               },
 
               '& .MuiDataGrid-cell:focus, & .MuiDataGrid-columnHeader:focus': {
