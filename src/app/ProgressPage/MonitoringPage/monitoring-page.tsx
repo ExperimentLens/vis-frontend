@@ -16,11 +16,14 @@ import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
-import { getCache } from '../../../shared/utils/localStorageCache';
+import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
+import { getCache, setCache } from '../../../shared/utils/localStorageCache';
 import { useLocation } from 'react-router-dom';
 import ComparativeAnalysis from './ComparativeAnalysis/comparative-analysis';
 import ExperimentExplainability from './ExperimentExplainability';
 import LlmMonitoringOverview from './LLMOverview/llm-monitoring-overview';
+import LlmTracesTableTab from './LLMOverview/llm-traces-table-tab';
+import { TRACE_SELECTION_LINK_CLASS } from './LLMOverview/trace-tooltip';
 import { useExperimentCapabilities } from '../../../shared/utils/experimentCapabilities';
 
 const MonitoringPage = () => {
@@ -46,9 +49,10 @@ const MonitoringPage = () => {
   const hasTraces = capabilities.traces;
   const TAB = {
     OVERVIEW: 0,
-    COMPARE: 1,
-    TRACES: 2,
-    EXPLAINABILITY: 3,
+    SESSION: 1,
+    COMPARE: 2,
+    TRACES: 3,
+    EXPLAINABILITY: 4,
   } as const;
 
   const canShowTraces = !isMlExperiment;
@@ -56,6 +60,7 @@ const MonitoringPage = () => {
 
   const isAllowedTab = (tab: number) => {
     if (tab === TAB.OVERVIEW) return true;
+    if (tab === TAB.SESSION) return canShowTraces;
     if (tab === TAB.COMPARE) return true;
     if (tab === TAB.TRACES) return canShowTraces;
     if (tab === TAB.EXPLAINABILITY) return canShowExplainability;
@@ -88,6 +93,58 @@ const MonitoringPage = () => {
     }
   }, [workflowsTable.initialized]);
 
+  useEffect(() => {
+    const handleClick = (event: MouseEvent) => {
+      const link = (event.target as HTMLElement | null)?.closest?.(
+        `a.${TRACE_SELECTION_LINK_CLASS}`,
+      ) as HTMLAnchorElement | null;
+
+      if (!link) return;
+
+      event.preventDefault();
+
+      const href = link.getAttribute('href');
+
+      if (!href) return;
+
+      const traceIdsAttr = link.getAttribute('data-trace-ids');
+
+      if (traceIdsAttr) {
+        try {
+          const traceIds = JSON.parse(traceIdsAttr) as string[];
+          const traceSelectionId = new URL(href, window.location.origin).searchParams.get('traceSelectionId');
+
+          if (traceSelectionId) {
+            setCache(traceSelectionId, { traceIds }, 5 * 60 * 1000);
+          }
+        } catch {
+          return;
+        }
+      }
+
+      navigate(href);
+    };
+
+    document.addEventListener('click', handleClick);
+
+    return () => document.removeEventListener('click', handleClick);
+  }, [navigate]);
+
+  const sessionContent = (
+    <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      <Box sx={{ flex: '0 0 60%', minHeight: 320 }}>
+        {visibleTable === 'workflows' ? (
+          <WorkflowTable />
+        ) : (
+          <ScheduleTable />
+        )}
+      </Box>
+      <Box sx={{ flex: 1, minHeight: 220 }}>
+        <ParallelCoordinatePlot />
+      </Box>
+    </Box>
+  );
+
   return (
     <>
       {/* Sticky Header: tabs + inline KPI strip */}
@@ -108,6 +165,7 @@ const MonitoringPage = () => {
             const searchParams = new URLSearchParams(location.search);
 
             searchParams.delete('compareId');
+            searchParams.delete('traceSelectionId');
             searchParams.set('tab', newValue);
             navigate({
               pathname: location.pathname,
@@ -134,6 +192,14 @@ const MonitoringPage = () => {
             iconPosition="start"
             label="Overview"
           />
+          {canShowTraces && (
+            <Tab
+              value={TAB.SESSION}
+              icon={<TableRowsRoundedIcon fontSize="small" />}
+              iconPosition="start"
+              label="Sessions"
+            />
+          )}
           <Tab
             value={TAB.COMPARE}
             icon={<CompareArrowsRoundedIcon fontSize="small" />}
@@ -173,21 +239,9 @@ const MonitoringPage = () => {
         }}
       >
         {selectedTab === TAB.OVERVIEW && (
-         
-            <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              <Box sx={{ flex: '0 0 60%', minHeight: 320 }}>
-                {visibleTable === 'workflows' ? (
-                  <WorkflowTable />
-                ) : (
-                  <ScheduleTable />
-                )}
-              </Box>
-              <Box sx={{ flex: 1, minHeight: 220 }}>
-                <ParallelCoordinatePlot />
-              </Box>
-            </Box>
-          
+          canShowTraces ? <LlmMonitoringOverview showTracesTable={false} /> : sessionContent
         )}
+        {selectedTab === TAB.SESSION && canShowTraces && sessionContent}
         {selectedTab === TAB.COMPARE && (
           <Box
             sx={{
@@ -251,7 +305,7 @@ const MonitoringPage = () => {
           </Box>
         )}
         {selectedTab === TAB.TRACES && !isMlExperiment && (
-          <LlmMonitoringOverview />
+          <LlmTracesTableTab />
         )}
 
         {selectedTab === TAB.EXPLAINABILITY && !isLlmExperiment && (

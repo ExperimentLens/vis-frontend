@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Button,
@@ -11,28 +11,15 @@ import {
 } from '@mui/material';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import { Handler } from 'vega-tooltip';
 
-import type { RootState } from '../../../../store/store';
-import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import {
-  fetchSessionTraceDetails,
-  selectSessionsMap,
-} from '../../../../store/slices/observabilitySlice';
-import {
-  OBSERVABILITY_PROJECT_ID,
-} from '../../../../shared/models/observability/agentic-conventions';
-import {
-  latencyByTraceName,
-  observationsByTime,
-  scoresTable,
-} from '../../../../shared/utils/observability-aggregates';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import LlmKpiStrip from './llm-kpi-strip';
 
 import LlmMonitoringUsageTab from './llm-monitoring-usage-tab';
 import LlmMonitoringQualityTab from './llm-monitoring-quality-tab';
 import LlmMonitoringAgentsTab from './llm-monitoring-agents-tab';
+import { useLlmSessionTraces } from './use-llm-session-traces';
+
 type LlmOverviewTab = 'usage' | 'quality' | 'agents';
 
 const LLM_TABS: Array<{ value: LlmOverviewTab; label: string }> = [
@@ -81,130 +68,31 @@ const downloadCsv = (
   URL.revokeObjectURL(url);
 };
 
-export default function LlmMonitoringOverview() {
-  const dispatch = useAppDispatch();
+type LlmMonitoringOverviewProps = {
+  /** Set to false to hide the all-traces data grid (e.g. when it's shown on its own tab). Defaults to true. */
+  showTracesTable?: boolean;
+};
+
+export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMonitoringOverviewProps) {
   const theme = useTheme();
 
   const [selectedTab, setSelectedTab] = useState<LlmOverviewTab>('usage');
 
-  const tooltip = useMemo(
-    () => new Handler({ sanitize: (v: unknown) => String(v) }).call,
-    [],
-  );
-
-  const { experiment, workflows } = useAppSelector((s: RootState) => s.progressPage);
-  const sessions = useAppSelector(selectSessionsMap);
-  const experimentId = experiment.data?.id;
-
-  const runNameById = useMemo(
-    () => Object.fromEntries(workflows.data.map(w => [w.id, w.name ?? w.id])),
-    [workflows.data],
-  );
-
-  const idKey = workflows.data
-    .filter(w => w.status !== 'SCHEDULED')
-    .map(w => w.id)
-    .join(',');
-
-  const workflowIds = useMemo(
-    () => (idKey ? idKey.split(',') : []),
-    [idKey],
-  );
-
-  useEffect(() => {
-    if (!experimentId) return;
-
-    workflowIds.forEach(id =>
-      dispatch(fetchSessionTraceDetails({
-        projectId: OBSERVABILITY_PROJECT_ID,
-        experimentId,
-        workflowId: id,
-      })),
-    );
-  }, [dispatch, experimentId, workflowIds]);
-
-  const allDetails = useMemo(
-    () => workflowIds.flatMap(id => sessions[id]?.details ?? []),
-    [workflowIds, sessions],
-  );
-
-  const anyLoading = workflowIds.some(id => sessions[id]?.loading);
-  const hasData = allDetails.length > 0;
-
-  const scores = useMemo(
-    () => (hasData ? scoresTable(allDetails) : []),
-    [hasData, allDetails],
-  );
-
-  const timeSeries = useMemo(
-    () => (hasData ? observationsByTime(allDetails) : []),
-    [hasData, allDetails],
-  );
-
-  const latencies = useMemo(
-    () => (hasData ? latencyByTraceName(allDetails) : []),
-    [hasData, allDetails],
-  );
-
-  const totalObservations = useMemo(
-    () => allDetails.reduce((sum, trace) => sum + trace.observations.length, 0),
-    [allDetails],
-  );
-
-  const totalScores = useMemo(
-    () => allDetails.reduce((sum, trace) => sum + trace.scores.length, 0),
-    [allDetails],
-  );
-
-  const obsSpec = useMemo(
-    () => ({
-      $schema: 'https://vega.github.io/schema/vega-lite/v5.json',
-      data: { values: timeSeries },
-      mark: { type: 'line', point: true, interpolate: 'monotone', color: theme.palette.success.main },
-      encoding: {
-        x: { field: 'time', type: 'temporal', title: null },
-        y: { field: 'count', type: 'quantitative', title: 'observations' },
-        color: {
-          field: 'level',
-          type: 'nominal',
-          scale: {
-            domain: ['DEFAULT', 'ERROR', 'DEBUG', 'WARNING'],
-            range: [
-              theme.palette.success.main,
-              theme.palette.error.main,
-              theme.palette.text.secondary,
-              theme.palette.warning.main,
-            ],
-          },
-          legend: { orient: 'bottom', title: null },
-        },
-        tooltip: [
-          { field: 'time', title: 'time', type: 'temporal', format: '%b %d, %H:%M' },
-          { field: 'level', title: 'level' },
-          { field: 'count', title: 'count' },
-        ],
-      },
-    }) as Record<string, unknown>,
-    [
-      timeSeries,
-      theme.palette.primary.main,
-      theme.palette.error.main,
-      theme.palette.text.secondary,
-      theme.palette.warning.main,
-    ],
-  );
-
-  const refresh = () => {
-    if (!experimentId) return;
-
-    workflowIds.forEach(id =>
-      dispatch(fetchSessionTraceDetails({
-        projectId: OBSERVABILITY_PROJECT_ID,
-        experimentId,
-        workflowId: id,
-      })),
-    );
-  };
+  const {
+    workflowIds,
+    runNameById,
+    allDetails,
+    anyLoading,
+    hasData,
+    scores,
+    timeSeries,
+    latencies,
+    totalObservations,
+    totalScores,
+    obsSpec,
+    tooltip,
+    refresh,
+  } = useLlmSessionTraces();
 
   const handleDownloadScoresCsv = () => {
     downloadCsv(
@@ -259,7 +147,7 @@ export default function LlmMonitoringOverview() {
           borderColor: 'divider',
           minHeight: 44,
           flexShrink: 0,
-        }}      
+        }}
       >
         <Tabs
           value={selectedTab}
@@ -341,6 +229,7 @@ export default function LlmMonitoringOverview() {
               tooltip={tooltip}
               onDownloadTraceLatencyCsv={handleDownloadTraceLatencyCsv}
               runNameById={runNameById}
+              showTracesTable={showTracesTable}
             />
           )}
 

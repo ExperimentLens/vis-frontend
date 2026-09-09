@@ -48,6 +48,8 @@ type UsageTabProps = {
   tooltip: React.ComponentProps<typeof ResponsiveCardVegaLite>['tooltip'];
   onDownloadTraceLatencyCsv: () => void;
   runNameById: Record<string, string>;
+  /** Set to false to hide the all-traces data grid (e.g. when it's shown elsewhere). Defaults to true. */
+  showTracesTable?: boolean;
 };
 
 export default function LlmMonitoringUsageTab({
@@ -60,6 +62,7 @@ export default function LlmMonitoringUsageTab({
   tooltip,
   onDownloadTraceLatencyCsv,
   runNameById,
+  showTracesTable = true,
 }: UsageTabProps) {
   const { experimentId } = useParams();
   const [selectedTraceIds, setSelectedTraceIds] = useState<string[] | null>(null);
@@ -153,7 +156,8 @@ export default function LlmMonitoringUsageTab({
 
   return (
     <>
-    <Grid container spacing={1.5}>
+    {showTracesTable && (
+      <Grid container spacing={1.5}>
         <Grid size={{ xs: 12 }} sx={{ textAlign: 'left' }}>
           <AllTracesTable
             details={details}
@@ -164,6 +168,7 @@ export default function LlmMonitoringUsageTab({
           />
         </Grid>
       </Grid>
+    )}
       <Grid container spacing={1.5}>
         <Grid size={{ xs: 12 }} sx={{ textAlign: 'left', height: 350 }}>
           <TraceCountByHourChart

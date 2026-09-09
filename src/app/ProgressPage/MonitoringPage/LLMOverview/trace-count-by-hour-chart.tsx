@@ -183,7 +183,6 @@ export default function TraceCountByHourChart({
       isStatic={false}
       tooltip={rows.length > 0 ? traceHourTooltip : tooltip}
       signalListeners={signalListeners}
-      disableTooltipPin
       showSettings={rows.length > 0}
       showInfoMessage={rows.length === 0}
       infoMessage={

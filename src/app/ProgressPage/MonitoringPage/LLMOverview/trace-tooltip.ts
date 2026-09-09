@@ -171,36 +171,40 @@ const formatMetric = (
   return `${Math.round(value).toLocaleString()} ms`;
 };
 
+// Keep in sync with the TAB.TRACES value in monitoring-page.tsx.
+const TRACES_TAB_INDEX = 3;
+
+/** Marks a tooltip link as one that should be intercepted client-side — see
+ * `TRACE_SELECTION_LINK_CLASS` usage in monitoring-page.tsx, which attaches a
+ * single delegated click listener for this class and navigates via the
+ * router. A plain onclick="" attribute was tried first, but the pinned
+ * tooltip panel copies the live tooltip's HTML via `.innerHTML`, and that
+ * round-trip doesn't reliably survive inline event handlers — a data
+ * attribute read by a delegated listener does. */
+export const TRACE_SELECTION_LINK_CLASS = 'trace-selection-link';
+
 /**
- * Placeholder navigation URL.
- *
- * Change this function when the final traces route is available.
+ * Builds the monitoring-page URL a "View N traces" link should point to
+ * (picked up via `traceSelectionId`) plus the trace ids to stash under that
+ * key once clicked, or null when there's nothing to link to (no experiment,
+ * or no traces in this bucket).
  */
-const buildTracesHref = ({
+const buildTraceSelectionLink = ({
   experimentId,
   traces,
 }: {
   experimentId?: string;
   traces: TraceDetail[];
-}): string => {
-  const params = new URLSearchParams({
-    tab: 'traces',
-  });
+}): { href: string; traceIds: string[] } | null => {
+  const traceIds = traces.map(trace => trace.id).filter(Boolean);
 
-  const traceIds = traces
-    .map(trace => trace.id)
-    .filter(Boolean)
-    .join(',');
+  if (!experimentId || traceIds.length === 0) return null;
 
-  if (traceIds) {
-    params.set('traceIds', traceIds);
-  }
+  const selectionKey = `trace-select-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-  return experimentId
-    ? `/${encodeURIComponent(
-        experimentId,
-      )}/monitoring?${params.toString()}`
-    : `/monitoring?${params.toString()}`;
+  const href = `/${encodeURIComponent(experimentId)}/monitoring?tab=${TRACES_TAB_INDEX}&traceSelectionId=${selectionKey}`;
+
+  return { href, traceIds };
 };
 
 const renderTooltip = ({
@@ -222,8 +226,7 @@ const renderTooltip = ({
   palette: WorkflowTooltipPalette;
   sanitize: (value: unknown) => string;
 }): string => {
-  //use when transision to link
-  const href = buildTracesHref({
+  const traceSelectionLink = buildTraceSelectionLink({
     experimentId,
     traces,
   });
@@ -282,20 +285,38 @@ const renderTooltip = ({
           `
           : ''
       }
-        <span
-          style="
-            display:block;
-            margin-top:6px;
-            padding-top:5px;
-            border-top:1px solid ${palette.border};
-            color:${palette.link};
-            font-weight:800;
-            cursor:default;
-          "
-        >        
-          View: ${traceCount.toLocaleString()}
-          ${traceCount === 1 ? 'trace' : 'traces'}
-      </span>
+      <div
+        style="
+          margin-top:6px;
+          padding-top:5px;
+          border-top:1px solid ${palette.border};
+        "
+      >
+        ${
+          traceSelectionLink
+            ? `
+              <a
+                href="${traceSelectionLink.href}"
+                class="${TRACE_SELECTION_LINK_CLASS}"
+                data-trace-ids='${JSON.stringify(traceSelectionLink.traceIds)}'
+                style="
+                  color:${palette.link};
+                  text-decoration:underline;
+                  font-size:0.68rem;
+                  font-weight:800;
+                  cursor:pointer;
+                "
+              >
+                View ${traceCount.toLocaleString()} ${traceCount === 1 ? 'trace' : 'traces'}
+              </a>
+            `
+            : `
+              <span style="color:${palette.secondaryText}; font-weight:800;">
+                ${traceCount.toLocaleString()} ${traceCount === 1 ? 'trace' : 'traces'}
+              </span>
+            `
+        }
+      </div>
     </div>
   `;
 };
