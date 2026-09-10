@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
+  Chip,
   CircularProgress,
+  Paper,
   Stack,
+  Toolbar,
   Typography,
-  useTheme,
 } from '@mui/material';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -18,7 +20,6 @@ import { useLlmSessionTraces } from './use-llm-session-traces';
 import { useParams } from 'react-router';
 
 export default function LlmTracesTableTab() {
-  const theme = useTheme();
   const { experimentId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,6 +35,14 @@ export default function LlmTracesTableTab() {
     hasData,
     refresh,
   } = useLlmSessionTraces();
+
+  const selectedCount = useMemo(() => {
+    if (!selectedTraceIds) return 0;
+
+    const idSet = new Set(selectedTraceIds);
+
+    return allDetails.filter(d => idSet.has(d.id)).length;
+  }, [allDetails, selectedTraceIds]);
 
   useEffect(() => {
     if (!traceSelectionId) return;
@@ -73,27 +82,37 @@ export default function LlmTracesTableTab() {
   }
 
   return (
-    <Stack spacing={1.5} sx={{ flex: 1, minHeight: 0 }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={1}
+    <Paper 
+      elevation={0}
+      variant="outlined"
+      sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' }}
+    >
+      <Toolbar
+        variant="dense"
         sx={{
-          position: 'sticky',
-          top: 0,
-          zIndex: theme.zIndex.appBar - 1,
-          bgcolor: 'background.paper',
-          borderBottom: 1,
-          borderColor: 'divider',
           minHeight: 44,
-          flexShrink: 0,
+          height: 44,
+          '@media (min-width:600px)': {
+            minHeight: 44,
+            height: 44,
+          },
+          flex: '0 0 auto',
+          gap: 1,
+          px: 1.5,
+          borderBottom: theme => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Typography variant="subtitle2" fontWeight={800}>
-          Traces
-        </Typography>
-
         <Box sx={{ flexGrow: 1 }} />
+
+        {selectedTraceIds && (
+          <Chip
+            size="small"
+            color="primary"
+            variant="outlined"
+            label={`${selectedCount} of ${allDetails.length} traces (from chart)`}
+            onDelete={clearSelection}
+          />
+        )}
 
         <Typography variant="caption" color="text.secondary">
           {workflowIds.length} session{workflowIds.length === 1 ? '' : 's'}
@@ -109,7 +128,7 @@ export default function LlmTracesTableTab() {
         >
           Refresh
         </Button>
-      </Stack>
+      </Toolbar>
 
       {!hasData && anyLoading && (
         <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, py: 6, gap: 1.5 }}>
@@ -130,14 +149,15 @@ export default function LlmTracesTableTab() {
       )}
 
       {hasData && (
-        <AllTracesTable
-          details={allDetails}
-          experimentId={experimentId}
-          runNameById={runNameById}
-          selectedTraceIds={selectedTraceIds}
-          onClearSelection={clearSelection}
-        />
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          <AllTracesTable
+            details={allDetails}
+            experimentId={experimentId}
+            runNameById={runNameById}
+            selectedTraceIds={selectedTraceIds}
+          />
+        </Box>
       )}
-    </Stack>
+    </Paper>
   );
 }

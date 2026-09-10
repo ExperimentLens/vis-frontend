@@ -174,7 +174,8 @@ export const TruncMono = ({
   max = 160,
 }: {
   children: string;
-  max?: number;
+  /** Pixel cap, or '100%' to instead fill (and track) whatever width the parent already gives it — e.g. a resizable DataGrid column. */
+  max?: number | string;
 }) => (
   <Box
     component="span"

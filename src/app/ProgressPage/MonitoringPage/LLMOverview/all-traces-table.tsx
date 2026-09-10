@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
-import type { GridColDef } from '@mui/x-data-grid';
+import { Box, Chip, IconButton, Paper, Tooltip, Typography } from '@mui/material';
+import type { GridAlignment, GridColDef } from '@mui/x-data-grid';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
@@ -8,7 +8,6 @@ import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
 import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import { useNavigate } from 'react-router-dom';
 
-import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
 import { EmptyNote } from './chart-kit';
 import { StyledDataGrid, TruncMono } from './llm-monitoring-shared';
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
@@ -16,6 +15,8 @@ import type { GenOutput } from '../../../../shared/models/observability/agentic-
 import { formatMs, isJudge, modelOf, prettyName } from '../../../../shared/models/observability/agentic-conventions';
 import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
 import { TONE_COLOR, TONE_LABEL, isHumanScoreName, scoreTone, worstTone } from '../../../Tasks/Observability/score-dimensions';
+
+const ACTION_COL_WIDTH = 120;
 
 type JudgeVerdict = 'pass' | 'fail' | null;
 
@@ -62,14 +63,12 @@ export default function AllTracesTable({
   details,
   experimentId,
   selectedTraceIds,
-  onClearSelection,
   runNameById,
 }: {
   details: TraceDetail[];
   experimentId: string | undefined;
   /** When set, only these trace ids are shown — e.g. traces from a bucket clicked in the time chart. */
   selectedTraceIds?: string[] | null;
-  onClearSelection?: () => void;
   runNameById?: Record<string, string>;
 }) {
   const navigate = useNavigate();
@@ -247,17 +246,14 @@ export default function AllTracesTable({
       const row = params.row as Row;
 
       if (row.isGroupHeader) {
-        const collapsed = collapsedSessions.has(row.sessionId);
-
         return (
           <Box
             onClick={e => {
               e.stopPropagation();
               toggleSession(row.sessionId);
             }}
-            sx={{ display: 'flex', alignItems: 'center', gap: 0.75, width: '100%', height: '100%', cursor: 'pointer' }}
+            sx={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%', cursor: 'pointer' }}
           >
-            {collapsed ? <ChevronRightRoundedIcon fontSize="small" /> : <ExpandMoreRoundedIcon fontSize="small" />}
             <span>{row.count} trace{row.count === 1 ? '' : 's'}</span>
           </Box>
         );
@@ -265,7 +261,7 @@ export default function AllTracesTable({
 
       return (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
-          <TruncMono max={row.annotatedCount ? 260 : 320}>{String(params.value ?? '')}</TruncMono>
+          <TruncMono max="100%">{String(params.value ?? '')}</TruncMono>
           {Boolean(row.annotatedCount) && (
             <Tooltip title={`${row.annotatedCount} human annotation${row.annotatedCount === 1 ? '' : 's'} — ${TONE_LABEL[row.annotationTone ?? 'good']}`}>
               <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, flexShrink: 0, color: TONE_COLOR[row.annotationTone ?? 'good'] }}>
@@ -286,21 +282,42 @@ export default function AllTracesTable({
   const sessionColumn: GridColDef = {
     field: 'sessionId',
     headerName: 'Session',
-    width: 140,
+    flex: 0.8,
+    minWidth: 140,
     headerAlign: 'left',
     align: 'left',
     sortable: false,
     renderCell: params => {
+      const row = params.row as Row;
       const sessionId = String(params.value ?? '');
+      const label = <TruncMono max="100%">{runNameById?.[sessionId] ?? sessionId}</TruncMono>;
 
-      return <TruncMono max={120}>{runNameById?.[sessionId] ?? sessionId}</TruncMono>;
+      if (row.isGroupHeader) {
+        const collapsed = collapsedSessions.has(sessionId);
+
+        return (
+          <Box
+            onClick={e => {
+              e.stopPropagation();
+              toggleSession(sessionId);
+            }}
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.75, width: '100%', height: '100%', minWidth: 0, cursor: 'pointer' }}
+          >
+            {collapsed ? <ChevronRightRoundedIcon fontSize="small" /> : <ExpandMoreRoundedIcon fontSize="small" />}
+            {label}
+          </Box>
+        );
+      }
+
+      return label;
     },
   };
 
   const modelColumn: GridColDef = {
     field: 'model',
     headerName: 'Model',
-    width: 160,
+    flex: 0.6,
+    minWidth: 160,
     headerAlign: 'left',
     align: 'left',
     sortable: false,
@@ -421,13 +438,13 @@ export default function AllTracesTable({
   const actionColumn: GridColDef = {
     field: 'rowAction',
     headerName: '',
-    width: 64,
+    minWidth: ACTION_COL_WIDTH,
+    flex: 0,
     sortable: false,
     filterable: false,
     align: 'center',
     headerAlign: 'center',
     headerClassName: 'datagrid-header-fixed',
-    cellClassName: 'datagrid-header-fixed',
     renderCell: params => {
       const row = params.row as Row;
 
@@ -435,13 +452,12 @@ export default function AllTracesTable({
         return (
           <Tooltip title="Open">
             <IconButton
-              size="small"
               onClick={e => {
                 e.stopPropagation();
                 goToWorkflow(row.sessionId);
               }}
             >
-              <LaunchRoundedIcon fontSize="small" />
+              <LaunchRoundedIcon sx={{ color: 'primary.main' }} />
             </IconButton>
           </Tooltip>
         );
@@ -450,13 +466,12 @@ export default function AllTracesTable({
       return (
         <Tooltip title="Open trace">
           <IconButton
-            size="small"
             onClick={e => {
               e.stopPropagation();
               goToTrace(row);
             }}
           >
-            <LaunchRoundedIcon fontSize="small" />
+            <LaunchRoundedIcon sx={{ color: 'primary.main' }} />
           </IconButton>
         </Tooltip>
       );
@@ -464,8 +479,8 @@ export default function AllTracesTable({
   };
 
   const columns: GridColDef[] = [
-    nameColumn,
     sessionColumn,
+    nameColumn,
     modelColumn,
     ...judgeColumns,
     latencyColumn,
@@ -479,7 +494,7 @@ export default function AllTracesTable({
     {
       groupId: 'Trace',
       headerClassName: 'theme-parameters-group',
-      children: [{ field: 'name' }, { field: 'sessionId' }, { field: 'model' }],
+      children: [{ field: 'sessionId' }, { field: 'name' }, { field: 'model' }],
     },
     ...(judgeColumns.length > 0
       ? [{
@@ -496,43 +511,31 @@ export default function AllTracesTable({
     {
       groupId: 'Actions',
       headerClassName: 'datagrid-header-fixed',
+      headerAlign: 'center' as GridAlignment,
       children: [{ field: 'rowAction' }],
     },
   ];
 
   return (
-    <ResponsiveCardTable
-      // title={`All traces (${traceRows.length})`}
-      title=""
-      noPadding
-      headerActions={
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {selectedTraceIds && (
-            <Chip
-              size="small"
-              color="primary"
-              variant="outlined"
-              label={`${filteredRows.length} of ${traceRows.length} traces (from chart)`}
-              onDelete={onClearSelection}
-            />
-          )}
-        </Box>
-      }
+    <Paper
+      elevation={0}
+      variant="outlined"
+      sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' }}
     >
       {traceRows.length === 0 ? (
-        <Box sx={{ px: 2, pb: 2 }}>
+        <Box sx={{ p: 2 }}>
           <EmptyNote>No traces.</EmptyNote>
         </Box>
       ) : filteredRows.length === 0 ? (
-        <Box sx={{ px: 2, pb: 2 }}>
+        <Box sx={{ p: 2 }}>
           <EmptyNote>No traces in the selected bucket.</EmptyNote>
         </Box>
       ) : (
-        <Box sx={{ height: 560, width: '100%' }}>
+        <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
           <StyledDataGrid
+            disableVirtualization
             density="compact"
             disableColumnMenu
-            disableColumnResize
             disableRowSelectionOnClick
             getRowClassName={params => ((params.row as Row).isGroupHeader ? 'trace-group-row' : '')}
             rows={displayRows}
@@ -544,6 +547,8 @@ export default function AllTracesTable({
             sx={{
               width: '100%',
               height: '100%',
+              border: 'none',
+              borderRadius: 0,
 
               '& .trace-group-row': {
                 bgcolor: 'action.hover',
@@ -561,6 +566,6 @@ export default function AllTracesTable({
           />
         </Box>
       )}
-    </ResponsiveCardTable>
+    </Paper>
   );
 }
