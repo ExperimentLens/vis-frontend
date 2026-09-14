@@ -2,6 +2,14 @@ import { Handler } from 'vega-tooltip';
 
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
 import {
+  DAY_MS,
+  bucketStartMs,
+  dayKey,
+  formatBucketAxisLabel,
+  formatBucketTooltipTitle,
+  pickBucketMs,
+} from '../../../../shared/utils/time-buckets';
+import {
   WF_INFO_TIP_CLASS,
   type WorkflowTooltipPalette,
 } from '../ComparativeAnalysis/workflow-info-tooltip';
@@ -16,6 +24,7 @@ export type TraceHourRow = {
 export type TraceHourBuckets = {
   rows: TraceHourRow[];
   tracesByHour: Map<string, TraceDetail[]>;
+  isDailyBucket: boolean;
 };
 
 export type TraceDistributionMetricKey =
@@ -71,88 +80,6 @@ const traceDate = (trace: TraceDetail): Date | null => {
 
   return Number.isNaN(date.getTime()) ? null : date;
 };
-
-export const dayKey = (date: Date): string =>
-  [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-');
-
-const formatHour = (
-  date: Date,
-  includeDate: boolean,
-): string =>
-  includeDate
-    ? date.toLocaleString(undefined, {
-        day: '2-digit',
-        month: 'short',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : date.toLocaleTimeString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-
-const formatDay = (date: Date): string =>
-  date.toLocaleDateString(undefined, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-
-const MINUTE_MS = 60_000;
-const HOUR_MS = 60 * MINUTE_MS;
-const DAY_MS = 24 * HOUR_MS;
-
-/**
- * Candidate bucket widths, finest first. `pickBucketMs` returns the finest
- * one that still keeps the chart to a readable number of bars — so a burst
- * of traces inside a single hour buckets by minute instead of collapsing
- * into one or two hour-wide bars, while a multi-day experiment still buckets
- * by hour/day instead of exploding into hundreds of bars.
- */
-const BUCKET_CANDIDATES_MS = [
-  MINUTE_MS,
-  5 * MINUTE_MS,
-  15 * MINUTE_MS,
-  30 * MINUTE_MS,
-  HOUR_MS,
-  3 * HOUR_MS,
-  6 * HOUR_MS,
-  12 * HOUR_MS,
-  DAY_MS,
-  7 * DAY_MS,
-];
-
-const MAX_BARS = 24;
-
-const pickBucketMs = (spanMs: number): number => {
-  if (spanMs <= 0) return BUCKET_CANDIDATES_MS[0];
-
-  const fit = BUCKET_CANDIDATES_MS.find(size => spanMs / size <= MAX_BARS);
-
-  return fit ?? BUCKET_CANDIDATES_MS[BUCKET_CANDIDATES_MS.length - 1];
-};
-
-const formatBucketLabel = (
-  date: Date,
-  bucketMs: number,
-  includeDate: boolean,
-): string =>
-  bucketMs >= DAY_MS ? formatDay(date) : formatHour(date, includeDate);
-
-const formatTooltipHour = (
-  date: Date | null,
-): string =>
-  date?.toLocaleString(undefined, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }) ?? 'Unknown hour';
 
 const formatMetric = (
   value: number | null,
@@ -329,11 +256,7 @@ export const buildTraceHourBuckets = (
     .filter((date): date is Date => date !== null)
     .map(date => date.getTime());
 
-  const spanMs = times.length
-    ? Math.max(...times) - Math.min(...times)
-    : 0;
-
-  const bucketMs = pickBucketMs(spanMs);
+  const bucketMs = pickBucketMs(times);
 
   const tracesByHour = new Map<
     string,
@@ -345,9 +268,7 @@ export const buildTraceHourBuckets = (
 
     if (!date) return;
 
-    const bucketStart =
-      Math.floor(date.getTime() / bucketMs) * bucketMs;
-    const hourKey = String(bucketStart);
+    const hourKey = String(bucketStartMs(date.getTime(), bucketMs));
     const bucket =
       tracesByHour.get(hourKey) ?? [];
 
@@ -375,7 +296,7 @@ export const buildTraceHourBuckets = (
     return {
       hourKey,
       hourStart: date.toISOString(),
-      hourLabel: formatBucketLabel(
+      hourLabel: formatBucketAxisLabel(
         date,
         bucketMs,
         includeDate,
@@ -389,15 +310,18 @@ export const buildTraceHourBuckets = (
   return {
     rows,
     tracesByHour,
+    isDailyBucket: bucketMs >= DAY_MS,
   };
 };
 
 export const createTraceHourTooltipHandler = ({
   tracesByHour,
+  isDailyBucket,
   experimentId,
   palette,
 }: {
   tracesByHour: Map<string, TraceDetail[]>;
+  isDailyBucket: boolean;
   experimentId?: string;
   palette: WorkflowTooltipPalette;
 }) => {
@@ -419,10 +343,100 @@ export const createTraceHourTooltipHandler = ({
         tracesByHour.get(hourKey) ?? [];
 
       return renderTooltip({
-        title: formatTooltipHour(
+        title: formatBucketTooltipTitle(
           hourKey
             ? new Date(Number(hourKey))
             : null,
+          isDailyBucket,
+        ),
+        traceCount: traces.length,
+        traces,
+        experimentId,
+        palette,
+        sanitize,
+      });
+    },
+  });
+
+  return handler.call;
+};
+
+const formatTokenCount = (value: number): string =>
+  new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 2 }).format(value);
+
+const formatLatencyMs = (value: number): string => `${Math.round(value).toLocaleString()} ms`;
+
+export const createLatencyBucketTooltipHandler = ({
+  tracesByBucket,
+  isDailyBucket,
+  experimentId,
+  palette,
+}: {
+  tracesByBucket: Map<string, TraceDetail[]>;
+  isDailyBucket: boolean;
+  experimentId?: string;
+  palette: WorkflowTooltipPalette;
+}) => {
+  const handler = new Handler({
+    sanitize: escapeHtml,
+
+    formatTooltip: (
+      value: Record<string, unknown>,
+      sanitize,
+    ) => {
+      const bucketKeyValue = String(value.bucketKey ?? '');
+      const percentile = String(value.percentile ?? '').toUpperCase();
+      const latencyMs = toNumber(value.latencyMs);
+
+      const traces = tracesByBucket.get(bucketKeyValue) ?? [];
+
+      return renderTooltip({
+        title: `${percentile}: ${latencyMs !== null ? formatLatencyMs(latencyMs) : '—'}`,
+        subtitle: formatBucketTooltipTitle(
+          bucketKeyValue ? new Date(Number(bucketKeyValue)) : null,
+          isDailyBucket,
+        ),
+        traceCount: traces.length,
+        traces,
+        experimentId,
+        palette,
+        sanitize,
+      });
+    },
+  });
+
+  return handler.call;
+};
+
+export const createTokensBucketTooltipHandler = ({
+  tracesByBucket,
+  isDailyBucket,
+  experimentId,
+  palette,
+}: {
+  tracesByBucket: Map<string, TraceDetail[]>;
+  isDailyBucket: boolean;
+  experimentId?: string;
+  palette: WorkflowTooltipPalette;
+}) => {
+  const handler = new Handler({
+    sanitize: escapeHtml,
+
+    formatTooltip: (
+      value: Record<string, unknown>,
+      sanitize,
+    ) => {
+      const bucketKeyValue = String(value.bucketKey ?? '');
+      const percentile = String(value.percentile ?? '').toUpperCase();
+      const tokens = toNumber(value.tokens);
+
+      const traces = tracesByBucket.get(bucketKeyValue) ?? [];
+
+      return renderTooltip({
+        title: `${percentile}: ${tokens !== null ? formatTokenCount(tokens) : '—'}`,
+        subtitle: formatBucketTooltipTitle(
+          bucketKeyValue ? new Date(Number(bucketKeyValue)) : null,
+          isDailyBucket,
         ),
         traceCount: traces.length,
         traces,

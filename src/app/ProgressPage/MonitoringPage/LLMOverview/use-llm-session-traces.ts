@@ -16,6 +16,7 @@ import {
   observationsByTime,
   scoresTable,
 } from '../../../../shared/utils/observability-aggregates';
+import { pickBucketMs } from '../../../../shared/utils/time-buckets';
 
 export function useLlmSessionTraces() {
   const dispatch = useAppDispatch();
@@ -70,9 +71,18 @@ export function useLlmSessionTraces() {
     [hasData, allDetails],
   );
 
+  // Same hour-for-single-day/day-for-multi-day rule as the other "over time" charts in this tab.
+  const bucketMs = useMemo(() => {
+    const times = allDetails
+      .map(d => Date.parse(d.timestamp))
+      .filter(t => !Number.isNaN(t));
+
+    return pickBucketMs(times);
+  }, [allDetails]);
+
   const timeSeries = useMemo(
-    () => (hasData ? observationsByTime(allDetails) : []),
-    [hasData, allDetails],
+    () => (hasData ? observationsByTime(allDetails, bucketMs) : []),
+    [hasData, allDetails, bucketMs],
   );
 
   const latencies = useMemo(
@@ -96,7 +106,15 @@ export function useLlmSessionTraces() {
       data: { values: timeSeries },
       mark: { type: 'line', point: true, interpolate: 'monotone', color: theme.palette.success.main },
       encoding: {
-        x: { field: 'time', type: 'temporal', title: null },
+        x: {
+          field: 'label',
+          type: 'ordinal',
+          title: null,
+          sort: { field: 'time' },
+          // domain:false avoids doubling up with the y-axis's zero gridline, which sits
+          // on the exact same pixel row as this axis's own baseline.
+          axis: { grid: false, labelAngle: 0, domain: false },
+        },
         y: { field: 'count', type: 'quantitative', title: 'observations' },
         color: {
           field: 'level',
@@ -113,7 +131,7 @@ export function useLlmSessionTraces() {
           legend: { orient: 'bottom', title: null },
         },
         tooltip: [
-          { field: 'time', title: 'time', type: 'temporal', format: '%b %d, %H:%M' },
+          { field: 'tooltipLabel', title: 'time', type: 'nominal' },
           { field: 'level', title: 'level' },
           { field: 'count', title: 'count' },
         ],

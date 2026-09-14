@@ -17,6 +17,8 @@ import { EmptyNote } from './chart-kit';
 import DistributionChart from './distribution-chart';
 import { StyledDataGrid } from './llm-monitoring-shared';
 import TraceCountByHourChart from './trace-count-by-hour-chart';
+import LatencyOverTimeChart from './latency-over-time-chart';
+import TokensOverTimeChart from './tokens-over-time-chart';
 import AllTracesTable from './all-traces-table';
 import { useParams } from 'react-router';
 import type { GridColDef } from '@mui/x-data-grid';
@@ -182,11 +184,21 @@ export default function LlmMonitoringUsageTab({
       </Grid>
 
       <Grid container spacing={1.5}>
-        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 300 }}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 350 }}>
+          <LatencyOverTimeChart details={details} experimentId={experimentId} isLoading={isLoading} />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 350 }}>
+          <TokensOverTimeChart details={details} experimentId={experimentId} isLoading={isLoading} />
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={1.5}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 350 }}>
           <DistributionChart details={details} experimentId={experimentId} isLoading={isLoading} />
         </Grid>
 
-        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 300 }}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 350 }}>
           <ResponsiveCardVegaLite
             title="Observations by time"
             details={

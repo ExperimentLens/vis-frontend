@@ -11,6 +11,15 @@ import {
 import type { GenOutput, TraceInput } from '../models/observability/agentic-conventions';
 import type { ReviewTone } from '../../app/Tasks/Observability/score-dimensions';
 import { worstTone } from '../../app/Tasks/Observability/score-dimensions';
+import {
+  DAY_MS,
+  HOUR_MS,
+  bucketStartMs,
+  dayKey,
+  formatBucketAxisLabel,
+  formatBucketTooltipTitle,
+  pickBucketMs,
+} from './time-buckets';
 
 const quantile = (sorted: number[], q: number): number => {
   if (sorted.length === 0) return 0;
@@ -326,10 +335,10 @@ export const scoresTable = (details: TraceDetail[]): ScoresRow[] => {
     .sort((a, b) => b.count - a.count);
 };
 
-export interface TimeBucket { time: number; count: number; level: string }
+export interface TimeBucket { time: number; label: string; tooltipLabel: string; count: number; level: string }
 
-/** Bucket observations by `bucketMs` (default 1h) and observation level for a line chart. */
-export const observationsByTime = (details: TraceDetail[], bucketMs = 3600000): TimeBucket[] => {
+/** Bucket observations by `bucketMs` (hour or day, per `pickBucketMs`) and observation level for a line chart. */
+export const observationsByTime = (details: TraceDetail[], bucketMs = HOUR_MS): TimeBucket[] => {
   const m = new Map<string, number>();
 
   details.forEach(t =>
@@ -337,7 +346,7 @@ export const observationsByTime = (details: TraceDetail[], bucketMs = 3600000): 
       const ts = Date.parse(o.startTime);
 
       if (Number.isNaN(ts)) return;
-      const bucket = Math.floor(ts / bucketMs) * bucketMs;
+      const bucket = bucketStartMs(ts, bucketMs);
       const level = (o.level || 'DEFAULT').toUpperCase();
       const k = `${bucket}|${level}`;
 
@@ -345,12 +354,21 @@ export const observationsByTime = (details: TraceDetail[], bucketMs = 3600000): 
     }),
   );
 
-  return Array.from(m.entries())
-    .map(([k, count]) => {
-      const [bucketStr, level] = k.split('|');
+  const entries = Array.from(m.entries()).map(([k, count]) => {
+    const [bucketStr, level] = k.split('|');
 
-      return { time: Number(bucketStr), count, level };
-    })
+    return { time: Number(bucketStr), count, level };
+  });
+
+  const includeDate = new Set(entries.map(e => dayKey(new Date(e.time)))).size > 1;
+  const isDailyBucket = bucketMs >= DAY_MS;
+
+  return entries
+    .map(e => ({
+      ...e,
+      label: formatBucketAxisLabel(new Date(e.time), bucketMs, includeDate),
+      tooltipLabel: formatBucketTooltipTitle(new Date(e.time), isDailyBucket),
+    }))
     .sort((a, b) => a.time - b.time);
 };
 
@@ -374,6 +392,96 @@ export const tokenSplit = (details: TraceDetail[]): TokenSplitTotals => {
   );
 
   return { prompt, completion, total };
+};
+
+export interface TimeBucketPercentilePoint {
+  bucketKey: string;
+  bucketStart: string;
+  bucketLabel: string;
+  count: number;
+  p50: number;
+  p90: number;
+  p99: number;
+}
+
+/**
+ * Buckets per-trace values by hour (single-day data) or by day (multi-day data) — the
+ * same rule every "over time" chart in this tab uses — and computes p50/p90/p99 per bucket.
+ */
+const percentilesOverTime = (
+  details: TraceDetail[],
+  valueOf: (t: TraceDetail) => number,
+): { rows: TimeBucketPercentilePoint[]; avg: number } => {
+  const times = details
+    .map(t => Date.parse(t.timestamp))
+    .filter(t => !Number.isNaN(t));
+
+  const bucketMs = pickBucketMs(times);
+
+  const byBucket = new Map<string, number[]>();
+
+  details.forEach(t => {
+    const ts = Date.parse(t.timestamp);
+
+    if (Number.isNaN(ts)) return;
+    const key = String(bucketStartMs(ts, bucketMs));
+    const arr = byBucket.get(key) ?? [];
+
+    arr.push(valueOf(t));
+    byBucket.set(key, arr);
+  });
+
+  const all = details.map(valueOf);
+  const avg = all.length ? all.reduce((a, b) => a + b, 0) / all.length : 0;
+
+  const keys = Array.from(byBucket.keys()).sort((a, b) => Number(a) - Number(b));
+  const includeDate = new Set(keys.map(key => dayKey(new Date(Number(key))))).size > 1;
+
+  const rows = keys.map(key => {
+    const arr = byBucket.get(key) ?? [];
+    const sorted = [...arr].sort((a, b) => a - b);
+    const date = new Date(Number(key));
+
+    return {
+      bucketKey: key,
+      bucketStart: date.toISOString(),
+      bucketLabel: formatBucketAxisLabel(date, bucketMs, includeDate),
+      count: sorted.length,
+      p50: quantile(sorted, 0.5),
+      p90: quantile(sorted, 0.9),
+      p99: quantile(sorted, 0.99),
+    };
+  });
+
+  return { rows, avg };
+};
+
+export type LatencyTimeseriesPoint = TimeBucketPercentilePoint;
+
+export interface LatencyOverTime {
+  rows: LatencyTimeseriesPoint[];
+  avgLatencyMs: number;
+}
+
+/** p50/p90/p99 trace latency over time, for a latency-over-time line chart. */
+export const latencyOverTime = (details: TraceDetail[]): LatencyOverTime => {
+  const { rows, avg } = percentilesOverTime(details, traceDurationMs);
+
+  return { rows, avgLatencyMs: avg };
+};
+
+export type TokenTimeseriesPoint = TimeBucketPercentilePoint;
+
+export interface TokensOverTime {
+  rows: TokenTimeseriesPoint[];
+  avgTokensPerTrace: number;
+}
+
+/** p50/p90/p99 tokens-per-trace over time, for a tokens-over-time line chart. */
+export const tokensOverTime = (details: TraceDetail[]): TokensOverTime => {
+  const { rows, avg } = percentilesOverTime(details, sumTraceTokens);
+
+  return { rows, avgTokensPerTrace: avg };
 };
 
 export interface LatencyPercentiles { name: string; count: number; p50: number; p90: number; p95: number; p99: number }

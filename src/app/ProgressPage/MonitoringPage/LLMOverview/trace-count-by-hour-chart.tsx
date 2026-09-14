@@ -10,7 +10,6 @@ import { paletteFromTheme } from '../ComparativeAnalysis/workflow-info-tooltip';
 import {
   buildTraceHourBuckets,
   createTraceHourTooltipHandler,
-  dayKey,
 } from './trace-tooltip';
 
 type TraceCountByHourChartProps = {
@@ -30,7 +29,7 @@ export default function TraceCountByHourChart({
 }: TraceCountByHourChartProps) {
   const theme = useTheme();
 
-  const { rows, tracesByHour } = useMemo(
+  const { rows, tracesByHour, isDailyBucket } = useMemo(
     () => buildTraceHourBuckets(details),
     [details],
   );
@@ -64,14 +63,6 @@ export default function TraceCountByHourChart({
     [rows],
   );
 
-  const hasMultipleDays = useMemo(() => {
-    const days = new Set(
-      rows.map(row => dayKey(new Date(row.hourStart))),
-    );
-
-    return days.size > 1;
-  }, [rows]);
-
   const barCount = useMemo(
     () => new Set(rows.map(row => row.hourKey)).size,
     [rows],
@@ -86,10 +77,11 @@ export default function TraceCountByHourChart({
     () =>
       createTraceHourTooltipHandler({
         tracesByHour,
+        isDailyBucket,
         experimentId,
         palette: paletteFromTheme(theme),
       }),
-    [tracesByHour, experimentId, theme],
+    [tracesByHour, isDailyBucket, experimentId, theme],
   );
 
   const spec = useMemo(
@@ -121,7 +113,7 @@ export default function TraceCountByHourChart({
               paddingOuter: barPaddingOuter,
             },
             axis: {
-              labelAngle: hasMultipleDays ? -30 : 0,
+              labelAngle: 0,
               grid: false,
             },
           },
@@ -169,14 +161,13 @@ export default function TraceCountByHourChart({
       }) as Record<string, unknown>,
     [
       rows,
-      hasMultipleDays,
       barPaddingOuter,
     ],
   );
 
   return (
     <ResponsiveCardVegaLite
-      title="Traces by time"
+      title="Traces"
       details={`${totalTraces.toLocaleString()} traces tracked`}
       spec={rows.length > 0 ? spec : {}}
       actions={false}
