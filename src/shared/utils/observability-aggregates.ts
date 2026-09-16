@@ -44,10 +44,22 @@ export const traceDurationMs = (t: TraceDetail): number => {
 const sumTraceTokens = (t: TraceDetail): number =>
   t.observations.reduce((s, o) => s + (tokensOf(o) ?? 0), 0);
 
-const traceQuestion = (t: TraceDetail): string => {
+export const traceQuestion = (t: TraceDetail): string => {
   const q = (t.input as TraceInput)?.question;
 
   return typeof q === 'string' ? q : t.name;
+};
+
+/** Best-effort trace-level answer text, for anything that needs a plain string
+ * (e.g. an issue-scan prompt) rather than the raw, shape-varying `output`. */
+export const traceAnswer = (t: TraceDetail): string => {
+  const out = t.output as GenOutput | string | null | undefined;
+
+  if (typeof out === 'string') return out;
+  if (out && typeof out === 'object' && typeof out.answer === 'string') return out.answer;
+  if (out) return JSON.stringify(out).slice(0, 2000);
+
+  return '(no output recorded)';
 };
 
 export interface ExperimentRollup {
@@ -482,6 +494,80 @@ export const tokensOverTime = (details: TraceDetail[]): TokensOverTime => {
   const { rows, avg } = percentilesOverTime(details, sumTraceTokens);
 
   return { rows, avgTokensPerTrace: avg };
+};
+
+export type CostTimeseriesPoint = TimeBucketPercentilePoint;
+
+export interface CostOverTime {
+  rows: CostTimeseriesPoint[];
+  avgCostPerTrace: number;
+}
+
+/** p50/p90/p99 cost-per-trace over time, for a cost-over-time line chart. */
+export const costOverTime = (details: TraceDetail[]): CostOverTime => {
+  const { rows, avg } = percentilesOverTime(details, t => t.totalCost ?? 0);
+
+  return { rows, avgCostPerTrace: avg };
+};
+
+export interface ErrorTimeseriesPoint {
+  bucketKey: string;
+  bucketStart: string;
+  bucketLabel: string;
+  errorCount: number;
+  totalCount: number;
+  errorRate: number;
+}
+
+export interface ErrorsOverTime {
+  rows: ErrorTimeseriesPoint[];
+  totalErrors: number;
+  overallErrorRate: number;
+}
+
+/** Traces with at least one error-level observation, bucketed over time — same bucketing
+ * rule as every other "over time" chart — for an errors-over-time bar+rate chart. */
+export const errorsOverTime = (details: TraceDetail[]): ErrorsOverTime => {
+  const times = details
+    .map(t => Date.parse(t.timestamp))
+    .filter(t => !Number.isNaN(t));
+
+  const bucketMs = pickBucketMs(times);
+  const byBucket = new Map<string, { errorCount: number; totalCount: number }>();
+
+  details.forEach(t => {
+    const ts = Date.parse(t.timestamp);
+
+    if (Number.isNaN(ts)) return;
+    const key = String(bucketStartMs(ts, bucketMs));
+    const e = byBucket.get(key) ?? { errorCount: 0, totalCount: 0 };
+
+    e.totalCount++;
+    if (t.observations.some(isErrorLevel)) e.errorCount++;
+    byBucket.set(key, e);
+  });
+
+  const keys = Array.from(byBucket.keys()).sort((a, b) => Number(a) - Number(b));
+  const includeDate = new Set(keys.map(key => dayKey(new Date(Number(key))))).size > 1;
+
+  const rows = keys.map(key => {
+    const e = byBucket.get(key)!;
+    const date = new Date(Number(key));
+
+    return {
+      bucketKey: key,
+      bucketStart: date.toISOString(),
+      bucketLabel: formatBucketAxisLabel(date, bucketMs, includeDate),
+      errorCount: e.errorCount,
+      totalCount: e.totalCount,
+      errorRate: e.totalCount ? e.errorCount / e.totalCount : 0,
+    };
+  });
+
+  const totalErrors = rows.reduce((s, r) => s + r.errorCount, 0);
+  const totalTraces = rows.reduce((s, r) => s + r.totalCount, 0);
+
+  return { rows, totalErrors, overallErrorRate: totalTraces ? totalErrors / totalTraces : 0 };
 };
 
 export interface LatencyPercentiles { name: string; count: number; p50: number; p90: number; p95: number; p99: number }

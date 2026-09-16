@@ -6,6 +6,7 @@ import type { Trace } from '../../shared/models/observability/trace';
 import type { Score } from '../../shared/models/observability/score';
 import type { ScoreCreateRequest } from '../../shared/models/observability/score-create-request';
 import type { ScoresResponse } from '../../shared/models/observability/scores-response';
+import type { IssueScanRequest, IssueScanResponse } from '../../shared/models/observability/issue-scan';
 
 // The API's error body is a Spring-style object ({ timestamp, status, error,
 // message, path, ... }), not a plain string — pull the human-readable message
@@ -51,6 +52,13 @@ export interface ObservabilityState {
         loading: boolean;
         error: string | null;
     };
+    // Results of the most recent local-LLM "detect issues" scan — session-only,
+    // not persisted server-side (unlike annotations, which are Langfuse scores).
+    issueScan: {
+        data: IssueScanResponse | null;
+        loading: boolean;
+        error: string | null;
+    };
 }
 
 const initialState: ObservabilityState = {
@@ -67,6 +75,11 @@ const initialState: ObservabilityState = {
     sessions: {},
     annotations: {
         data: [],
+        loading: false,
+        error: null,
+    },
+    issueScan: {
+        data: null,
         loading: false,
         error: null,
     },
@@ -168,6 +181,27 @@ export const fetchAnnotations = createAsyncThunk<
             return response.data as ScoresResponse;
         } catch (error) {
             return rejectWithValue(extractErrorMessage(error, 'Failed to load annotations'));
+        }
+    },
+);
+
+// Runs a local Ollama model as a judge over a batch of traces (MLflow's
+// "Detect Issues", but pointed at whatever's on localhost:11434 instead of a
+// hosted provider). Session-only: results aren't written back as Langfuse
+// scores, so a page refresh clears them.
+export const detectIssues = createAsyncThunk<
+    IssueScanResponse,
+    IssueScanRequest,
+    { rejectValue: string }
+>(
+    'observability/detectIssues',
+    async (request, { rejectWithValue }) => {
+        try {
+            const response = await api.post('/observability/detect-issues', request);
+
+            return response.data as IssueScanResponse;
+        } catch (error) {
+            return rejectWithValue(extractErrorMessage(error, 'Issue scan failed — is Ollama running?'));
         }
     },
 );
@@ -274,6 +308,18 @@ const observabilitySlice = createSlice({
             .addCase(fetchAnnotations.rejected, (state, action) => {
                 state.annotations.loading = false;
                 state.annotations.error = (action.payload as string) ?? 'Failed to load annotations';
+            })
+            .addCase(detectIssues.pending, (state) => {
+                state.issueScan.loading = true;
+                state.issueScan.error = null;
+            })
+            .addCase(detectIssues.fulfilled, (state, action) => {
+                state.issueScan.loading = false;
+                state.issueScan.data = action.payload;
+            })
+            .addCase(detectIssues.rejected, (state, action) => {
+                state.issueScan.loading = false;
+                state.issueScan.error = (action.payload as string) ?? 'Issue scan failed';
             });
     },
 });
@@ -286,5 +332,7 @@ export const selectExperimentTracesLoading = (workflowIds: string[]) => (state: 
     workflowIds.some(id => state.observability.sessions[id]?.loading);
 
 export const selectAnnotations = (state: SliceState) => state.observability.annotations;
+
+export const selectIssueScan = (state: SliceState) => state.observability.issueScan;
 
 export default observabilitySlice.reducer;

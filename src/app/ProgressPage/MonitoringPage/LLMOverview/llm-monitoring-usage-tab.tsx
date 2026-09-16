@@ -19,6 +19,9 @@ import { StyledDataGrid } from './llm-monitoring-shared';
 import TraceCountByHourChart from './trace-count-by-hour-chart';
 import LatencyOverTimeChart from './latency-over-time-chart';
 import TokensOverTimeChart from './tokens-over-time-chart';
+import CostOverTimeChart from './cost-over-time-chart';
+import ErrorsOverTimeChart from './errors-over-time-chart';
+import DetectIssuesPanel from './detect-issues-panel';
 import AllTracesTable from './all-traces-table';
 import { useParams } from 'react-router';
 import type { GridColDef } from '@mui/x-data-grid';
@@ -172,6 +175,12 @@ export default function LlmMonitoringUsageTab({
       </Grid>
     )}
       <Grid container spacing={1.5}>
+        <Grid size={{ xs: 12 }} sx={{ textAlign: 'left' }}>
+          <DetectIssuesPanel details={details} runNameById={runNameById} />
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={1.5}>
         <Grid size={{ xs: 12 }} sx={{ textAlign: 'left', height: 350 }}>
           <TraceCountByHourChart
             details={details}
@@ -192,6 +201,16 @@ export default function LlmMonitoringUsageTab({
           <TokensOverTimeChart details={details} experimentId={experimentId} isLoading={isLoading} />
         </Grid>
       </Grid>
+
+      {/* <Grid container spacing={1.5}>
+        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 350 }}>
+          <CostOverTimeChart details={details} experimentId={experimentId} isLoading={isLoading} />
+        </Grid>
+
+        <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 350 }}>
+          <ErrorsOverTimeChart details={details} experimentId={experimentId} isLoading={isLoading} />
+        </Grid>
+      </Grid> */}
 
       <Grid container spacing={1.5}>
         <Grid size={{ xs: 12, md: 6 }} sx={{ textAlign: 'left', height: 350 }}>

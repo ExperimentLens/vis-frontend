@@ -450,6 +450,94 @@ export const createTokensBucketTooltipHandler = ({
   return handler.call;
 };
 
+const formatCostValue = (value: number): string => (value === 0 ? '$0' : `$${value.toFixed(4)}`);
+
+export const createCostBucketTooltipHandler = ({
+  tracesByBucket,
+  isDailyBucket,
+  experimentId,
+  palette,
+}: {
+  tracesByBucket: Map<string, TraceDetail[]>;
+  isDailyBucket: boolean;
+  experimentId?: string;
+  palette: WorkflowTooltipPalette;
+}) => {
+  const handler = new Handler({
+    sanitize: escapeHtml,
+
+    formatTooltip: (
+      value: Record<string, unknown>,
+      sanitize,
+    ) => {
+      const bucketKeyValue = String(value.bucketKey ?? '');
+      const percentile = String(value.percentile ?? '').toUpperCase();
+      const cost = toNumber(value.cost);
+
+      const traces = tracesByBucket.get(bucketKeyValue) ?? [];
+
+      return renderTooltip({
+        title: `${percentile}: ${cost !== null ? formatCostValue(cost) : '—'}`,
+        subtitle: formatBucketTooltipTitle(
+          bucketKeyValue ? new Date(Number(bucketKeyValue)) : null,
+          isDailyBucket,
+        ),
+        traceCount: traces.length,
+        traces,
+        experimentId,
+        palette,
+        sanitize,
+      });
+    },
+  });
+
+  return handler.call;
+};
+
+export const createErrorBucketTooltipHandler = ({
+  tracesByBucket,
+  isDailyBucket,
+  experimentId,
+  palette,
+}: {
+  tracesByBucket: Map<string, TraceDetail[]>;
+  isDailyBucket: boolean;
+  experimentId?: string;
+  palette: WorkflowTooltipPalette;
+}) => {
+  const handler = new Handler({
+    sanitize: escapeHtml,
+
+    formatTooltip: (
+      value: Record<string, unknown>,
+      sanitize,
+    ) => {
+      const bucketKeyValue = String(value.bucketKey ?? '');
+      const errorCount = toNumber(value.errorCount) ?? 0;
+      const totalCount = toNumber(value.totalCount) ?? 0;
+      const errorRate = toNumber(value.errorRate);
+
+      const traces = tracesByBucket.get(bucketKeyValue) ?? [];
+
+      return renderTooltip({
+        title: `${errorCount.toLocaleString()} error${errorCount === 1 ? '' : 's'}`,
+        subtitle: formatBucketTooltipTitle(
+          bucketKeyValue ? new Date(Number(bucketKeyValue)) : null,
+          isDailyBucket,
+        ),
+        meta: `${totalCount.toLocaleString()} traces this bucket${errorRate !== null ? ` · ${(errorRate * 100).toFixed(1)}% error rate` : ''}`,
+        traceCount: traces.length,
+        traces,
+        experimentId,
+        palette,
+        sanitize,
+      });
+    },
+  });
+
+  return handler.call;
+};
+
 const distributionNumberKey = (
   value: unknown,
 ): string => {
