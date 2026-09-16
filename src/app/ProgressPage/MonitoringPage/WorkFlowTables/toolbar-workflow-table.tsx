@@ -306,16 +306,16 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
             {
               visibleTable === 'workflows' && (
                 <Tooltip title="Experiment Highlights">
-                  <IconButton component={Link} to={`/${experiment.data?.id}/highlights`}>
-                    <AutoAwesomeIcon />
+                  <IconButton component={Link} to={`/${experiment.data?.id}/highlights`} size="small">
+                    <AutoAwesomeIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
             {showSpaceButton && (
               <Tooltip title="Spaces">
-                <IconButton onClick={handleSpaceOptionsOpen}>
+                <IconButton onClick={handleSpaceOptionsOpen} size="small">
                   <Badge color="primary" badgeContent={workflowsTable.selectedSpaces.length} invisible={workflowsTable.selectedSpaces.length === 0}>
-                    <GrainIcon />
+                    <GrainIcon fontSize="small" />
                   </Badge>
                 </IconButton>
               </Tooltip>
@@ -323,33 +323,33 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
 
             {showFilterButton && (
               <Tooltip title="Filter list">
-                <IconButton onClick={filterClickedFunction}>
+                <IconButton onClick={filterClickedFunction} size="small">
                   <Badge color="primary" badgeContent={filterNumbers} invisible={filterNumbers === 0}>
-                    <FilterListIcon />
+                    <FilterListIcon fontSize="small" />
                   </Badge>
                 </IconButton>
               </Tooltip>
             )}
 
             <Tooltip title="Columns">
-              <IconButton onClick={handleOpen}>
-                <ViewColumnIcon />
+              <IconButton onClick={handleOpen} size="small">
+                <ViewColumnIcon fontSize="small" />
               </IconButton>
             </Tooltip>
 
             {visibleTable === 'workflows' && (
               <Tooltip title="Group by">
-                <IconButton onClick={handleGroupClick}>
+                <IconButton onClick={handleGroupClick} size="small">
                   <Badge color="primary" badgeContent={workflowsTable.groupBy.length} invisible={workflowsTable.groupBy.length === 0}>
-                    <PivotTableChartRoundedIcon />
+                    <PivotTableChartRoundedIcon fontSize="small" />
                   </Badge>
                 </IconButton>
               </Tooltip>
             )}
             {onDownloadCsv && (
               <Tooltip title="Export to CSV">
-                <IconButton onClick={onDownloadCsv}>
-                  <DownloadIcon />
+                <IconButton onClick={onDownloadCsv} size="small">
+                  <DownloadIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             )}
