@@ -20,6 +20,7 @@ import {
   useAppSelector,
 } from '../../../../store/store';
 import {
+  MONITOR_TAB,
   setScheduledTable,
   setVisibleTable,
   setWorkflowsTable,
@@ -248,7 +249,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
         px: 1.5,
         borderBottom: theme => `1px solid ${theme.palette.divider}`,
         ...(numSelected > 0 &&
-          selectedTab !== 1 && {
+          selectedTab !== MONITOR_TAB.COMPARE && {
           bgcolor: theme =>
             alpha(
               theme.palette.primary.dark,
@@ -257,7 +258,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
         }),
       }}
     >
-      {numSelected > 0 && selectedTab !== 1 ? (
+      {numSelected > 0 && selectedTab !== MONITOR_TAB.COMPARE ? (
         <Typography
           sx={{ flex: '1 1 auto' }}
           color="inherit"
@@ -267,7 +268,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
           {numSelected} selected
         </Typography>
       ) : (
-        selectedTab !== 1 && (
+        selectedTab !== MONITOR_TAB.COMPARE && (
           <Box sx={{ flex: '0 0 auto' }}>
             <SegmentedToggle
               uppercase
@@ -282,7 +283,7 @@ export default function ToolBarWorkflow(props: ToolBarWorkflowProps) {
           </Box>
         )
       )}
-      {numSelected > 0 && selectedTab !== 1 ? (
+      {numSelected > 0 && selectedTab !== MONITOR_TAB.COMPARE ? (
         <Button
           size="small"
           variant="contained"

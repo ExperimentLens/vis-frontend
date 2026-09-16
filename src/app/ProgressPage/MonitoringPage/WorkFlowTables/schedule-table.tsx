@@ -189,16 +189,22 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
 }));
 
 // Create a custom NoRowsOverlay component using InfoMessage
-const CustomNoRowsOverlay = () => {
+const CustomNoRowsOverlay = ({ isLlmExperiment }: { isLlmExperiment?: boolean }) => {
   return (
     <InfoMessage
-      message="No scheduled workflows available."
+      message={isLlmExperiment ? 'No scheduled sessions available.' : 'No scheduled workflows available.'}
       type="info"
       icon={<ScheduleIcon sx={{ fontSize: 40, color: 'info.main' }} />}
       fullHeight
     />
   );
 };
+
+declare module '@mui/x-data-grid' {
+  interface NoRowsOverlayPropsOverrides {
+    isLlmExperiment?: boolean;
+  }
+}
 
 const HIDDEN_INTERNAL_FIELDS = new Set(['space']);
 
@@ -208,6 +214,9 @@ export default function ScheduleTable() {
   );
   const { scheduledTable } = useAppSelector(
     (state: RootState) => state.monitorPage
+  );
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
   );
   const dispatch = useAppDispatch();
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
@@ -308,7 +317,12 @@ export default function ScheduleTable() {
             .filter(key => key !== 'id' && !HIDDEN_INTERNAL_FIELDS.has(key))
             .map(key => ({
               field: key,
-              headerName: key === 'action' ? '' : key.replace('_', ' '),
+              headerName:
+                key === 'action'
+                  ? ''
+                  : key === 'workflowId'
+                    ? (isLlmExperiment ? 'Session' : 'Workflow')
+                    : key.replace('_', ' '),
               headerClassName:
                 key === 'action' ? 'datagrid-header-fixed' : 'datagrid-header',
               minWidth: key === 'action' ? 120 : key === 'status' ? key.length * 10 + 40 : key.length * 10,
@@ -575,9 +589,9 @@ export default function ScheduleTable() {
         key="scheduled-toolbar"
         filterNumbers={scheduledTable.filtersCounter}
         filterClickedFunction={filterClicked}
-        actionButtonName="Cancel selected workflows"
+        actionButtonName={isLlmExperiment ? 'Cancel selected sessions' : 'Cancel selected workflows'}
         numSelected={scheduledTable.selectedWorkflows.length}
-        tableName={'Scheduled Workflows'}
+        tableName={isLlmExperiment ? 'Scheduled Sessions' : 'Scheduled Workflows'}
         handleClickedFunction={removeSelected}
         showFilterButton={true}
         showSpaceButton={scheduledTable.rows.some(row => row.space && row.space.trim() !== '')}
@@ -632,6 +646,9 @@ export default function ScheduleTable() {
             }
             slots={{
               noRowsOverlay: CustomNoRowsOverlay
+            }}
+            slotProps={{
+              noRowsOverlay: { isLlmExperiment },
             }}
             checkboxSelection
             sx={{

@@ -41,6 +41,9 @@ const ExperimentControls = () => {
   );
   const { experimentId } = useParams();
   const dispatch = useAppDispatch();
+  const isLlmExperiment = useAppSelector(
+    (state: RootState) => state.progressPage.experiment.data?.tags?.experiment_type?.toLowerCase() === 'llm',
+  );
   const workflow = workflows.data?.find(workflow => workflow.id === workflowId);
   const workflowStatus = workflow?.status;
   const completedTasks = workflow?.tasks?.filter(task => task.endTime).length ?? 0;
@@ -308,7 +311,7 @@ const ExperimentControls = () => {
                       maxWidth: 280,
                       lineHeight: 1.2,
                     }}>
-                    Workflow
+                    {isLlmExperiment ? 'Session' : 'Workflow'}
                   </Typography>
                   <Typography
                     sx={{
@@ -335,7 +338,7 @@ const ExperimentControls = () => {
                   {StatusPill}
 
                   {(tab?.workflowConfiguration?.tasks?.length ?? 0) > 0 && (
-                    <Tooltip title="View workflow diagram" arrow>
+                    <Tooltip title={isLlmExperiment ? 'View session diagram' : 'View workflow diagram'} arrow>
                       <Button
                         size="small"
                         startIcon={<AccountTreeIcon sx={{ fontSize: 16 }} />}
@@ -504,7 +507,7 @@ const ExperimentControls = () => {
                   component="div"
                   sx={{ fontWeight: 600, color: 'text.primary', letterSpacing: '0.3px' }}
                 >
-                  Workflow Diagram
+                  {isLlmExperiment ? 'Session Diagram' : 'Workflow Diagram'}
                 </Typography>
                 <IconButton edge="end" color="inherit" onClick={handleCloseDiagram} aria-label="close">
                   <CloseIcon />

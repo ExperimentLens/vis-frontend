@@ -57,7 +57,7 @@ export default function WorkflowTreeView() {
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <AccountTreeIcon color="primary" />
-              <Typography fontWeight={600}>Workflow Details</Typography>
+              <Typography fontWeight={600}>{isLlmExperiment ? 'Session Details' : 'Workflow Details'}</Typography>
             </Box>
             <Box
               onClick={(e) => { e.stopPropagation(); setWorkflowExpanded(p => !p); }}

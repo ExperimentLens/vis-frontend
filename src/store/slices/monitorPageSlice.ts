@@ -9,6 +9,17 @@ import type { IDataAsset } from '../../shared/models/experiment/data-asset.model
 import type { IDataExplorationMetaDataResponse, IDataExplorationRequest, IDataExplorationResponse, IMetaDataRequest, VisualColumn } from '../../shared/models/dataexploration.model';
 import type { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
 
+// Tab indices for the monitoring page's top-level Tabs, shared with components (like
+// the workflow toolbar/table) that need to key behavior off which tab is active without
+// hardcoding indices that drift whenever a tab is added or reordered.
+export const MONITOR_TAB = {
+  OVERVIEW: 0,
+  SESSION: 1,
+  COMPARE: 2,
+  TRACES: 3,
+  EXPLAINABILITY: 4,
+} as const;
+
 export interface WorkflowTableRow {
   id: string;
   workflowId: string;

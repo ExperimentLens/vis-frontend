@@ -12,7 +12,7 @@ import StopIcon from '@mui/icons-material/Stop';
 import LaunchIcon from '@mui/icons-material/Launch';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { setSelectedTab, setWorkflowsTable, bulkToggleWorkflowSelection, setHoveredWorkflow, setVisibleTable, setExpandedGroup, setExpandedWorkflowTrace } from '../../../../store/slices/monitorPageSlice';
+import { MONITOR_TAB, setSelectedTab, setWorkflowsTable, bulkToggleWorkflowSelection, setHoveredWorkflow, setVisibleTable, setExpandedGroup, setExpandedWorkflowTrace } from '../../../../store/slices/monitorPageSlice';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
@@ -45,14 +45,21 @@ export interface Data {
   [key: string]: string | number | boolean | null | undefined;
 }
 
+declare module '@mui/x-data-grid' {
+  interface NoRowsOverlayPropsOverrides {
+    isLlmExperiment?: boolean;
+  }
+}
+
 // WorkflowActions
 
 const WorkflowActions = memo((props: {
   currentStatus: string
   workflowId: string,
   experimentId: string | undefined,
+  isLlmExperiment?: boolean,
 }) => {
-  const { currentStatus, workflowId, experimentId } = props;
+  const { currentStatus, workflowId, experimentId, isLlmExperiment } = props;
   const workflowsData = useAppSelector(
     (state: RootState) => state.progressPage.workflows.data,
   );
@@ -246,7 +253,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           ],
         }}
       >
-        <SectionHeader icon={<ControlPointDuplicateIcon fontSize="small" />} title="Create New Workflow" />
+        <SectionHeader icon={<ControlPointDuplicateIcon fontSize="small" />} title={isLlmExperiment ? 'Create New Session' : 'Create New Workflow'} />
 
         <Box
           component="form"
@@ -270,7 +277,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <TextField
               fullWidth
               size="small"
-              label="workflow name"
+              label={isLlmExperiment ? 'session name' : 'workflow name'}
               value={workflowName}
               onChange={(e) => setWorkflowName(e.target.value)}
             />
@@ -422,10 +429,10 @@ const StyledDataGrid = styled(DataGrid)(({ theme }) => ({
   },
 }));
 
-const CustomNoRowsOverlay = () => {
+const CustomNoRowsOverlay = ({ isLlmExperiment }: { isLlmExperiment?: boolean }) => {
   return (
     <InfoMessage
-      message="No workflows available."
+      message={isLlmExperiment ? 'No sessions available.' : 'No workflows available.'}
       type="info"
       icon={<ScheduleIcon sx={{ fontSize: 40, color: 'info.main' }} />}
       fullHeight
@@ -479,7 +486,7 @@ const WorkflowColorDot = styled('span')<{
 
 const TRACE_STATUS_LABEL: Record<NonNullable<WorkflowTableRow['isTraceStatus']>, string> = {
   loading: 'Loading traces…',
-  empty: 'No traces for this workflow.',
+  empty: 'No traces for this session.',
   error: 'Failed to load traces.',
 };
 
@@ -585,7 +592,7 @@ const WorkflowIdCell = ({
           </IconButton>
         </Tooltip>
       )}
-      {selectedTab === 1 && <WorkflowColorDot color={color} selected={isSelected} />}
+      {selectedTab === MONITOR_TAB.COMPARE && <WorkflowColorDot color={color} selected={isSelected} />}
       <span title={row.workflowName ?? workflowId}>{workflowId}</span>
     </Box>
   );
@@ -770,10 +777,13 @@ export default function WorkflowTable() {
       const groupId = `group-${key}`;
       const values = group[0];
       const workflowIds = group.map(row => row.workflowId);
+      const unitLabel = isLlmExperiment
+        ? (group.length > 1 ? 'sessions' : 'session')
+        : (group.length > 1 ? 'workflows' : 'workflow');
       const summary: WorkflowTableRow = {
         id: groupId,
         isGroupSummary: true,
-        workflowId: group.length > 1 ? `${group.length} workflows` : `${group.length} workflow`,
+        workflowId: `${group.length} ${unitLabel}`,
       };
 
       grouppedWorkflows[groupId] = workflowIds;
@@ -1157,14 +1167,23 @@ export default function WorkflowTable() {
         return;
       }
 
-      const isStatusSticky = selectedTab === 0;
+      const isStatusSticky = selectedTab === MONITOR_TAB.OVERVIEW;
 
       const columns: CustomGridColDef[] = Object.keys(rows[0])
         .filter(key => key !== 'id' && !HIDDEN_INTERNAL_FIELDS.has(key))
         .map(key => {
           const base: CustomGridColDef = {
             field: key,
-            headerName: key === 'action' ? '' : key === 'status' && isStatusSticky ? '' : key.replace('_', ' '),
+            headerName:
+        key === 'action'
+          ? ''
+          : key === 'status' && isStatusSticky
+            ? ''
+            : key === 'workflowId'
+              ? (isLlmExperiment ? 'Session ID' : 'Workflow ID')
+              : key === 'workflowName'
+                ? (isLlmExperiment ? 'Session Name' : 'Workflow Name')
+                : key.replace('_', ' '),
             headerClassName:
         key === 'action'
           ? 'datagrid-header-fixed'
@@ -1261,6 +1280,7 @@ export default function WorkflowTable() {
                     currentStatus={currentStatus}
                     workflowId={params.row.workflowId}
                     experimentId={experimentId}
+                    isLlmExperiment={isLlmExperiment}
                   />
                 );
               },
@@ -1383,13 +1403,13 @@ export default function WorkflowTable() {
         setAlert({
           open: true,
           severity: 'success',
-          message: `New workflow created`,
+          message: isLlmExperiment ? 'New session created' : 'New workflow created',
         });
       } else if (createdWorkflow.error) {
         setAlert({
           open: true,
           severity: 'error',
-          message: 'Failed to create new workflow',
+          message: isLlmExperiment ? 'Failed to create new session' : 'Failed to create new workflow',
         });
       }
     }
@@ -1505,7 +1525,7 @@ export default function WorkflowTable() {
 
     const csv = [headers, ...dataLines].join('\n');
 
-    downloadTextFile(`${experimentId}_workflows.csv`, csv);
+    downloadTextFile(`${experimentId}_${isLlmExperiment ? 'sessions' : 'workflows'}.csv`, csv);
   };
 
   return (
@@ -1517,7 +1537,7 @@ export default function WorkflowTable() {
     >
       <ToolbarWorkflow
         key="workflows-toolbar"
-        actionButtonName="Compare selected workflows"
+        actionButtonName={isLlmExperiment ? 'Compare selected sessions' : 'Compare selected workflows'}
         tableName="Workflow Execution"
         numSelected={workflowsTable.selectedWorkflows.length}
         filterNumbers={workflowsTable.filtersCounter}
@@ -1568,7 +1588,7 @@ export default function WorkflowTable() {
 
       <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
           <StyledDataGrid
-            className={selectedTab === 0 ? 'status-sticky-mode' : undefined}
+            className={selectedTab === MONITOR_TAB.OVERVIEW ? 'status-sticky-mode' : undefined}
             disableVirtualization
             disableColumnMenu
             density="compact"
@@ -1596,9 +1616,10 @@ export default function WorkflowTable() {
             slots={{ noRowsOverlay: CustomNoRowsOverlay }}
             slotProps={
               {
+                noRowsOverlay: { isLlmExperiment },
                 row: {
                   onMouseEnter: (event) => {
-                    if(selectedTab === 1) {
+                    if(selectedTab === MONITOR_TAB.COMPARE) {
                       const rowId = event.currentTarget.getAttribute('data-id');
                       const id = rowId ? workflowsTable.selectedWorkflows.includes(rowId) ? rowId : 'notSelected' : null;
 
@@ -1606,7 +1627,7 @@ export default function WorkflowTable() {
                     }
                   },
                   onMouseLeave: () => {
-                    if(selectedTab === 1)
+                    if(selectedTab === MONITOR_TAB.COMPARE)
                       handleHover(null);
                   }
                 }
@@ -1619,7 +1640,7 @@ export default function WorkflowTable() {
             getRowClassName={(params) => {
               if (params.row.isTraceRow || params.row.isTraceStatus) return 'workflow-trace-row';
 
-              return selectedTab === 1 && workflowsTable.hoveredWorkflowId && params.id === workflowsTable.hoveredWorkflowId
+              return selectedTab === MONITOR_TAB.COMPARE && workflowsTable.hoveredWorkflowId && params.id === workflowsTable.hoveredWorkflowId
                 ? 'workflow-hovered-row'
                 : '';
             }}
@@ -1706,7 +1727,7 @@ export default function WorkflowTable() {
                   ) as GridColumnNode[]
                 ) : []
               },
-              ...(selectedTab === 0 ?
+              ...(selectedTab === MONITOR_TAB.OVERVIEW ?
                 [
                   {
                     groupId: 'Status',

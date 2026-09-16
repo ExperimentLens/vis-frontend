@@ -144,8 +144,8 @@ const ProgressPageBar = () => {
           <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0 }}>
             <InlineStat
               value={progressBar.total}
-              label="workflows"
-              tooltip="Total workflows"
+              label={experimentType === 'LLM' ? 'sessions' : 'workflows'}
+              tooltip={experimentType === 'LLM' ? 'Total sessions' : 'Total workflows'}
             />
             <StatDivider />
             <InlineStat

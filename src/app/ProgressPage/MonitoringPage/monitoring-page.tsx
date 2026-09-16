@@ -9,6 +9,7 @@ import { useAppDispatch, useAppSelector } from '../../../store/store';
 import { Resizable } from 're-resizable';
 import {
   bulkToggleWorkflowSelection,
+  MONITOR_TAB,
   setSelectedTab,
   setVisibleTable,
 } from '../../../store/slices/monitorPageSlice';
@@ -47,13 +48,7 @@ const MonitoringPage = () => {
   const capabilities = useExperimentCapabilities();
   const hasExplainability = capabilities.explainability;
   const hasTraces = capabilities.traces;
-  const TAB = {
-    OVERVIEW: 0,
-    SESSION: 1,
-    COMPARE: 2,
-    TRACES: 3,
-    EXPLAINABILITY: 4,
-  } as const;
+  const TAB = MONITOR_TAB;
 
   const canShowTraces = !isMlExperiment;
   const canShowExplainability = !isLlmExperiment;
