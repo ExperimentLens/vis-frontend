@@ -7,6 +7,7 @@ import {
   Paper,
   IconButton,
   ListItemButton,
+  Typography,
 } from '@mui/material';
 import { useParams } from 'react-router-dom';
 import ListRoundedIcon from '@mui/icons-material/ListRounded';
@@ -149,6 +150,7 @@ const LeftMenu = () => {
               padding: 1,
               height: '64px', // Fixed height to match experiment controls
               boxSizing: 'border-box',
+              overflow: 'hidden',
               borderBottom: theme => `1px solid ${theme.palette.divider}`,
             }}
           >
@@ -157,12 +159,28 @@ const LeftMenu = () => {
               src="/images/extremexp-logo-full.png"
               alt="ExtremeXP logo"
               sx={{
-                width: '80%',
+                maxWidth: '40%',
+                maxHeight: '100%',
+                width: 'auto',
+                height: 'auto',
                 borderRadius: '8px',
-                objectFit: 'cover',
+                objectFit: 'contain',
                 userSelect: 'none',
+                flexShrink: 0,
               }}
             />
+            <Typography
+              variant="subtitle1"
+              noWrap
+              sx={{
+                fontWeight: 700,
+                userSelect: 'none',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              ExperimentLens
+            </Typography>
           </Box>
         )}
         <Box>
