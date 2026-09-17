@@ -162,7 +162,7 @@ export default function TokensOverTimeChart({
         />
       }
       maxHeight={300}
-      aspectRatio={2.8}
+      aspectRatio={1.7}
       loading={isLoading}
     />
   );

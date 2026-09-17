@@ -160,7 +160,7 @@ export default function LatencyOverTimeChart({
         />
       }
       maxHeight={300}
-      aspectRatio={2.8}
+      aspectRatio={1.7}
       loading={isLoading}
     />
   );

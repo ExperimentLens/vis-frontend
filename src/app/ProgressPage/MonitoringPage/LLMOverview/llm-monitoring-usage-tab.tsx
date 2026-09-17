@@ -239,7 +239,7 @@ export default function LlmMonitoringUsageTab({
                 fullHeight
               />
             }
-            maxHeight={240}
+            maxHeight={300}
             aspectRatio={1.7}
             loading={isLoading}
           />

@@ -312,8 +312,8 @@ export default function DistributionChart({
           fullHeight
         />
       }
-      maxHeight={240}
-      aspectRatio={2.6}
+      maxHeight={300}
+      aspectRatio={1.7}
       actions={false}
       isStatic={false}
       loading={isLoading}

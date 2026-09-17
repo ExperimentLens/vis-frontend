@@ -116,6 +116,7 @@ export default function DetectIssuesPanel({ details, runNameById }: Props) {
       optionsIcon={<FindInPageRoundedIcon fontSize="small" />}
       showDownloadButton={false}
       showFullScreenButton={false}
+      maxHeight={350}
       headerActions={
         <Button
           size="small"
