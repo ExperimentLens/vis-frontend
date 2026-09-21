@@ -156,8 +156,23 @@ export const createAnnotation = createAsyncThunk<
     async ({ request }, { rejectWithValue }) => {
         try {
             const response = await api.post('/observability/scores', request);
+            const created = (response.data ?? {}) as Partial<Score>;
 
-            return response.data as Score;
+            // Langfuse's create-score endpoint can respond with just `{ id }`, so
+            // fall back to what we sent — otherwise the reducer can't match the
+            // score to its trace/span and the filters that pick out human
+            // annotations (by name / observationId) drop it.
+            return {
+                id: created.id ?? `local-${Date.now()}`,
+                traceId: created.traceId ?? request.traceId,
+                name: created.name ?? request.name,
+                value: created.value ?? request.value ?? null,
+                stringValue: created.stringValue ?? request.stringValue ?? null,
+                dataType: created.dataType ?? request.dataType,
+                observationId: created.observationId ?? request.observationId ?? '',
+                timestamp: created.timestamp ?? new Date().toISOString(),
+                comment: created.comment ?? request.comment ?? '',
+            } as Score;
         } catch (error) {
             return rejectWithValue(extractErrorMessage(error, 'Failed to save annotation'));
         }

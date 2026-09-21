@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, Typography, alpha } from '@mui/material';
+import { Link } from 'react-router-dom';
+import { Box, Chip, IconButton, Tooltip, Typography, alpha } from '@mui/material';
+import LaunchIcon from '@mui/icons-material/Launch';
 import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import { useAppDispatch, useAppSelector } from '../../../../../store/store';
 import { fetchAnnotations, selectAnnotations } from '../../../../../store/slices/observabilitySlice';
@@ -29,9 +31,12 @@ interface AnnotationsBrowserProps {
   traceSessionNames?: Record<string, string>;
   // traceId -> the trace's own name, shown in place of the raw id.
   traceNames?: Record<string, string>;
+  // traceId -> id of the run/workflow it belongs to, used to open the trace.
+  traceWorkflowIds?: Record<string, string>;
+  experimentId?: string;
 }
 
-const AnnotationsBrowser = ({ traceSessionNames, traceNames }: AnnotationsBrowserProps) => {
+const AnnotationsBrowser = ({ traceSessionNames, traceNames, traceWorkflowIds, experimentId }: AnnotationsBrowserProps) => {
   const dispatch = useAppDispatch();
   const { data, loading, error } = useAppSelector(selectAnnotations);
   const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
@@ -108,10 +113,10 @@ const AnnotationsBrowser = ({ traceSessionNames, traceNames }: AnnotationsBrowse
       }
     >
       <Box sx={{ overflowX: 'auto' }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '150px 160px 90px 120px 100px 190px 1fr 1fr 170px', gap: 0 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '150px 130px 60px 120px 100px 190px 1fr 1fr 170px 60px', gap: 0 }}>
           <Box sx={{ display: 'contents' }}>
-            {['Session', 'Trace', 'Scope', 'Status', 'Source', 'Name', 'Value', 'Comment', 'When'].map(h => (
-              <Box key={h} sx={{ py: 0.75, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}` }}>
+            {['Session', 'Trace', 'Scope', 'Status', 'Source', 'Name', 'Value', 'Comment', 'When', ''].map((h, i) => (
+              <Box key={i} sx={{ py: 0.75, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}` }}>
                 <Typography variant="statLabel" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '0.6rem' }}>
                   {h}
                 </Typography>
@@ -178,6 +183,17 @@ const AnnotationsBrowser = ({ traceSessionNames, traceNames }: AnnotationsBrowse
                 </Box>
                 <Box sx={{ py: 0.6, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}` }}>
                   <Typography variant="bodySm" sx={{ color: 'text.secondary' }}>{formatTimestamp(s.timestamp)}</Typography>
+                </Box>
+                <Box sx={{ py: 0.2, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {experimentId && traceWorkflowIds?.[s.traceId] && (
+                    <Link to={`/${experimentId}/workflow?workflowId=${traceWorkflowIds[s.traceId]}&traceId=${s.traceId}`}>
+                      <Tooltip title="Open trace">
+                        <IconButton size="small" color="primary">
+                          <LaunchIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Link>
+                  )}
                 </Box>
               </Box>
             );
