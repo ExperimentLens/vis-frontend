@@ -8,14 +8,14 @@ import ResponsiveCardTable from '../../../../../shared/components/responsive-car
 import InfoMessage from '../../../../../shared/components/InfoMessage';
 import Loader from '../../../../../shared/components/loader';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import { TONE_COLOR, TONE_LABEL, dimensionLabel, scoreTone } from '../../../../Tasks/Observability/score-dimensions';
+import { SCORE_SOURCE_COLOR, SCORE_SOURCE_LABEL, TONE_COLOR, TONE_LABEL, dimensionLabel, scoreSource, scoreTone } from '../../../../Tasks/Observability/score-dimensions';
 
-// Project-wide, deliberately not scoped to the runs currently selected in the
-// comparison table above — this is "every annotation anyone has left on any
-// trace in this Langfuse project," the answer to "where do I see everything
-// that's been annotated." The "Needs review" filter is what turns that from
-// a log into a queue: skip everything that's fine, look only at what a
-// reviewer flagged as bad (low score, "Missed escalation", etc).
+// Scoped to the traces belonging to the runs currently selected in the
+// comparison table above — the answer to "where do I see everything that's
+// been annotated for what I'm looking at right now." The "Needs review"
+// filter is what turns that from a log into a queue: skip everything that's
+// fine, look only at what a reviewer flagged as bad (low score, "Missed
+// escalation", etc).
 
 const formatTimestamp = (iso: string) => {
   const d = new Date(iso);
@@ -23,7 +23,15 @@ const formatTimestamp = (iso: string) => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleString();
 };
 
-const AnnotationsBrowser = () => {
+interface AnnotationsBrowserProps {
+  // traceId -> the name of the run/session it belongs to. Also doubles as
+  // the scoping set: only traces present as a key are shown.
+  traceSessionNames?: Record<string, string>;
+  // traceId -> the trace's own name, shown in place of the raw id.
+  traceNames?: Record<string, string>;
+}
+
+const AnnotationsBrowser = ({ traceSessionNames, traceNames }: AnnotationsBrowserProps) => {
   const dispatch = useAppDispatch();
   const { data, loading, error } = useAppSelector(selectAnnotations);
   const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
@@ -32,9 +40,14 @@ const AnnotationsBrowser = () => {
     dispatch(fetchAnnotations({ projectId: OBSERVABILITY_PROJECT_ID }));
   }, [dispatch]);
 
+  const scoped = useMemo(
+    () => (traceSessionNames ? data.filter(s => s.traceId in traceSessionNames) : data),
+    [data, traceSessionNames],
+  );
+
   const sorted = useMemo(
-    () => [...data].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-    [data],
+    () => [...scoped].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+    [scoped],
   );
 
   const needsReviewCount = useMemo(
@@ -59,10 +72,14 @@ const AnnotationsBrowser = () => {
     );
   }
 
-  if (data.length === 0) {
+  if (scoped.length === 0) {
     return (
       <InfoMessage
-        message="No annotations yet — annotate a step or trace from the Graph tab to see it here."
+        message={
+          traceSessionNames && data.length > 0
+            ? 'No annotations for the selected sessions.'
+            : 'No annotations yet — annotate a step or trace from the Graph tab to see it here.'
+        }
         type="info"
         icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
         fullHeight
@@ -73,7 +90,7 @@ const AnnotationsBrowser = () => {
   return (
     <ResponsiveCardTable
       title="Annotations"
-      details={`${data.length} across this project`}
+      details={traceSessionNames ? `${scoped.length} across the selected sessions` : `${scoped.length} across this project`}
       headerActions={
         <Chip
           size="small"
@@ -91,9 +108,9 @@ const AnnotationsBrowser = () => {
       }
     >
       <Box sx={{ overflowX: 'auto' }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: '160px 90px 120px 190px 1fr 1fr 170px', gap: 0 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: '150px 160px 90px 120px 100px 190px 1fr 1fr 170px', gap: 0 }}>
           <Box sx={{ display: 'contents' }}>
-            {['Trace', 'Scope', 'Status', 'Name', 'Value', 'Comment', 'When'].map(h => (
+            {['Session', 'Trace', 'Scope', 'Status', 'Source', 'Name', 'Value', 'Comment', 'When'].map(h => (
               <Box key={h} sx={{ py: 0.75, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}` }}>
                 <Typography variant="statLabel" sx={{ color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.04em', fontSize: '0.6rem' }}>
                   {h}
@@ -111,12 +128,19 @@ const AnnotationsBrowser = () => {
           {visible.map(s => {
             const tone = scoreTone(s);
             const toneColor = TONE_COLOR[tone];
+            const source = scoreSource(s.name);
+            const sourceColor = SCORE_SOURCE_COLOR[source];
 
             return (
               <Box key={s.id} sx={{ display: 'contents' }}>
                 <Box sx={{ py: 0.6, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}` }}>
-                  <Typography variant="mono" sx={{ fontSize: '0.68rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={s.traceId}>
-                    {s.traceId}
+                  <Typography variant="bodySm" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={traceSessionNames?.[s.traceId]}>
+                    {traceSessionNames?.[s.traceId] ?? '—'}
+                  </Typography>
+                </Box>
+                <Box sx={{ py: 0.6, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}` }}>
+                  <Typography variant="bodySm" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }} title={s.traceId}>
+                    {traceNames?.[s.traceId] ?? s.traceId}
                   </Typography>
                 </Box>
                 <Box sx={{ py: 0.6, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}` }}>
@@ -132,6 +156,13 @@ const AnnotationsBrowser = () => {
                     icon={tone === 'bad' ? <FlagRoundedIcon sx={{ fontSize: '12px !important' }} /> : undefined}
                     label={TONE_LABEL[tone]}
                     sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: alpha(toneColor, 0.12), color: toneColor }}
+                  />
+                </Box>
+                <Box sx={{ py: 0.6, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}` }}>
+                  <Chip
+                    size="small"
+                    label={SCORE_SOURCE_LABEL[source]}
+                    sx={{ height: 18, fontSize: '0.6rem', fontWeight: 700, bgcolor: alpha(sourceColor, 0.12), color: sourceColor }}
                   />
                 </Box>
                 <Box sx={{ py: 0.6, px: 1, borderBottom: theme => `1px solid ${theme.palette.divider}` }}>

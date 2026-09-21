@@ -166,6 +166,12 @@ export const createAnnotation = createAsyncThunk<
 
 // Project-wide annotation listing (not scoped to a single trace) — the data
 // source for an "all annotations" browse view across the whole experiment.
+// The Langfuse scores endpoint caps each response at a page (100 by
+// default), so when no explicit page/limit is requested this pages through
+// every result and returns them all concatenated — otherwise the browser
+// silently only ever saw the newest ~50-100 scores project-wide, which was
+// disproportionately cutting off automated judge/checker scores (there are
+// far more of those than human annotations).
 export const fetchAnnotations = createAsyncThunk<
     ScoresResponse,
     { projectId: string; traceId?: string; name?: string; page?: number; limit?: number },
@@ -174,11 +180,31 @@ export const fetchAnnotations = createAsyncThunk<
     'observability/fetchAnnotations',
     async ({ projectId, traceId, name, page, limit }, { rejectWithValue }) => {
         try {
-            const response = await api.get('/observability/scores', {
-                params: { projectId, traceId, name, page, limit },
-            });
+            if (page !== undefined || limit !== undefined) {
+                const response = await api.get('/observability/scores', {
+                    params: { projectId, traceId, name, page, limit },
+                });
 
-            return response.data as ScoresResponse;
+                return response.data as ScoresResponse;
+            }
+
+            const pageSize = 100;
+            let currentPage = 1;
+            let all: Score[] = [];
+            let meta: ScoresResponse['meta'] | null = null;
+
+            do {
+                const response = await api.get('/observability/scores', {
+                    params: { projectId, traceId, name, page: currentPage, limit: pageSize },
+                });
+                const payload = response.data as ScoresResponse;
+
+                all = all.concat(payload.data ?? []);
+                meta = payload.meta;
+                currentPage += 1;
+            } while (meta && currentPage <= meta.totalPages);
+
+            return { data: all, meta: meta as ScoresResponse['meta'] };
         } catch (error) {
             return rejectWithValue(extractErrorMessage(error, 'Failed to load annotations'));
         }

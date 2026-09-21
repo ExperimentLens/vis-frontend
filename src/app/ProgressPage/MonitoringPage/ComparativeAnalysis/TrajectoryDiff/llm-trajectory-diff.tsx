@@ -79,6 +79,20 @@ export default function LlmTrajectoryDiff() {
     [runIds, sessions],
   );
 
+  const traceSessionNames = useMemo(
+    () => Object.fromEntries(
+      runIds.flatMap(id => (detailsByRun[id] ?? []).map(t => [t.id, runNameById[id] ?? id] as const)),
+    ),
+    [runIds, detailsByRun, runNameById],
+  );
+
+  const traceNames = useMemo(
+    () => Object.fromEntries(
+      runIds.flatMap(id => (detailsByRun[id] ?? []).map(t => [t.id, t.name ?? t.id] as const)),
+    ),
+    [runIds, detailsByRun],
+  );
+
   // Timeline/Verdicts/Responses pick each run's session independently — the
   // same question text isn't expected to repeat word-for-word across runs.
   const [manualTraceByRun, setManualTraceByRun] = useState<Record<string, string>>({});
@@ -407,9 +421,9 @@ export default function LlmTrajectoryDiff() {
         />
       )} */}
 
-      {/* Annotations — every human annotation in this Langfuse project, not
-          scoped to the currently selected runs; add one from the Graph tab. */}
-      {selectedExecutionsView === 'annotations' && <AnnotationsBrowser />}
+      {/* Annotations — scoped to the traces belonging to the currently
+          selected runs; add one from the Graph tab. */}
+      {selectedExecutionsView === 'annotations' && <AnnotationsBrowser traceSessionNames={traceSessionNames} traceNames={traceNames} />}
     </Stack>
   );
 }

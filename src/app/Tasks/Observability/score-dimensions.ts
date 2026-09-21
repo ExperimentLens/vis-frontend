@@ -52,6 +52,31 @@ export const HUMAN_SCORE_PREFIX = 'human_';
 export const isHumanScoreName = (name: string | null | undefined): boolean =>
     typeof name === 'string' && name.startsWith(HUMAN_SCORE_PREFIX);
 
+export type ScoreSource = 'human' | 'judge' | 'checker';
+
+// Mirrors isJudge()'s /judge/i heuristic (agentic-conventions.ts), applied to
+// scores instead of observations: human_-prefixed is a human annotation,
+// anything else with "judge" in its name is an LLM-as-judge verdict, and
+// everything remaining is a deterministic/rule-based checker.
+export const scoreSource = (name: string | null | undefined): ScoreSource => {
+    if (isHumanScoreName(name)) return 'human';
+    if (typeof name === 'string' && /judge/i.test(name)) return 'judge';
+
+    return 'checker';
+};
+
+export const SCORE_SOURCE_LABEL: Record<ScoreSource, string> = {
+    human: 'Human',
+    judge: 'Judge',
+    checker: 'Checker',
+};
+
+export const SCORE_SOURCE_COLOR: Record<ScoreSource, string> = {
+    human: '#3766AF',
+    judge: '#8b5cf6',
+    checker: '#0ea5e9',
+};
+
 export const dimensionByName = (name: string | null | undefined): ScoreDimension | undefined =>
     typeof name === 'string' ? SCORE_DIMENSIONS.find(d => d.name === name) : undefined;
 
@@ -65,16 +90,37 @@ export interface ToneableScore {
     name: string | null;
     value: number | null;
     stringValue?: string | null;
+    dataType?: string;
 }
 
-/** RAG tone for one score, from its dimension's configured thresholds. Any
- * score whose dimension isn't in SCORE_DIMENSIONS (unknown/legacy name) —
- * or that has no thresholds configured — reads as 'good' (nothing to flag),
- * not 'bad', so an unrecognized score never falsely raises an alarm. */
+const FAIL_STRINGS = ['fail', 'failed', 'false', 'no', 'error'];
+const PASS_STRINGS = ['pass', 'passed', 'true', 'yes', 'ok'];
+
+/** RAG tone for one score. Human dimensions (SCORE_DIMENSIONS) use their
+ * configured thresholds. Everything else — an automated judge/checker score,
+ * which has no dimension config since it isn't human_-prefixed — falls back
+ * to the same pass/fail convention verdictPassRates() already uses for
+ * those: a BOOLEAN score is bad at 0/false, good at 1/true; a CATEGORICAL
+ * score is read against common fail/pass wording. A NUMERIC automated score
+ * has no known scale to threshold against, so it reads as 'good' (nothing to
+ * flag) rather than guessing. */
 export const scoreTone = (score: ToneableScore): ReviewTone => {
     const dim = dimensionByName(score.name);
 
-    if (!dim) return 'good';
+    if (!dim) {
+        if (score.dataType === 'BOOLEAN' || score.value === 0 || score.value === 1) {
+            return score.value === 0 ? 'bad' : 'good';
+        }
+
+        if (score.dataType === 'CATEGORICAL' || score.stringValue) {
+            const v = score.stringValue?.toLowerCase().trim();
+
+            if (v && FAIL_STRINGS.includes(v)) return 'bad';
+            if (v && PASS_STRINGS.includes(v)) return 'good';
+        }
+
+        return 'good';
+    }
 
     if (dim.type === 'boolean') {
         if (dim.badWhen === undefined) return 'good';
