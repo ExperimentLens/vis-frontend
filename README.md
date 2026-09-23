@@ -84,10 +84,10 @@ Make sure the backend is running before starting the frontend.
 ## Related Repositories
 
 - Visualization API:
-  https://github.com/extremexp-HORIZON/vis-api
+  https://github.com/ExperimentLens/vis-api
 
 - Explainability Module:
-  https://github.com/extremexp-HORIZON/extremexp-explainability-module
+  https://github.com/ExperimentLens/explainability-module
 
 ## License
 Not available
