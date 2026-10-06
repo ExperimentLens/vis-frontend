@@ -8,14 +8,11 @@ import UmapComponent from './umapComponent';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import SearchableSelect from '../../../../shared/components/searchable-select';
 import PillToggle from '../../../../shared/components/pill-toggle';
-
-interface DataField {
-  values: unknown[]
-}
+import type { IAppliedAffectedActions, ITableContents } from '../../../../shared/models/plotmodel.model';
 
 interface GlovesScatterProps {
-  data1: Record<string, DataField>
-  data2: { appliedAffectedActions: Record<string, DataField> }
+  data1: ITableContents
+  data2: IAppliedAffectedActions
   actions?: unknown
   eff_cost_actions?: unknown
 }
@@ -71,7 +68,7 @@ const GlovesScatter = ({
   }, [data1, data2]);
 
   // Function to transform data for Vega-Lite, keeping all fields
-  const transformData = (data: Record<string, DataField>) => {
+  const transformData = (data: ITableContents) => {
     const keys = Object.keys(data);
     const length = data[keys[0]].values.length; // Assume all fields have the same length
     const result = [];

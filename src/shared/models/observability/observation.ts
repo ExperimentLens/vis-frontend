@@ -6,8 +6,8 @@ export interface Observation {
     startTime: string;
     endTime: string;
     model: string;
-    input: { [key: string]: any };
-    output: { [key: string]: any };
+    input: Record<string, unknown>;
+    output: Record<string, unknown>;
     level: string;
     statusMessage: string;
     parentObservationId: string;

@@ -11,7 +11,6 @@ import TimelineRoundedIcon from '@mui/icons-material/TimelineRounded';
 import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
-import TableChartRoundedIcon from '@mui/icons-material/TableChartRounded';
 import RateReviewRoundedIcon from '@mui/icons-material/RateReviewRounded';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
 import { menuPaperSx } from '../../../../shared/styles/card-surface';

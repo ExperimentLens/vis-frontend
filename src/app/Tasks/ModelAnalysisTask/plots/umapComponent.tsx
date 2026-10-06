@@ -5,14 +5,11 @@ import InfoMessage from '../../../../shared/components/InfoMessage';
 import { Box, Grid } from '@mui/material';
 import { logger } from '../../../../shared/utils/logger';
 import { dataApi } from '../../../api/api';
-
-interface DataField {
-  values: unknown[]
-}
+import type { IAppliedAffectedActions, ITableContents } from '../../../../shared/models/plotmodel.model';
 
 interface UmapComponentProps {
-  data1: Record<string, DataField>
-  data2: { appliedAffectedActions: Record<string, DataField> }
+  data1: ITableContents
+  data2: IAppliedAffectedActions
   colorField: string
   controlPanel: React.ComponentType<{ chartType: string | null }>
 }

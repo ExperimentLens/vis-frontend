@@ -9,13 +9,13 @@ export interface TraceDetail {
     sessionId: string;
     release: string;
     version: string;
-    metadata: { [key: string]: any };
+    metadata: Record<string, unknown>;
     tags: string[];
     isPublic: boolean;
     observations: Observation[];
     scores: Score[];
-    input: any;
-    output: any;
+    input: unknown;
+    output: unknown;
     latency: number;
     totalCost: number;
 }

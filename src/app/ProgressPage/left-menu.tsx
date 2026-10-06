@@ -22,7 +22,6 @@ import { setMenuOptions } from '../../store/slices/progressPageSlice';
 import { toggleThemeMode } from '../../store/slices/uiSlice';
 import { logoutUser } from '../../store/slices/authSlice';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
-import HubRoundedIcon from '@mui/icons-material/HubRounded';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 const LeftMenu = () => {

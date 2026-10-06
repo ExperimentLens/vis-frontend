@@ -1,88 +1,41 @@
 import axios from 'axios';
+import type { AxiosInstance } from 'axios';
 import { getToken } from '../../store/slices/authSlice';
 
-export const experimentApi = axios.create({
-  baseURL: '/experiments',
-  withCredentials: true,
-});
+const createClient = (baseURL: string): AxiosInstance =>
+  axios.create({ baseURL, withCredentials: true });
 
-export const api = axios.create({
-  baseURL: '/api',
-  withCredentials: true,
-});
+/** Sends the stored bearer token, and returns to the login page when the session is rejected. */
+const withAuth = (client: AxiosInstance): AxiosInstance => {
+  client.interceptors.request.use(config => {
+    const token = getToken();
 
-export const authApi = axios.create({
-  baseURL: '/auth',
-  withCredentials: true,
-});
-
-export const dataApi = axios.create({
-  baseURL: '/api/data',
-  withCredentials: true,
-});
-
-api.interceptors.request.use(config => {
-  const token = getToken();
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
-
-api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
-    return Promise.reject(error);
-  },
-);
+    return config;
+  });
 
-experimentApi.interceptors.request.use(config => {
-  const token = getToken();
+  client.interceptors.response.use(
+    response => response,
+    error => {
+      if (error.response && error.response.status === 401) {
+        localStorage.removeItem('auth_token');
+        window.location.href = '/login';
+      }
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+      return Promise.reject(error);
+    },
+  );
 
-  return config;
-});
+  return client;
+};
 
-experimentApi.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
-    }
+export const experimentApi = withAuth(createClient('/experiments'));
 
-    return Promise.reject(error);
-  },
-);
+export const api = withAuth(createClient('/api'));
 
-dataApi.interceptors.request.use(config => {
-  const token = getToken();
+export const authApi = createClient('/auth');
 
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  return config;
-});
-
-dataApi.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
-    }
-
-    return Promise.reject(error);
-  },
-);
+export const dataApi = withAuth(createClient('/api/data'));

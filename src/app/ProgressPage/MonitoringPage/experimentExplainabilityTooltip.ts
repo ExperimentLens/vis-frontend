@@ -22,7 +22,6 @@ export const createExperimentExplainabilityTooltipHandler = ({
   workflowColors,
   xAxisName = 'xAxis default',
   yAxisName = 'yAxis default',
-  axisType,
   selectedFeature,
   selectedFeature2,
   experimentId,

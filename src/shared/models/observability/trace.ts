@@ -2,13 +2,13 @@ export interface Trace {
     id: string;
     timestamp: string;
     name: string;
-    input: any;
-    output: any;
+    input: unknown;
+    output: unknown;
     sessionId: string;
     release: string;
     version: string;
     userId: string;
-    metadata: { [key: string]: any };
+    metadata: Record<string, unknown>;
     tags: string[];
     isPublic: boolean;
     environment: string;

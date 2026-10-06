@@ -1,4 +1,4 @@
-import type { IPlotModel } from '../plotmodel.model';
+import type { IAppliedAffectedActions, IPlotModel } from '../plotmodel.model';
 import type {
   IDataExplorationResponse
 } from '../dataexploration.model';
@@ -103,7 +103,7 @@ export interface IModelAnalysis {
     error: string | null
   }
   affected: {
-    data: unknown | null
+    data: IAppliedAffectedActions | null
     loading: boolean
     error: string | null
   }

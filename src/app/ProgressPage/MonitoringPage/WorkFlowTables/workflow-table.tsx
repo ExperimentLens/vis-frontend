@@ -7,7 +7,6 @@ import { DataGrid } from '@mui/x-data-grid';
 import ToolbarWorkflow from './toolbar-workflow-table';
 import Paper from '@mui/material/Paper';
 import Box from '@mui/material/Box';
-import PauseIcon from '@mui/icons-material/Pause';
 import StopIcon from '@mui/icons-material/Stop';
 import LaunchIcon from '@mui/icons-material/Launch';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -27,7 +26,6 @@ import InfoMessage from '../../../../shared/components/InfoMessage';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import type { WorkflowTableRow } from '../../../../store/slices/monitorPageSlice';
 import { createWorkflow, setWorkflowsData, stateController } from '../../../../store/slices/progressPageSlice';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import ControlPointDuplicateIcon from '@mui/icons-material/ControlPointDuplicate';
 import { SectionHeader } from '../../../../shared/components/responsive-card-table';
 import { menuPaperSx } from '../../../../shared/styles/card-surface';
@@ -142,40 +140,6 @@ const handleSubmit = async (e: React.FormEvent) => {
   handleCreateWokrkflowClose();
 };
 
-  const handlePausePlay = () => {
-    if(currentStatus === 'PAUSED') {
-      const updatedWorkflows = workflowsData?.map(workflow =>
-        workflow.id === workflowId
-          ? { ...workflow, status: 'RUNNING' }
-          : workflow
-      );
-
-      dispatch(setWorkflowsData(updatedWorkflows));
-      dispatch(
-        stateController({
-          experimentId: null,
-          runId: workflowId,
-          action: 'resume',
-        })
-      );
-    } else {
-      const updatedWorkflows = workflowsData?.map(workflow =>
-        workflow.id === workflowId
-          ? { ...workflow, status: 'PAUSED' }
-          : workflow
-      );
-
-      dispatch(setWorkflowsData(updatedWorkflows));
-      dispatch(
-        stateController({
-          experimentId: null,
-          runId: workflowId,
-          action: 'pause',
-        })
-      );
-    }
-  };
-
   const handleStop = () => {
     const updatedWorkflows = workflowsData?.map(workflow =>
       workflow.id === workflowId
@@ -214,16 +178,6 @@ const handleSubmit = async (e: React.FormEvent) => {
       </Link>
       {currentStatus !== 'COMPLETED' && currentStatus !== 'FAILED' && currentStatus !== 'KILLED' && (
         <>
-          {/* <IconButton onClick={handlePausePlay} >
-            { currentStatus === 'PAUSED' ? (
-              <PlayArrowIcon style={{ cursor: 'pointer', color: theme.palette.primary.main }} />
-            ) : (
-              <PauseIcon
-                style={{ cursor: 'pointer', color: theme.palette.primary.main }}
-              />
-            )
-            }
-          </IconButton> */}
           <IconButton onClick={handleStop}>
             <StopIcon
               style={{ cursor: 'pointer', color: theme.palette.primary.main }}

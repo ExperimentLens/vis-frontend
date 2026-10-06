@@ -73,6 +73,23 @@ http://localhost:8080
 
 Make sure the backend is running before starting the frontend.
 
+## Local Development
+
+With the Visualization API running on `http://localhost:8080`:
+
+```bash
+npm install
+npm start            # dev server on http://localhost:5173
+npm run check        # type-check, lint and unit tests (what CI runs)
+npm run build        # production build into dist/
+```
+
+### Build-time settings
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `VITE_REQUIRE_AUTH` | `false` | `true` sends signed-out users to `/login`. Enable it for deployments behind the access-control proxy. |
+
 ## Technology Stack
 
 - React
@@ -90,6 +107,7 @@ Make sure the backend is running before starting the frontend.
   https://github.com/ExperimentLens/explainability-module
 
 ## License
-Not available
+
+Apache License 2.0, see [LICENSE](LICENSE).
 
 Feel free to reach out with any questions, issues, or suggestions!

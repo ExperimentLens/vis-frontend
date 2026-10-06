@@ -2,7 +2,9 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import type { ActionReducerMapBuilder } from '@reduxjs/toolkit';
 import type { fetchAffectedRequest } from '../../shared/models/dataexploration.model';
 import type { IWorkflowPage } from './workflowPageSlice';
+import type { IAppliedAffectedActions } from '../../shared/models/plotmodel.model';
 import { api, experimentApi } from '../../app/api/api';
+import { parseRocPayload } from '../../shared/utils/roc';
 import type { AxiosError } from 'axios';
 
 interface LoadableSection<T = unknown> {
@@ -11,69 +13,12 @@ interface LoadableSection<T = unknown> {
   error: string | null;
 }
 
-function parseRocCsv(csv: string): {
-  fpr: number[];
-  tpr: number[];
-  thresholds?: number[];
-  auc?: number;
-} {
-  const lines = csv.trim().split(/\r?\n/);
-  const [headerLine, ...dataLines] = lines;
-
-  const headers = headerLine.split(',').map((h) => h.trim());
-
-  const fprIdx = headers.indexOf('fpr');
-  const tprIdx = headers.indexOf('tpr');
-  const thrIdx = headers.indexOf('threshold');
-  const aucIdx = headers.indexOf('auc');
-
-  const fpr: number[] = [];
-  const tpr: number[] = [];
-  const thresholds: number[] = [];
-
-  const parseNum = (value: string): number => {
-    const v = value.trim();
-
-    if (v === 'Infinity') return 1e9;
-    if (v === '-Infinity') return -1e9;
-    const n = Number(v);
-
-    return n;
-  };
-
-  dataLines.forEach((line) => {
-    if (!line.trim()) return;
-    const cols = line.split(',').map((c) => c.trim());
-
-    if (fprIdx >= 0) fpr.push(parseNum(cols[fprIdx]));
-    if (tprIdx >= 0) tpr.push(parseNum(cols[tprIdx]));
-    if (thrIdx >= 0) thresholds.push(parseNum(cols[thrIdx]));
-  });
-
-  let auc: number | undefined;
-
-  if (aucIdx >= 0 && dataLines.length > 0) {
-    const firstCols = dataLines[0].split(',').map((c) => c.trim());
-    const aucVal = Number(firstCols[aucIdx]);
-
-    if (!Number.isNaN(aucVal)) {
-      auc = aucVal;
-    }
-  }
-
-  return {
-    fpr,
-    tpr,
-    thresholds: thresholds.length ? thresholds : undefined,
-    ...(auc !== undefined ? { auc } : {})
-  };
-};
 
 // Thunks
 export const fetchAffected = createAsyncThunk(
   'modelAnalysis/fetch_affected',
   async (_payload: fetchAffectedRequest) => {
-    const response = await api.get('/explainability/affected');
+    const response = await api.get<IAppliedAffectedActions>('/explainability/affected');
 
     return response.data;
   }
@@ -253,35 +198,7 @@ export const modelAnalysisReducers = (builder: ActionReducerMapBuilder<IWorkflow
       const task = getTask(state, action.meta.arg.runId);
 
       if (task) {
-        let rawData: unknown;
-
-        if (typeof action.payload === 'string') {
-          const trimmed = action.payload.trim();
-
-          // Heuristic: JSON if starts with { or [
-          if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-            rawData = JSON.parse(
-              trimmed
-                .replace(/\bInfinity\b/g, '1e9')
-                .replace(/\b-Infinity\b/g, '-1e9')
-            );
-          } else {
-            // Treat as CSV
-            rawData = parseRocCsv(trimmed);
-          }
-        } else {
-          rawData = action.payload;
-        }
-        if (Array.isArray(rawData.thresholds)) {
-          rawData.thresholds = (rawData.thresholds as Array<string | number>).map(
-            (t): number => {
-              if (t === Infinity || t === 'Infinity') return 1e9;
-              if (t === -Infinity || t === '-Infinity') return -1e9;
-
-              return Number(t);
-            }
-          );
-        }
+        const rawData = parseRocPayload(action.payload);
 
         assignResult(task.modelRocCurve, rawData);
       }

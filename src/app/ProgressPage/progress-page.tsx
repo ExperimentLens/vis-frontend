@@ -24,7 +24,7 @@ interface ProgressPageProps {
 }
 
 const ProgressPage = (props: ProgressPageProps) => {
-  const { experiment, workflows, initialization, menuOptions } = useAppSelector(
+  const { experiment, initialization, menuOptions } = useAppSelector(
     (state: RootState) => state.progressPage,
   );
   const { experimentId } = useParams();

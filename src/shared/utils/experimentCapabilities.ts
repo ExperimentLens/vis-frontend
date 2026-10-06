@@ -36,10 +36,9 @@ export interface ExperimentCapabilities {
 }
 
 /**
- * Tab indices, named so the magic numbers in the monitoring components stay in sync.
- * Reordering a tab here updates every consumer.
+ * Compare-subtab indices, named so the magic numbers in the compare components stay in sync.
+ * (Top-level monitoring tab indices live in `MONITOR_TAB` in monitorPageSlice.)
  */
-export const MONITOR_TAB = { OVERVIEW: 0, COMPARE: 1, TRACES: 2, EXPLAINABILITY: 3 } as const;
 export const COMPARE_TAB = { METRICS: 0, EXECUTIONS: 1, MODELS: 2, DATA: 3 } as const;
 
 /** Serialized trained-model artifact names the explainability views can load. */
@@ -63,25 +62,11 @@ export function hasModelExplainability(
   tasks: ITask[] | null | undefined,
   dataAssets: IDataAsset[] | null | undefined,
 ): boolean {
-  /* eslint-disable no-console */
-  console.log('[hasModelExplainability] tasks:', tasks);
-  console.log('[hasModelExplainability] dataAssets:', dataAssets);
-
   const byTask = Boolean(tasks?.some(t => typeof t.name === 'string' && /explainability/i.test(t.name)));
-
   const byAsset = Boolean(
-    dataAssets?.some(a => {
-      const nameMatch = MODEL_ARTIFACTS.includes(a.name);
-      const folderMatch = a.folder === EXPLAINABILITY_FOLDER;
-      console.log(
-        `[hasModelExplainability] asset — name: ${JSON.stringify(a.name)}, folder: ${JSON.stringify(a.folder)} | nameMatch: ${nameMatch}, folderMatch: ${folderMatch}`,
-      );
-      return nameMatch || folderMatch;
-    }),
+    dataAssets?.some(a => MODEL_ARTIFACTS.includes(a.name) || a.folder === EXPLAINABILITY_FOLDER),
   );
 
-  console.log(`[hasModelExplainability] result — byTask: ${byTask}, byAsset: ${byAsset}`);
-  /* eslint-enable no-console */
   return byTask || byAsset;
 }
 

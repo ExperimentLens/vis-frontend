@@ -18,7 +18,8 @@ export interface IPlotModel {
     TotalCost: number;
     TotalEffectiveness: number;
     actions: ITableContents;
-    affectedClusters: IAffectedClusters;
+    /** Column-oriented, like every other table the explainability service returns. */
+    affectedClusters: ITableContents;
     effCostActions: IEffCostActions;
     featuresTable: ITableContents;
     attributionsTable: ITableContents;
@@ -43,13 +44,9 @@ export interface IAction {
     [key: string]: ITableContents;
   }
 
-export interface IAffectedClusters {
-    [key: string]: IClusterData;
-  }
-
-export interface IClusterData {
-    clusterName: string;
-    data: Record<string, number | string>;
+/** `GET /explainability/affected`: the affected instances after applying the chosen actions. */
+export interface IAppliedAffectedActions {
+    appliedAffectedActions: ITableContents;
   }
 
 export interface IEffCostActions {

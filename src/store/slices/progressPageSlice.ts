@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { IExperiment } from '../../shared/models/experiment/experiment.model';
 import type { IRun } from '../../shared/models/experiment/run.model';
 import type { IMetric } from '../../shared/models/experiment/metric.model';
+import type { ICreateRunRequest, ICreateRunResponse } from '../../shared/models/experiment/create-run.model';
 import { experimentApi } from '../../app/api/api';
 
 interface IUserEvaluationResponse {
@@ -366,7 +367,7 @@ export const fetchUserEvaluation = createAsyncThunk(
 
 export const createWorkflow = createAsyncThunk(
   'progressPage/create_workflow',
-  async (payload: { experimentId: string; runName: string; params: Record<string, string> }) => {
+  async (payload: ICreateRunRequest) => {
     const { experimentId, runName, params } = payload;
     const requestUrl = `${experimentId}/runs/create`;
 

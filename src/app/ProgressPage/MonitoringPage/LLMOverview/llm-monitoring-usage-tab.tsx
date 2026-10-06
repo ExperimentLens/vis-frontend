@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Box,
+  Chip,
   Grid,
 } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -19,8 +20,6 @@ import { StyledDataGrid } from './llm-monitoring-shared';
 import TraceCountByHourChart from './trace-count-by-hour-chart';
 import LatencyOverTimeChart from './latency-over-time-chart';
 import TokensOverTimeChart from './tokens-over-time-chart';
-import CostOverTimeChart from './cost-over-time-chart';
-import ErrorsOverTimeChart from './errors-over-time-chart';
 import DetectIssuesPanel from './detect-issues-panel';
 import AllTracesTable from './all-traces-table';
 import { useParams } from 'react-router';
@@ -164,11 +163,20 @@ export default function LlmMonitoringUsageTab({
     {showTracesTable && (
       <Grid container spacing={1.5}>
         <Grid size={{ xs: 12 }} sx={{ textAlign: 'left' }}>
+          {selectedTraceIds && (
+            <Chip
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={{ mb: 1 }}
+              label={`${selectedTraceIds.length} of ${details.length} traces (from chart)`}
+              onDelete={() => setSelectedTraceIds(null)}
+            />
+          )}
           <AllTracesTable
             details={details}
             experimentId={experimentId}
             selectedTraceIds={selectedTraceIds}
-            onClearSelection={() => setSelectedTraceIds(null)}
             runNameById={runNameById}
           />
         </Grid>

@@ -18,10 +18,12 @@ import DashboardRoundedIcon from '@mui/icons-material/DashboardRounded';
 import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import TableRowsRoundedIcon from '@mui/icons-material/TableRowsRounded';
+// import InsightsRoundedIcon from '@mui/icons-material/InsightsRounded';
 import { getCache, setCache } from '../../../shared/utils/localStorageCache';
 import { useLocation } from 'react-router-dom';
 import ComparativeAnalysis from './ComparativeAnalysis/comparative-analysis';
 import ExperimentExplainability from './ExperimentExplainability';
+import ExperimentInsights from './Insights/experiment-insights';
 import LlmMonitoringOverview from './LLMOverview/llm-monitoring-overview';
 import LlmTracesTableTab from './LLMOverview/llm-traces-table-tab';
 import { TRACE_SELECTION_LINK_CLASS } from './LLMOverview/trace-tooltip';
@@ -57,6 +59,7 @@ const MonitoringPage = () => {
     if (tab === TAB.OVERVIEW) return true;
     if (tab === TAB.SESSION) return canShowTraces;
     if (tab === TAB.COMPARE) return true;
+    if (tab === TAB.INSIGHTS) return true;
     if (tab === TAB.TRACES) return canShowTraces;
     if (tab === TAB.EXPLAINABILITY) return canShowExplainability;
 
@@ -201,6 +204,12 @@ const MonitoringPage = () => {
             iconPosition="start"
             label="Compare"
           />
+          {/* <Tab
+            value={TAB.INSIGHTS}
+            icon={<InsightsRoundedIcon fontSize="small" />}
+            iconPosition="start"
+            label="Insights"
+          /> */}
           {!isMlExperiment && (
             <Tab
               value={TAB.TRACES}
@@ -299,6 +308,7 @@ const MonitoringPage = () => {
             </Paper>
           </Box>
         )}
+        {selectedTab === TAB.INSIGHTS && <ExperimentInsights />}
         {selectedTab === TAB.TRACES && !isMlExperiment && (
           <LlmTracesTableTab />
         )}

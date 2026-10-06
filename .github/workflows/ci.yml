@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  push:
+    branches: [main, experiment-lens]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      # package-lock.json is gitignored in this repo, so `npm ci` is not available yet.
+      - run: npm install --no-audit --no-fund
+      - name: Type-check, lint and unit tests
+        run: npm run check
+      - name: Production build
+        run: npm run build
