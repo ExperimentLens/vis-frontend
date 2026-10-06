@@ -8,6 +8,7 @@ import InfoMessage from '../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 
 import ExperimentsTable from './experiments-table';
+import GetStartedBanner from './get-started-banner';
 
 const ExperimentsLandingPage = () => {
   const dispatch = useAppDispatch();
@@ -49,7 +50,7 @@ const ExperimentsLandingPage = () => {
         </Typography>
       </Box>
 
-      <Box sx={{ flex: 1, overflow: 'hidden', px: 2, py: 2 }}>
+      <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', px: 2, pt: 2, pb: 1 }}>
         {experiments.loading && <Loader />}
 
         {!!experiments.error && !experiments.loading && (
@@ -68,6 +69,10 @@ const ExperimentsLandingPage = () => {
             onRefresh={handleRefresh}
           />
         )}
+      </Box>
+
+      <Box sx={{ flexShrink: 0, px: 2, pb: 2, pt: 1 }}>
+        <GetStartedBanner />
       </Box>
     </Box>
   );
