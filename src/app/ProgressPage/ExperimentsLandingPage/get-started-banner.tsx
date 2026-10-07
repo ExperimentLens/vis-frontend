@@ -7,7 +7,7 @@ import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
 /** Overridable per deployment; the defaults point at the published SDK and its maintainer. */
 const SDK_DOCS_URL = import.meta.env.VITE_SDK_DOCS_URL || 'https://pypi.org/project/experimentlens/';
 const GITHUB_URL = import.meta.env.VITE_GITHUB_URL || 'https://github.com/ExperimentLens';
-const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'panosgidarakos@gmail.com';
+const CONTACT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL || 'explens@athenarc.gr';
 
 // The snippet stays dark in both themes, like a terminal.
 const CODE = {
