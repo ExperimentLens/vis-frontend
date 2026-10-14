@@ -46,6 +46,16 @@ export const isGeneration = (o: Observation) => (o.type ?? '').toUpperCase() ===
 export const isJudge = (o: Observation) =>
   /judge/i.test(o.name) || typeof (o.output as GenOutput)?.passed === 'boolean';
 
+/** A judge's pass/fail verdict (`output.passed`), or null when the step isn't a verdict. */
+export const judgeVerdict = (o: Observation): boolean | null => {
+  const passed = (o.output as GenOutput)?.passed;
+
+  return typeof passed === 'boolean' ? passed : null;
+};
+
+/** A judge that ran fine but returned FAIL; shown like an error so it stands out in the trace. */
+export const isFailedJudge = (o: Observation) => judgeVerdict(o) === false;
+
 export const isErrorLevel = (o: Observation) =>
   (o.level ?? '').toUpperCase() === 'ERROR' || Boolean(o.statusMessage);
 

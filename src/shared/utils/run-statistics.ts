@@ -145,6 +145,9 @@ export function collapseAliasedParams(records: RunRecord[], params: string[]): P
   return { params: params.filter(p => kept.includes(p)), aliases };
 }
 
+/** Prefix of the metrics `ctx.evaluate()` in the experimentlens SDK logs. */
+export const EVAL_METRIC_PREFIX = 'eval_';
+
 // Checked in order: unmistakable "bad" words, then quality words, then cost-like words.
 // So `latency_check_passed` and `token_f1` count as quality, but `hallucination_score` doesn't.
 const ALWAYS_MINIMIZE = /(loss|error|err$|_err_|mse|mae|rmse|mape|perplexity|wer|cer|fpr|fnr|toxicity|hallucination)/i;
@@ -153,6 +156,9 @@ const MINIMIZE = /(latency|duration|time|_ms$|_s$|seconds|cost|token)/i;
 
 /** Best guess at whether higher or lower is better, from the metric's name. */
 export function inferDirection(metric: string): Direction {
+  // SDK evaluation scores are 0..1 and higher is better, even for safety metrics
+  // (eval_toxicity = 1 means "no toxicity found").
+  if (metric.startsWith(EVAL_METRIC_PREFIX)) return 'maximize';
   if (ALWAYS_MINIMIZE.test(metric)) return 'minimize';
   if (MAXIMIZE.test(metric)) return 'maximize';
 

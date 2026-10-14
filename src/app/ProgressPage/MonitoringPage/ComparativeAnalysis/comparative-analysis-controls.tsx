@@ -320,7 +320,7 @@ const ComparativeAnalysisControls = ()=> {
           )}
 
           {!isDataTab
-            && !(isExecutionsTab && (selectedExecutionsView === 'timeline' || selectedExecutionsView === 'verdicts' || selectedExecutionsView === 'responses' || selectedExecutionsView === 'stepprofile' || selectedExecutionsView === 'annotations')) && (
+            && !(isExecutionsTab && (selectedExecutionsView === 'timeline' || selectedExecutionsView === 'verdicts' || selectedExecutionsView === 'stepprofile' || selectedExecutionsView === 'annotations')) && (
             <SegmentedToggle
               uppercase
               aria-label="view mode"

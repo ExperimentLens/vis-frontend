@@ -13,19 +13,23 @@ import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 
 import InfoMessage from '../../../../shared/components/InfoMessage';
-import LlmKpiStrip from './llm-kpi-strip';
 
-import LlmMonitoringUsageTab from './llm-monitoring-usage-tab';
-import LlmMonitoringQualityTab from './llm-monitoring-quality-tab';
-import LlmMonitoringAgentsTab from './llm-monitoring-agents-tab';
+import LlmMonitoringPerformanceTab from './llm-monitoring-performance-tab';
+import QualityTab from '../Evaluation/quality-tab';
+import ExperimentOverview from '../Overview/experiment-overview';
 import { useLlmSessionTraces } from './use-llm-session-traces';
 
-type LlmOverviewTab = 'usage' | 'quality' | 'agents';
+/**
+ * Overview: headline numbers and what needs attention (run metrics).
+ * Quality: eval scores, baseline comparison, judges and issues (run metrics + traces).
+ * Performance: volume, latency, tokens, cost, errors and agents (traces).
+ */
+type LlmOverviewTab = 'overview' | 'quality' | 'performance';
 
 const LLM_TABS: Array<{ value: LlmOverviewTab; label: string }> = [
-  { value: 'usage', label: 'Usage' },
+  { value: 'overview', label: 'Overview' },
   { value: 'quality', label: 'Quality' },
-  { value: 'agents', label: 'Agents' },
+  { value: 'performance', label: 'Performance' },
 ];
 
 const downloadCsv = (
@@ -76,7 +80,7 @@ type LlmMonitoringOverviewProps = {
 export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMonitoringOverviewProps) {
   const theme = useTheme();
 
-  const [selectedTab, setSelectedTab] = useState<LlmOverviewTab>('usage');
+  const [selectedTab, setSelectedTab] = useState<LlmOverviewTab>('overview');
 
   const {
     workflowIds,
@@ -85,11 +89,8 @@ export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMon
     anyLoading,
     hasData,
     scores,
-    timeSeries,
     latencies,
-    totalObservations,
     totalScores,
-    obsSpec,
     tooltip,
     refresh,
   } = useLlmSessionTraces();
@@ -104,20 +105,6 @@ export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMon
         ones: s.ones ?? 0,
       })),
       'scores.csv',
-    );
-  };
-
-  const handleDownloadTraceLatencyCsv = () => {
-    downloadCsv(
-      latencies.map(l => ({
-        traceName: l.name,
-        count: l.count,
-        p50: l.p50,
-        p90: l.p90,
-        p95: l.p95,
-        p99: l.p99,
-      })),
-      'trace-latency-percentiles.csv',
     );
   };
 
@@ -196,7 +183,20 @@ export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMon
         </Button>
       </Stack>
 
-      {!hasData && anyLoading && (
+      {selectedTab === 'overview' && <ExperimentOverview />}
+
+      {selectedTab === 'quality' && (
+        <QualityTab
+          details={allDetails}
+          tracesLoading={anyLoading}
+          scores={scores}
+          totalScores={totalScores}
+          onDownloadScoresCsv={handleDownloadScoresCsv}
+          runNameById={runNameById}
+        />
+      )}
+
+      {selectedTab === 'performance' && !hasData && anyLoading && (
         <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, py: 6, gap: 1.5 }}>
           <CircularProgress size={22} />
           <Typography variant="body2" color="text.secondary">
@@ -205,7 +205,7 @@ export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMon
         </Stack>
       )}
 
-      {!hasData && !anyLoading && (
+      {selectedTab === 'performance' && !hasData && !anyLoading && (
         <InfoMessage
           message="No traces found for this experiment's sessions."
           type="info"
@@ -214,38 +214,16 @@ export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMon
         />
       )}
 
-      {hasData && (
-        <>
-          <LlmKpiStrip details={allDetails} sessionCount={workflowIds.length} />
-
-          {selectedTab === 'usage' && (
-            <LlmMonitoringUsageTab
-              details={allDetails}
-              isLoading={anyLoading}
-              timeSeries={timeSeries}
-              latencies={latencies}
-              totalObservations={totalObservations}
-              obsSpec={obsSpec}
-              tooltip={tooltip}
-              onDownloadTraceLatencyCsv={handleDownloadTraceLatencyCsv}
-              runNameById={runNameById}
-              showTracesTable={showTracesTable}
-            />
-          )}
-
-          {selectedTab === 'quality' && (
-            <LlmMonitoringQualityTab
-              details={allDetails}
-              scores={scores}
-              totalScores={totalScores}
-              onDownloadScoresCsv={handleDownloadScoresCsv}
-            />
-          )}
-
-          {selectedTab === 'agents' && (
-            <LlmMonitoringAgentsTab details={allDetails} />
-          )}
-        </>
+      {selectedTab === 'performance' && hasData && (
+        <LlmMonitoringPerformanceTab
+          details={allDetails}
+          isLoading={anyLoading}
+          sessionCount={workflowIds.length}
+          latencies={latencies}
+          tooltip={tooltip}
+          runNameById={runNameById}
+          showTracesTable={showTracesTable}
+        />
       )}
     </Stack>
   );

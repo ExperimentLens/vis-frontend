@@ -1,4 +1,4 @@
-import { Box, Chip, Stack, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Chip, Grid, Stack, Tooltip, Typography, alpha, useTheme } from '@mui/material';
 import type { TraceDetail } from '../../../../../shared/models/observability/trace-detail';
 import type { GenOutput, TraceOutput } from '../../../../../shared/models/observability/agentic-conventions';
 import { MONO, isGeneration, isJudge, prettyName, tokensOf } from '../../../../../shared/models/observability/agentic-conventions';
@@ -10,6 +10,7 @@ type Props = {
   runNameById: Record<string, string>;
   colorById: Record<string, string>;
   baselineId: string;
+  isMosaic: boolean;
 };
 
 /**
@@ -59,21 +60,28 @@ const responseTextOf = (t: TraceDetail): ResponseText | null => {
   return null;
 };
 
-const judgeVerdictOf = (t: TraceDetail): { passed: boolean; rationale?: string; name: string } | null => {
-  const judge = t.observations.find(isJudge);
+type JudgeSummary = { passed: number; total: number; failed: Array<{ name: string; rationale?: string }> };
 
-  if (!judge) return null;
-  const out = judge.output as GenOutput | undefined;
+/** Every judge on the trace, not just the first: SDK runs carry one judge per metric. */
+const judgeSummaryOf = (t: TraceDetail): JudgeSummary | null => {
+  const verdicts = t.observations
+    .filter(isJudge)
+    .map(j => ({ name: prettyName(j.name), out: j.output as GenOutput | undefined }))
+    .filter(j => typeof j.out?.passed === 'boolean');
 
-  if (typeof out?.passed !== 'boolean') return null;
+  if (!verdicts.length) return null;
 
-  return { passed: out.passed, rationale: out.rationale, name: prettyName(judge.name) };
+  return {
+    passed: verdicts.filter(j => j.out?.passed).length,
+    total: verdicts.length,
+    failed: verdicts.filter(j => !j.out?.passed).map(j => ({ name: j.name, rationale: j.out?.rationale })),
+  };
 };
 
 const tokensOfTrace = (t: TraceDetail): number =>
   t.observations.reduce((sum, o) => sum + (tokensOf(o) ?? 0), 0);
 
-export default function ResponseDiff({ byRun, runIds, runNameById, colorById, baselineId }: Props) {
+export default function ResponseDiff({ byRun, runIds, runNameById, colorById, baselineId, isMosaic }: Props) {
   const theme = useTheme();
 
   const baselineScores = new Map((byRun[baselineId]?.scores ?? []).map(s => [s.name, s.value]));
@@ -85,19 +93,21 @@ export default function ResponseDiff({ byRun, runIds, runNameById, colorById, ba
       showSettings={false}
       showFullScreenButton={false}
     >
-      <Box sx={{ display: 'flex', gap: 1.25, overflowX: 'auto', pb: 0.5 }}>
+      <Grid container spacing={1.25}>
         {runIds.map(id => {
           const trace = byRun[id];
           const response = trace ? responseTextOf(trace) : null;
-          const verdict = trace ? judgeVerdictOf(trace) : null;
-          const scores = trace?.scores ?? [];
+          const verdict = trace ? judgeSummaryOf(trace) : null;
+          // Failing checks first, then alphabetical, so problems are read before the rest.
+          const scores = [...(trace?.scores ?? [])].sort(
+            (a, b) => Number(a.value !== 0) - Number(b.value !== 0) || prettyName(a.name).localeCompare(prettyName(b.name)),
+          );
 
           return (
+            <Grid key={id} size={{ xs: 12, md: isMosaic ? 6 : 12, xl: isMosaic ? 4 : 12 }}>
             <Box
-              key={id}
               sx={{
-                flex: '0 0 auto',
-                width: 340,
+                height: '100%',
                 border: `1px solid ${theme.palette.divider}`,
                 borderLeft: `3px solid ${colorById[id]}`,
                 borderRadius: 1.5,
@@ -119,12 +129,14 @@ export default function ResponseDiff({ byRun, runIds, runNameById, colorById, ba
                 {id === baselineId && <Chip label="base" size="small" sx={{ height: 16, fontSize: '0.55rem' }} />}
                 <Box sx={{ flexGrow: 1 }} />
                 {verdict && (
-                  <Chip
-                    label={verdict.passed ? 'PASS' : 'FAIL'}
-                    size="small"
-                    color={verdict.passed ? 'success' : 'error'}
-                    sx={{ height: 18, fontSize: '0.55rem', fontWeight: 700 }}
-                  />
+                  <Tooltip title={verdict.failed.length ? `Failed: ${verdict.failed.map(f => f.name).join(', ')}` : 'Every judge passed'}>
+                    <Chip
+                      label={verdict.failed.length ? `FAIL ${verdict.passed}/${verdict.total}` : `PASS ${verdict.passed}/${verdict.total}`}
+                      size="small"
+                      color={verdict.failed.length ? 'error' : 'success'}
+                      sx={{ height: 18, fontSize: '0.55rem', fontWeight: 700 }}
+                    />
+                  </Tooltip>
                 )}
               </Stack>
 
@@ -173,8 +185,10 @@ export default function ResponseDiff({ byRun, runIds, runNameById, colorById, ba
                       id !== baselineId && baseValue !== undefined && baseValue !== null && sc.value !== null
                         ? sc.value - baseValue
                         : 0;
+                    // A failed boolean check is red even when the baseline failed it too.
                     const tone =
-                      delta > 0 ? theme.palette.success.main : delta < 0 ? theme.palette.error.main : theme.palette.text.secondary;
+                      delta > 0 ? theme.palette.success.main : delta < 0 || sc.value === 0 ? theme.palette.error.main : theme.palette.text.secondary;
+                    const highlighted = delta !== 0 || sc.value === 0;
 
                     return (
                       <Chip
@@ -184,8 +198,8 @@ export default function ResponseDiff({ byRun, runIds, runNameById, colorById, ba
                         sx={{
                           height: 20,
                           fontSize: '0.6rem',
-                          bgcolor: delta !== 0 ? alpha(tone, 0.12) : undefined,
-                          color: delta !== 0 ? tone : undefined,
+                          bgcolor: highlighted ? alpha(tone, 0.12) : undefined,
+                          color: highlighted ? tone : undefined,
                         }}
                       />
                     );
@@ -193,11 +207,12 @@ export default function ResponseDiff({ byRun, runIds, runNameById, colorById, ba
                 </Stack>
               )}
 
-              {verdict?.rationale && (
-                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                  {verdict.rationale}
+              {verdict?.failed.filter(f => f.rationale).map(f => (
+                <Typography key={f.name} variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                  <Box component="span" sx={{ color: 'error.main', fontWeight: 700 }}>{f.name}: </Box>
+                  {f.rationale}
                 </Typography>
-              )}
+              ))}
 
               {trace && (
                 <Typography variant="caption" sx={{ color: 'text.disabled', fontFamily: MONO, fontSize: '0.62rem' }}>
@@ -205,9 +220,10 @@ export default function ResponseDiff({ byRun, runIds, runNameById, colorById, ba
                 </Typography>
               )}
             </Box>
+            </Grid>
           );
         })}
-      </Box>
+      </Grid>
     </ResponsiveCardTable>
   );
 }

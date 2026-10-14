@@ -5,6 +5,7 @@ import {
   asText,
   durationOf,
   formatMs,
+  isFailedJudge,
   modelOf,
 } from '../../../shared/models/observability/agentic-conventions';
 import type { GenInput, GenOutput } from '../../../shared/models/observability/agentic-conventions';
@@ -47,7 +48,8 @@ const SpanDetail = ({ obs, scores = [], onAnnotate, savingAnnotation = false }: 
   const output = obs.output as GenOutput;
   const model = modelOf(obs);
   const tokens = output?.tokens;
-  const color = colorForType(obs.type);
+  // A FAIL verdict colors the whole card red, so it doesn't read as a healthy generation.
+  const color = isFailedJudge(obs) ? theme.palette.error.main : colorForType(obs.type);
   const promptText = asText(input?.prompt);
   const inputWithoutPrompt = omitPrompt(obs.input);
 

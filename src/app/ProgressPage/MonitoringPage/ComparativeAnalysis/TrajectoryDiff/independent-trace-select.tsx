@@ -1,9 +1,7 @@
 import { useMemo } from 'react';
 import {
-  alpha,
   Box,
   Checkbox,
-  Chip,
   FormControl,
   InputLabel,
   ListSubheader,
@@ -64,8 +62,11 @@ export default function IndependentTraceSelect({
     if (runId) onSelect(runId, added);
   };
 
+  // Runs logged with the SDK hold one trace each, so there is nothing to pick.
+  if (runIds.every(id => (detailsByRun[id] ?? []).length <= 1)) return null;
+
   return (
-    <FormControl size="small" sx={{ minWidth: 300, maxWidth: 560 }}>
+    <FormControl size="small" sx={{ width: 360, maxWidth: '100%' }}>
       <InputLabel id="traj-manual-multi">Traces per workflow</InputLabel>
       <Select
         labelId="traj-manual-multi"
@@ -74,44 +75,29 @@ export default function IndependentTraceSelect({
         value={value}
         onChange={handleChange}
         sx={{ '& .MuiSelect-select': { py: 0.625 } }}
-        renderValue={selected => (
-          <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap' }}>
-            {runIds
-              .filter(id => (selected as string[]).includes(selectedIdByRun[id]))
-              .map(id => {
-                const trace = (detailsByRun[id] ?? []).find(t => t.id === selectedIdByRun[id]);
+        // One line however many runs are compared: a chip per run wrapped into a tall block.
+        renderValue={selected => {
+          const picked = runIds
+            .map(id => (detailsByRun[id] ?? []).find(t => t.id === selectedIdByRun[id]))
+            .filter((t): t is TraceDetail => Boolean(t) && (selected as string[]).includes(t!.id));
+          const names = [...new Set(picked.map(traceLabel))];
 
-                if (!trace) return null;
-
-                const color = colorById[id] ?? '#999';
-
-                return (
-                  <Chip
-                    key={id}
-                    size="small"
-                    label={
-                      <Stack direction="row" spacing={0.75} alignItems="center">
-                        <Dot color={color} />
-                        <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>
-                          {traceLabel(trace)}
-                        </Box>
-                      </Stack>
-                    }
-                    sx={{
-                      height: 24,
-                      maxWidth: 260,
-                      borderRadius: '999px',
-                      fontWeight: 500,
-                      bgcolor: alpha(color, 0.12),
-                      border: `1px solid ${alpha(color, 0.4)}`,
-                      color: 'text.primary',
-                      '& .MuiChip-label': { display: 'flex', alignItems: 'center', px: 1 },
-                    }}
-                  />
-                );
-              })}
-          </Stack>
-        )}
+          return (
+            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ minWidth: 0 }}>
+              <Stack direction="row" sx={{ flexShrink: 0 }}>
+                {runIds.slice(0, 6).map((id, i) => (
+                  <Box key={id} sx={{ ml: i ? -0.5 : 0, border: 1, borderColor: 'background.paper', borderRadius: '50%', display: 'flex' }}>
+                    <Dot color={colorById[id] ?? '#999'} />
+                  </Box>
+                ))}
+              </Stack>
+              <Box component="span" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8rem' }}>
+                {names.length === 1 ? names[0] : `${names.length} different traces`}
+                <Box component="span" sx={{ color: 'text.secondary' }}>{` · ${picked.length} of ${runIds.length} runs`}</Box>
+              </Box>
+            </Stack>
+          );
+        }}
         MenuProps={{
           PaperProps: {
             style: { maxHeight: 420, width: 360 },

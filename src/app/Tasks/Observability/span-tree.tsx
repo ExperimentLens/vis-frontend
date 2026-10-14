@@ -3,6 +3,7 @@ import { Box, Stack, Typography, Tooltip, alpha, useTheme } from '@mui/material'
 import ChevronRightRoundedIcon from '@mui/icons-material/ChevronRightRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import ErrorRoundedIcon from '@mui/icons-material/ErrorRounded';
+import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
 import AutoAwesomeRoundedIcon from '@mui/icons-material/AutoAwesomeRounded';
 import ManageSearchRoundedIcon from '@mui/icons-material/ManageSearchRounded';
 import BlurOnRoundedIcon from '@mui/icons-material/BlurOnRounded';
@@ -12,7 +13,7 @@ import BoltRoundedIcon from '@mui/icons-material/BoltRounded';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import GavelRoundedIcon from '@mui/icons-material/GavelRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
-import { formatMs, isJudge } from '../../../shared/models/observability/agentic-conventions';
+import { formatMs, isFailedJudge, isJudge } from '../../../shared/models/observability/agentic-conventions';
 import { colorForType } from './trace-observation-waterfall';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -193,6 +194,11 @@ const SpanTree = ({ observations, selectedId, onSelect }: Props) => {
             {isError && (
               <Tooltip title={obs.statusMessage ?? 'Error'} arrow>
                 <ErrorRoundedIcon sx={{ fontSize: 13, color: theme.palette.error.main, flexShrink: 0 }} />
+              </Tooltip>
+            )}
+            {!isError && isFailedJudge(obs) && (
+              <Tooltip title="Judge verdict: FAIL" arrow>
+                <CancelRoundedIcon sx={{ fontSize: 13, color: theme.palette.error.main, flexShrink: 0 }} />
               </Tooltip>
             )}
 

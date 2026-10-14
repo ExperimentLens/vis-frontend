@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import type { Observation } from '../../../shared/models/observability/observation';
-import { formatMs } from '../../../shared/models/observability/agentic-conventions';
+import { formatMs, judgeVerdict } from '../../../shared/models/observability/agentic-conventions';
 import { colorForType } from './trace-observation-waterfall';
 import InfoMessage from '../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -152,7 +152,8 @@ const TraceGraph = ({ observations, selectedId, onSelect }: Props) => {
           if (!obs) return null;
 
           const color = colorForType(obs.type);
-          const isError = (obs.level ?? '').toUpperCase() === 'ERROR' || Boolean(obs.statusMessage);
+          const verdict = judgeVerdict(obs);
+          const isError = (obs.level ?? '').toUpperCase() === 'ERROR' || Boolean(obs.statusMessage) || verdict === false;
           const isSelected = selectedId === id;
           const clickable = Boolean(onSelect);
 
@@ -197,6 +198,11 @@ const TraceGraph = ({ observations, selectedId, onSelect }: Props) => {
                 sx={{ fontSize: '0.6rem', color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}
               >
                 {formatMs(durationOf(obs))}
+                {verdict !== null && (
+                  <Box component="span" sx={{ ml: 0.5, fontWeight: 700, color: verdict ? theme.palette.success.main : theme.palette.error.main }}>
+                    {verdict ? '· PASS' : '· FAIL'}
+                  </Box>
+                )}
               </Typography>
             </Box>
           );

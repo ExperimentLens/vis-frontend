@@ -2,6 +2,7 @@ import { Box, Stack, Typography, Tooltip, useTheme, alpha } from '@mui/material'
 import type { Observation } from '../../../shared/models/observability/observation';
 import { CHART_NEUTRAL } from '../../../mui-theme';
 import InfoMessage from '../../../shared/components/InfoMessage';
+import { isFailedJudge } from '../../../shared/models/observability/agentic-conventions';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 
 export const TYPE_COLORS: Record<string, string> = {
@@ -107,7 +108,7 @@ const ObservationWaterfall = ({ observations, selectedId, onSelect }: Props) => 
             const width = Math.max(0.6, ((end - start) / max) * 100);
             const indent = o.parentObservationId ? 12 : 0;
             const color = colorForType(o.type);
-            const isError = (o.level ?? '').toUpperCase() === 'ERROR';
+            const isError = (o.level ?? '').toUpperCase() === 'ERROR' || isFailedJudge(o);
             const durationMs = Math.round(end - start);
             const model = o.model ?? (o.input as { model?: string })?.model;
             const isSelected = selectedId === o.id;

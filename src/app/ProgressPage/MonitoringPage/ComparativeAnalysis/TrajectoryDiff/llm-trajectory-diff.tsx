@@ -402,6 +402,7 @@ export default function LlmTrajectoryDiff() {
           runNameById={runNameById}
           colorById={colorById}
           baselineId={baseline}
+          isMosaic={isMosaic}
         />
       )}
 
