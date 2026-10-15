@@ -41,7 +41,7 @@ export const traceDurationMs = (t: TraceDetail): number => {
   return (t.latency ?? 0) * 1000;
 };
 
-const sumTraceTokens = (t: TraceDetail): number =>
+export const sumTraceTokens = (t: TraceDetail): number =>
   t.observations.reduce((s, o) => s + (tokensOf(o) ?? 0), 0);
 
 export const traceQuestion = (t: TraceDetail): string => {

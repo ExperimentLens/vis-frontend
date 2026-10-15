@@ -9,13 +9,15 @@ interface Props {
   rows: GroupScores[];
   metrics: string[];
   param: string;
+  /** Called with the clicked cell, to open its traces. */
+  onCellClick?: (group: string, metric: string, mean: number) => void;
 }
 
 const TONE_LABEL: Record<ScoreTone, string> = { good: 'At or above pass mark', warn: 'Just below', bad: 'Well below' };
 const ROW_HEIGHT = 34;
 
 /** Configuration × metric grid of mean scores, colored against each metric's pass mark. */
-export default function EvalHeatmapCard({ rows, metrics, param }: Props) {
+export default function EvalHeatmapCard({ rows, metrics, param, onCellClick }: Props) {
   const theme = useTheme();
   const themeConfig = useVegaThemeConfig();
   const tooltip = useVegaTooltip();
@@ -32,6 +34,7 @@ export default function EvalHeatmapCard({ rows, metrics, param }: Props) {
 
           return {
             group: row.group,
+            metricKey: m,
             metric: evalLabel(m),
             kind: isSafetyEval(m) ? 'Safety check' : 'Quality metric',
             mean: s.mean,
@@ -52,7 +55,8 @@ export default function EvalHeatmapCard({ rows, metrics, param }: Props) {
       },
       layer: [
         {
-          mark: { type: 'rect', cornerRadius: 3, stroke: theme.palette.background.paper, strokeWidth: 2 },
+          params: [{ name: 'pick', select: { type: 'point', on: 'click', fields: ['group', 'metricKey'], clear: false } }],
+          mark: { type: 'rect', cornerRadius: 3, stroke: theme.palette.background.paper, strokeWidth: 2, cursor: onCellClick ? 'pointer' : 'default' },
           encoding: {
             color: {
               field: 'tone',
@@ -85,16 +89,32 @@ export default function EvalHeatmapCard({ rows, metrics, param }: Props) {
       ],
       config: themeConfig,
     } as Record<string, unknown>;
-  }, [rows, metrics, param, theme, themeConfig]);
+  }, [rows, metrics, param, theme, themeConfig, onCellClick]);
+
+  const meanByCell = useMemo(
+    () => new Map(rows.flatMap(r => metrics.filter(m => r.scores[m]).map(m => [`${r.group}\u0000${m}`, r.scores[m].mean] as const))),
+    [rows, metrics],
+  );
+  // Vega reports a point selection as { group: [value], metricKey: [value] }.
+  const signalListeners = useMemo(() => (onCellClick ? {
+    pick: (_name: string, value: unknown) => {
+      const v = value as { group?: string | string[]; metricKey?: string | string[] } | null;
+      const group = Array.isArray(v?.group) ? v?.group[0] : v?.group;
+      const metric = Array.isArray(v?.metricKey) ? v?.metricKey[0] : v?.metricKey;
+
+      if (group && metric) onCellClick(group, metric, meanByCell.get(`${group}\u0000${metric}`) ?? 1);
+    },
+  } : undefined), [onCellClick, meanByCell]);
 
   return (
     <ResponsiveCardVegaLite
       title="Evaluation scores"
-      details={`Mean per ${param || 'group'}, best on top · 0–1, higher is better${safetyCount ? ` · last ${safetyCount} columns are safety checks` : ''}`}
+      details={`Mean per ${param || 'group'}, best on top · 0–1, higher is better${safetyCount ? ` · last ${safetyCount} columns are safety checks` : ''}${onCellClick ? ' · click a cell for its traces' : ''}`}
       spec={spec}
       actions={false}
       isStatic={false}
       tooltip={tooltip}
+      signalListeners={signalListeners}
       showSettings={false}
       minHeight={height}
       maxHeight={height}

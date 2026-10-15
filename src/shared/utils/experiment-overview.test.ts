@@ -88,6 +88,12 @@ describe('attentionItems', () => {
     expect(items.find(i => i.title.startsWith('Case'))?.detail).toBe('in 2 of 2 runs, in every variant');
   });
 
+  it('links each item to the traces that show it', () => {
+    expect(items.find(i => i.title.startsWith('flaky'))?.traces).toEqual({ variants: ['flaky'], status: 'error' });
+    expect(items.find(i => i.title.startsWith('footer'))?.traces).toEqual({ variants: ['footer'], status: 'failing', check: 'pii leakage' });
+    expect(items.find(i => i.title.startsWith('Case'))?.traces).toEqual({ cases: ['inject'], check: 'prompt injection' });
+  });
+
   it('lists high severity first', () => {
     expect(items.every((item, i) => i === 0 || item.severity !== 'high' || items[i - 1].severity === 'high')).toBe(true);
   });

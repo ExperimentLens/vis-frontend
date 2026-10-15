@@ -29,6 +29,8 @@ import { useInsightRecords } from '../Insights/use-insight-records';
 import ParamImpactCard from '../Insights/param-impact-card';
 import ScoresOverTimeCard from '../Evaluation/scores-over-time-card';
 import AttentionCard from './attention-card';
+import { useOpenTraces } from '../Traces/use-open-traces';
+import { useExperimentCapabilities } from '../../../../shared/utils/experimentCapabilities';
 import VariantMapCard from './variant-map-card';
 
 const COST_METRICS = ['latency_ms', 'cost_usd', 'total_tokens'];
@@ -54,6 +56,8 @@ export default function ExperimentOverview() {
   const { records, completedTotal, filtered } = useInsightRecords();
   const workflows = useAppSelector((s: RootState) => s.progressPage.workflows.data);
 
+  const openTraces = useOpenTraces();
+  const { traces: hasTraces } = useExperimentCapabilities();
   const scored = useMemo(() => withQualityScore(records), [records]);
   const source = useMemo(() => qualitySource(records), [records]);
   const evals = useMemo(() => evalMetrics(records), [records]);
@@ -179,7 +183,7 @@ export default function ExperimentOverview() {
         <VariantMapCard points={points} costMetric={costMetric ?? ''} param={param} />
       </Grid>
       <Grid size={{ xs: 12, lg: 5 }}>
-        <AttentionCard items={attention} />
+        <AttentionCard items={attention} onOpenTraces={hasTraces ? openTraces : undefined} />
       </Grid>
 
       {impacts.length > 0 && (

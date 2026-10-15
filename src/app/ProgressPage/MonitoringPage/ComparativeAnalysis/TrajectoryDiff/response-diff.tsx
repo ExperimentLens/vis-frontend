@@ -3,6 +3,7 @@ import type { TraceDetail } from '../../../../../shared/models/observability/tra
 import type { GenOutput, TraceOutput } from '../../../../../shared/models/observability/agentic-conventions';
 import { MONO, isGeneration, isJudge, prettyName, tokensOf } from '../../../../../shared/models/observability/agentic-conventions';
 import ResponsiveCardTable from '../../../../../shared/components/responsive-card-table';
+import { judgesOf } from '../../../../../shared/utils/trace-explorer';
 
 type Props = {
   byRun: Record<string, TraceDetail>;
@@ -63,18 +64,16 @@ const responseTextOf = (t: TraceDetail): ResponseText | null => {
 type JudgeSummary = { passed: number; total: number; failed: Array<{ name: string; rationale?: string }> };
 
 /** Every judge on the trace, not just the first: SDK runs carry one judge per metric. */
+/** Every check on the trace, judges and rule-based scores alike (see judgesOf). */
 const judgeSummaryOf = (t: TraceDetail): JudgeSummary | null => {
-  const verdicts = t.observations
-    .filter(isJudge)
-    .map(j => ({ name: prettyName(j.name), out: j.output as GenOutput | undefined }))
-    .filter(j => typeof j.out?.passed === 'boolean');
+  const checks = judgesOf(t);
 
-  if (!verdicts.length) return null;
+  if (!checks.length) return null;
 
   return {
-    passed: verdicts.filter(j => j.out?.passed).length,
-    total: verdicts.length,
-    failed: verdicts.filter(j => !j.out?.passed).map(j => ({ name: j.name, rationale: j.out?.rationale })),
+    passed: checks.filter(c => c.passed).length,
+    total: checks.length,
+    failed: checks.filter(c => !c.passed).map(c => ({ name: c.name, rationale: c.rationale })),
   };
 };
 

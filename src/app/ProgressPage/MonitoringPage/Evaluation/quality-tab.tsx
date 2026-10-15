@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Alert, Box, Button, Chip, CircularProgress, Grid, Stack, Typography } from '@mui/material';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
@@ -9,6 +9,7 @@ import type { TraceDetail } from '../../../../shared/models/observability/trace-
 import {
   compareToBaseline,
   evalMetrics,
+  evalName,
   groupingParams,
   scoresByGroup,
   scoresOverTime,
@@ -20,6 +21,7 @@ import BaselineComparisonCard from './baseline-comparison-card';
 import EvalHeatmapCard from './eval-heatmap-card';
 import ScoresOverTimeCard from './scores-over-time-card';
 import TraceScoresCard from './trace-scores-card';
+import { useOpenTraces } from '../Traces/use-open-traces';
 import type { TraceScoreSummary } from './trace-scores-card';
 
 /** Operational metrics worth checking for regressions next to the eval scores. */
@@ -45,6 +47,7 @@ interface Props {
  */
 export default function QualityTab({ details, tracesLoading, scores, totalScores, onDownloadScoresCsv, runNameById }: Props) {
   const { records, completedTotal, filtered } = useInsightRecords();
+  const openTraces = useOpenTraces();
   const workflows = useAppSelector((s: RootState) => s.progressPage.workflows.data);
 
   const metrics = useMemo(() => evalMetrics(records), [records]);
@@ -84,6 +87,13 @@ export default function QualityTab({ details, tracesLoading, scores, totalScores
 
   const hasEvals = metrics.length > 0;
   const hasTraces = details.length > 0;
+
+  const openCellTraces = useCallback((group: string, metric: string, mean: number) => openTraces({
+    // Traces filter by variant, so other groupings open every variant.
+    ...(param === 'variant' ? { variants: [group] } : {}),
+    // A cell below 1 opens the traces that failed this check; a perfect one opens all of them.
+    ...(mean < 1 ? { status: 'failing' as const, check: evalName(metric).replace(/_/g, ' ') } : {}),
+  }), [openTraces, param]);
 
   return (
     <Grid container spacing={1.5} sx={{ pb: 1.5, flexShrink: 0 }}>
@@ -130,7 +140,12 @@ export default function QualityTab({ details, tracesLoading, scores, totalScores
       {hasEvals && (
         <>
           <Grid size={{ xs: 12 }}>
-            <EvalHeatmapCard rows={scoreRows} metrics={metrics} param={param} />
+            <EvalHeatmapCard
+              rows={scoreRows}
+              metrics={metrics}
+              param={param}
+              onCellClick={hasTraces ? openCellTraces : undefined}
+            />
           </Grid>
           <Grid size={{ xs: 12 }}>
             <BaselineComparisonCard

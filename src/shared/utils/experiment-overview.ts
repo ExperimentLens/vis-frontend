@@ -1,7 +1,8 @@
 import { formatMs } from '../models/observability/agentic-conventions';
-import { compareToBaseline, evalLabel, evalMetrics, evalPassMark, isEvalMetric, isSafetyEval } from './eval-quality';
+import { compareToBaseline, evalLabel, evalMetrics, evalName, evalPassMark, isEvalMetric, isSafetyEval } from './eval-quality';
 import { comparableMetrics, inferDirection, NOT_SET, paretoFrontier, summarize } from './run-statistics';
 import type { RunRecord } from './run-statistics';
+import type { TraceFilters } from './trace-explorer';
 
 /**
  * The experiment Overview: one quality number, one cost number, and the handful of
@@ -125,7 +126,12 @@ export interface AttentionItem {
   severity: AttentionSeverity;
   title: string;
   detail: string;
+  /** Traces-tab filters that show the evidence, when there is a trace-level view of it. */
+  traces?: Partial<TraceFilters>;
 }
+
+/** The Traces tab names a check like the trace does: eval_pii_leakage → "pii leakage". */
+const checkName = (metric: string) => evalName(metric).replace(/_/g, ' ');
 
 export interface RunOutcome {
   status: string;
@@ -145,6 +151,8 @@ export function attentionItems(
 ): AttentionItem[] {
   const items: AttentionItem[] = [];
   const groupOf = (params: Record<string, string>) => params[param] ?? NOT_SET;
+  // Traces are filtered by variant; other groupings can't be expressed as a trace filter.
+  const variantFilter = (group: string) => (param === 'variant' ? { variants: [group] } : {});
 
   // Failed runs, per group.
   const failed = new Map<string, { failed: number; total: number }>();
@@ -157,7 +165,14 @@ export function attentionItems(
     failed.set(groupOf(r.params), entry);
   });
   failed.forEach(({ failed: n, total }, group) => {
-    if (n) items.push({ severity: 'high', title: `${group}: ${n} of ${total} runs failed`, detail: 'Open the failed runs in the Sessions tab to see the error.' });
+    if (n) {
+      items.push({
+        severity: 'high',
+        title: `${group}: ${n} of ${total} runs failed`,
+        detail: 'See the errors in the failed traces.',
+        traces: { ...variantFilter(group), status: 'error' },
+      });
+    }
   });
 
   // Regressions against the baseline: one item per group, eval metrics listed before cost ones.
@@ -172,8 +187,13 @@ export function attentionItems(
       if (!regressed.length) return;
       const names = regressed.map(c => (isEvalMetric(c.metric) ? evalLabel(c.metric).toLowerCase() : c.metric));
 
+      const firstEval = regressed.find(c => isEvalMetric(c.metric));
+
       items.push({
         severity: regressed.some(c => isSafetyEval(c.metric)) ? 'high' : 'medium',
+        traces: firstEval
+          ? { ...variantFilter(group), status: 'failing', check: checkName(firstEval.metric) }
+          : variantFilter(group),
         title: `${group}: ${names.slice(0, 2).join(', ')}${names.length > 2 ? ` +${names.length - 2}` : ''} regressed`,
         detail: regressed
           .map(c => `${c.metric === 'latency_ms' ? 'latency' : isEvalMetric(c.metric) ? evalLabel(c.metric).toLowerCase() : c.metric} `
@@ -204,6 +224,7 @@ export function attentionItems(
         items.push({
           severity: isSafetyEval(metric) ? 'high' : 'medium',
           title: `Case "${caseId}" fails ${evalLabel(metric).toLowerCase()}`,
+          traces: { cases: [caseId], check: checkName(metric) },
           detail: `in ${failing.length} of ${scored.length} runs, in every ${param || 'configuration'}`,
         });
       }
