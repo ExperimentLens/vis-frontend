@@ -542,7 +542,9 @@ const WorkflowIdCell = ({
     );
 
     return (
-      <Box sx={{ pl: 4, width: '100%', minWidth: 0, pt: 0.5, pb: row.isLastTrace ? 1.75 : 0.5 }}>
+      // lineHeight reset: DataGrid cells set line-height to the row height, which
+      // the inline trace name would otherwise inherit and blow up the row.
+      <Box sx={{ pl: 4, width: '100%', minWidth: 0, lineHeight: 1.5, pt: 0.5, pb: row.isLastTrace ? 1 : 0.5 }}>
         {row.isFirstTrace && (
           <Box sx={{ ...TRACE_GRID_SX, mb: 0.25 }}>
             {TRACE_COLUMN_LABELS.map((label, i) => (
@@ -1617,7 +1619,7 @@ export default function WorkflowTable() {
 
               // First row carries the label header; last row gets extra bottom
               // room so the trace group separates from the next session row.
-              return (row.isFirstTrace ? 54 : 36) + (row.isLastTrace ? 10 : 0);
+              return (row.isFirstTrace ? 54 : 36) + (row.isLastTrace ? 4 : 0);
             }}
             sortModel={workflowsTable.expandedTraceWorkflows.length > 0 ? [] : workflowsTable.sortModel}
             onSortModelChange={(newSortModel) => dispatch(setWorkflowsTable({ sortModel: newSortModel }))}
