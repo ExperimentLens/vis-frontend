@@ -1,12 +1,10 @@
 import { useState } from 'react';
-import { Box, Stack, Typography, alpha, useTheme } from '@mui/material';
-import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import { Box, Stack, Typography, useTheme } from '@mui/material';
+import { Resizable } from 're-resizable';
+import MoreVertRoundedIcon from '@mui/icons-material/MoreVertRounded';
 import TouchAppRoundedIcon from '@mui/icons-material/TouchAppRounded';
 import ViewListRoundedIcon from '@mui/icons-material/ViewListRounded';
 import SchemaRoundedIcon from '@mui/icons-material/SchemaRounded';
-import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
-import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
-import TextSnippetRoundedIcon from '@mui/icons-material/TextSnippetRounded';
 import type { Observation } from '../../../shared/models/observability/observation';
 import type { Score } from '../../../shared/models/observability/score';
 import ResponsiveCardTable from '../../../shared/components/responsive-card-table';
@@ -47,6 +45,27 @@ const TREE_VIEW_OPTIONS = [
   { value: 'graph', icon: <SchemaRoundedIcon fontSize="small" />, tooltip: 'Graph' },
 ];
 
+const TREE_WIDTH_KEY = 'traceWorkspace.treeWidth';
+const DEFAULT_TREE_WIDTH = 360;
+
+const readTreeWidth = () => {
+  try {
+    const saved = Number(localStorage.getItem(TREE_WIDTH_KEY));
+
+    return saved > 0 ? saved : DEFAULT_TREE_WIDTH;
+  } catch {
+    return DEFAULT_TREE_WIDTH;
+  }
+};
+
+const saveTreeWidth = (width: number) => {
+  try {
+    localStorage.setItem(TREE_WIDTH_KEY, String(Math.round(width)));
+  } catch {
+    // Storage blocked: the width just resets next time.
+  }
+};
+
 const TraceWorkspace = ({
   observations,
   selectedSpanId,
@@ -63,7 +82,8 @@ const TraceWorkspace = ({
   onAnnotateTrace,
   promptObs,
 }: TraceWorkspaceProps) => {
-  const [view, setView] = useState<'list' | 'graph'>('graph');
+  const [view, setView] = useState<'list' | 'graph'>('list');
+  const [treeWidth] = useState(readTreeWidth);
   const [mode, setMode] = useState<PaneMode>('span');
   const activeId = selectedSpanId ?? defaultSpanId;
 
@@ -72,29 +92,38 @@ const TraceWorkspace = ({
     setMode('span');
   };
 
+  // Labeled tabs, like Langfuse/LangSmith's detail pane, instead of unlabeled icons.
   const paneOptions = [
-    { value: 'span', icon: <AccountTreeRoundedIcon fontSize="small" />, tooltip: 'Span' },
-    { value: 'eval', icon: <FactCheckRoundedIcon fontSize="small" />, tooltip: `Evaluation (${judges.length + checks.length + metrics.length})` },
-    { value: 'prompts', icon: <TextSnippetRoundedIcon fontSize="small" />, tooltip: `Prompts (${promptObs.length})` },
+    { value: 'span', label: 'Span' },
+    { value: 'eval', label: `Evaluation · ${judges.length + checks.length + metrics.length}` },
+    { value: 'prompts', label: `Prompts · ${promptObs.length}`, disabled: promptObs.length === 0 },
   ];
 
-  const paneTitle = mode === 'span' ? 'Selected Span' : mode === 'eval' ? 'Evaluation' : 'Prompts';
+  const paneTitle = mode === 'span' ? selectedObs?.name ?? 'Span' : mode === 'eval' ? 'Evaluation' : 'Prompts';
 
   return (
     <Stack
       direction="row"
-      spacing={1.5}
+      spacing={2}
       height="99%"
       width="100%"
       overflow="hidden"
     >
-      <Box
-        sx={{
-          width: 340,
-          minWidth: 280,
-          maxWidth: 400,
-          flexShrink: 0,
-          height: '100%',
+      {/* Drag the right edge to widen the tree; same handle as the Compare tab's split. */}
+      <Resizable
+        defaultSize={{ width: treeWidth, height: '100%' }}
+        minWidth={240}
+        maxWidth="65%"
+        enable={{ right: true }}
+        onResizeStop={(_e, _dir, ref) => saveTreeWidth(ref.offsetWidth)}
+        style={{ flexShrink: 0, position: 'relative' }}
+        handleStyles={{ right: { width: 16, right: -16, zIndex: 10 } }}
+        handleComponent={{
+          right: (
+            <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'ew-resize' }}>
+              <MoreVertRoundedIcon sx={{ color: 'action.active' }} />
+            </Box>
+          ),
         }}
       >
         <ResponsiveCardTable
@@ -114,11 +143,11 @@ const TraceWorkspace = ({
         >
           <Stack spacing={0} sx={{ height: '100%' }}>
             {observations.length > 0 && (
-              <Box sx={{ px: 1.5, pt: 1.25, pb: 1 }}>
+              <Box sx={{ px: 1.5, py: 1, borderBottom: 1, borderColor: 'divider' }}>
                 <TimelineSummary observations={observations} />
               </Box>
             )}
-            <Box sx={{ flex: 1, overflow: 'auto', px: view === 'list' ? 0.75 : 0, pb: 1 }}>
+            <Box sx={{ flex: 1, overflow: 'auto', px: view === 'list' ? 0.75 : 0, py: 0.75 }}>
               {view === 'list' ? (
                 <SpanTree observations={observations} selectedId={activeId} onSelect={onSelectSpan} />
               ) : (
@@ -127,7 +156,7 @@ const TraceWorkspace = ({
             </Box>
           </Stack>
         </ResponsiveCardTable>
-      </Box>
+      </Resizable>
 
       <Box sx={{ flex: 1, minWidth: 0, height: '100%' }}>
         <ResponsiveCardTable
@@ -183,11 +212,12 @@ const TraceWorkspace = ({
   );
 };
 
+/** One quiet line instead of a wrap of pills: "9 spans · 7 generation · 1 retriever · 1 error". */
 const TimelineSummary = ({ observations }: { observations: Observation[] }) => {
   const theme = useTheme();
 
   const byType = observations.reduce<Record<string, number>>((acc, observation) => {
-    const type = (observation.type ?? '').toUpperCase() || 'UNKNOWN';
+    const type = (observation.type ?? '').toLowerCase() || 'unknown';
     acc[type] = (acc[type] ?? 0) + 1;
     return acc;
   }, {});
@@ -197,54 +227,23 @@ const TimelineSummary = ({ observations }: { observations: Observation[] }) => {
   ).length;
 
   return (
-    <Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexWrap: 'wrap', rowGap: 0.75 }}>
-      <CountPill color={theme.palette.text.secondary} label="SPANS" value={observations.length} />
+    <Stack direction="row" spacing={1.25} alignItems="center" sx={{ overflow: 'hidden', whiteSpace: 'nowrap' }}>
+      <Typography variant="caption" sx={{ fontWeight: 700 }}>
+        {observations.length} spans
+      </Typography>
       {Object.entries(byType).map(([type, count]) => (
-        <CountPill key={type} color={colorForType(type)} label={type} value={count} />
+        <Stack key={type} direction="row" spacing={0.5} alignItems="center">
+          <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: colorForType(type.toUpperCase()) }} />
+          <Typography variant="caption" color="text.secondary">{count} {type}</Typography>
+        </Stack>
       ))}
       {errors > 0 && (
-        <CountPill
-          color={theme.palette.error.main}
-          label="ERRORS"
-          value={errors}
-          icon={<ErrorOutlineRoundedIcon sx={{ fontSize: 12 }} />}
-        />
+        <Typography variant="caption" sx={{ color: theme.palette.error.main, fontWeight: 700 }}>
+          {errors} error{errors === 1 ? '' : 's'}
+        </Typography>
       )}
     </Stack>
   );
 };
-
-const CountPill = ({
-  color,
-  label,
-  value,
-  icon,
-}: {
-  color: string;
-  label: string;
-  value: number;
-  icon?: React.ReactNode;
-}) => (
-  <Box
-    sx={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 0.5,
-      px: 0.85,
-      py: 0.3,
-      borderRadius: 999,
-      bgcolor: alpha(color, 0.1),
-      border: `1px solid ${alpha(color, 0.3)}`,
-    }}
-  >
-    {icon ?? <Box sx={{ width: 7, height: 7, borderRadius: '50%', bgcolor: color }} />}
-    <Typography component="span" sx={{ fontSize: '0.62rem', fontWeight: 700, color }}>
-      {value}
-    </Typography>
-    <Typography component="span" sx={{ fontSize: '0.58rem', color: 'text.secondary'}}>
-      {label}
-    </Typography>
-  </Box>
-);
 
 export default TraceWorkspace;
