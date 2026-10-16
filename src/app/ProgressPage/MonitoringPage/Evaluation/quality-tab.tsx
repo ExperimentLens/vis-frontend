@@ -172,7 +172,7 @@ export default function QualityTab({ details, tracesLoading, scores, totalScores
         </Grid>
       )}
 
-      {hasTraces && (
+      {/* {hasTraces && (
         <Grid size={{ xs: 12 }} sx={{ textAlign: 'left' }}>
           <Button
             size="small"
@@ -187,7 +187,7 @@ export default function QualityTab({ details, tracesLoading, scores, totalScores
             </Box>
           )}
         </Grid>
-      )}
+      )} */}
     </Grid>
   );
 }
