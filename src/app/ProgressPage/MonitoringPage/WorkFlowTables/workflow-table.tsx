@@ -450,14 +450,14 @@ const TRACE_GRID_SX = {
   display: 'grid',
   // Fixed-width tracks (no fr) so the stats sit right after the trace name and
   // any spare width falls to the right edge instead of between columns.
-  gridTemplateColumns: 'minmax(140px, 260px) minmax(80px, 120px) 100px 70px 100px 52px 52px 48px',
+  gridTemplateColumns: 'minmax(140px, 260px) minmax(80px, 120px) 100px 70px 100px 52px 52px 48px 84px',
   columnGap: 1.5,
   alignItems: 'center',
   width: '100%',
   minWidth: 0,
 } as const;
 
-const TRACE_COLUMN_LABELS = ['Trace', 'Model', 'Latency', 'Tokens', 'Cost', 'Judges', 'Checks', 'Errors'];
+const TRACE_COLUMN_LABELS = ['Trace', 'Model', 'Latency', 'Tokens', 'Cost', 'Judges', 'Checks', 'Errors', 'Status'];
 
 const WorkflowIdCell = ({
   row,
@@ -503,6 +503,7 @@ const WorkflowIdCell = ({
 
   if (row.isTraceRow) {
     const annotationTone = (row.annotationTone as ReviewTone | undefined) ?? 'good';
+    const tone = (row.tone as ReviewTone | undefined) ?? 'good';
     const cost = typeof row.cost === 'number' ? row.cost : 0;
     const tokens = typeof row.tokens === 'number' ? row.tokens : 0;
     const latencyMs = typeof row.latencyMs === 'number' ? row.latencyMs : 0;
@@ -551,7 +552,7 @@ const WorkflowIdCell = ({
               <Typography
                 key={label}
                 variant="caption"
-                sx={{ fontSize: '0.6rem', fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4, textAlign: i < 2 ? 'left' : 'right' }}
+                sx={{ fontSize: '0.6rem', fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4, textAlign: i < 2 || label === 'Status' ? 'left' : 'right' }}
               >
                 {label}
               </Typography>
@@ -574,6 +575,20 @@ const WorkflowIdCell = ({
           {stat(rateLabel(judgeRate), rateColor(judgeRate))}
           {stat(rateLabel(checkRate), rateColor(checkRate))}
           {errorRate > 0 ? stat(`${Math.round(errorRate * 100)}%`, TONE_COLOR.bad) : stat('—')}
+          <Tooltip title={`Judge pass ${rateLabel(judgeRate)} · Check pass ${rateLabel(checkRate)} · Errors ${Math.round(errorRate * 100)}%`}>
+            <Chip
+              size="small"
+              label={TONE_LABEL[tone]}
+              sx={{
+                justifySelf: 'start',
+                fontSize: '0.65rem',
+                height: 20,
+                fontWeight: 700,
+                bgcolor: alpha(TONE_COLOR[tone], 0.12),
+                color: TONE_COLOR[tone],
+              }}
+            />
+          </Tooltip>
         </Box>
       </Box>
     );
@@ -1237,32 +1252,9 @@ export default function WorkflowTable() {
             return {
               ...base,
               renderCell: params => {
-                if (params.row.isTraceStatus) return null;
-
-                if (params.row.isTraceRow) {
-                  const tone = (params.row.tone as ReviewTone | undefined) ?? 'good';
-                  const judgeRate = params.row.judgePassRate as number | null;
-                  const checkRate = params.row.checkPassRate as number | null;
-                  const errorRate = typeof params.row.errorRate === 'number' ? params.row.errorRate : 0;
-
-                  return (
-                    <Tooltip
-                      title={`Judge pass ${judgeRate === null || judgeRate === undefined ? '—' : `${Math.round(judgeRate * 100)}%`} · Check pass ${checkRate === null || checkRate === undefined ? '—' : `${Math.round(checkRate * 100)}%`} · Errors ${Math.round(errorRate * 100)}%`}
-                    >
-                      <Chip
-                        size="small"
-                        label={TONE_LABEL[tone]}
-                        sx={{
-                          fontSize: '0.65rem',
-                          height: 20,
-                          fontWeight: 700,
-                          bgcolor: alpha(TONE_COLOR[tone], 0.12),
-                          color: TONE_COLOR[tone],
-                        }}
-                      />
-                    </Tooltip>
-                  );
-                }
+                // Trace rows show their tone chip inline with the other trace stats
+                // (see WorkflowIdCell), not under the session status column.
+                if (params.row.isTraceStatus || params.row.isTraceRow) return null;
 
                 return (
                   <ProgressBar
