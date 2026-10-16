@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Box, Button, Chip, CircularProgress, Grid, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Grid, Stack, Typography } from '@mui/material';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
 import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
 import SearchableSelect from '../../../../shared/components/searchable-select';
@@ -46,7 +46,7 @@ interface Props {
  * then the trace-level judges, issue scan and raw scores once traces have loaded.
  */
 export default function QualityTab({ details, tracesLoading, scores, totalScores, onDownloadScoresCsv, runNameById }: Props) {
-  const { records, completedTotal, filtered } = useInsightRecords();
+  const { records } = useInsightRecords();
   const openTraces = useOpenTraces();
   const workflows = useAppSelector((s: RootState) => s.progressPage.workflows.data);
 
@@ -119,11 +119,6 @@ export default function QualityTab({ details, tracesLoading, scores, totalScores
               <Typography variant="caption" color="text.secondary">Loading traces…</Typography>
             </Stack>
           )}
-          <Chip
-            size="small"
-            variant="outlined"
-            label={filtered ? `${records.length} of ${completedTotal} completed runs (runs table filters applied)` : `${records.length} completed runs`}
-          />
         </Stack>
       </Grid>
 

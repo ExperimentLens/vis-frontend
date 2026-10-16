@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Box, Stack, Tooltip, Typography, useTheme } from '@mui/material';
+import { Box, Stack, Tooltip, useTheme } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid';
 import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
 import SearchableSelect from '../../../../shared/components/searchable-select';
@@ -69,9 +69,9 @@ export default function BaselineComparisonCard({ param, groups, baseline, onBase
         headerAlign: 'right',
         align: 'right',
         renderCell: params => (
-          <Typography variant="body2" sx={{ fontFamily: MONO, fontWeight: 700, color: (params.row as Row).regressions ? 'error.main' : 'success.main' }}>
+          <Box component="span" sx={{ fontFamily: MONO, fontSize: '0.8rem', fontWeight: 700, color: (params.row as Row).regressions ? 'error.main' : 'success.main' }}>
             {(params.row as Row).regressions}
-          </Typography>
+          </Box>
         ),
       },
       ...metrics.map<GridColDef>(metric => ({
