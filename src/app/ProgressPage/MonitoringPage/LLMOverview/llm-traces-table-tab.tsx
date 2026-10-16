@@ -171,7 +171,7 @@ export default function LlmTracesTableTab() {
   );
 
   return (
-    <Stack direction="row" spacing={1.25} sx={{ height: '100%', minHeight: 0, pt: 1.25 }}>
+    <Stack direction="row" spacing={1.25} sx={{ flex: 1, minHeight: 0 }}>
       <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, borderRadius: 1.5, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {toolbar}
 
