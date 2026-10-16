@@ -1,4 +1,4 @@
-import { Box, Paper, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Table, TableBody, TableCell, TableHead, TableRow, Tooltip, Typography, alpha, useTheme } from '@mui/material';
 import { MONO } from '../../../../shared/models/observability/agentic-conventions';
 import type { CaseGrid, GridCell } from '../../../../shared/utils/trace-explorer';
 
@@ -37,7 +37,7 @@ export default function CaseGridView({ grid, selected, onSelect }: Props) {
   };
 
   return (
-    <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, borderRadius: 1.5, overflow: 'auto' }}>
+    <Box sx={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
       <Table size="small" stickyHeader sx={{ borderCollapse: 'separate' }}>
         <TableHead>
           <TableRow>
@@ -103,6 +103,6 @@ export default function CaseGridView({ grid, selected, onSelect }: Props) {
           ))}
         </TableBody>
       </Table>
-    </Paper>
+    </Box>
   );
 }

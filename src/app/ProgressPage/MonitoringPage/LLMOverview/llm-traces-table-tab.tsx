@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Button, Chip, CircularProgress, Paper, Stack, Typography } from '@mui/material';
+import { Box, Chip, CircularProgress, IconButton, InputAdornment, Paper, Stack, TextField, Toolbar, Tooltip, Typography } from '@mui/material';
+import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -12,7 +13,7 @@ import { caseGrid, defaultBaseline, FILTER_QUERY_KEYS, filterOptions, filterTrac
 import type { GridCell, TraceFilters } from '../../../../shared/utils/trace-explorer';
 import BaselineCompare from '../Traces/baseline-compare';
 import CaseGridView from '../Traces/case-grid';
-import TraceFilterBar from '../Traces/trace-filter-bar';
+import TraceFiltersButton from '../Traces/trace-filters-button';
 import TraceList from '../Traces/trace-list';
 import TracePeekPanel from '../Traces/trace-peek-panel';
 import { useLlmSessionTraces } from './use-llm-session-traces';
@@ -127,88 +128,108 @@ export default function LlmTracesTableTab() {
 
   const failing = allRows.filter(r => r.status === 'fail' || r.status === 'error').length;
 
+  // Same shape as the Sessions table: a dense toolbar on the card, view switch on the left,
+  // search and icon actions (filters, refresh) on the right.
+  const toolbar = (
+    <Toolbar
+      variant="dense"
+      sx={{ minHeight: 44, height: 44, '@media (min-width:600px)': { minHeight: 44, height: 44 }, flex: '0 0 auto', gap: 1, px: 1.5, borderBottom: 1, borderColor: 'divider' }}
+    >
+      <SegmentedToggle
+        uppercase
+        aria-label="Traces view"
+        value={view}
+        onChange={v => { setView(v as 'list' | 'grid'); setSelectedId(null); setCell(null); }}
+        options={[{ value: 'list', label: 'List' }, { value: 'grid', label: 'Case grid' }]}
+      />
+      <Typography variant="caption" color="text.secondary" noWrap sx={{ ml: 0.5, minWidth: 0 }}>
+        {rows.length === allRows.length ? `${allRows.length} traces` : `${rows.length} of ${allRows.length} traces`} · {failing} failing
+      </Typography>
+      {anyLoading && <CircularProgress size={14} />}
+      <Box sx={{ flex: 1 }} />
+      {chartTraceIds && (
+        <Chip size="small" color="primary" variant="outlined" label={`${chartTraceIds.length} from chart`} onDelete={clearChartSelection} />
+      )}
+      <TextField
+        id="trace-search"
+        size="small"
+        placeholder="Search questions and answers"
+        value={filters.search}
+        onChange={e => setFilters({ ...filters, search: e.target.value })}
+        sx={{ width: { xs: 160, md: 240 }, '& .MuiInputBase-root': { height: 30, fontSize: '0.8rem' } }}
+        slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchRoundedIcon fontSize="small" /></InputAdornment> } }}
+      />
+      <TraceFiltersButton filters={filters} onChange={setFilters} options={options} />
+      <Tooltip title="Refresh traces">
+        <span>
+          <IconButton size="small" onClick={refresh} disabled={anyLoading}>
+            <RefreshRoundedIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
+    </Toolbar>
+  );
+
   return (
-    <Stack spacing={1.25} sx={{ height: '100%', minHeight: 0, pt: 1.25 }}>
-      <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ flexShrink: 0 }}>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <TraceFilterBar filters={filters} onChange={setFilters} options={options} />
-        </Box>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0, pt: 0.5 }}>
-          {chartTraceIds && (
-            <Chip size="small" color="primary" variant="outlined" label={`${chartTraceIds.length} from chart`} onDelete={clearChartSelection} />
-          )}
-          <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
-            {rows.length} of {allRows.length} traces · {failing} failing
-          </Typography>
-          {anyLoading && <CircularProgress size={14} />}
-          <SegmentedToggle
-            size="small"
-            aria-label="Traces view"
-            value={view}
-            onChange={v => { setView(v as 'list' | 'grid'); setSelectedId(null); setCell(null); }}
-            options={[{ value: 'list', label: 'List' }, { value: 'grid', label: 'Case grid' }]}
+    <Stack direction="row" spacing={1.25} sx={{ height: '100%', minHeight: 0, pt: 1.25 }}>
+      <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, borderRadius: 1.5, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+        {toolbar}
+
+        {!hasData && anyLoading && (
+          <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, gap: 1.5 }}>
+            <CircularProgress size={22} />
+            <Typography variant="body2" color="text.secondary">Fetching traces…</Typography>
+          </Stack>
+        )}
+
+        {!hasData && !anyLoading && (
+          <InfoMessage
+            message="No traces found for this experiment's runs."
+            type="info"
+            icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
+            fullHeight
           />
-          <Button size="small" startIcon={<RefreshRoundedIcon />} onClick={refresh} disabled={anyLoading}>Refresh</Button>
-        </Stack>
-      </Stack>
+        )}
 
-      {!hasData && anyLoading && (
-        <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, gap: 1.5 }}>
-          <CircularProgress size={22} />
-          <Typography variant="body2" color="text.secondary">Fetching traces…</Typography>
-        </Stack>
-      )}
+        {hasData && (
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
+            {view === 'grid' && rows.length > 0 ? (
+              <CaseGridView grid={grid} selected={cell} onSelect={selectCell} />
+            ) : rows.length === 0 ? (
+              <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, gap: 1 }}>
+                <Typography variant="body2" color="text.secondary">No traces match these filters.</Typography>
+              </Stack>
+            ) : (
+              <TraceList rows={rows} selectedId={selectedId} onSelect={setSelectedId} compact={Boolean(selected)} />
+            )}
+          </Box>
+        )}
+      </Paper>
 
-      {!hasData && !anyLoading && (
-        <InfoMessage
-          message="No traces found for this experiment's runs."
-          type="info"
-          icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
-          fullHeight
-        />
-      )}
-
-      {hasData && (
-        <Stack direction="row" spacing={1.25} sx={{ flex: 1, minHeight: 0 }}>
-          {view === 'grid' && rows.length > 0 ? (
-            <CaseGridView grid={grid} selected={cell} onSelect={selectCell} />
-          ) : (
-            <Paper variant="outlined" sx={{ flex: 1, minWidth: 0, borderRadius: 1.5, overflow: 'hidden', display: 'flex' }}>
-              {rows.length === 0 ? (
-                <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, gap: 1 }}>
-                  <Typography variant="body2" color="text.secondary">No traces match these filters.</Typography>
-                </Stack>
-              ) : (
-                <TraceList rows={rows} selectedId={selectedId} onSelect={setSelectedId} compact={Boolean(selected)} />
-              )}
-            </Paper>
-          )}
-          {selected && (
-            <Box sx={{ width: { xs: '100%', lg: '46%' }, flexShrink: 0, minHeight: 0 }}>
-              <TracePeekPanel
+      {selected && (
+        <Box sx={{ width: { xs: '100%', lg: '46%' }, flexShrink: 0, minHeight: 0 }}>
+          <TracePeekPanel
+            row={selected}
+            position={index + 1}
+            total={navRows.length}
+            onPrev={() => move(-1)}
+            onNext={() => move(1)}
+            onClose={() => { setSelectedId(null); setCell(null); }}
+            compareOpen={compareOpen}
+            onToggleCompare={() => setCompareOpen(o => !o)}
+            compare={(
+              <BaselineCompare
+                key={selected.id}
                 row={selected}
-                position={index + 1}
-                total={navRows.length}
-                onPrev={() => move(-1)}
-                onNext={() => move(1)}
-                onClose={() => { setSelectedId(null); setCell(null); }}
-                compareOpen={compareOpen}
-                onToggleCompare={() => setCompareOpen(o => !o)}
-                compare={(
-                  <BaselineCompare
-                    key={selected.id}
-                    row={selected}
-                    allRows={allRows}
-                    variants={options.variants}
-                    compareVariant={compareVariant || defaultBaseline(options.variants)}
-                    onCompareVariantChange={setCompareVariant}
-                  />
-                )}
-                onOpenFull={() => navigate(`/${experimentId}/workflow?workflowId=${selected.sessionId}&traceId=${selected.id}`)}
+                allRows={allRows}
+                variants={options.variants}
+                compareVariant={compareVariant || defaultBaseline(options.variants)}
+                onCompareVariantChange={setCompareVariant}
               />
-            </Box>
-          )}
-        </Stack>
+            )}
+            onOpenFull={() => navigate(`/${experimentId}/workflow?workflowId=${selected.sessionId}&traceId=${selected.id}`)}
+          />
+        </Box>
       )}
     </Stack>
   );
