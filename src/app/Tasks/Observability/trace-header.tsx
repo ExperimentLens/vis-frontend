@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import {
   Box,
   Chip,
-  Paper,
+  Popover,
   Stack,
   Tooltip,
   Typography,
@@ -19,6 +19,7 @@ import RuleRoundedIcon from '@mui/icons-material/RuleRounded';
 
 import { CopyButton, MetaChip } from './trace-ui';
 import { formatMs, MONO } from '../../../shared/models/observability/agentic-conventions';
+import { menuPaperSx } from '../../../shared/styles/card-surface';
 
 type SummaryChipTone =
   | 'default'
@@ -120,196 +121,94 @@ const TraceHeader = ({
   checksPassed,
 }: TraceHeaderProps) => {
   const theme = useTheme();
-  const [showAllTags, setShowAllTags] = useState(false);
+  const [detailsAnchor, setDetailsAnchor] = useState<HTMLElement | null>(null);
 
-  const hasMetadata =
-    Boolean(headerModel) ||
-    configEntries.length > 0 ||
-    Boolean(tags?.length);
-
-  // Config values (claim/prediction/temperature/...) plus dataset/workflow
-  // tags used to render as one unbroken row that wrapped across 2+ lines —
-  // cap what's visible by default and let the rest expand behind one chip,
-  // same overflow pattern as a crowded nav or a long filter-chip row.
-  const TAG_VISIBLE_COUNT = 5;
-  type TagItem =
-    | { kind: 'meta'; key: string; label: string; value: string }
-    | { kind: 'tag'; key: string; label: string };
-  const allTagItems: TagItem[] = [
-    ...(headerModel ? [{ kind: 'meta' as const, key: 'model', label: 'model', value: headerModel }] : []),
-    ...configEntries.map(([key, value]) => ({ kind: 'meta' as const, key, label: key, value: String(value) })),
-    ...(tags ?? []).map(t => ({ kind: 'tag' as const, key: t, label: t })),
+  // Config values and tags go behind one "+N details" chip, so the header stays one line.
+  const details = [
+    ...configEntries.map(([key, value]) => ({ key, label: key, value: String(value) as string | undefined })),
+    ...(tags ?? []).map(t => ({ key: `tag:${t}`, label: t, value: undefined as string | undefined })),
   ];
-  const visibleTagItems = showAllTags ? allTagItems : allTagItems.slice(0, TAG_VISIBLE_COUNT);
-  const hiddenTagCount = allTagItems.length - visibleTagItems.length;
 
-  const judgesTone: SummaryChipTone =
-    judgesCount === 0
-      ? 'default'
-      : judgesPassed === judgesCount
-        ? 'success'
-        : 'warning';
+  const tone = (passed: number, total: number): SummaryChipTone =>
+    total === 0 ? 'default' : passed === total ? 'success' : 'warning';
 
-  const checksTone: SummaryChipTone =
-    checksCount === 0
-      ? 'default'
-      : checksPassed === checksCount
-        ? 'success'
-        : 'warning';
+  const shortId = id.length > 14 ? `${id.slice(0, 6)}…${id.slice(-4)}` : id;
+
+  // Only the stats this trace actually has; "— tokens" and "$0.0000" were noise.
+  const stats: ReactNode[] = [
+    <SummaryChip key="duration" icon={<TimerOutlinedIcon />} label={formatMs(durationMs)} />,
+    totalTokens > 0 && <SummaryChip key="tokens" icon={<TokenRoundedIcon />} label={`${totalTokens.toLocaleString()} tokens`} />,
+    (totalCost ?? 0) > 0 && <SummaryChip key="cost" icon={<PaymentsRoundedIcon />} label={`$${(totalCost ?? 0).toFixed(4)}`} />,
+    judgesCount > 0 && <SummaryChip key="judges" icon={<GavelRoundedIcon />} label={`${judgesPassed}/${judgesCount} judges`} tone={tone(judgesPassed, judgesCount)} />,
+    checksCount > 0 && <SummaryChip key="checks" icon={<RuleRoundedIcon />} label={`${checksPassed}/${checksCount} checks`} tone={tone(checksPassed, checksCount)} />,
+    headerModel && <SummaryChip key="model" icon={<SmartToyRoundedIcon />} label={<Box component="span" sx={{ fontFamily: MONO, fontSize: '0.7rem' }}>{headerModel}</Box>} />,
+  ].filter(Boolean);
 
   return (
-    <Paper
-      elevation={0}
-      variant="outlined"
-      sx={{
-        px: 1.5,
-        py: 1,
-        borderRadius: 2,
-        background: theme.palette.customSurface.cardHeader,
-        borderColor: theme.palette.customGrey.main,
-      }}
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={1.5}
+      sx={{ px: 0.5, minHeight: 40, flexShrink: 0, borderBottom: `1px solid ${theme.palette.divider}`, overflow: 'hidden' }}
     >
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={1}
-        sx={{ flexWrap: 'wrap', rowGap: 0.75 }}
-      >
-        <SmartToyRoundedIcon sx={{ fontSize: 18, color: 'primary.main', flexShrink: 0 }} />
-
-        <Tooltip title={question} arrow>
-          <Typography
-            sx={{
-              flex: 1,
-              minWidth: 120,
-              fontSize: '0.92rem',
-              fontWeight: 700,
-              lineHeight: 1.3,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {question}
-          </Typography>
-        </Tooltip>
-
-        <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0 }}>
-          <Typography
-            variant="bodySm"
-            sx={{
-              color: 'text.secondary',
-              fontFamily: MONO,
-              fontSize: '0.66rem',
-            }}
-          >
-            {id}
-          </Typography>
-          <CopyButton text={id} />
-        </Stack>
-      </Stack>
-
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={1}
-        divider={<Dot />}
-        sx={{ mt: 0.75, flexWrap: 'wrap', rowGap: 0.5 }}
-      >
-        <SummaryChip
-          icon={<TimerOutlinedIcon />}
-          label={formatMs(durationMs)}
-        />
-
-        <SummaryChip
-          icon={<TokenRoundedIcon />}
-          label={
-            totalTokens
-              ? `${totalTokens.toLocaleString()} tokens`
-              : '— tokens'
-          }
-        />
-
-        <SummaryChip
-          icon={<PaymentsRoundedIcon />}
-          label={`$${(totalCost ?? 0).toFixed(4)}`}
-        />
-
-        <SummaryChip
-          icon={<GavelRoundedIcon />}
-          label={
-            judgesCount
-              ? `${judgesPassed}/${judgesCount} judges`
-              : '— judges'
-          }
-          tone={judgesTone}
-        />
-
-        <SummaryChip
-          icon={<RuleRoundedIcon />}
-          label={
-            checksCount
-              ? `${checksPassed}/${checksCount} checks`
-              : '— checks'
-          }
-          tone={checksTone}
-        />
-      </Stack>
-
-      {hasMetadata && (
-        <Stack
-          direction="row"
-          spacing={0.5}
+      <Tooltip title={question} arrow>
+        <Typography
           sx={{
-            mt: 0.75,
-            pt: 0.75,
-            borderTop: `1px solid ${theme.palette.divider}`,
-            flexWrap: 'wrap',
-            rowGap: 0.5,
+            flex: '0 1 auto',
+            minWidth: 120,
+            fontSize: '0.92rem',
+            fontWeight: 700,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
-          {visibleTagItems.map(item => (
-            item.kind === 'meta'
-              ? <MetaChip key={item.key} label={item.label} value={item.value} />
-              : (
-                <Chip
-                  key={item.key}
-                  size="small"
-                  label={item.label}
-                  variant="outlined"
-                  sx={{ height: 20, fontSize: '0.62rem' }}
-                />
-              )
-          ))}
+          {question}
+        </Typography>
+      </Tooltip>
 
-          {hiddenTagCount > 0 && (
-            <Chip
-              size="small"
-              label={`+${hiddenTagCount} more`}
-              onClick={() => setShowAllTags(true)}
-              sx={{
-                height: 20,
-                fontSize: '0.62rem',
-                fontWeight: 700,
-                color: 'primary.main',
-                bgcolor: 'transparent',
-                border: `1px dashed ${theme.palette.primary.main}`,
-                cursor: 'pointer',
-              }}
-            />
-          )}
+      <Stack direction="row" alignItems="center" spacing={1} divider={<Dot />} sx={{ flexShrink: 0 }}>
+        {stats}
+      </Stack>
 
-          {showAllTags && allTagItems.length > TAG_VISIBLE_COUNT && (
-            <Chip
-              size="small"
-              label="Show less"
-              onClick={() => setShowAllTags(false)}
-              sx={{ height: 20, fontSize: '0.62rem', cursor: 'pointer' }}
-            />
-          )}
-        </Stack>
+      {details.length > 0 && (
+        <>
+          <Chip
+            size="small"
+            variant="outlined"
+            label={`+${details.length} details`}
+            onClick={e => setDetailsAnchor(e.currentTarget)}
+            sx={{ height: 20, fontSize: '0.62rem', fontWeight: 600, flexShrink: 0 }}
+          />
+          <Popover
+            open={Boolean(detailsAnchor)}
+            anchorEl={detailsAnchor}
+            onClose={() => setDetailsAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+            slotProps={{ paper: { elevation: 0, sx: [menuPaperSx({ width: 360 }), { p: 1.25, overflowY: 'auto' }] } }}
+          >
+            <Stack direction="row" spacing={0.5} sx={{ flexWrap: 'wrap', rowGap: 0.5 }} useFlexGap>
+              {details.map(item => (
+                item.value !== undefined
+                  ? <MetaChip key={item.key} label={item.label} value={item.value} />
+                  : <Chip key={item.key} size="small" label={item.label} variant="outlined" sx={{ height: 20, fontSize: '0.62rem' }} />
+              ))}
+            </Stack>
+          </Popover>
+        </>
       )}
-    </Paper>
+
+      <Box sx={{ flex: 1 }} />
+
+      <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0 }}>
+        <Tooltip title={id} arrow>
+          <Typography variant="bodySm" sx={{ color: 'text.secondary', fontFamily: MONO, fontSize: '0.66rem' }}>
+            {shortId}
+          </Typography>
+        </Tooltip>
+        <CopyButton text={id} />
+      </Stack>
+    </Stack>
   );
 };
 
