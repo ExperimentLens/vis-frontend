@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Chip, Grid, Stack } from '@mui/material';
+import { Grid, Stack } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
@@ -53,7 +53,7 @@ const qualityTone = (value: number | null): Tone =>
 
 /** Landing view of an experiment: headline numbers, which configuration wins, and what needs a look. */
 export default function ExperimentOverview() {
-  const { records, completedTotal, filtered } = useInsightRecords();
+  const { records } = useInsightRecords();
   const workflows = useAppSelector((s: RootState) => s.progressPage.workflows.data);
 
   const openTraces = useOpenTraces();
@@ -127,20 +127,9 @@ export default function ExperimentOverview() {
   return (
     <Grid container spacing={1.5} sx={{ pb: 1.5, flexShrink: 0 }}>
       <Grid size={{ xs: 12 }}>
-        <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', flexWrap: 'wrap', rowGap: 1 }}>
-          {param && <Chip size="small" variant="outlined" label={`grouped by ${param} · baseline ${baseline}`} />}
-          <Chip
-            size="small"
-            variant="outlined"
-            label={filtered ? `${records.length} of ${completedTotal} completed runs (runs table filters applied)` : `${records.length} completed runs`}
-          />
-        </Stack>
-      </Grid>
-
-      <Grid size={{ xs: 12 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1}>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
           <StatTile
-            icon={<EmojiEventsRoundedIcon fontSize="small" />}
+            icon={<EmojiEventsRoundedIcon sx={{ fontSize: 15 }} />}
             label="Quality score"
             value={quality === null ? '—' : `${Math.round(quality * 100)}%`}
             sub={best ? `best: ${best.group} (${Math.round(best.scores[QUALITY_SCORE].mean * 100)}%)` : source.label || 'no quality metric logged'}
@@ -148,7 +137,7 @@ export default function ExperimentOverview() {
             trend={smooth(seriesOverTime(scored, startTimeById, QUALITY_SCORE))}
           />
           <StatTile
-            icon={<ShieldOutlinedIcon fontSize="small" />}
+            icon={<ShieldOutlinedIcon sx={{ fontSize: 15 }} />}
             label="Passed safety checks"
             value={safety.length ? `${Math.round((safety.filter(Boolean).length / safety.length) * 100)}%` : '—'}
             sub={safety.length ? `${safety.filter(Boolean).length} of ${safety.length} runs` : 'no safety evals logged'}
@@ -156,21 +145,21 @@ export default function ExperimentOverview() {
             trend={smooth(orderedSafety)}
           />
           <StatTile
-            icon={<SpeedRoundedIcon fontSize="small" />}
+            icon={<SpeedRoundedIcon sx={{ fontSize: 15 }} />}
             label="Latency p95"
             value={p95 === null ? '—' : formatMs(p95)}
             sub={latencies.length ? `median ${formatMs(percentile(latencies, 50) ?? 0)}` : 'no latency_ms logged'}
             trend={smooth(seriesOverTime(scored, startTimeById, 'latency_ms'))}
           />
           <StatTile
-            icon={<PaymentsRoundedIcon fontSize="small" />}
+            icon={<PaymentsRoundedIcon sx={{ fontSize: 15 }} />}
             label={totalCost > 0 ? 'Total cost' : 'Total tokens'}
             value={totalCost > 0 ? `$${totalCost.toFixed(4)}` : totalTokens ? totalTokens.toLocaleString() : '—'}
             sub={totalCost > 0 ? `${totalTokens.toLocaleString()} tokens` : 'no cost tracked'}
             trend={smooth(seriesOverTime(scored, startTimeById, totalCost > 0 ? 'cost_usd' : 'total_tokens'))}
           />
           <StatTile
-            icon={<ScienceRoundedIcon fontSize="small" />}
+            icon={<ScienceRoundedIcon sx={{ fontSize: 15 }} />}
             label="Runs"
             value={`${finished.length - failed} / ${finished.length}`}
             sub={failed ? `${failed} failed` : 'none failed'}

@@ -61,23 +61,28 @@ const StatTile = ({ icon, label, value, sub, tone = 'default', trend }: StatTile
         border: `1px solid ${alpha(color, 0.18)}`,
       }}
     >
-      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.25 }}>
-        <Box sx={{ color, display: 'inline-flex' }}>{icon}</Box>
-        <Typography variant="captionLabel" sx={{ color: 'text.secondary' }}>
-          {label}
-        </Typography>
-      </Stack>
-      <Stack direction="row" alignItems="flex-end" justifyContent="space-between" spacing={1}>
-        <Typography variant="statValue" sx={{ color }}>
-          {value}
-        </Typography>
+      {/* Sparkline spans both rows and the sub sits beside the value, so every tile keeps the same height. */}
+      <Stack direction="row" alignItems="center" spacing={1}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.25 }}>
+            <Box sx={{ color, display: 'inline-flex' }}>{icon}</Box>
+            <Typography variant="captionLabel" noWrap sx={{ color: 'text.secondary' }}>
+              {label}
+            </Typography>
+          </Stack>
+          <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ minWidth: 0 }}>
+            <Typography variant="statValue" noWrap sx={{ color, flexShrink: 0 }}>
+              {value}
+            </Typography>
+            {sub && (
+              <Typography variant="bodySm" noWrap title={sub} sx={{ color: 'text.secondary', fontSize: '0.58rem', minWidth: 0 }}>
+                {sub}
+              </Typography>
+            )}
+          </Stack>
+        </Box>
         {trend && trend.length > 1 && <Sparkline values={trend} color={color} />}
       </Stack>
-      {sub && (
-        <Typography variant="bodySm" sx={{ color: 'text.secondary', fontSize: '0.58rem', display: 'block' }}>
-          {sub}
-        </Typography>
-      )}
     </Paper>
   );
 };
