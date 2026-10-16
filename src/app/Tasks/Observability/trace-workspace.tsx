@@ -92,6 +92,12 @@ const TraceWorkspace = ({
     setMode('span');
   };
 
+  // Picking a span in the tree while on Evaluation shows that span; Prompts already follows the selection.
+  const selectFromTree = (id: string) => {
+    onSelectSpan(id);
+    if (mode === 'eval') setMode('span');
+  };
+
   // Labeled tabs, like Langfuse/LangSmith's detail pane, instead of unlabeled icons.
   const paneOptions = [
     { value: 'span', label: 'Span' },
@@ -149,9 +155,9 @@ const TraceWorkspace = ({
             )}
             <Box sx={{ flex: 1, overflow: 'auto', px: view === 'list' ? 0.75 : 0, py: 0.75 }}>
               {view === 'list' ? (
-                <SpanTree observations={observations} selectedId={activeId} onSelect={onSelectSpan} />
+                <SpanTree observations={observations} selectedId={activeId} onSelect={selectFromTree} />
               ) : (
-                <TraceGraph observations={observations} selectedId={activeId} onSelect={onSelectSpan} />
+                <TraceGraph observations={observations} selectedId={activeId} onSelect={selectFromTree} />
               )}
             </Box>
           </Stack>
