@@ -109,6 +109,10 @@ const EvaluationContent = ({ judges, checks, metrics, humanScores, onAnnotateTra
   const selected = allItems.find(item => item.key === selectedKey);
 
   const onSelect = (key: string) => setSelectedKey(prev => (prev === key ? null : key));
+  // The rationale opens right under the group the clicked cell belongs to.
+  const rationaleFor = (group: Assessment['group']) => (
+    <RationalePanel selected={selected?.group === group ? selected : undefined} onJumpToSpan={onJumpToSpan} />
+  );
 
   if (allItems.length === 0 && humanScores.length === 0) {
     return (
@@ -151,6 +155,7 @@ const EvaluationContent = ({ judges, checks, metrics, humanScores, onAnnotateTra
               <BoolCell key={item.key} item={item} selected={item.key === selectedKey} onSelect={onSelect} onJumpToSpan={onJumpToSpan} />
             ))}
           </HeatGrid>
+          {rationaleFor('judge')}
         </Section>
       )}
 
@@ -161,6 +166,7 @@ const EvaluationContent = ({ judges, checks, metrics, humanScores, onAnnotateTra
               <BoolCell key={item.key} item={item} selected={item.key === selectedKey} onSelect={onSelect} onJumpToSpan={onJumpToSpan} />
             ))}
           </HeatGrid>
+          {rationaleFor('check')}
         </Section>
       )}
 
@@ -178,10 +184,9 @@ const EvaluationContent = ({ judges, checks, metrics, humanScores, onAnnotateTra
               />
             ))}
           </HeatGrid>
+          {rationaleFor('metric')}
         </Section>
       )}
-
-      <RationalePanel selected={selected} onJumpToSpan={onJumpToSpan} />
     </Stack>
   );
 };
@@ -422,58 +427,50 @@ const RationalePanel = ({ selected, onJumpToSpan }: { selected: Assessment | und
         : 'FAIL';
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 2, borderLeft: `3px solid ${color}`, p: 1.25, minHeight: 64 }}>
-      <SectionLabel>Rationale</SectionLabel>
-      <Collapse in={Boolean(selected)} unmountOnExit>
-        {selected && (
-          <>
-            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 0.5 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>{selected.name}</Typography>
+    <Collapse in={Boolean(selected)} unmountOnExit>
+      {selected && (
+        <Paper variant="outlined" sx={{ mt: 0.75, borderRadius: 2, borderLeft: `3px solid ${color}`, p: 1.25 }}>
+          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 0.5 }}>
+            <Typography sx={{ fontWeight: 700, fontSize: '0.8rem' }}>{selected.name}</Typography>
+            <Box
+              sx={{
+                px: 0.75,
+                py: 0.1,
+                borderRadius: 999,
+                bgcolor: alpha(color, 0.14),
+                color,
+                fontWeight: 700,
+                fontSize: '0.62rem',
+              }}
+            >
+              {verdict}
+            </Box>
+            <Box sx={{ flexGrow: 1 }} />
+            {selected.observationId && onJumpToSpan && (
               <Box
+                onClick={() => onJumpToSpan(selected.observationId!)}
                 sx={{
-                  px: 0.75,
-                  py: 0.1,
-                  borderRadius: 999,
-                  bgcolor: alpha(color, 0.14),
-                  color,
-                  fontWeight: 700,
-                  fontSize: '0.62rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.4,
+                  cursor: 'pointer',
+                  color: 'primary.main',
+                  fontSize: '0.68rem',
+                  fontWeight: 600,
+                  '&:hover': { textDecoration: 'underline' },
                 }}
               >
-                {verdict}
+                <LaunchRoundedIcon sx={{ fontSize: 13 }} />
+                View span
               </Box>
-              <Box sx={{ flexGrow: 1 }} />
-              {selected.observationId && onJumpToSpan && (
-                <Box
-                  onClick={() => onJumpToSpan(selected.observationId!)}
-                  sx={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.4,
-                    cursor: 'pointer',
-                    color: 'primary.main',
-                    fontSize: '0.68rem',
-                    fontWeight: 600,
-                    '&:hover': { textDecoration: 'underline' },
-                  }}
-                >
-                  <LaunchRoundedIcon sx={{ fontSize: 13 }} />
-                  View span
-                </Box>
-              )}
-            </Stack>
-            <Typography variant="bodySm" sx={{ color: 'text.secondary' }}>
-              {selected.detail || 'No rationale recorded for this assessment.'}
-            </Typography>
-          </>
-        )}
-      </Collapse>
-      {!selected && (
-        <Typography variant="bodySm" color="text.secondary">
-          Select a cell above to read its rationale.
-        </Typography>
+            )}
+          </Stack>
+          <Typography variant="bodySm" sx={{ color: 'text.secondary' }}>
+            {selected.detail || 'No rationale recorded for this assessment.'}
+          </Typography>
+        </Paper>
       )}
-    </Paper>
+    </Collapse>
   );
 };
 
