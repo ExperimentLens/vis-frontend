@@ -290,7 +290,7 @@ export const progressPageSlice = createSlice({
 export const fetchAllExperiments = createAsyncThunk(
   'progressPage/fetch_all_experiments',
   async () => {
-    const limit = 50;
+    const limit = 100;
 
     const res = await experimentApi.get('', {
       params: {
