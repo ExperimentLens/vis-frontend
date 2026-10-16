@@ -7,6 +7,7 @@ import type { Score } from '../../shared/models/observability/score';
 import type { ScoreCreateRequest } from '../../shared/models/observability/score-create-request';
 import type { ScoresResponse } from '../../shared/models/observability/scores-response';
 import type { IssueScanRequest, IssueScanResponse } from '../../shared/models/observability/issue-scan';
+import { LANGFUSE_PROJECT_TAG } from '../../shared/models/observability/agentic-conventions';
 
 // The API's error body is a Spring-style object ({ timestamp, status, error,
 // message, path, ... }), not a plain string — pull the human-readable message
@@ -21,6 +22,17 @@ const extractErrorMessage = (error: unknown, fallback: string): string => {
     }
 
     return fallback;
+};
+
+// The Langfuse project comes from the open experiment's tag (written by the SDK).
+// Undefined is fine: axios drops it, and Langfuse resolves the project from the
+// API keys vis-api uses.
+const projectIdOf = (getState: () => unknown): string | undefined => {
+    const state = getState() as {
+        progressPage?: { experiment?: { data?: { tags?: Record<string, string> } | null } };
+    };
+
+    return state.progressPage?.experiment?.data?.tags?.[LANGFUSE_PROJECT_TAG] || undefined;
 };
 
 export interface SessionTraces {
@@ -85,10 +97,11 @@ const initialState: ObservabilityState = {
     },
 };
 
-export const getTraces = createAsyncThunk<TracesResponse, { projectId: string; sessionId?: string; userId?: string; }>(
+export const getTraces = createAsyncThunk<TracesResponse, { sessionId?: string; userId?: string; }>(
     'observability/getTraces',
-    async ({ projectId, sessionId, userId }, { rejectWithValue }) => {
+    async ({ sessionId, userId }, { getState, rejectWithValue }) => {
         try {
+            const projectId = projectIdOf(getState);
             const response = await api.get('/observability/traces', {
                 params: { projectId, sessionId, userId },
             });
@@ -113,12 +126,13 @@ export const getTrace = createAsyncThunk<TraceDetail, string>(
 
 export const fetchSessionTraceDetails = createAsyncThunk<
     { workflowId: string; details: TraceDetail[] },
-    { projectId: string; experimentId: string; workflowId: string },
+    { experimentId: string; workflowId: string },
     { rejectValue: string }
 >(
     'observability/fetchSessionTraceDetails',
-    async ({ projectId, experimentId, workflowId }, { rejectWithValue }) => {
+    async ({ experimentId, workflowId }, { getState, rejectWithValue }) => {
         try {
+            const projectId = projectIdOf(getState);
             const listResp = await api.get('/observability/traces', {
                 params: { projectId, userId: experimentId, sessionId: workflowId },
             });
@@ -189,12 +203,13 @@ export const createAnnotation = createAsyncThunk<
 // far more of those than human annotations).
 export const fetchAnnotations = createAsyncThunk<
     ScoresResponse,
-    { projectId: string; traceId?: string; name?: string; page?: number; limit?: number },
+    { traceId?: string; name?: string; page?: number; limit?: number },
     { rejectValue: string }
 >(
     'observability/fetchAnnotations',
-    async ({ projectId, traceId, name, page, limit }, { rejectWithValue }) => {
+    async ({ traceId, name, page, limit }, { getState, rejectWithValue }) => {
         try {
+            const projectId = projectIdOf(getState);
             if (page !== undefined || limit !== undefined) {
                 const response = await api.get('/observability/scores', {
                     params: { projectId, traceId, name, page, limit },

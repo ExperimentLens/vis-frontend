@@ -33,7 +33,7 @@ import SearchableSelect from '../../../../shared/components/searchable-select';
 import { getCache } from '../../../../shared/utils/localStorageCache';
 import { fetchSessionTraceDetails, selectSessionsMap } from '../../../../store/slices/observabilitySlice';
 import type { SessionTraces } from '../../../../store/slices/observabilitySlice';
-import { OBSERVABILITY_PROJECT_ID, formatMs, modelOf } from '../../../../shared/models/observability/agentic-conventions';
+import { formatMs, modelOf } from '../../../../shared/models/observability/agentic-conventions';
 import { rollup, toneFromRollup } from '../../../../shared/utils/observability-aggregates';
 import { isHumanScoreName, scoreTone, worstTone, TONE_COLOR, TONE_LABEL } from '../../../Tasks/Observability/score-dimensions';
 import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
@@ -605,7 +605,7 @@ const WorkflowIdCell = ({
     dispatch(setExpandedWorkflowTrace(workflowId));
 
     if (!isTraceExpanded && !sessionsMap[workflowId] && experimentId) {
-      dispatch(fetchSessionTraceDetails({ projectId: OBSERVABILITY_PROJECT_ID, experimentId, workflowId }));
+      dispatch(fetchSessionTraceDetails({ experimentId, workflowId }));
     }
   };
 

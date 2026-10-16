@@ -7,10 +7,10 @@ import type { Observation } from './observation';
  * way and any drift is fixed in one place.
  */
 
-export const MONO = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
+// Experiment tag the SDK writes with the Langfuse project its traces live in.
+export const LANGFUSE_PROJECT_TAG = 'langfuse.project_id';
 
-// Hardcoded until the backend exposes a project mapping per experiment.
-export const OBSERVABILITY_PROJECT_ID = 'cmp72x36n0006n207vrcgltju';
+export const MONO = '"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace';
 
 export type TokenInfo = { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
 export type GenInput = { prompt?: string; model?: string; temperature?: number } & Record<string, unknown>;

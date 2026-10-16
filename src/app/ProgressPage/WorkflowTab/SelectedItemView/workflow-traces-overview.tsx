@@ -12,7 +12,6 @@ import { fetchSessionTraceDetails, getTrace, selectSessionsMap } from '../../../
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 import {
   MONO,
-  OBSERVABILITY_PROJECT_ID,
   asText,
   formatMs,
   isJudge,
@@ -153,7 +152,7 @@ export default function WorkflowTracesOverview() {
 
   useEffect(() => {
     if (!experimentId || !workflowId || workflowId === 'none') return;
-    dispatch(fetchSessionTraceDetails({ projectId: OBSERVABILITY_PROJECT_ID, experimentId, workflowId }));
+    dispatch(fetchSessionTraceDetails({ experimentId, workflowId }));
   }, [dispatch, experimentId, workflowId]);
 
   const traces = useMemo(

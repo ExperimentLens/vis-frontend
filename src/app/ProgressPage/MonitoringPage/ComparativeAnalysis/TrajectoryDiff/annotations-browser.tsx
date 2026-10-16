@@ -5,7 +5,6 @@ import LaunchIcon from '@mui/icons-material/Launch';
 import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
 import { useAppDispatch, useAppSelector } from '../../../../../store/store';
 import { fetchAnnotations, selectAnnotations } from '../../../../../store/slices/observabilitySlice';
-import { OBSERVABILITY_PROJECT_ID } from '../../../../../shared/models/observability/agentic-conventions';
 import ResponsiveCardTable from '../../../../../shared/components/responsive-card-table';
 import InfoMessage from '../../../../../shared/components/InfoMessage';
 import Loader from '../../../../../shared/components/loader';
@@ -42,7 +41,7 @@ const AnnotationsBrowser = ({ traceSessionNames, traceNames, traceWorkflowIds, e
   const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchAnnotations({ projectId: OBSERVABILITY_PROJECT_ID }));
+    dispatch(fetchAnnotations({}));
   }, [dispatch]);
 
   const scoped = useMemo(

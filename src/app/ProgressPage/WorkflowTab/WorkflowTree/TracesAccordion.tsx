@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
 import { fetchAnnotations, fetchSessionTraceDetails, getTrace, getTraces, selectAnnotations } from '../../../../store/slices/observabilitySlice';
-import { MONO, OBSERVABILITY_PROJECT_ID } from '../../../../shared/models/observability/agentic-conventions';
+import { MONO } from '../../../../shared/models/observability/agentic-conventions';
 import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
 import { TONE_COLOR, TONE_LABEL, isHumanScoreName, scoreTone, worstTone } from '../../../Tasks/Observability/score-dimensions';
 
@@ -69,12 +69,12 @@ export default function TracesAccordion() {
   useEffect(() => {
     if (!experimentId || !workflowId || workflowId === 'none') return;
     dispatch(
-      getTraces({ projectId: OBSERVABILITY_PROJECT_ID, userId: experimentId, sessionId: workflowId }),
+      getTraces({ userId: experimentId, sessionId: workflowId }),
     );
   }, [dispatch, experimentId, workflowId]);
 
   useEffect(() => {
-    dispatch(fetchAnnotations({ projectId: OBSERVABILITY_PROJECT_ID }));
+    dispatch(fetchAnnotations({}));
   }, [dispatch]);
 
   // Deep link from the "All traces" table: land directly on the selected trace
@@ -124,7 +124,7 @@ export default function TracesAccordion() {
     dispatch(setSelectedId('traces-root'));
     dispatch(setSelectedItem({ type: 'traces-overview', data: { workflowId } }));
     if (experimentId) {
-      dispatch(fetchSessionTraceDetails({ projectId: OBSERVABILITY_PROJECT_ID, experimentId, workflowId }));
+      dispatch(fetchSessionTraceDetails({ experimentId, workflowId }));
     }
   };
 

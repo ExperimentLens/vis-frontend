@@ -11,7 +11,6 @@ import type { TraceDetail } from '../../../../../shared/models/observability/tra
 import { useAppDispatch, useAppSelector } from '../../../../../store/store';
 import { fetchSessionTraceDetails, selectSessionsMap } from '../../../../../store/slices/observabilitySlice';
 import { setHoveredWorkflow } from '../../../../../store/slices/monitorPageSlice';
-import { OBSERVABILITY_PROJECT_ID } from '../../../../../shared/models/observability/agentic-conventions';
 import { rollup } from '../../../../../shared/utils/observability-aggregates';
 import type { ExperimentRollup } from '../../../../../shared/utils/observability-aggregates';
 import InfoMessage from '../../../../../shared/components/InfoMessage';
@@ -70,7 +69,7 @@ export default function LlmTrajectoryDiff() {
   useEffect(() => {
     if (!experimentId) return;
     runIds.forEach(id =>
-      dispatch(fetchSessionTraceDetails({ projectId: OBSERVABILITY_PROJECT_ID, experimentId, workflowId: id })),
+      dispatch(fetchSessionTraceDetails({ experimentId, workflowId: id })),
     );
   }, [experimentId, idKey, runIds, dispatch]);
 

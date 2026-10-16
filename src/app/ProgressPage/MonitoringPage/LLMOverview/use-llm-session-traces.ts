@@ -9,9 +9,6 @@ import {
   selectSessionsMap,
 } from '../../../../store/slices/observabilitySlice';
 import {
-  OBSERVABILITY_PROJECT_ID,
-} from '../../../../shared/models/observability/agentic-conventions';
-import {
   latencyByTraceName,
   observationsByTime,
   scoresTable,
@@ -51,7 +48,6 @@ export function useLlmSessionTraces() {
 
     workflowIds.forEach(id =>
       dispatch(fetchSessionTraceDetails({
-        projectId: OBSERVABILITY_PROJECT_ID,
         experimentId,
         workflowId: id,
       })),
@@ -151,7 +147,6 @@ export function useLlmSessionTraces() {
 
     workflowIds.forEach(id =>
       dispatch(fetchSessionTraceDetails({
-        projectId: OBSERVABILITY_PROJECT_ID,
         experimentId,
         workflowId: id,
       })),
