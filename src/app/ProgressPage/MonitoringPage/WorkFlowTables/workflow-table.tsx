@@ -444,6 +444,21 @@ const TRACE_STATUS_LABEL: Record<NonNullable<WorkflowTableRow['isTraceStatus']>,
   error: 'Failed to load traces.',
 };
 
+// Shared column template for trace rows nested under a session, so every
+// trace's stats line up vertically and the label header above them matches.
+const TRACE_GRID_SX = {
+  display: 'grid',
+  // Fixed-width tracks (no fr) so the stats sit right after the trace name and
+  // any spare width falls to the right edge instead of between columns.
+  gridTemplateColumns: 'minmax(140px, 260px) minmax(80px, 120px) 100px 70px 100px 52px 52px 48px',
+  columnGap: 1.5,
+  alignItems: 'center',
+  width: '100%',
+  minWidth: 0,
+} as const;
+
+const TRACE_COLUMN_LABELS = ['Trace', 'Model', 'Latency', 'Tokens', 'Cost', 'Judges', 'Checks', 'Errors'];
+
 const WorkflowIdCell = ({
   row,
   experimentId,
@@ -500,24 +515,64 @@ const WorkflowIdCell = ({
     const rateLabel = (rate: number | null | undefined) => (rate === null || rate === undefined ? '—' : `${Math.round(rate * 100)}%`);
 
     const stat = (label: string, color?: string) => (
-      <Typography key={label} variant="caption" sx={{ color: color ?? 'text.secondary', fontWeight: color ? 700 : 400, fontSize: '0.68rem', whiteSpace: 'nowrap' }}>
+      <Typography
+        variant="caption"
+        sx={{
+          color: color ?? 'text.secondary',
+          fontWeight: color ? 700 : 400,
+          fontSize: '0.68rem',
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          textAlign: 'right',
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
         {label}
       </Typography>
     );
 
-    return (
-      <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: 1.5, rowGap: 0.25, pl: 4, width: '100%', minWidth: 0, py: 0.5 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flexShrink: 0 }}>
-          <TruncMono max={260}>{String(row.name ?? row.traceId ?? '')}</TruncMono>
-          {typeof row.annotatedCount === 'number' && <AnnotationBadge count={row.annotatedCount} tone={annotationTone} />}
+    const barStat = (label: string, value: number, max: number) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.75, minWidth: 0 }}>
+        {stat(label)}
+        <Box sx={{ width: 36, height: 5, flexShrink: 0, borderRadius: 999, bgcolor: 'customSurface.barTrack', overflow: 'hidden' }}>
+          <Box sx={{ width: `${max > 0 ? Math.min(100, (value / max) * 100) : 0}%`, height: '100%', bgcolor: 'primary.main' }} />
         </Box>
-        {stat(String(row.model ?? '—'))}
-        {stat(formatMs(latencyMs))}
-        {stat(`${tokens.toLocaleString()} tok`)}
-        {stat(`$${cost.toFixed(4)}`)}
-        {stat(`Judges ${rateLabel(judgeRate)}`, rateColor(judgeRate))}
-        {stat(`Checks ${rateLabel(checkRate)}`, rateColor(checkRate))}
-        {errorRate > 0 && stat(`Errors ${Math.round(errorRate * 100)}%`, TONE_COLOR.bad)}
+      </Box>
+    );
+
+    return (
+      <Box sx={{ pl: 4, width: '100%', minWidth: 0, pt: 0.5, pb: row.isLastTrace ? 1.75 : 0.5 }}>
+        {row.isFirstTrace && (
+          <Box sx={{ ...TRACE_GRID_SX, mb: 0.25 }}>
+            {TRACE_COLUMN_LABELS.map((label, i) => (
+              <Typography
+                key={label}
+                variant="caption"
+                sx={{ fontSize: '0.6rem', fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: 0.4, textAlign: i < 2 ? 'left' : 'right' }}
+              >
+                {label}
+              </Typography>
+            ))}
+          </Box>
+        )}
+        <Box sx={TRACE_GRID_SX}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+            <TruncMono max={260}>{String(row.name ?? row.traceId ?? '')}</TruncMono>
+            {typeof row.annotatedCount === 'number' && <AnnotationBadge count={row.annotatedCount} tone={annotationTone} />}
+          </Box>
+          <Box sx={{ minWidth: 0, display: 'flex' }}>
+            <Typography variant="caption" title={String(row.model ?? '')} sx={{ fontSize: '0.68rem', color: 'text.secondary', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {String(row.model ?? '—')}
+            </Typography>
+          </Box>
+          {barStat(formatMs(latencyMs), latencyMs, row.maxLatencyMs ?? 0)}
+          {stat(tokens.toLocaleString())}
+          {barStat(`$${cost.toFixed(4)}`, cost, row.maxCost ?? 0)}
+          {stat(rateLabel(judgeRate), rateColor(judgeRate))}
+          {stat(rateLabel(checkRate), rateColor(checkRate))}
+          {errorRate > 0 ? stat(`${Math.round(errorRate * 100)}%`, TONE_COLOR.bad) : stat('—')}
+        </Box>
       </Box>
     );
   }
@@ -573,9 +628,9 @@ const buildTraceRows = (workflowId: string, session: SessionTraces | undefined):
     return [{ id: `trace-status-${workflowId}`, workflowId: '', parentWorkflowId: workflowId, isTraceStatus: 'empty' }];
   }
 
-  return [...session.details]
+  const rows = [...session.details]
     .sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp))
-    .map(t => {
+    .map((t, i) => {
       const r = rollup([t]);
       const humanScores = (t.scores ?? []).filter(s => isHumanScoreName(s.name));
       const annotationTone = worstTone(humanScores.map(scoreTone));
@@ -586,6 +641,8 @@ const buildTraceRows = (workflowId: string, session: SessionTraces | undefined):
         workflowId: '',
         parentWorkflowId: workflowId,
         isTraceRow: true,
+        isFirstTrace: i === 0,
+        isLastTrace: i === session.details.length - 1,
         traceId: t.id,
         name: t.name || t.id,
         model: gen ? (modelOf(gen) ?? '—') : '—',
@@ -602,6 +659,12 @@ const buildTraceRows = (workflowId: string, session: SessionTraces | undefined):
 
       return row;
     });
+
+  // Session-wide maxima so each trace's latency/cost bar reads relative to its siblings.
+  const maxLatencyMs = Math.max(0, ...rows.map(r => (r.latencyMs as number) || 0));
+  const maxCost = Math.max(0, ...rows.map(r => (r.cost as number) || 0));
+
+  return rows.map(r => ({ ...r, maxLatencyMs, maxCost }));
 };
 
 export default function WorkflowTable() {
@@ -1547,7 +1610,15 @@ export default function WorkflowTable() {
             disableColumnMenu
             density="compact"
             rows={rowsWithTraces}
-            getRowHeight={(params) => ((params.model as WorkflowTableRow).isTraceRow ? 52 : null)}
+            getRowHeight={(params) => {
+              const row = params.model as WorkflowTableRow;
+
+              if (!row.isTraceRow) return null;
+
+              // First row carries the label header; last row gets extra bottom
+              // room so the trace group separates from the next session row.
+              return (row.isFirstTrace ? 54 : 36) + (row.isLastTrace ? 10 : 0);
+            }}
             sortModel={workflowsTable.expandedTraceWorkflows.length > 0 ? [] : workflowsTable.sortModel}
             onSortModelChange={(newSortModel) => dispatch(setWorkflowsTable({ sortModel: newSortModel }))}
             disableColumnFilter

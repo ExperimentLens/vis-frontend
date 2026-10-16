@@ -37,6 +37,13 @@ export interface WorkflowTableRow {
   parentWorkflowId?: string;
   /** Set on trace rows only — the individual trace's id. */
   traceId?: string;
+  /** Set on the first trace row of an expanded session — it carries the column labels. */
+  isFirstTrace?: boolean;
+  /** Set on the last trace row of an expanded session — gets extra bottom spacing. */
+  isLastTrace?: boolean;
+  /** Set on trace rows — session-wide maxima used to scale the latency/cost bars. */
+  maxLatencyMs?: number;
+  maxCost?: number;
   [key: string]: string | number | boolean | null | undefined;
 }
 
