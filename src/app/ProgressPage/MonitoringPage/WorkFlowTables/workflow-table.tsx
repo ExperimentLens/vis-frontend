@@ -646,10 +646,10 @@ export default function WorkflowTable() {
 
   const handleLaunchCompletedTab =
     () => () => {
-      dispatch(setSelectedTab(1));
+      dispatch(setSelectedTab(MONITOR_TAB.COMPARE));
       const searchParams = new URLSearchParams(location.search);
 
-      searchParams.set('tab', '1');
+      searchParams.set('tab', String(MONITOR_TAB.COMPARE));
       navigate({
         pathname: location.pathname,
         search: searchParams.toString(),
