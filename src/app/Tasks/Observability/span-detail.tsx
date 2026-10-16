@@ -1,4 +1,4 @@
-import { Box, Chip, Paper, Stack, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Chip, Stack, Typography, alpha, useTheme } from '@mui/material';
 import type { Observation } from '../../../shared/models/observability/observation';
 import type { Score } from '../../../shared/models/observability/score';
 import {
@@ -54,43 +54,31 @@ const SpanDetail = ({ obs, scores = [], onAnnotate, savingAnnotation = false }: 
   const inputWithoutPrompt = omitPrompt(obs.input);
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 2, p: 1.5, borderColor: alpha(color, 0.4) }}>
-      <Stack direction="row" alignItems="center" spacing={0.75} sx={{ mb: 1, flexWrap: 'wrap', rowGap: 0.5 }}>
-        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: color }} />
-        <Typography variant="body2" sx={{ fontWeight: 700, fontFamily: 'inherit' }}>
-          {obs.name}
-        </Typography>
-        <Chip size="small" label={obs.type} sx={{ height: 18, fontSize: '0.6rem', bgcolor: alpha(color, 0.12), color }} />
-        <Box sx={{ flexGrow: 1 }} />
+    // The pane title already names the span, so this is just its type and vitals,
+    // then Input over Output at full width (the Langfuse/LangSmith reading order).
+    <Stack spacing={2}>
+      <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexWrap: 'wrap', rowGap: 0.5 }}>
+        <Chip size="small" label={obs.type} sx={{ height: 20, fontSize: '0.62rem', fontWeight: 700, bgcolor: alpha(color, 0.12), color }} />
         <MetaChip label="duration" value={formatMs(durationOf(obs))} />
         {model && <MetaChip label="model" value={model} />}
-        {typeof tokens?.total_tokens === 'number' && <MetaChip label="tokens" value={tokens.total_tokens} />}
+        {typeof tokens?.total_tokens === 'number' && (
+          <MetaChip
+            label="tokens"
+            value={typeof tokens.prompt_tokens === 'number' || typeof tokens.completion_tokens === 'number'
+              ? `${tokens.total_tokens} (${tokens.prompt_tokens ?? 0} → ${tokens.completion_tokens ?? 0})`
+              : tokens.total_tokens}
+          />
+        )}
       </Stack>
 
-      {tokens && (typeof tokens.prompt_tokens === 'number' || typeof tokens.completion_tokens === 'number') && (
-        <Typography variant="mono" sx={{ color: 'text.secondary', display: 'block', mb: 1, fontSize: '0.62rem' }}>
-          prompt tokens {tokens.prompt_tokens ?? 0} · completion tokens {tokens.completion_tokens ?? 0} · total tokens {tokens.total_tokens ?? 0}
-        </Typography>
-      )}
-
-      <Box
-        sx={{
-          display: 'grid',
-          gridTemplateColumns: {
-            xs: '1fr',
-            md: 'minmax(0, 1fr) minmax(0, 1fr)',
-          },
-          gap: 1.5,
-          alignItems: 'start',
-        }}
-      >
+      <Stack spacing={2}>
         <Box>
           <SectionLabel>Input</SectionLabel>
 
           {promptText && (
             <Box sx={{ mb: 1 }}>
               <SectionLabel action={<CopyButton text={promptText} />}>Prompt</SectionLabel>
-              <CodeBlock maxHeight={180}>{promptText}</CodeBlock>
+              <CodeBlock maxHeight={360}>{promptText}</CodeBlock>
             </Box>
           )}
 
@@ -121,7 +109,7 @@ const SpanDetail = ({ obs, scores = [], onAnnotate, savingAnnotation = false }: 
             </Typography>
           ) : renderValue(obs.output)}
         </Box>
-      </Box>
+      </Stack>
 
       {onAnnotate && (
         <AnnotateForm scores={scores} targetLabel="step" onSave={onAnnotate} saving={savingAnnotation} />
@@ -130,7 +118,7 @@ const SpanDetail = ({ obs, scores = [], onAnnotate, savingAnnotation = false }: 
       {model && input?.prompt && (
         <CounterfactualReplayPanel traceId={obs.traceId} observationId={obs.id} prompt={input.prompt} />
       )}
-    </Paper>
+    </Stack>
   );
 };
 

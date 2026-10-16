@@ -92,6 +92,14 @@ const SpanTree = ({ observations, selectedId, onSelect }: Props) => {
 
   const tree = useMemo(() => buildTree(observations), [observations]);
   const rows = useMemo(() => flatten(tree, collapsed), [tree, collapsed]);
+  // Time window for the waterfall bars: from the earliest start to the latest end.
+  const span = useMemo(() => {
+    const starts = observations.map(o => Date.parse(o.startTime)).filter(t => !Number.isNaN(t));
+    const ends = observations.map(o => Date.parse(o.endTime)).filter(t => !Number.isNaN(t));
+    const start = starts.length ? Math.min(...starts) : 0;
+
+    return { start, total: Math.max(1, (ends.length ? Math.max(...ends) : start) - start) };
+  }, [observations]);
 
   if (observations.length === 0) {
     return (
@@ -202,10 +210,28 @@ const SpanTree = ({ observations, selectedId, onSelect }: Props) => {
               </Tooltip>
             )}
 
+            <Tooltip title={`${formatMs(durationMs)} of ${formatMs(span.total)}`} arrow placement="top">
+              <Box sx={{ position: 'relative', width: '30%', minWidth: 48, maxWidth: 180, height: 6, flexShrink: 0, borderRadius: 3, bgcolor: alpha(theme.palette.text.primary, 0.06) }}>
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    bottom: 0,
+                    left: `${Math.min(100, Math.max(0, ((Date.parse(obs.startTime) - span.start) / span.total) * 100)) || 0}%`,
+                    width: `${Math.max(1.5, (durationMs / span.total) * 100)}%`,
+                    maxWidth: '100%',
+                    borderRadius: 3,
+                    bgcolor: isError || isFailedJudge(obs) ? theme.palette.error.main : color,
+                  }}
+                />
+              </Box>
+            </Tooltip>
+
             <Typography
               variant="statLabel"
               sx={{
                 flexShrink: 0,
+                minWidth: 44,
                 textAlign: 'right',
                 color: 'text.secondary',
                 fontWeight: isSelected ? 600 : 400,
