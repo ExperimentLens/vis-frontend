@@ -14,6 +14,7 @@ import { useParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
+import ShowMoreTreeItem, { useShowMore } from './ShowMoreTreeItem';
 
 export default function NullTaskFallback() {
   const dispatch = useAppDispatch();
@@ -49,6 +50,9 @@ export default function NullTaskFallback() {
       fallbackOutputGrouped: group(datasets.filter(d => d.role === 'OUTPUT')),
     };
   }, [tab]);
+
+  const paramsList = useShowMore(fallbackParams);
+  const metricsList = useShowMore(fallbackMetrics);
 
   const getDatasetIcon = (format?: string | null) => {
     if (!format || !format.trim()) {
@@ -101,7 +105,7 @@ export default function NullTaskFallback() {
           </Box>
         }
       />
-      {fallbackParams.map((param, index) => (
+      {paramsList.visible.map((param, index) => (
         <TreeItem
           key={`null-param-${index}`}
           itemId={`null-param-${index}`}
@@ -123,6 +127,7 @@ export default function NullTaskFallback() {
           }
         />
       ))}
+      <ShowMoreTreeItem itemId="null-params-more" hidden={paramsList.hidden} expanded={paramsList.expanded} onToggle={paramsList.toggle} />
 
       {/* Metrics */}
       <TreeItem
@@ -141,7 +146,7 @@ export default function NullTaskFallback() {
           </Box>
         }
       />
-      {fallbackMetrics.map((metric, index) => {
+      {metricsList.visible.map((metric, index) => {
         const isSeiresMetric = workflowSeriesMetrics.data.some(m => m.name === metric.name && m.seriesMetric.length > 1);
 
         return (
@@ -173,6 +178,7 @@ export default function NullTaskFallback() {
           />
         );
       })}
+      <ShowMoreTreeItem itemId="null-metrics-more" hidden={metricsList.hidden} expanded={metricsList.expanded} onToggle={metricsList.toggle} />
 
       {/* Inputs */}
       {(fallbackInputGrouped.noFolder.length > 0 ||

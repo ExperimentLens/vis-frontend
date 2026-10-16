@@ -3,6 +3,7 @@ import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
+import ShowMoreTreeItem, { useShowMore } from './ShowMoreTreeItem';
 
 type Metric = { name: string; value: number; task?: string | null; };
 type Props = { taskId: string; metrics: Metric[] | {name: string; task?: string; value?: number;}[] };
@@ -13,6 +14,7 @@ export default function MetricsSection({ taskId, metrics }: Props) {
 
   const round2 = (v: number) => Math.round(v * 100) / 100;
   const theme = useTheme();
+  const list = useShowMore<Metric | { name: string; task?: string; value?: number }>(metrics);
 
   return (
     <>
@@ -28,7 +30,7 @@ export default function MetricsSection({ taskId, metrics }: Props) {
           </Box>
         }
       />
-      {metrics.map((metric, index) => {
+      {list.visible.map((metric, index) => {
         const isSeiresMetric = workflowSeriesMetrics.data.some(m => m.name === metric.name && m.seriesMetric.length > 1);
 
         return (
@@ -58,6 +60,7 @@ export default function MetricsSection({ taskId, metrics }: Props) {
           />
         );
       })}
+      <ShowMoreTreeItem itemId={`metrics-more-${taskId}`} hidden={list.hidden} expanded={list.expanded} onToggle={list.toggle} />
     </>
   );
 }
