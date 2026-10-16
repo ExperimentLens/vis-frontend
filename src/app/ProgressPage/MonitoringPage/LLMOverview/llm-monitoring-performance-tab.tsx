@@ -1,17 +1,15 @@
 import { useMemo, useState } from 'react';
-import { Chip, Grid, Stack } from '@mui/material';
+import { Chip, Grid } from '@mui/material';
 import { useParams } from 'react-router';
-import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import type { RootState } from '../../../../store/store';
-import { useAppDispatch, useAppSelector } from '../../../../store/store';
-import { setIsMosaic } from '../../../../store/slices/monitorPageSlice';
+import { useAppSelector } from '../../../../store/store';
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
 import { perAgentProfile } from '../../../../shared/utils/observability-aggregates';
 import type ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
 import AllTracesTable from './all-traces-table';
 import CallFrequencyChart from './call-frequency-chart';
 import CostOverTimeChart from './cost-over-time-chart';
-import DistributionChart from './distribution-chart';
+// import DistributionChart from './distribution-chart';
 import ErrorsOverTimeChart from './errors-over-time-chart';
 import LatencyOverTimeChart from './latency-over-time-chart';
 import LatencyPercentilesChart from './latency-percentiles-chart';
@@ -49,7 +47,6 @@ export default function LlmMonitoringPerformanceTab({
   showTracesTable = true,
 }: Props) {
   const { experimentId } = useParams();
-  const dispatch = useAppDispatch();
   const isMosaic = useAppSelector((s: RootState) => s.monitorPage.isMosaic);
   const [selectedTraceIds, setSelectedTraceIds] = useState<string[] | null>(null);
   const multiAgent = useMemo(() => perAgentProfile(details).length > 1, [details]);
@@ -59,22 +56,6 @@ export default function LlmMonitoringPerformanceTab({
     <Grid container spacing={1.5} sx={{ pb: 1.5, flexShrink: 0 }}>
       <Grid size={{ xs: 12 }}>
         <LlmKpiStrip details={details} sessionCount={sessionCount} />
-      </Grid>
-
-      <Grid size={{ xs: 12 }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Stack sx={{ flex: 1 }} />
-          <SegmentedToggle
-            uppercase
-            aria-label="chart layout"
-            value={isMosaic ? 'mosaic' : 'stacked'}
-            onChange={v => dispatch(setIsMosaic(v === 'mosaic'))}
-            options={[
-              { value: 'mosaic', label: 'Mosaic' },
-              { value: 'stacked', label: 'Stacked' },
-            ]}
-          />
-        </Stack>
       </Grid>
 
       <Grid size={{ xs: 12 }} sx={{ textAlign: 'left', height: CHART_HEIGHT }}>
@@ -103,9 +84,9 @@ export default function LlmMonitoringPerformanceTab({
       <Grid size={half} sx={{ textAlign: 'left' }}>
         <LatencyPercentilesChart latencies={latencies} isLoading={isLoading} />
       </Grid>
-      <Grid size={half} sx={{ textAlign: 'left', height: CHART_HEIGHT }}>
+      {/* <Grid size={half} sx={{ textAlign: 'left', height: CHART_HEIGHT }}>
         <DistributionChart details={details} experimentId={experimentId} isLoading={isLoading} />
-      </Grid>
+      </Grid> */}
 
       {multiAgent && (
         <>
