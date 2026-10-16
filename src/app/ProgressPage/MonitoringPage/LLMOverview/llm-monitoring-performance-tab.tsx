@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Chip, Grid, Stack, Typography } from '@mui/material';
+import { Chip, Grid, Stack } from '@mui/material';
 import { useParams } from 'react-router';
 import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import type { RootState } from '../../../../store/store';
@@ -63,7 +63,6 @@ export default function LlmMonitoringPerformanceTab({
 
       <Grid size={{ xs: 12 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
-          <Typography variant="caption" color="text.secondary">From the Langfuse traces of every session</Typography>
           <Stack sx={{ flex: 1 }} />
           <SegmentedToggle
             uppercase
