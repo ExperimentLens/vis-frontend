@@ -33,8 +33,8 @@ import { useOpenTraces } from '../Traces/use-open-traces';
 import { useExperimentCapabilities } from '../../../../shared/utils/experimentCapabilities';
 import VariantMapCard from './variant-map-card';
 import { passBand } from '../../../../shared/utils/app-settings';
+import { costMetrics, groupParam, preferredBaseline } from '../../../../shared/utils/experiment-conventions';
 
-const COST_METRICS = ['latency_ms', 'cost_usd', 'total_tokens'];
 
 /** Rolling mean so a sparkline over dozens of runs shows the trend, not every wobble. */
 const smooth = (values: number[]) => {
@@ -68,14 +68,14 @@ export default function ExperimentOverview() {
   const startTimeById = useMemo(() => Object.fromEntries(workflows.map(w => [w.id, w.startTime])), [workflows]);
 
   const groups = useMemo(() => [...new Set(scored.map(r => r.params[param] ?? NOT_SET))].sort(), [scored, param]);
-  const baseline = groups.includes('baseline') ? 'baseline' : groups[0] ?? '';
+  const baseline = preferredBaseline(groups);
 
   const attention = useMemo(() => {
     const outcomes = workflows.map(w => ({
       status: w.status,
       params: Object.fromEntries((w.params ?? []).map(p => [p.name, String(p.value)])),
     }));
-    const metrics = [...evals, ...COST_METRICS.filter(m => scored.some(r => r.metrics[m] !== undefined))];
+    const metrics = [...evals, ...costMetrics(m => scored.some(r => r.metrics[m] !== undefined))];
 
     return attentionItems(outcomes, scored, param, baseline, metrics);
   }, [workflows, scored, param, baseline, evals]);
@@ -85,7 +85,7 @@ export default function ExperimentOverview() {
   const impactParams = useMemo(() => {
     const varying = varyingParams(scored);
     // A variant name only restates the other params; rank it only when nothing else varies.
-    const factors = varying.filter(p => p !== 'variant');
+    const factors = varying.filter(p => p !== groupParam());
 
     return collapseAliasedParams(scored, factors.length ? factors : varying);
   }, [scored]);

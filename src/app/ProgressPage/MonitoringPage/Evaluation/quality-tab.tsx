@@ -1,7 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Box, Button, CircularProgress, Grid, Stack, Typography } from '@mui/material';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
-import ExpandLessRoundedIcon from '@mui/icons-material/ExpandLessRounded';
+import { Alert, Box, CircularProgress, Grid, Stack, Typography } from '@mui/material';
 import SearchableSelect from '../../../../shared/components/searchable-select';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
@@ -20,12 +18,9 @@ import VerdictPassRateChart from '../LLMOverview/verdict-passrate-chart';
 import BaselineComparisonCard from './baseline-comparison-card';
 import EvalHeatmapCard from './eval-heatmap-card';
 import ScoresOverTimeCard from './scores-over-time-card';
-import TraceScoresCard from './trace-scores-card';
 import { useOpenTraces } from '../Traces/use-open-traces';
 import type { TraceScoreSummary } from './trace-scores-card';
-
-/** Operational metrics worth checking for regressions next to the eval scores. */
-const COST_METRICS = ['latency_ms', 'cost_usd', 'total_tokens'];
+import { costMetrics, groupParam, preferredBaseline, saveBaseline } from '../../../../shared/utils/experiment-conventions';
 
 /** A user's pick while it is still available, otherwise the data's default. */
 const pick = (chosen: string, options: string[]) => (options.includes(chosen) ? chosen : options[0] ?? '');
@@ -45,7 +40,7 @@ interface Props {
  * MLflow run metrics, so they show immediately), the baseline comparison and trend,
  * then the trace-level judges, issue scan and raw scores once traces have loaded.
  */
-export default function QualityTab({ details, tracesLoading, scores, totalScores, onDownloadScoresCsv, runNameById }: Props) {
+export default function QualityTab({ details, tracesLoading, runNameById }: Props) {
   const { records } = useInsightRecords();
   const openTraces = useOpenTraces();
   const workflows = useAppSelector((s: RootState) => s.progressPage.workflows.data);
@@ -59,17 +54,16 @@ export default function QualityTab({ details, tracesLoading, scores, totalScores
   const [chosenParam, setChosenParam] = useState('');
   const [chosenBaseline, setChosenBaseline] = useState('');
   const [chosenMetric, setChosenMetric] = useState('');
-  const [showRawScores, setShowRawScores] = useState(false);
 
   const param = pick(chosenParam, params);
   const timeMetric = pick(chosenMetric, metrics);
 
   const scoreRows = useMemo(() => scoresByGroup(records, param, metrics), [records, param, metrics]);
   const groups = useMemo(() => scoreRows.map(r => r.group).sort(), [scoreRows]);
-  const baseline = pick(chosenBaseline, groups.includes('baseline') ? ['baseline', ...groups] : groups);
+  const baseline = pick(chosenBaseline, [preferredBaseline(groups), ...groups]);
 
   const comparedMetrics = useMemo(
-    () => [...metrics, ...COST_METRICS.filter(m => records.some(r => r.metrics[m] !== undefined))],
+    () => [...metrics, ...costMetrics(m => records.some(r => r.metrics[m] !== undefined))],
     [metrics, records],
   );
 
@@ -90,7 +84,7 @@ export default function QualityTab({ details, tracesLoading, scores, totalScores
 
   const openCellTraces = useCallback((group: string, metric: string, mean: number) => openTraces({
     // Traces filter by variant, so other groupings open every variant.
-    ...(param === 'variant' ? { variants: [group] } : {}),
+    ...(param === groupParam() ? { variants: [group] } : {}),
     // A cell below 1 opens the traces that failed this check; a perfect one opens all of them.
     ...(mean < 1 ? { status: 'failing' as const, check: evalName(metric).replace(/_/g, ' ') } : {}),
   }), [openTraces, param]);
@@ -147,7 +141,7 @@ export default function QualityTab({ details, tracesLoading, scores, totalScores
               param={param}
               groups={groups}
               baseline={baseline}
-              onBaselineChange={setChosenBaseline}
+              onBaselineChange={b => { saveBaseline(b); setChosenBaseline(b); }}
               candidates={candidates}
               metrics={comparedMetrics}
             />

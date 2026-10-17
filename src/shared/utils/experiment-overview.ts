@@ -4,6 +4,7 @@ import { comparableMetrics, inferDirection, NOT_SET, paretoFrontier, summarize }
 import type { RunRecord } from './run-statistics';
 import type { TraceFilters } from './trace-explorer';
 import { appSettings } from './app-settings';
+import { caseParam, costMetrics, groupParam } from './experiment-conventions';
 
 /**
  * The experiment Overview: one quality number, one cost number, and the handful of
@@ -45,7 +46,9 @@ export function withQualityScore(records: RunRecord[]): RunRecord[] {
 export function pickCostMetric(records: RunRecord[]): string | null {
   const varies = (m: string) => new Set(records.map(r => r.metrics[m]).filter(v => v !== undefined && v !== 0)).size > 0;
 
-  return ['cost_usd', 'latency_ms', 'total_tokens'].find(varies) ?? null;
+  const available = costMetrics(varies);
+
+  return ['cost_usd', 'latency_ms', 'total_tokens'].find(m => available.includes(m)) ?? available[0] ?? null;
 }
 
 export function percentile(values: number[], p: number): number | null {
@@ -153,7 +156,7 @@ export function attentionItems(
   const items: AttentionItem[] = [];
   const groupOf = (params: Record<string, string>) => params[param] ?? NOT_SET;
   // Traces are filtered by variant; other groupings can't be expressed as a trace filter.
-  const variantFilter = (group: string) => (param === 'variant' ? { variants: [group] } : {});
+  const variantFilter = (group: string) => (param === groupParam() ? { variants: [group] } : {});
 
   // Failed runs, per group.
   const failed = new Map<string, { failed: number; total: number }>();
@@ -209,7 +212,7 @@ export function attentionItems(
   const byCase = new Map<string, RunRecord[]>();
 
   records.forEach(r => {
-    const caseId = r.params.case_id;
+    const caseId = r.params[caseParam()];
 
     if (caseId) byCase.set(caseId, [...(byCase.get(caseId) ?? []), r]);
   });

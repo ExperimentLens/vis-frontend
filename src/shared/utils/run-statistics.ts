@@ -1,5 +1,6 @@
 import type { IRun } from '../models/experiment/run.model';
 import { appSettings } from './app-settings';
+import { metricDefinition } from './experiment-conventions';
 
 /**
  * Statistics behind the Insights tab: which params drive a metric, whether one param
@@ -157,6 +158,9 @@ const MINIMIZE = /(latency|duration|time|_ms$|_s$|seconds|cost|token)/i;
 
 /** Best guess at whether higher or lower is better, from the metric's name. */
 export function inferDirection(metric: string): Direction {
+  const declared = metricDefinition(metric)?.direction;
+
+  if (declared) return declared;
   // SDK evaluation scores are 0..1 and higher is better, even for safety metrics
   // (eval_toxicity = 1 means "no toxicity found").
   if (metric.startsWith(EVAL_METRIC_PREFIX)) return 'maximize';

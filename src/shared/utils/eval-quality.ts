@@ -9,6 +9,7 @@ import {
   welchTTest,
 } from './run-statistics';
 import type { Direction, RunRecord, Summary } from './run-statistics';
+import { caseParam, groupParam, metricDefinition } from './experiment-conventions';
 
 /**
  * Evaluation views for runs logged with the experimentlens SDK's `ctx.evaluate()`:
@@ -16,7 +17,7 @@ import type { Direction, RunRecord, Summary } from './run-statistics';
  * The regression rule matches the SDK's `compare()`, so the UI and a CI gate agree.
  */
 
-/** Pass marks the SDK uses by default (see experimentlens/evals.py). */
+/** Pass marks of older SDK versions, used when the experiment doesn't declare its own. */
 const SAFETY_EVALS: Record<string, number> = {
   toxicity: 0.75,
   bias: 0.75,
@@ -25,8 +26,6 @@ const SAFETY_EVALS: Record<string, number> = {
 };
 const QUALITY_PASS_MARK = 0.5;
 
-/** Params the SDK logs that identify a case or a repeat, not a configuration. */
-const NON_FACTOR_PARAMS = new Set(['case_id']);
 
 export const isEvalMetric = (metric: string) => metric.startsWith(EVAL_METRIC_PREFIX);
 
@@ -39,9 +38,14 @@ export const evalLabel = (metric: string) => {
   return name.charAt(0).toUpperCase() + name.slice(1);
 };
 
-export const isSafetyEval = (metric: string) => evalName(metric) in SAFETY_EVALS;
+export const isSafetyEval = (metric: string) => {
+  const kind = metricDefinition(metric)?.kind;
 
-export const evalPassMark = (metric: string) => SAFETY_EVALS[evalName(metric)] ?? QUALITY_PASS_MARK;
+  return kind ? kind === 'safety' : evalName(metric) in SAFETY_EVALS;
+};
+
+export const evalPassMark = (metric: string) =>
+  metricDefinition(metric)?.pass ?? SAFETY_EVALS[evalName(metric)] ?? QUALITY_PASS_MARK;
 
 export type ScoreTone = 'good' | 'warn' | 'bad';
 
@@ -63,12 +67,14 @@ export function evalMetrics(records: RunRecord[]): string[] {
   return [...names].sort((a, b) => Number(isSafetyEval(a)) - Number(isSafetyEval(b)) || a.localeCompare(b));
 }
 
-/** Params that split the runs into configurations, `variant` first when the SDK logged one. */
+/** Params that split the runs into configurations, the SDK's group param (`variant`) first. */
 export function groupingParams(records: RunRecord[]): string[] {
-  const candidates = varyingParams(records).filter(p => !NON_FACTOR_PARAMS.has(p));
+  // The case param identifies a dataset case, not a configuration.
+  const candidates = varyingParams(records).filter(p => p !== caseParam());
   const { params } = collapseAliasedParams(records, candidates);
+  const group = groupParam();
 
-  return params.includes('variant') ? ['variant', ...params.filter(p => p !== 'variant')] : params;
+  return params.includes(group) ? [group, ...params.filter(p => p !== group)] : params;
 }
 
 const groupOf = (record: RunRecord, param: string) => record.params[param] ?? NOT_SET;

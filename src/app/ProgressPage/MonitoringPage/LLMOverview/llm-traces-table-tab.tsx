@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Chip, CircularProgress, IconButton, InputAdornment, Paper, Stack, TextField, Toolbar, Tooltip, Typography } from '@mui/material';
+import { Alert, Box, Chip, CircularProgress, IconButton, InputAdornment, Paper, Stack, TextField, Toolbar, Tooltip, Typography } from '@mui/material';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import RefreshRoundedIcon from '@mui/icons-material/RefreshRounded';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -17,6 +17,7 @@ import TraceFiltersButton from '../Traces/trace-filters-button';
 import TraceList from '../Traces/trace-list';
 import TracePeekPanel from '../Traces/trace-peek-panel';
 import { useLlmSessionTraces } from './use-llm-session-traces';
+import { caseParam } from '../../../../shared/utils/experiment-conventions';
 
 /**
  * Traces tab: every trace as question → answer → verdicts, filterable by what the
@@ -72,6 +73,8 @@ export default function LlmTracesTableTab() {
   }, [allRows, chartTraceIds, filters]);
 
   const grid = useMemo(() => caseGrid(rows), [rows]);
+  // Without a case param every trace is its own case, so the grid can't line runs up.
+  const missingCase = rows.length > 0 && rows.every(r => r.caseId === '—');
   // In the grid, the panel steps through the clicked cell's traces (its repeats).
   const navRows = view === 'grid' && cell ? grid.cell(cell.caseId, cell.variant)?.rows ?? [] : rows;
   const index = navRows.findIndex(r => r.id === selectedId);
@@ -193,7 +196,13 @@ export default function LlmTracesTableTab() {
 
         {hasData && (
           <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
-            {view === 'grid' && rows.length > 0 ? (
+            {view === 'grid' && rows.length > 0 && missingCase ? (
+              <Alert severity="info" sx={{ m: 1.5, alignSelf: 'flex-start' }}>
+                The case grid is off: no run has a <code>{caseParam()}</code> param, so traces can&apos;t be lined up by
+                dataset case. The SDK&apos;s <code>run_experiment</code> logs it for you. Runs logged another way can name
+                their case param with the experiment tag <code>experimentlens.case_param</code>.
+              </Alert>
+            ) : view === 'grid' && rows.length > 0 ? (
               <CaseGridView grid={grid} selected={cell} onSelect={selectCell} />
             ) : rows.length === 0 ? (
               <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, gap: 1 }}>

@@ -3,6 +3,7 @@ import type { GenOutput } from '../models/observability/agentic-conventions';
 import { isErrorLevel, isJudge, prettyName } from '../models/observability/agentic-conventions';
 import { isHumanScoreName } from '../../app/Tasks/Observability/score-dimensions';
 import { sumTraceTokens, traceAnswer, traceDurationMs, traceQuestion } from './observability-aggregates';
+import { caseParam, groupParam, preferredBaseline } from './experiment-conventions';
 
 /**
  * Rows for the Traces tab: each trace joined to the run it belongs to (session id = MLflow
@@ -86,8 +87,8 @@ export function toTraceRows(details: TraceDetail[], runs: RunInfo[]): TraceRow[]
       id: t.id,
       sessionId: t.sessionId,
       runName,
-      variant: params.variant ?? runName,
-      caseId: params.case_id ?? '—',
+      variant: params[groupParam()] ?? runName,
+      caseId: params[caseParam()] ?? '—',
       question: traceQuestion(t),
       answer: traceAnswer(t),
       expected: typeof t.metadata?.expected === 'string' ? t.metadata.expected : null,
@@ -198,7 +199,7 @@ export interface CaseGrid {
 }
 
 /** The variant to compare against: one named "baseline" when present, else the first. */
-export const defaultBaseline = (variants: string[]) => (variants.includes('baseline') ? 'baseline' : variants[0] ?? '');
+export const defaultBaseline = (variants: string[]) => preferredBaseline(variants);
 
 /** Cases × variants: every trace of a case under a variant, with its checks pooled across repeats. */
 export function caseGrid(rows: TraceRow[]): CaseGrid {

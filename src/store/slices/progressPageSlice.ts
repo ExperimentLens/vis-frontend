@@ -4,6 +4,7 @@ import type { IRun } from '../../shared/models/experiment/run.model';
 import type { IMetric } from '../../shared/models/experiment/metric.model';
 import type { ICreateRunRequest, ICreateRunResponse } from '../../shared/models/experiment/create-run.model';
 import { experimentApi } from '../../app/api/api';
+import { setExperimentConventions } from '../../shared/utils/experiment-conventions';
 
 interface IUserEvaluationResponse {
   status: string;
@@ -307,6 +308,9 @@ export const fetchExperiment = createAsyncThunk(
   async (experimentId: string) => {
     const requestUrl = `${experimentId}`;
     const res = await experimentApi.get(requestUrl);
+
+    // Before the views render, so they read this experiment's declared metrics and params.
+    setExperimentConventions(res.data?.id ?? experimentId, res.data?.tags);
 
     return res.data;
   }
