@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -13,7 +13,7 @@ import {
   Typography,
   alpha,
 } from '@mui/material';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import FindInPageRoundedIcon from '@mui/icons-material/FindInPageRounded';
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
@@ -26,6 +26,9 @@ import { traceAnswer, traceQuestion } from '../../../../shared/utils/observabili
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
 import { CLEARS_CATEGORIES } from '../../../../shared/models/observability/issue-scan';
 import type { ClearsCategory, DetectedIssue } from '../../../../shared/models/observability/issue-scan';
+import { isGeneration, isJudge, modelOf } from '../../../../shared/models/observability/agentic-conventions';
+import { appSettings } from '../../../../shared/utils/app-settings';
+import { api } from '../../../api/api';
 
 interface Props {
   details: TraceDetail[];
@@ -42,13 +45,45 @@ const SEVERITY_COLOR: Record<string, string> = {
 // click doesn't accidentally kick off a 10-minute run over hundreds of traces.
 const DEFAULT_SAMPLE_SIZE = 15;
 
+// Models this size judge noticeably worse (scores that contradict their own reasons).
+const SMALL_MODEL = /(\b(0\.5|1|1\.5|2|3|4)b\b|llama3\.2(:latest)?$|tinyllama|gemma.?2b)/i;
+
+// "ollama/llama3.2" and "llama3.2:latest" name the same model.
+const bareModel = (m: string) => m.replace(/^[a-z]+\//i, '').replace(/:latest$/, '').toLowerCase();
+
 export default function DetectIssuesPanel({ details, runNameById }: Props) {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { experimentId } = useParams();
   const { data, loading, error } = useAppSelector(selectIssueScan);
 
-  const [model, setModel] = useState('llama3.2');
+  const [model, setModel] = useState(appSettings.judgeModel);
+  const [serverDefault, setServerDefault] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.get('/settings').then(r => setServerDefault(r.data?.defaultJudgeModel ?? null)).catch(() => undefined);
+  }, []);
+
+  const judgeWarnings = useMemo(() => {
+    const judge = model || serverDefault;
+
+    if (!judge) return [];
+
+    const tested = new Set(
+      details
+        .flatMap(t => t.observations ?? [])
+        .filter(o => isGeneration(o) && !isJudge(o))
+        .map(modelOf)
+        .filter((m): m is string => !!m)
+        .map(bareModel),
+    );
+    const warnings: string[] = [];
+
+    if (tested.has(bareModel(judge))) warnings.push('The judge is the same model that produced the answers, so it tends to approve its own mistakes.');
+    if (SMALL_MODEL.test(bareModel(judge))) warnings.push('Small judge models give unreliable verdicts. Prefer a larger or hosted model.');
+
+    return warnings;
+  }, [details, model, serverDefault]);
   const [sampleSize, setSampleSize] = useState(DEFAULT_SAMPLE_SIZE);
   const [categories, setCategories] = useState<ClearsCategory[]>([...CLEARS_CATEGORIES]);
   // Collapsed-by-name, not collapsed-by-default — a category only enters this
@@ -106,7 +141,7 @@ export default function DetectIssuesPanel({ details, runNameById }: Props) {
 
   const cardDetails = data
     ? `Scanned ${data.scannedCount} trace${data.scannedCount === 1 ? '' : 's'} · ${data.issues.length} issue${data.issues.length === 1 ? '' : 's'} found${data.failedTraceIds.length > 0 ? ` · ${data.failedTraceIds.length} failed to scan` : ''}`
-    : 'Local LLM judge — CLEARS framework';
+    : `LLM judge (${model || serverDefault || 'server default'}) — CLEARS framework`;
 
   return (
     <ResponsiveCardTable
@@ -133,15 +168,23 @@ export default function DetectIssuesPanel({ details, runNameById }: Props) {
         <Stack spacing={1.25} sx={{ width: '100%' }}>
           <Box>
             <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>
-              Ollama model
+              Judge model
             </Typography>
             <TextField
               size="small"
               fullWidth
               value={model}
+              placeholder={serverDefault ? `Default: ${serverDefault}` : 'Server default'}
+              helperText={<>e.g. anthropic/claude-sonnet-5-5 · default in <RouterLink to="/settings">Settings</RouterLink></>}
               onChange={e => setModel(e.target.value)}
               sx={{ '& .MuiInputBase-input': { fontSize: '0.75rem' } }}
             />
+            {judgeWarnings.map(w => (
+              <Stack key={w} direction="row" spacing={0.5} sx={{ mt: 0.5, color: 'warning.main' }}>
+                <WarningAmberRoundedIcon sx={{ fontSize: 14, mt: '2px' }} />
+                <Typography variant="caption">{w}</Typography>
+              </Stack>
+            ))}
           </Box>
 
           <Box>

@@ -20,6 +20,7 @@ import {
   formatBucketTooltipTitle,
   pickBucketMs,
 } from './time-buckets';
+import { passBand } from './app-settings';
 
 const quantile = (sorted: number[], q: number): number => {
   if (sorted.length === 0) return 0;
@@ -124,8 +125,8 @@ export const toneFromRollup = (r: ExperimentRollup, annotationTone: ReviewTone):
   const tones: ReviewTone[] = [annotationTone];
 
   if (r.errorRate > 0) tones.push('bad');
-  if (r.judgePassRate !== null) tones.push(r.judgePassRate >= 0.75 ? 'good' : r.judgePassRate >= 0.5 ? 'warn' : 'bad');
-  if (r.checkPassRate !== null) tones.push(r.checkPassRate >= 0.75 ? 'good' : r.checkPassRate >= 0.5 ? 'warn' : 'bad');
+  if (r.judgePassRate !== null) tones.push(passBand(r.judgePassRate));
+  if (r.checkPassRate !== null) tones.push(passBand(r.checkPassRate));
 
   return worstTone(tones);
 };

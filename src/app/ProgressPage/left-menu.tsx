@@ -22,6 +22,7 @@ import { setMenuOptions } from '../../store/slices/progressPageSlice';
 import { toggleThemeMode } from '../../store/slices/uiSlice';
 import { logoutUser } from '../../store/slices/authSlice';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 const LeftMenu = () => {
@@ -45,6 +46,12 @@ const LeftMenu = () => {
       label: 'Monitoring',
       path: 'monitoring',
       to: experimentId ? `/${experimentId}/monitoring` : null,
+    },
+    {
+      icon: <SettingsOutlinedIcon />,
+      label: 'Settings',
+      path: 'settings',
+      to: '/settings',
     },
     // {
     //   icon: <HubRoundedIcon />,

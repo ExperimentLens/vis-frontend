@@ -15,6 +15,7 @@ const ExperimentsLandingPage = lazy(() => import('./app/ProgressPage/Experiments
 const MonitoringPage = lazy(() => import('./app/ProgressPage/MonitoringPage/monitoring-page'));
 const WorkflowTab = lazy(() => import('./app/ProgressPage/WorkflowTab/workflow-tab'));
 const HighlightsPage = lazy(() => import('./app/ProgressPage/HighlightsPage/highlights-page'));
+const SettingsPage = lazy(() => import('./app/SettingsPage/settings-page'));
 
 /**
  * Deployments behind the ABAC/Keycloak proxy set VITE_REQUIRE_AUTH=true to send
@@ -38,6 +39,11 @@ const routes = createBrowserRouter([
   {
     path: '/',
     element: inShell(<ExperimentsLandingPage />),
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: '/settings',
+    element: inShell(<SettingsPage />),
     errorElement: <ErrorPage />,
   },
   {

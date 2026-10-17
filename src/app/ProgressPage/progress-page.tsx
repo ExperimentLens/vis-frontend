@@ -53,7 +53,9 @@ const ProgressPage = (props: ProgressPageProps) => {
       return;
     }
 
-    if (location.pathname.includes('workflow'))
+    if (pathParts[0] === 'settings')
+      dispatch(setMenuOptions({ ...menuOptions, selected: 'settings' }));
+    else if (location.pathname.includes('workflow'))
       dispatch(setMenuOptions({ ...menuOptions, selected: 'monitoring' }));
     else dispatch(setMenuOptions({ ...menuOptions, selected: pathParts[1] }));
   }, [location]);

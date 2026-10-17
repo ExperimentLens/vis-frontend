@@ -7,8 +7,9 @@ import { verdictPassRates } from '../../../../shared/utils/observability-aggrega
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
 import InfoMessage from '../../../../shared/components/InfoMessage';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import { passBand } from '../../../../shared/utils/app-settings';
 
-const band = (r: number) => (r >= 0.75 ? 'good' : r >= 0.5 ? 'mid' : 'bad');
+const band = (r: number) => ({ good: 'good', warn: 'mid', bad: 'bad' } as const)[passBand(r)];
 
 export default function VerdictPassRateChart({
   details,

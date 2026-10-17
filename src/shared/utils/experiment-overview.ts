@@ -3,6 +3,7 @@ import { compareToBaseline, evalLabel, evalMetrics, evalName, evalPassMark, isEv
 import { comparableMetrics, inferDirection, NOT_SET, paretoFrontier, summarize } from './run-statistics';
 import type { RunRecord } from './run-statistics';
 import type { TraceFilters } from './trace-explorer';
+import { appSettings } from './app-settings';
 
 /**
  * The experiment Overview: one quality number, one cost number, and the handful of
@@ -220,7 +221,7 @@ export function attentionItems(
       // Only when it fails under every configuration; otherwise a regression above covers it.
       const everyGroup = new Set(scored.map(r => groupOf(r.params))).size === new Set(failing.map(r => groupOf(r.params))).size;
 
-      if (scored.length >= 2 && failing.length / scored.length >= 0.5 && everyGroup) {
+      if (scored.length >= 2 && failing.length / scored.length >= appSettings.attentionFailShare && everyGroup) {
         items.push({
           severity: isSafetyEval(metric) ? 'high' : 'medium',
           title: `Case "${caseId}" fails ${evalLabel(metric).toLowerCase()}`,

@@ -38,6 +38,7 @@ import { rollup, toneFromRollup } from '../../../../shared/utils/observability-a
 import { isHumanScoreName, scoreTone, worstTone, TONE_COLOR, TONE_LABEL } from '../../../Tasks/Observability/score-dimensions';
 import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
 import { AnnotationBadge, TruncMono } from '../LLMOverview/llm-monitoring-shared';
+import { passBand } from '../../../../shared/utils/app-settings';
 
 export interface Data {
   [key: string]: string | number | boolean | null | undefined;
@@ -512,7 +513,7 @@ const WorkflowIdCell = ({
     const errorRate = typeof row.errorRate === 'number' ? row.errorRate : 0;
 
     const rateColor = (rate: number | null | undefined) =>
-      rate === null || rate === undefined ? undefined : rate >= 0.75 ? TONE_COLOR.good : rate >= 0.5 ? TONE_COLOR.warn : TONE_COLOR.bad;
+      rate === null || rate === undefined ? undefined : TONE_COLOR[passBand(rate)];
     const rateLabel = (rate: number | null | undefined) => (rate === null || rate === undefined ? '—' : `${Math.round(rate * 100)}%`);
 
     const stat = (label: string, color?: string) => (

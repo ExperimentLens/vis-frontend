@@ -4,6 +4,7 @@ import type { Theme } from '@mui/material/styles';
 import { Handler } from 'vega-tooltip';
 import { cardSurfaceSx, cardHeaderSx } from '../../../../shared/styles/card-surface';
 import { MONO } from '../../../../shared/models/observability/agentic-conventions';
+import { appSettings } from '../../../../shared/utils/app-settings';
 
 /** Shared Vega tooltip handler (stringifies values, themed via global CSS). */
 export const useVegaTooltip = () => useMemo(() => new Handler({ sanitize: (v: unknown) => String(v) }).call, []);
@@ -35,8 +36,8 @@ export const useVegaThemeConfig = () => {
 export const numericColor = (value: number, theme: Theme, invert = false) => {
   const v = invert ? 1 - value : value;
 
-  if (v >= 0.75) return theme.palette.success.main;
-  if (v >= 0.5) return theme.palette.warning.main;
+  if (v >= appSettings.goodCutoff) return theme.palette.success.main;
+  if (v >= appSettings.warnCutoff) return theme.palette.warning.main;
 
   return theme.palette.error.main;
 };

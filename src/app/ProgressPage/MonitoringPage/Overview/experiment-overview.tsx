@@ -32,6 +32,7 @@ import AttentionCard from './attention-card';
 import { useOpenTraces } from '../Traces/use-open-traces';
 import { useExperimentCapabilities } from '../../../../shared/utils/experimentCapabilities';
 import VariantMapCard from './variant-map-card';
+import { passBand } from '../../../../shared/utils/app-settings';
 
 const COST_METRICS = ['latency_ms', 'cost_usd', 'total_tokens'];
 
@@ -49,7 +50,7 @@ const smooth = (values: number[]) => {
 const mean = (values: number[]) => (values.length ? values.reduce((a, b) => a + b, 0) / values.length : null);
 
 const qualityTone = (value: number | null): Tone =>
-  value === null ? 'default' : value >= 0.75 ? 'success' : value >= 0.5 ? 'warning' : 'error';
+  value === null ? 'default' : ({ good: 'success', warn: 'warning', bad: 'error' } as const)[passBand(value)];
 
 /** Landing view of an experiment: headline numbers, which configuration wins, and what needs a look. */
 export default function ExperimentOverview() {

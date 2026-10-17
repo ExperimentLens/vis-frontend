@@ -1,4 +1,5 @@
 import type { IRun } from '../models/experiment/run.model';
+import { appSettings } from './app-settings';
 
 /**
  * Statistics behind the Insights tab: which params drive a metric, whether one param
@@ -21,7 +22,7 @@ export type Direction = 'maximize' | 'minimize';
 /** Group label for runs that never logged the param. */
 export const NOT_SET = '(not set)';
 
-export const SIGNIFICANCE_LEVEL = 0.05;
+export const SIGNIFICANCE_LEVEL = appSettings.significanceLevel;
 
 // ---------------------------------------------------------------------------
 // Runs → records
