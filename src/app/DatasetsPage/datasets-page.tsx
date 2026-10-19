@@ -14,7 +14,6 @@ import {
   List,
   ListItemButton,
   ListItemText,
-  Paper,
   Stack,
   Switch,
   Table,
@@ -40,6 +39,7 @@ import { caseIdOf } from '../../shared/models/observability/dataset';
 import { MONO } from '../../shared/models/observability/agentic-conventions';
 import { CopyButton } from '../Tasks/Observability/trace-ui';
 import DatasetItemDialog from '../Tasks/Observability/dataset-item-dialog';
+import ResponsiveCardTable from '../../shared/components/responsive-card-table';
 
 const preview = (value: unknown): string => {
   if (value === null || value === undefined) return '—';
@@ -51,7 +51,27 @@ const preview = (value: unknown): string => {
   return typeof text === 'string' ? text : JSON.stringify(value);
 };
 
-const formatDate = (iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+/** The app's standard card, without the chart-only gear / fullscreen / download buttons. */
+const Section = ({ title, details, headerActions, children }: {
+  title: string;
+  details?: string | null;
+  headerActions?: React.ReactNode;
+  children: React.ReactNode;
+}) => (
+  <ResponsiveCardTable
+    title={title}
+    details={details}
+    headerActions={headerActions}
+    showSettings={false}
+    showFullScreenButton={false}
+    showDownloadButton={false}
+    noPadding
+  >
+    {children}
+  </ResponsiveCardTable>
+);
+
+const formatDate =(iso: string) => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
 const Clamp = ({ children, mono = false }: { children: string; mono?: boolean }) => (
   <Tooltip title={<Box component="pre" sx={{ m: 0, whiteSpace: 'pre-wrap', fontSize: '0.72rem' }}>{children}</Box>}>
@@ -204,45 +224,55 @@ function DatasetView({ name, onChanged }: { name: string; onChanged: () => void 
 
   return (
     <Stack spacing={2} sx={{ minWidth: 0 }}>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'flex-start' }}>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, wordBreak: 'break-word' }}>{name}</Typography>
-          {detail.dataset.description && (
-            <Typography variant="body2" color="text.secondary">{detail.dataset.description}</Typography>
-          )}
+      <Section title={name}>
+        <Stack spacing={1} sx={{ p: 1.5 }}>
           <Typography variant="caption" color="text.secondary">
             {active.length} case{active.length === 1 ? '' : 's'}
             {archivedCount > 0 && ` · ${archivedCount} archived`}
             {` · ${detail.runs.length} run${detail.runs.length === 1 ? '' : 's'}`}
+            {detail.dataset.description && ` · ${detail.dataset.description}`}
           </Typography>
-        </Box>
-        <Button variant="contained" startIcon={<AddRoundedIcon />} onClick={() => setDialog({ kind: 'new' })}>
-          Add case
-        </Button>
-      </Stack>
-
-      <Paper variant="outlined" sx={{ px: 1.5, py: 1, borderRadius: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>Use in code</Typography>
-        <Typography sx={{ fontFamily: MONO, fontSize: '0.75rem', flex: 1, minWidth: 0, overflowX: 'auto', whiteSpace: 'nowrap' }}>
-          {snippet}
-        </Typography>
-        <CopyButton text={snippet} />
-      </Paper>
+          <Box
+            sx={{
+              px: 1.25,
+              py: 0.5,
+              borderRadius: 1,
+              border: theme => `1px solid ${theme.palette.divider}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0 }}>Use in code</Typography>
+            <Typography sx={{ fontFamily: MONO, fontSize: '0.75rem', flex: 1, minWidth: 0, overflowX: 'auto', whiteSpace: 'nowrap' }}>
+              {snippet}
+            </Typography>
+            <CopyButton text={snippet} />
+          </Box>
+        </Stack>
+      </Section>
 
       {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
 
-      <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
-        <Stack direction="row" alignItems="center" sx={{ px: 1.5, py: 0.75 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, flex: 1 }}>Cases</Typography>
-          {archivedCount > 0 && (
-            <FormControlLabel
-              control={<Switch id="show-archived" size="small" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />}
-              label={<Typography variant="caption">Show archived</Typography>}
-            />
-          )}
-        </Stack>
+      <Section
+        title="Cases"
+        headerActions={
+          <>
+            {archivedCount > 0 && (
+              <FormControlLabel
+                sx={{ mr: 0.5 }}
+                control={<Switch id="show-archived" size="small" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />}
+                label={<Typography variant="caption">Show archived</Typography>}
+              />
+            )}
+            <Button size="small" variant="contained" disableElevation startIcon={<AddRoundedIcon />} onClick={() => setDialog({ kind: 'new' })}>
+              Add case
+            </Button>
+          </>
+        }
+      >
         {shown.length === 0 ? (
-          <Box sx={{ px: 2, pb: 2 }}>
+          <Box sx={{ p: 2 }}>
             <Typography variant="body2" color="text.secondary">
               No cases yet. Add one here, use “Add to dataset” on any trace, or upload from code with
               {' '}<Box component="code" sx={{ fontFamily: MONO }}>upload_dataset(&quot;{name}&quot;, cases)</Box>.
@@ -313,12 +343,11 @@ function DatasetView({ name, onChanged }: { name: string; onChanged: () => void 
             </Table>
           </Box>
         )}
-      </Paper>
+      </Section>
 
-      <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, px: 1.5, py: 1 }}>Runs on this dataset</Typography>
+      <Section title="Runs on this dataset">
         {detail.runs.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ px: 1.5, pb: 1.5 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
             No experiment has run on it yet.
           </Typography>
         ) : (
@@ -341,7 +370,7 @@ function DatasetView({ name, onChanged }: { name: string; onChanged: () => void 
             </Table>
           </Box>
         )}
-      </Paper>
+      </Section>
 
       {dialog && (
         <DatasetItemDialog
@@ -376,17 +405,35 @@ export default function DatasetsPage() {
   const select = (name: string) => navigate(`/datasets/${encodeURIComponent(name)}`);
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 }, maxWidth: 1280, mx: 'auto' }}>
-      <Stack direction="row" alignItems="flex-start" spacing={1} sx={{ mb: 2 }}>
+    <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <Box
+        sx={{
+          flexShrink: 0,
+          bgcolor: theme => theme.palette.background.default,
+          borderBottom: theme => theme.palette.customGrey.main,
+          borderBottomWidth: 2,
+          borderBottomStyle: 'solid',
+          height: 64,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1,
+          px: 2,
+        }}
+      >
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>Datasets</Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.3 }} color="text.primaryHeader" noWrap>
+            Datasets
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} noWrap>
             Test cases your experiments run on. Runs record which version they used, so results stay comparable.
           </Typography>
         </Box>
-        <Button variant="outlined" startIcon={<AddRoundedIcon />} onClick={() => setCreating(true)}>New dataset</Button>
-      </Stack>
+        <Button size="small" variant="contained" disableElevation startIcon={<AddRoundedIcon />} onClick={() => setCreating(true)} sx={{ flexShrink: 0 }}>
+          New dataset
+        </Button>
+      </Box>
 
+      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 2 }}>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
       <Box
@@ -395,9 +442,12 @@ export default function DatasetsPage() {
           gridTemplateColumns: { xs: '1fr', md: '280px minmax(0, 1fr)' },
           gap: 2,
           alignItems: 'start',
+          maxWidth: 1280,
+          mx: 'auto',
         }}
       >
-        <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+        <Box sx={{ position: { md: 'sticky' }, top: 0 }}>
+        <Section title="All datasets" headerActions={datasets && <Chip size="small" label={datasets.length} sx={{ height: 20, fontSize: '0.68rem', mr: 0.5 }} />}>
           {!datasets && !error && <Box sx={{ p: 2, display: 'grid', placeItems: 'center' }}><CircularProgress size={20} /></Box>}
           {datasets?.length === 0 && (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
@@ -405,7 +455,7 @@ export default function DatasetsPage() {
             </Typography>
           )}
           {datasets && datasets.length > 0 && (
-            <List dense disablePadding sx={{ maxHeight: { md: 'calc(100vh - 220px)' }, overflowY: 'auto' }}>
+            <List dense disablePadding sx={{ maxHeight: { md: 'calc(100vh - 160px)' }, overflowY: 'auto' }}>
               {datasets.map(d => (
                 <ListItemButton key={d.name} selected={d.name === datasetName} onClick={() => select(d.name)}>
                   <ListItemText
@@ -421,19 +471,21 @@ export default function DatasetsPage() {
               ))}
             </List>
           )}
-        </Paper>
+        </Section>
+        </Box>
 
         <Box sx={{ minWidth: 0 }}>
           {datasetName ? (
             <DatasetView key={datasetName} name={datasetName} onChanged={refresh} />
           ) : (
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1.5 }}>
-              <Typography variant="body2" color="text.secondary">
+            <Section title="No dataset selected">
+              <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
                 Pick a dataset to see its cases and the runs that used it.
               </Typography>
-            </Paper>
+            </Section>
           )}
         </Box>
+      </Box>
       </Box>
 
       <NewDatasetDialog
