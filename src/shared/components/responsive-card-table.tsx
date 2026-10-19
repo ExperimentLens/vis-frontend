@@ -17,6 +17,7 @@ import {
   Fade,
   useTheme,
   useMediaQuery,
+  alpha,
 } from '@mui/material';
 import CompactMenuItem from './compact-menu-item';
 import { cardSurfaceSx, cardHeaderSx, menuPaperSx } from '../styles/card-surface';
@@ -57,6 +58,10 @@ interface ResponsiveCardTableProps {
   optionsLabel?: string
   /** Icon for the settings/controls section header. */
   optionsIcon?: React.ReactNode
+  /** Makes the whole header band clickable, with list-item hover feedback. */
+  onHeaderClick?: () => void
+  /** Paints the clickable header as selected, like a selected list item. */
+  headerSelected?: boolean
 
 }
 
@@ -129,6 +134,8 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
   showSettings = true,
   optionsLabel = 'Options',
   optionsIcon = <TuneRoundedIcon fontSize="small" />,
+  onHeaderClick,
+  headerSelected = false,
 
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -233,12 +240,40 @@ const ResponsiveCardTable: React.FC<ResponsiveCardTableProps> = ({
       >
         <Box
           ref={cardHeaderRef}
+          {...(onHeaderClick && {
+            role: 'button',
+            tabIndex: 0,
+            onClick: onHeaderClick,
+            onKeyDown: (e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onHeaderClick();
+              }
+            },
+          })}
           sx={[
             cardHeaderSx(),
             {
               justifyContent: 'space-between',
               height: shouldShowControlsInHeader ? 'auto' : 44,
             },
+            // Same hover / selected colours as a MUI ListItemButton.
+            !!onHeaderClick && (t => ({
+              cursor: 'pointer',
+              outline: 'none',
+              transition: t.transitions.create('background', { duration: t.transitions.duration.shortest }),
+              ...(headerSelected && {
+                background: alpha(t.palette.primary.main, t.palette.action.selectedOpacity),
+              }),
+              '&:hover': {
+                background: headerSelected
+                  ? alpha(t.palette.primary.main, t.palette.action.selectedOpacity + t.palette.action.hoverOpacity)
+                  : t.palette.action.hover,
+              },
+              '&:focus-visible': {
+                background: t.palette.action.focus,
+              },
+            })),
           ]}
         >
           {/* Title with truncation */}

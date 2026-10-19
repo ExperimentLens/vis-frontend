@@ -39,6 +39,10 @@ import { caseIdOf } from '../../shared/models/observability/dataset';
 import { MONO } from '../../shared/models/observability/agentic-conventions';
 import { CopyButton } from '../Tasks/Observability/trace-ui';
 import DatasetItemDialog from '../Tasks/Observability/dataset-item-dialog';
+import StatTile from '../../shared/components/stat-tile';
+import FolderCopyOutlinedIcon from '@mui/icons-material/FolderCopyOutlined';
+import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
+import UpdateRoundedIcon from '@mui/icons-material/UpdateRounded';
 import ResponsiveCardTable from '../../shared/components/responsive-card-table';
 
 const preview = (value: unknown): string => {
@@ -52,16 +56,20 @@ const preview = (value: unknown): string => {
 };
 
 /** The app's standard card, without the chart-only gear / fullscreen / download buttons. */
-const Section = ({ title, details, headerActions, children }: {
+const Section = ({ title, details, headerActions, onHeaderClick, headerSelected, children }: {
   title: string;
   details?: string | null;
   headerActions?: React.ReactNode;
+  onHeaderClick?: () => void;
+  headerSelected?: boolean;
   children: React.ReactNode;
 }) => (
   <ResponsiveCardTable
     title={title}
     details={details}
     headerActions={headerActions}
+    onHeaderClick={onHeaderClick}
+    headerSelected={headerSelected}
     showSettings={false}
     showFullScreenButton={false}
     showDownloadButton={false}
@@ -387,6 +395,76 @@ function DatasetView({ name, onChanged }: { name: string; onChanged: () => void 
   );
 }
 
+function DatasetsOverview({ datasets, onSelect, onCreate }: {
+  datasets: Dataset[] | null;
+  onSelect: (name: string) => void;
+  onCreate: () => void;
+}) {
+  if (!datasets) return <Box sx={{ p: 3, display: 'grid', placeItems: 'center' }}><CircularProgress size={24} /></Box>;
+
+  const totalCases = datasets.reduce((sum, d) => sum + (d.itemCount ?? 0), 0);
+  const lastUpdated = datasets[0]; // the list is sorted newest first
+
+  return (
+    <Stack spacing={2} sx={{ minWidth: 0 }}>
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
+        <StatTile icon={<FolderCopyOutlinedIcon sx={{ fontSize: 15 }} />} label="Datasets" value={String(datasets.length)} />
+        <StatTile
+          icon={<ListAltRoundedIcon sx={{ fontSize: 15 }} />}
+          label="Cases"
+          value={totalCases.toLocaleString()}
+        />
+        <StatTile
+          icon={<UpdateRoundedIcon sx={{ fontSize: 15 }} />}
+          label="Last updated"
+          value={lastUpdated ? formatDate(lastUpdated.updatedAt) : '—'}
+          sub={lastUpdated?.name}
+        />
+      </Stack>
+
+      <Section title="All datasets">
+        {datasets.length === 0 ? (
+          <Stack spacing={1.5} alignItems="flex-start" sx={{ p: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              No datasets yet. Create one, or add a trace from an experiment’s Traces table.
+            </Typography>
+            <Button size="small" variant="outlined" startIcon={<AddRoundedIcon />} onClick={onCreate}>New dataset</Button>
+          </Stack>
+        ) : (
+          <Box sx={{ overflowX: 'auto' }}>
+            <Table size="small" sx={{ minWidth: 560 }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Description</TableCell>
+                  <TableCell sx={{ width: 80 }} align="right">Cases</TableCell>
+                  <TableCell sx={{ width: 170 }}>Created</TableCell>
+                  <TableCell sx={{ width: 170 }}>Updated</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {datasets.map(d => (
+                  <TableRow key={d.name} hover onClick={() => onSelect(d.name)} sx={{ cursor: 'pointer' }}>
+                    <TableCell sx={{ fontWeight: 600, wordBreak: 'break-word' }}>{d.name}</TableCell>
+                    <TableCell>
+                      {d.description
+                        ? <Clamp>{d.description}</Clamp>
+                        : <Typography variant="caption" color="text.secondary">—</Typography>}
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{d.itemCount ?? 0}</TableCell>
+                    <TableCell sx={{ fontVariantNumeric: 'tabular-nums', color: 'text.secondary' }}>{formatDate(d.createdAt)}</TableCell>
+                    <TableCell sx={{ fontVariantNumeric: 'tabular-nums', color: 'text.secondary' }}>{formatDate(d.updatedAt)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        )}
+      </Section>
+    </Stack>
+  );
+}
+
 export default function DatasetsPage() {
   const navigate = useNavigate();
   const { datasetName } = useParams();
@@ -447,7 +525,12 @@ export default function DatasetsPage() {
         }}
       >
         <Box sx={{ position: { md: 'sticky' }, top: 0 }}>
-        <Section title="All datasets" headerActions={datasets && <Chip size="small" label={datasets.length} sx={{ height: 20, fontSize: '0.68rem', mr: 0.5 }} />}>
+        <Section
+          title="All datasets"
+          onHeaderClick={() => navigate('/datasets')}
+          headerSelected={!datasetName}
+          headerActions={datasets && <Chip size="small" label={datasets.length} sx={{ height: 20, fontSize: '0.68rem', mr: 0.5 }} />}
+        >
           {!datasets && !error && <Box sx={{ p: 2, display: 'grid', placeItems: 'center' }}><CircularProgress size={20} /></Box>}
           {datasets?.length === 0 && (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
@@ -478,11 +561,7 @@ export default function DatasetsPage() {
           {datasetName ? (
             <DatasetView key={datasetName} name={datasetName} onChanged={refresh} />
           ) : (
-            <Section title="No dataset selected">
-              <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-                Pick a dataset to see its cases and the runs that used it.
-              </Typography>
-            </Section>
+            <DatasetsOverview datasets={datasets} onSelect={select} onCreate={() => setCreating(true)} />
           )}
         </Box>
       </Box>
