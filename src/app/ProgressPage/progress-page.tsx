@@ -53,8 +53,9 @@ const ProgressPage = (props: ProgressPageProps) => {
       return;
     }
 
-    if (pathParts[0] === 'settings')
-      dispatch(setMenuOptions({ ...menuOptions, selected: 'settings' }));
+    // Top-level pages, which live outside an experiment.
+    if (pathParts[0] === 'settings' || pathParts[0] === 'datasets')
+      dispatch(setMenuOptions({ ...menuOptions, selected: pathParts[0] }));
     else if (location.pathname.includes('workflow'))
       dispatch(setMenuOptions({ ...menuOptions, selected: 'monitoring' }));
     else dispatch(setMenuOptions({ ...menuOptions, selected: pathParts[1] }));
