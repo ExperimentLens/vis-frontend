@@ -24,6 +24,7 @@ import { isHumanScoreName, scoreTone, worstTone } from '../../../Tasks/Observabi
 import { getConversation } from '../../../api/conversations';
 import type { Conversation } from '../../../../shared/models/observability/conversation';
 import ConversationPanel from './conversation-panel';
+import Loader from '../../../../shared/components/loader';
 
 const traceLatencyMs = (t: TraceDetail): number => {
   const times = t.observations
@@ -160,9 +161,14 @@ export default function WorkflowTracesOverview() {
 
   // Multi-turn runs get a transcript and conversation-level scores above the trace cards.
   const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [conversationLoading, setConversationLoading] = useState(!!workflowId && workflowId !== 'none');
   const loadConversation = useCallback(() => {
     if (!workflowId || workflowId === 'none') return;
-    getConversation(workflowId).then(setConversation).catch(() => setConversation(null));
+    setConversationLoading(true);
+    getConversation(workflowId)
+      .then(setConversation)
+      .catch(() => setConversation(null))
+      .finally(() => setConversationLoading(false));
   }, [workflowId]);
 
   useEffect(() => {
@@ -181,12 +187,10 @@ export default function WorkflowTracesOverview() {
     dispatch(getTrace(traceId));
   };
 
-  if (session?.loading && traces.length === 0) {
+  // Hold the whole view until both traces and the conversation (if any) are fetched.
+  if ((session?.loading && traces.length === 0) || (conversationLoading && !conversation)) {
     return (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 2 }}>
-        <CircularProgress size={16} />
-        <Typography variant="body2" color="text.secondary">Loading traces…</Typography>
-      </Box>
+        <Loader />
     );
   }
 

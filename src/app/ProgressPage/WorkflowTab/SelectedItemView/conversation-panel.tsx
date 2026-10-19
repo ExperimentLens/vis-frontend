@@ -3,11 +3,12 @@ import {
   Alert,
   Box,
   Button,
-  Checkbox,
   CircularProgress,
-  Collapse,
-  FormControlLabel,
+  Divider,
+  IconButton,
+  InputAdornment,
   Paper,
+  Popover,
   Stack,
   TextField,
   Tooltip,
@@ -23,6 +24,8 @@ import { apiErrorMessage } from '../../../api/api';
 import type { Conversation, ConversationMetricResult } from '../../../../shared/models/observability/conversation';
 import { metricLabel } from '../../../../shared/models/observability/conversation';
 import { appSettings } from '../../../../shared/utils/app-settings';
+import { menuPaperSx } from '../../../../shared/styles/card-surface';
+import SelectionList from '../../../../shared/components/selection-list';
 
 const ScoreCard = ({ name, description, result }: { name: string; description: string; result?: ConversationMetricResult }) => {
   const theme = useTheme();
@@ -87,7 +90,7 @@ type Props = {
 };
 
 export default function ConversationPanel({ conversation, onOpenTrace, onEvaluated }: Props) {
-  const [showEvaluate, setShowEvaluate] = useState(false);
+  const [evaluateAnchor, setEvaluateAnchor] = useState<HTMLElement | null>(null);
   const [selected, setSelected] = useState<string[]>(() => conversation.metrics.map(m => m.name));
   const [model, setModel] = useState(appSettings.judgeModel);
   const [role, setRole] = useState(conversation.suggestedRole ?? '');
@@ -117,6 +120,7 @@ export default function ConversationPanel({ conversation, onOpenTrace, onEvaluat
       if (response.failed.length) parts.push(`No result for ${response.failed.map(metricLabel).join(', ')}: the judge's reply couldn't be read.`);
       if (!response.savedToRun) parts.push('The scores could not be saved to the MLflow run, so the Quality tab won’t show them.');
       setNotice(parts.join(' '));
+      setEvaluateAnchor(null);
       onEvaluated();
     } catch (e) {
       setError(apiErrorMessage(e, 'The evaluation failed. Check the judge model in Settings.'));
@@ -132,14 +136,11 @@ export default function ConversationPanel({ conversation, onOpenTrace, onEvaluat
         <Typography sx={{ fontWeight: 700, flex: 1 }}>
           Conversation · {conversation.turns.length} turn{conversation.turns.length === 1 ? '' : 's'}
         </Typography>
-        <Button
-          size="small"
-          variant={showEvaluate ? 'contained' : 'outlined'}
-          startIcon={<GavelRoundedIcon />}
-          onClick={() => setShowEvaluate(v => !v)}
-        >
-          Evaluate
-        </Button>
+        <Tooltip title="Evaluate">
+          <IconButton size="small" onClick={e => { setError(null); setEvaluateAnchor(e.currentTarget); }}>
+            <GavelRoundedIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Stack>
 
       <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 1, mb: 1.5 }}>
@@ -148,63 +149,83 @@ export default function ConversationPanel({ conversation, onOpenTrace, onEvaluat
         ))}
       </Box>
 
-      <Collapse in={showEvaluate} unmountOnExit>
-        <Paper variant="outlined" sx={{ p: 1.5, mb: 1.5, borderRadius: 1.5, bgcolor: 'action.hover' }}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            An LLM judge reads the whole transcript and scores each metric from 0 to 1. Results replace the run’s
-            scores, so comparisons and the Quality tab use them. Small local models often miss invented details;
-            a stronger judge gives more reliable scores.
+      <Popover
+        open={Boolean(evaluateAnchor)}
+        anchorEl={evaluateAnchor}
+        onClose={running ? undefined : () => setEvaluateAnchor(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        slotProps={{ paper: { elevation: 0, sx: [menuPaperSx({ width: 380 }), { p: 1.25, maxHeight: 'none', overflowY: 'auto' }] } }}
+      >
+        <TextField
+          id="conv-judge-model"
+          fullWidth
+          size="small"
+          placeholder="Judge model"
+          value={model}
+          onChange={e => setModel(e.target.value)}
+          InputProps={{ startAdornment: <InputAdornment position="start"><GavelRoundedIcon fontSize="small" /></InputAdornment> }}
+        />
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+          e.g. anthropic/claude-sonnet-5-5 or ollama/llama3.2. Leave empty for the default from Settings.
+        </Typography>
+
+        <Box sx={{ mt: 1.25 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
+            Metrics
           </Typography>
-          <Stack direction="row" useFlexGap flexWrap="wrap" columnGap={1}>
-            {conversation.metrics.map(m => (
-              <FormControlLabel
-                key={m.name}
-                control={<Checkbox id={`conv-metric-${m.name}`} size="small" checked={selected.includes(m.name)} onChange={() => toggle(m.name)} />}
-                label={<Typography variant="body2">{metricLabel(m.name)}</Typography>}
-              />
-            ))}
-          </Stack>
-          <Stack spacing={1.5} sx={{ mt: 1 }}>
-            <TextField
-              id="conv-judge-model"
-              size="small"
-              label="Judge model"
-              value={model}
-              onChange={e => setModel(e.target.value)}
-              placeholder="Server default"
-              helperText="e.g. anthropic/claude-sonnet-5-5 or ollama/llama3.2. Leave empty for the default from Settings."
+          <Box sx={{ mx: -0.5 }}>
+            <SelectionList
+              options={conversation.metrics.map(m => m.name)}
+              selectedOptions={selected}
+              onToggle={toggle}
+              getOptionLabel={metricLabel}
             />
-            {needsRole && (
-              <TextField
-                id="conv-role"
-                size="small"
-                label="Assistant’s role"
-                value={role}
-                onChange={e => setRole(e.target.value)}
-                multiline
-                minRows={2}
-                maxRows={6}
-                helperText={conversation.suggestedRole
-                  ? 'From the run. Role adherence checks every reply against it.'
-                  : 'Usually the system prompt. Role adherence checks every reply against it.'}
-              />
-            )}
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Button variant="contained" onClick={run} disabled={!canRun} startIcon={running ? <CircularProgress size={14} color="inherit" /> : undefined}>
-                {running ? 'Judging…' : `Evaluate ${selected.length} metric${selected.length === 1 ? '' : 's'}`}
-              </Button>
-              {needsRole && !role.trim() && (
-                <Typography variant="caption" color="text.secondary">Add the role, or untick role adherence.</Typography>
-              )}
-            </Stack>
-          </Stack>
-        </Paper>
-      </Collapse>
+          </Box>
+        </Box>
+
+        {needsRole && (
+          <Box sx={{ mt: 1.25 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75 }}>
+              Assistant’s role
+            </Typography>
+            <TextField
+              id="conv-role"
+              fullWidth
+              size="small"
+              placeholder="Usually the system prompt"
+              value={role}
+              onChange={e => setRole(e.target.value)}
+              multiline
+              minRows={2}
+              maxRows={6}
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+              {role.trim()
+                ? `${conversation.suggestedRole ? 'From the run. ' : ''}Role adherence checks every reply against it.`
+                : 'Add the role, or deselect role adherence.'}
+            </Typography>
+          </Box>
+        )}
+
+        <Divider sx={{ my: 1.25 }} />
+
+        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          An LLM judge reads the whole transcript and scores each metric from 0 to 1. Results replace the run’s
+          scores, so comparisons and the Quality tab use them. A stronger judge gives more reliable scores.
+        </Typography>
+        {error && <Alert severity="error" onClose={() => setError(null)} sx={{ mt: 1.25 }}>{error}</Alert>}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 1.25 }}>
+          <Button size="small" onClick={() => setEvaluateAnchor(null)} disabled={running}>Cancel</Button>
+          <Button size="small" variant="contained" onClick={run} disabled={!canRun} startIcon={running ? <CircularProgress size={14} color="inherit" /> : undefined}>
+            {running ? 'Judging…' : `Evaluate ${selected.length} metric${selected.length === 1 ? '' : 's'}`}
+          </Button>
+        </Box>
+      </Popover>
 
       {notice && <Alert severity="info" onClose={() => setNotice(null)} sx={{ mb: 1.5 }}>{notice}</Alert>}
-      {error && <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 1.5 }}>{error}</Alert>}
 
-      <Stack spacing={1.25}>
+      <Stack spacing={1.25} sx={{ maxHeight: 350, overflowY: 'auto', pr: 0.5 }}>
         {conversation.turns.map(turn => (
           <Box key={`${turn.traceId}-${turn.index}`}>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mb: 0.5, fontVariantNumeric: 'tabular-nums' }}>
