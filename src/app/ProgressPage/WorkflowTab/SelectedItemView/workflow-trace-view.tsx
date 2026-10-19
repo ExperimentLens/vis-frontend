@@ -21,6 +21,7 @@ import { isHumanScoreName } from '../../../Tasks/Observability/score-dimensions'
 import type { AnnotationSavePayload } from '../../../Tasks/Observability/annotate-form';
 
 import TraceHeader from '../../../Tasks/Observability/trace-header';
+import { AddToDatasetButton } from '../../../Tasks/Observability/dataset-item-dialog';
 import TraceWorkspace from '../../../Tasks/Observability/trace-workspace';
 
 export default function WorkflowTraceView() {
@@ -200,6 +201,7 @@ export default function WorkflowTraceView() {
         judgesPassed={judgesPassed}
         checksCount={checks.length}
         checksPassed={checksPassed}
+        actions={<AddToDatasetButton trace={data} />}
       />
       <Box sx={{ flex: 1, overflow: 'auto', height: '100%', width: '100%', position: 'relative' }}>
         <TraceWorkspace

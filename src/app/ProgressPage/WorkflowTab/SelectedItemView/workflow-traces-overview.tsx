@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Box, Chip, CircularProgress, Paper, Stack, Typography, useTheme } from '@mui/material';
 import LaunchRoundedIcon from '@mui/icons-material/LaunchRounded';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
@@ -21,6 +21,9 @@ import type { GenOutput, TraceInput, TraceOutput } from '../../../../shared/mode
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
 import { AnnotationBadge } from '../../MonitoringPage/LLMOverview/llm-monitoring-shared';
 import { isHumanScoreName, scoreTone, worstTone } from '../../../Tasks/Observability/score-dimensions';
+import { getConversation } from '../../../api/conversations';
+import type { Conversation } from '../../../../shared/models/observability/conversation';
+import ConversationPanel from './conversation-panel';
 
 const traceLatencyMs = (t: TraceDetail): number => {
   const times = t.observations
@@ -155,6 +158,18 @@ export default function WorkflowTracesOverview() {
     dispatch(fetchSessionTraceDetails({ experimentId, workflowId }));
   }, [dispatch, experimentId, workflowId]);
 
+  // Multi-turn runs get a transcript and conversation-level scores above the trace cards.
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const loadConversation = useCallback(() => {
+    if (!workflowId || workflowId === 'none') return;
+    getConversation(workflowId).then(setConversation).catch(() => setConversation(null));
+  }, [workflowId]);
+
+  useEffect(() => {
+    setConversation(null);
+    loadConversation();
+  }, [loadConversation]);
+
   const traces = useMemo(
     () => [...(session?.details ?? [])].sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp)),
     [session?.details],
@@ -185,6 +200,14 @@ export default function WorkflowTracesOverview() {
 
   return (
     <Stack spacing={1.25}>
+      {conversation && conversation.turns.length > 1 && (
+        <ConversationPanel
+          key={conversation.sessionId}
+          conversation={conversation}
+          onOpenTrace={handleOpen}
+          onEvaluated={loadConversation}
+        />
+      )}
       {traces.map(t => (
         <TracePreviewCard key={t.id} trace={t} onOpen={() => handleOpen(t.id)} />
       ))}

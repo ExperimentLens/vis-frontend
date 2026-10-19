@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import type { AxiosInstance } from 'axios';
 import { getToken } from '../../store/slices/authSlice';
 
@@ -39,3 +39,7 @@ export const api = withAuth(createClient('/api'));
 export const authApi = createClient('/auth');
 
 export const dataApi = withAuth(createClient('/api/data'));
+
+/** The server's message for a failed call, or a fallback that says what was attempted. */
+export const apiErrorMessage = (error: unknown, fallback: string): string =>
+  (isAxiosError(error) && typeof error.response?.data?.message === 'string' && error.response.data.message) || fallback;

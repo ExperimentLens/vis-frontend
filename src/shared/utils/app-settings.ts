@@ -4,7 +4,7 @@
  * sees the same values without subscribing to changes.
  */
 export interface AppSettings {
-  /** Judge model for Detect Issues, e.g. "anthropic/claude-sonnet-5-5"; empty = vis-api default. */
+  /** Judge model for Detect Issues and conversation evals, e.g. "anthropic/claude-sonnet-5-5"; empty = vis-api default. */
   judgeModel: string;
   /** p-value below which a difference counts as significant. */
   significanceLevel: number;

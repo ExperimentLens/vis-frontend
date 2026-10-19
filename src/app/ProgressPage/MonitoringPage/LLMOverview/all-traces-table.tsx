@@ -14,6 +14,7 @@ import type { TraceDetail } from '../../../../shared/models/observability/trace-
 import type { GenOutput } from '../../../../shared/models/observability/agentic-conventions';
 import { formatMs, isJudge, modelOf, prettyName } from '../../../../shared/models/observability/agentic-conventions';
 import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
+import { AddToDatasetButton } from '../../../Tasks/Observability/dataset-item-dialog';
 import { TONE_COLOR, TONE_LABEL, isHumanScoreName, scoreTone, worstTone } from '../../../Tasks/Observability/score-dimensions';
 
 const ACTION_COL_WIDTH = 120;
@@ -72,6 +73,7 @@ export default function AllTracesTable({
   runNameById?: Record<string, string>;
 }) {
   const navigate = useNavigate();
+  const traceById = useMemo(() => new Map(details.map(t => [t.id, t])), [details]);
   const [collapsedSessions, setCollapsedSessions] = useState<Set<string>>(new Set());
 
   const goToTrace = (row: Row) => {
@@ -463,17 +465,22 @@ export default function AllTracesTable({
         );
       }
 
+      const trace = traceById.get(row.id);
+
       return (
-        <Tooltip title="Open trace">
-          <IconButton
-            onClick={e => {
-              e.stopPropagation();
-              goToTrace(row);
-            }}
-          >
-            <LaunchRoundedIcon sx={{ color: 'primary.main' }} />
-          </IconButton>
-        </Tooltip>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {trace && <AddToDatasetButton trace={trace} size="medium" />}
+          <Tooltip title="Open trace">
+            <IconButton
+              onClick={e => {
+                e.stopPropagation();
+                goToTrace(row);
+              }}
+            >
+              <LaunchRoundedIcon sx={{ color: 'primary.main' }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
       );
     },
   };

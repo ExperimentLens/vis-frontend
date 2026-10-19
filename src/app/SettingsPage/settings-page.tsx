@@ -130,7 +130,7 @@ export default function SettingsPage() {
 
         <Section
           title="Judge model"
-          hint="Used by Detect Issues. Use provider/model names, like the SDK: ollama/llama3.2, anthropic/claude-sonnet-5-5, openai/gpt-4o-mini."
+          hint="Used by Detect Issues and conversation evals. Use provider/model names, like the SDK: ollama/llama3.2, anthropic/claude-sonnet-5-5, openai/gpt-4o-mini."
         >
           <TextField
             size="small"

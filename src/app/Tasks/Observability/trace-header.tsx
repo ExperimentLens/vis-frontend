@@ -104,6 +104,8 @@ type TraceHeaderProps = {
   judgesPassed: number;
   checksCount: number;
   checksPassed: number;
+  /** Extra controls shown before the trace id, e.g. "Add to dataset". */
+  actions?: ReactNode;
 };
 
 const TraceHeader = ({
@@ -119,6 +121,7 @@ const TraceHeader = ({
   judgesPassed,
   checksCount,
   checksPassed,
+  actions,
 }: TraceHeaderProps) => {
   const theme = useTheme();
   const [detailsAnchor, setDetailsAnchor] = useState<HTMLElement | null>(null);
@@ -201,6 +204,7 @@ const TraceHeader = ({
       <Box sx={{ flex: 1 }} />
 
       <Stack direction="row" alignItems="center" spacing={0.25} sx={{ flexShrink: 0 }}>
+        {actions}
         <Tooltip title={id} arrow>
           <Typography variant="bodySm" sx={{ color: 'text.secondary', fontFamily: MONO, fontSize: '0.66rem' }}>
             {shortId}

@@ -12,4 +12,5 @@ export interface Observation {
     statusMessage: string;
     parentObservationId: string;
     version: number;
+    metadata?: unknown;
 }
