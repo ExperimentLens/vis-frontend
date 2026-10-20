@@ -125,16 +125,17 @@ const ConnectionsTable = ({ rows, results, onTest }: {
       renderCell: ({ row }) => {
         const result = results[row.id];
 
-        if (!result) return <Typography variant="caption" color="text.disabled">Not tested</Typography>;
-        if (result === 'running') return <CircularProgress size={14} />;
-
         return (
-          <Stack justifyContent="center" sx={{ height: '100%' }}>
-            <PassFailChip
-              passed={result.ok}
-              label={result.ok ? `Connected · ${result.latencyMs} ms` : 'Failed'}
-              tooltip={result.ok ? undefined : result.error}
-            />
+          <Stack direction="row" alignItems="center" sx={{ height: '100%', minWidth: 0 }}>
+            {!result && <Typography variant="caption" color="text.disabled">Not tested</Typography>}
+            {result === 'running' && <CircularProgress size={14} />}
+            {result && result !== 'running' && (
+              <PassFailChip
+                passed={result.ok}
+                label={result.ok ? `${result.latencyMs} ms` : 'Failed'}
+                tooltip={result.ok ? 'Connected' : result.error}
+              />
+            )}
           </Stack>
         );
       },

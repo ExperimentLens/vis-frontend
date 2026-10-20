@@ -85,6 +85,7 @@ export const PassFailChip = ({ passed, label, tooltip }: { passed: boolean; labe
         border: `1px solid ${alpha(color, 0.3)}`,
         fontSize: '0.7rem',
         fontWeight: 600,
+        lineHeight: 1.4,
         maxWidth: '100%',
       }}
     >
