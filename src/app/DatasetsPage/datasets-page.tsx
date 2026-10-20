@@ -16,11 +16,6 @@ import {
   ListItemText,
   Stack,
   Switch,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
   TextField,
   Tooltip,
   Typography,
@@ -44,6 +39,9 @@ import FolderCopyOutlinedIcon from '@mui/icons-material/FolderCopyOutlined';
 import ListAltRoundedIcon from '@mui/icons-material/ListAltRounded';
 import UpdateRoundedIcon from '@mui/icons-material/UpdateRounded';
 import ResponsiveCardTable from '../../shared/components/responsive-card-table';
+import type { GridColDef } from '@mui/x-data-grid';
+import { StyledDataGrid, TruncMono } from '../ProgressPage/MonitoringPage/LLMOverview/llm-monitoring-shared';
+import { EmptyNote } from '../ProgressPage/MonitoringPage/LLMOverview/chart-kit';
 
 const preview = (value: unknown): string => {
   if (value === null || value === undefined) return '—';
@@ -99,6 +97,57 @@ const Clamp = ({ children, mono = false }: { children: string; mono?: boolean })
     </Typography>
   </Tooltip>
 );
+
+const numericCell = { fontVariantNumeric: 'tabular-nums' } as const;
+
+const DATASET_COLUMNS: GridColDef<Dataset>[] = [
+  {
+    field: 'name',
+    headerName: 'Name',
+    flex: 0.8,
+    minWidth: 160,
+    renderCell: ({ value }) => <Typography variant="body2" sx={{ fontWeight: 600, wordBreak: 'break-word' }}>{value}</Typography>,
+  },
+  {
+    field: 'description',
+    headerName: 'Description',
+    flex: 1,
+    minWidth: 200,
+    sortable: false,
+    renderCell: ({ value }) => (value
+      ? <Clamp>{value}</Clamp>
+      : <Typography variant="caption" color="text.secondary">—</Typography>),
+  },
+  {
+    field: 'itemCount',
+    headerName: 'Cases',
+    type: 'number',
+    width: 90,
+    valueGetter: (value: number | null | undefined) => value ?? 0,
+  },
+  {
+    field: 'createdAt',
+    headerName: 'Created',
+    width: 180,
+    renderCell: ({ value }) => <Typography variant="body2" color="text.secondary" sx={numericCell}>{formatDate(value)}</Typography>,
+  },
+  {
+    field: 'updatedAt',
+    headerName: 'Updated',
+    width: 180,
+    renderCell: ({ value }) => <Typography variant="body2" color="text.secondary" sx={numericCell}>{formatDate(value)}</Typography>,
+  },
+];
+
+const RUN_COLUMNS: GridColDef<DatasetDetail['runs'][number]>[] = [
+  { field: 'name', headerName: 'Run', flex: 1, minWidth: 200 },
+  {
+    field: 'createdAt',
+    headerName: 'Started',
+    width: 200,
+    renderCell: ({ value }) => <Typography variant="body2" sx={numericCell}>{formatDate(value)}</Typography>,
+  },
+];
 
 function NewDatasetDialog({ open, onClose, onCreated }: { open: boolean; onClose: () => void; onCreated: (d: Dataset) => void }) {
   const [name, setName] = useState('');
@@ -225,6 +274,86 @@ function DatasetView({ name, onChanged }: { name: string; onChanged: () => void 
     }
   };
 
+  const caseColumns: GridColDef<DatasetItem>[] = [
+    {
+      field: 'case',
+      headerName: 'Case',
+      width: 130,
+      sortable: false,
+      renderCell: ({ row }) => (
+        <Stack spacing={0.5} sx={{ minWidth: 0 }}>
+          <TruncMono max="100%">{caseIdOf(row) ?? row.id.slice(0, 8)}</TruncMono>
+          {row.status === 'ARCHIVED' && <Chip size="small" label="Archived" sx={{ height: 18, fontSize: '0.6rem', alignSelf: 'flex-start' }} />}
+        </Stack>
+      ),
+    },
+    {
+      field: 'input',
+      headerName: 'Input',
+      flex: 1,
+      minWidth: 200,
+      sortable: false,
+      renderCell: ({ row }) => <Clamp>{preview(row.input)}</Clamp>,
+    },
+    {
+      field: 'expectedOutput',
+      headerName: 'Expected',
+      flex: 0.7,
+      minWidth: 160,
+      sortable: false,
+      renderCell: ({ row }) => <Clamp mono={typeof row.expectedOutput !== 'string'}>{preview(row.expectedOutput)}</Clamp>,
+    },
+    {
+      field: 'source',
+      headerName: 'Source',
+      width: 120,
+      sortable: false,
+      renderCell: ({ row }) => (row.sourceTraceId ? (
+        <Button
+          size="small"
+          endIcon={openingTrace === row.sourceTraceId ? <CircularProgress size={12} /> : <LaunchRoundedIcon sx={{ fontSize: 14 }} />}
+          onClick={() => openTrace(row.sourceTraceId as string)}
+          sx={{ textTransform: 'none', fontSize: '0.72rem', px: 0.5, minWidth: 0 }}
+        >
+          Trace
+        </Button>
+      ) : (
+        <Typography variant="caption" color="text.secondary">
+          {row.metadata?.added_from === 'experimentlens-ui' ? 'Added here' : 'Uploaded'}
+        </Typography>
+      )),
+    },
+    {
+      field: 'actions',
+      headerName: '',
+      width: 96,
+      sortable: false,
+      align: 'right',
+      renderCell: ({ row }) => {
+        const archived = row.status === 'ARCHIVED';
+
+        return (
+          <Box sx={{ whiteSpace: 'nowrap' }}>
+            <Tooltip title="Edit">
+              <span>
+                <IconButton size="small" disabled={archived} onClick={() => setDialog({ kind: 'edit', item: row })}>
+                  <EditRoundedIcon sx={{ fontSize: 17 }} />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title={archived ? 'Restore' : 'Archive. New runs skip it.'}>
+              <span>
+                <IconButton size="small" disabled={busyItem === row.id} onClick={() => setStatus(row, archived ? 'ACTIVE' : 'ARCHIVED')}>
+                  {archived ? <UnarchiveOutlinedIcon sx={{ fontSize: 17 }} /> : <ArchiveOutlinedIcon sx={{ fontSize: 17 }} />}
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+        );
+      },
+    },
+  ];
+
   if (error && !detail) return <Alert severity="error">{error}</Alert>;
   if (!detail) return <Box sx={{ p: 3, display: 'grid', placeItems: 'center' }}><CircularProgress size={24} /></Box>;
 
@@ -280,103 +409,45 @@ function DatasetView({ name, onChanged }: { name: string; onChanged: () => void 
         }
       >
         {shown.length === 0 ? (
-          <Box sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              No cases yet. Add one here, use “Add to dataset” on any trace, or upload from code with
-              {' '}<Box component="code" sx={{ fontFamily: MONO }}>upload_dataset(&quot;{name}&quot;, cases)</Box>.
-            </Typography>
-          </Box>
+          <EmptyNote>
+            No cases yet. Add one here, use “Add to dataset” on any trace, or upload from code with
+            {' '}<Box component="code" sx={{ fontFamily: MONO }}>upload_dataset(&quot;{name}&quot;, cases)</Box>.
+          </EmptyNote>
         ) : (
-          <Box sx={{ overflowX: 'auto' }}>
-            <Table size="small" sx={{ minWidth: 640 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ width: 120 }}>Case</TableCell>
-                  <TableCell>Input</TableCell>
-                  <TableCell sx={{ width: '28%' }}>Expected</TableCell>
-                  <TableCell sx={{ width: 120 }}>Source</TableCell>
-                  <TableCell sx={{ width: 96 }} align="right" />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {shown.map(item => {
-                  const archived = item.status === 'ARCHIVED';
-
-                  return (
-                    <TableRow key={item.id} sx={{ opacity: archived ? 0.55 : 1, verticalAlign: 'top' }}>
-                      <TableCell>
-                        <Typography sx={{ fontFamily: MONO, fontSize: '0.72rem', wordBreak: 'break-all' }}>
-                          {caseIdOf(item) ?? item.id.slice(0, 8)}
-                        </Typography>
-                        {archived && <Chip size="small" label="Archived" sx={{ mt: 0.5, height: 18, fontSize: '0.6rem' }} />}
-                      </TableCell>
-                      <TableCell><Clamp>{preview(item.input)}</Clamp></TableCell>
-                      <TableCell><Clamp mono={typeof item.expectedOutput !== 'string'}>{preview(item.expectedOutput)}</Clamp></TableCell>
-                      <TableCell>
-                        {item.sourceTraceId ? (
-                          <Button
-                            size="small"
-                            endIcon={openingTrace === item.sourceTraceId ? <CircularProgress size={12} /> : <LaunchRoundedIcon sx={{ fontSize: 14 }} />}
-                            onClick={() => openTrace(item.sourceTraceId as string)}
-                            sx={{ textTransform: 'none', fontSize: '0.72rem', px: 0.5, minWidth: 0 }}
-                          >
-                            Trace
-                          </Button>
-                        ) : (
-                          <Typography variant="caption" color="text.secondary">
-                            {item.metadata?.added_from === 'experimentlens-ui' ? 'Added here' : 'Uploaded'}
-                          </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                        <Tooltip title="Edit">
-                          <span>
-                            <IconButton size="small" disabled={archived} onClick={() => setDialog({ kind: 'edit', item })}>
-                              <EditRoundedIcon sx={{ fontSize: 17 }} />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                        <Tooltip title={archived ? 'Restore' : 'Archive. New runs skip it.'}>
-                          <span>
-                            <IconButton size="small" disabled={busyItem === item.id} onClick={() => setStatus(item, archived ? 'ACTIVE' : 'ARCHIVED')}>
-                              {archived ? <UnarchiveOutlinedIcon sx={{ fontSize: 17 }} /> : <ArchiveOutlinedIcon sx={{ fontSize: 17 }} />}
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </Box>
+          <StyledDataGrid
+            autoHeight
+            hideFooter={shown.length <= 25}
+            disableRowSelectionOnClick
+            disableColumnMenu
+            rows={shown}
+            columns={caseColumns as GridColDef[]}
+            rowHeight={56}
+            columnHeaderHeight={44}
+            initialState={{ pagination: { paginationModel: { pageSize: 25, page: 0 } } }}
+            pageSizeOptions={[25, 50, 100]}
+            getRowClassName={params => ((params.row as DatasetItem).status === 'ARCHIVED' ? 'case-archived' : '')}
+            sx={{ width: '100%', '& .case-archived': { opacity: 0.55 } }}
+          />
         )}
       </Section>
 
       <Section title="Runs on this dataset">
         {detail.runs.length === 0 ? (
-          <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-            No experiment has run on it yet.
-          </Typography>
+          <EmptyNote>No experiment has run on it yet.</EmptyNote>
         ) : (
-          <Box sx={{ overflowX: 'auto' }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Run</TableCell>
-                  <TableCell sx={{ width: 190 }}>Started</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {detail.runs.map(run => (
-                  <TableRow key={run.id}>
-                    <TableCell sx={{ wordBreak: 'break-word' }}>{run.name}</TableCell>
-                    <TableCell sx={{ fontVariantNumeric: 'tabular-nums' }}>{formatDate(run.createdAt)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
+          <StyledDataGrid
+            autoHeight
+            hideFooter={detail.runs.length <= 25}
+            disableRowSelectionOnClick
+            disableColumnMenu
+            rows={detail.runs}
+            columns={RUN_COLUMNS as GridColDef[]}
+            rowHeight={44}
+            columnHeaderHeight={44}
+            initialState={{ pagination: { paginationModel: { pageSize: 25, page: 0 } } }}
+            pageSizeOptions={[25, 50, 100]}
+            sx={{ width: '100%' }}
+          />
         )}
       </Section>
 
@@ -424,41 +495,28 @@ function DatasetsOverview({ datasets, onSelect, onCreate }: {
 
       <Section title="All datasets">
         {datasets.length === 0 ? (
-          <Stack spacing={1.5} alignItems="flex-start" sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              No datasets yet. Create one, or add a trace from an experiment’s Traces table.
-            </Typography>
-            <Button size="small" variant="outlined" startIcon={<AddRoundedIcon />} onClick={onCreate}>New dataset</Button>
-          </Stack>
+          <EmptyNote>
+            <Stack spacing={1.5} alignItems="center" component="span">
+              <span>No datasets yet. Create one, or add a trace from an experiment’s Traces table.</span>
+              <Button size="small" variant="outlined" startIcon={<AddRoundedIcon />} onClick={onCreate}>New dataset</Button>
+            </Stack>
+          </EmptyNote>
         ) : (
-          <Box sx={{ overflowX: 'auto' }}>
-            <Table size="small" sx={{ minWidth: 560 }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Description</TableCell>
-                  <TableCell sx={{ width: 80 }} align="right">Cases</TableCell>
-                  <TableCell sx={{ width: 170 }}>Created</TableCell>
-                  <TableCell sx={{ width: 170 }}>Updated</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {datasets.map(d => (
-                  <TableRow key={d.name} hover onClick={() => onSelect(d.name)} sx={{ cursor: 'pointer' }}>
-                    <TableCell sx={{ fontWeight: 600, wordBreak: 'break-word' }}>{d.name}</TableCell>
-                    <TableCell>
-                      {d.description
-                        ? <Clamp>{d.description}</Clamp>
-                        : <Typography variant="caption" color="text.secondary">—</Typography>}
-                    </TableCell>
-                    <TableCell align="right" sx={{ fontVariantNumeric: 'tabular-nums' }}>{d.itemCount ?? 0}</TableCell>
-                    <TableCell sx={{ fontVariantNumeric: 'tabular-nums', color: 'text.secondary' }}>{formatDate(d.createdAt)}</TableCell>
-                    <TableCell sx={{ fontVariantNumeric: 'tabular-nums', color: 'text.secondary' }}>{formatDate(d.updatedAt)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Box>
+          <StyledDataGrid
+            autoHeight
+            hideFooter={datasets.length <= 25}
+            disableRowSelectionOnClick
+            disableColumnMenu
+            rows={datasets}
+            columns={DATASET_COLUMNS as GridColDef[]}
+            getRowId={row => (row as Dataset).name}
+            onRowClick={params => onSelect((params.row as Dataset).name)}
+            rowHeight={56}
+            columnHeaderHeight={44}
+            initialState={{ pagination: { paginationModel: { pageSize: 25, page: 0 } } }}
+            pageSizeOptions={[25, 50, 100]}
+            sx={{ width: '100%', '& .MuiDataGrid-row': { cursor: 'pointer' } }}
+          />
         )}
       </Section>
     </Stack>
