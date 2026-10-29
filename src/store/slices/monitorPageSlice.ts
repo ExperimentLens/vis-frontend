@@ -9,6 +9,7 @@ import type { AxiosError } from 'axios';
 import type { IDataAsset } from '../../shared/models/experiment/data-asset.model';
 import type { IDataExplorationMetaDataResponse, IDataExplorationRequest, IDataExplorationResponse, IMetaDataRequest, VisualColumn } from '../../shared/models/dataexploration.model';
 import type { GridPaginationModel, GridSortModel } from '@mui/x-data-grid';
+import { EMPTY_FILTERS, type TraceFilters } from '../../shared/utils/trace-explorer';
 
 // Tab indices for the monitoring page's top-level Tabs, shared with components (like
 // the workflow toolbar/table) that need to key behavior off which tab is active without
@@ -159,6 +160,7 @@ interface IMonitoringPageSlice {
       showMisclassifiedOnly: boolean
       sortRocByAuc: boolean
       sortConfusionByF1: boolean
+      traceFilters: TraceFilters
       selectedWorkflowsMetrics: {
         data: {[key: string]: {name: string; seriesMetric: IMetric[]}[]}
         loading: boolean
@@ -291,6 +293,7 @@ const initialState: IMonitoringPageSlice = {
   showMisclassifiedOnly: false,
   sortRocByAuc: false,
   sortConfusionByF1: false,
+  traceFilters: EMPTY_FILTERS,
   selectedWorkflowsMetrics: {
     data: {},
     loading: false,
@@ -484,6 +487,9 @@ export const monitoringPageSlice = createSlice({
     },
     setSortConfusionByF1: (state, action: { payload: boolean }) => {
       state.sortConfusionByF1 = action.payload;
+    },
+    setTraceFilters: (state, action: { payload: TraceFilters }) => {
+      state.traceFilters = action.payload;
     },
     setComparativeModelInstanceControlPanel: (
       state,
@@ -1003,5 +1009,5 @@ export const fetchComparativeUmap = createAsyncThunk(
 
 export const { setParallel, setWorkflowsTable, setScheduledTable, setVisibleTable, setSelectedTab, setSelectedComparisonTab, toggleWorkflowSelection, bulkToggleWorkflowSelection, setGroupBy,
   setHoveredWorkflow, updateWorkflowRatingLocally, setSelectedModelComparisonChart, setSelectedExecutionsView, setCommonDataAssets, setDataAssetsControlPanel, setIsMosaic, setShowMisclassifiedOnly, setComparativeModelInstanceControlPanel,
-  setExpandedGroup, setExpandedWorkflowTrace, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces, setSortRocByAuc, setSortConfusionByF1, resetMonitoringPage
+  setExpandedGroup, setExpandedWorkflowTrace, setSelectedDataset, setDataComparisonViewMode, setDataComparisonSelectedColumns, setComparativeVisibleMetrics, setSelectedSpaces, setSortRocByAuc, setSortConfusionByF1, setTraceFilters, resetMonitoringPage
 } = monitoringPageSlice.actions;

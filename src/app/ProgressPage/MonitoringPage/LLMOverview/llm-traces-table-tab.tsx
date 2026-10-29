@@ -8,7 +8,8 @@ import InfoMessage from '../../../../shared/components/InfoMessage';
 import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import { getCache, removeCache } from '../../../../shared/utils/localStorageCache';
 import type { RootState } from '../../../../store/store';
-import { useAppSelector } from '../../../../store/store';
+import { useAppDispatch, useAppSelector } from '../../../../store/store';
+import { setTraceFilters } from '../../../../store/slices/monitorPageSlice';
 import { caseGrid, defaultBaseline, FILTER_QUERY_KEYS, filterOptions, filterTraceRows, filtersFromQuery, filtersToQuery, toTraceRows } from '../../../../shared/utils/trace-explorer';
 import type { GridCell, TraceFilters } from '../../../../shared/utils/trace-explorer';
 import BaselineCompare from '../Traces/baseline-compare';
@@ -23,19 +24,24 @@ import { caseParam } from '../../../../shared/utils/experiment-conventions';
  * Traces tab: every trace as question → answer → verdicts, filterable by what the
  * experiment varied, with a side panel to read one without leaving the list.
  * Filters can come from the URL (variant, case, status, check, q), so other views can
- * link straight to e.g. "contact_footer traces that failed pii leakage".
+ * link straight to e.g. "contact_footer traces that failed pii leakage". Otherwise the
+ * last filters used are kept in the store, so they survive leaving the tab and coming back.
  */
 export default function LlmTracesTableTab() {
   const { experimentId } = useParams();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const location = useLocation();
   const query = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const traceSelectionId = query.get('traceSelectionId');
 
   const { workflowIds, allDetails, anyLoading, hasData, refresh } = useLlmSessionTraces();
   const runs = useAppSelector((s: RootState) => s.progressPage.workflows.data);
+  const storedFilters = useAppSelector((s: RootState) => s.monitorPage.traceFilters);
 
-  const [filters, setFilters] = useState<TraceFilters>(() => filtersFromQuery(query));
+  // A link with filters in it wins; a plain visit picks up where the user left off.
+  const [filters, setFilters] = useState<TraceFilters>(() =>
+    FILTER_QUERY_KEYS.some(key => query.has(key)) ? filtersFromQuery(query) : storedFilters);
   const [chartTraceIds, setChartTraceIds] = useState<string[] | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [view, setView] = useState<'list' | 'grid'>(query.get('view') === 'grid' ? 'grid' : 'list');
@@ -43,8 +49,10 @@ export default function LlmTracesTableTab() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareVariant, setCompareVariant] = useState('');
 
-  // Keep filters and view in the URL, so a link or a reload shows the same traces.
+  // Keep filters and view in the URL, so a link or a reload shows the same traces,
+  // and filters in the store, so they're still there after navigating away.
   useEffect(() => {
+    dispatch(setTraceFilters(filters));
     const params = new URLSearchParams(location.search);
 
     FILTER_QUERY_KEYS.forEach(key => params.delete(key));

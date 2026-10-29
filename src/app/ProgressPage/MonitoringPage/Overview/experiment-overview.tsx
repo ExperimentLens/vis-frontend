@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Grid, Stack } from '@mui/material';
+import { useCallback, useMemo, useState } from 'react';
+import { Box, Grid, Stack } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
@@ -29,6 +29,7 @@ import { useInsightRecords } from '../Insights/use-insight-records';
 import ParamImpactCard from '../Insights/param-impact-card';
 import ScoresOverTimeCard from '../Evaluation/scores-over-time-card';
 import AttentionCard from './attention-card';
+import AttentionTracesPanel from './attention-traces-panel';
 import { useOpenTraces } from '../Traces/use-open-traces';
 import { useExperimentCapabilities } from '../../../../shared/utils/experimentCapabilities';
 import VariantMapCard from './variant-map-card';
@@ -80,6 +81,13 @@ export default function ExperimentOverview() {
     return attentionItems(outcomes, scored, param, baseline, metrics);
   }, [workflows, scored, param, baseline, evals]);
 
+  // The attention item whose traces are open beside the overview, by title so it survives a recompute.
+  const [openTitle, setOpenTitle] = useState<string | null>(null);
+  const openItem = attention.find(i => i.title === openTitle) ?? null;
+  const closePanel = useCallback(() => setOpenTitle(null), []);
+  // Grid breakpoints follow the window, not the space left beside the panel; while it is open
+  // the cards are stacked one per row so the charts keep a readable width.
+
   const points = useMemo(() => (costMetric ? variantMap(scored, param, costMetric) : []), [scored, param, costMetric]);
 
   const impactParams = useMemo(() => {
@@ -125,77 +133,92 @@ export default function ExperimentOverview() {
     .sort((a, b) => (startTimeById[a.id] ?? 0) - (startTimeById[b.id] ?? 0))
     .map(r => Number(passedSafety(r)));
 
+  // Tiles across the top; below them the cards scroll on the left and the traces panel sits beside them, as in the Traces tab.
   return (
-    <Grid container spacing={1.5} sx={{ pb: 1.5, flexShrink: 0 }}>
-      <Grid size={{ xs: 12 }}>
-        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
-          <StatTile
-            icon={<EmojiEventsRoundedIcon sx={{ fontSize: 15 }} />}
-            label="Quality score"
-            value={quality === null ? '—' : `${Math.round(quality * 100)}%`}
-            sub={best ? `best: ${best.group} (${Math.round(best.scores[QUALITY_SCORE].mean * 100)}%)` : source.label || 'no quality metric logged'}
-            tone={qualityTone(quality)}
-            trend={smooth(seriesOverTime(scored, startTimeById, QUALITY_SCORE))}
-          />
-          <StatTile
-            icon={<ShieldOutlinedIcon sx={{ fontSize: 15 }} />}
-            label="Passed safety checks"
-            value={safety.length ? `${Math.round((safety.filter(Boolean).length / safety.length) * 100)}%` : '—'}
-            sub={safety.length ? `${safety.filter(Boolean).length} of ${safety.length} runs` : 'no safety evals logged'}
-            tone={!safety.length ? 'default' : safety.every(Boolean) ? 'success' : 'error'}
-            trend={smooth(orderedSafety)}
-          />
-          <StatTile
-            icon={<SpeedRoundedIcon sx={{ fontSize: 15 }} />}
-            label="Latency p95"
-            value={p95 === null ? '—' : formatMs(p95)}
-            sub={latencies.length ? `median ${formatMs(percentile(latencies, 50) ?? 0)}` : 'no latency_ms logged'}
-            trend={smooth(seriesOverTime(scored, startTimeById, 'latency_ms'))}
-          />
-          <StatTile
-            icon={<PaymentsRoundedIcon sx={{ fontSize: 15 }} />}
-            label={totalCost > 0 ? 'Total cost' : 'Total tokens'}
-            value={totalCost > 0 ? `$${totalCost.toFixed(4)}` : totalTokens ? totalTokens.toLocaleString() : '—'}
-            sub={totalCost > 0 ? `${totalTokens.toLocaleString()} tokens` : 'no cost tracked'}
-            trend={smooth(seriesOverTime(scored, startTimeById, totalCost > 0 ? 'cost_usd' : 'total_tokens'))}
-          />
-          <StatTile
-            icon={<ScienceRoundedIcon sx={{ fontSize: 15 }} />}
-            label="Runs"
-            value={`${finished.length - failed} / ${finished.length}`}
-            sub={failed ? `${failed} failed` : 'none failed'}
-            tone={failed ? 'error' : 'success'}
-          />
-        </Stack>
-      </Grid>
-
-      <Grid size={{ xs: 12, lg: 7 }}>
-        <VariantMapCard points={points} costMetric={costMetric ?? ''} param={param} />
-      </Grid>
-      <Grid size={{ xs: 12, lg: 5 }}>
-        <AttentionCard items={attention} onOpenTraces={hasTraces ? openTraces : undefined} />
-      </Grid>
-
-      {impacts.length > 0 && (
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <ParamImpactCard
-            metric={QUALITY_SCORE}
-            impacts={impacts}
-            aliases={impactParams.aliases}
-            selectedParam={impactParam || impacts[0].param}
-            onSelectParam={setImpactParam}
-          />
-        </Grid>
-      )}
-      <Grid size={{ xs: 12, lg: impacts.length > 0 ? 6 : 12 }}>
-        <ScoresOverTimeCard
-          points={timePoints}
-          metrics={timeMetrics}
-          metric={timeMetrics.includes(timeMetric) ? timeMetric : QUALITY_SCORE}
-          onMetricChange={setTimeMetric}
-          param={param}
+    <Stack spacing={1.5} sx={{ flex: 1, minHeight: 0 }}>
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1, flexShrink: 0 }}>
+        <StatTile
+          icon={<EmojiEventsRoundedIcon sx={{ fontSize: 15 }} />}
+          label="Quality score"
+          value={quality === null ? '—' : `${Math.round(quality * 100)}%`}
+          sub={best ? `best: ${best.group} (${Math.round(best.scores[QUALITY_SCORE].mean * 100)}%)` : source.label || 'no quality metric logged'}
+          tone={qualityTone(quality)}
+          trend={smooth(seriesOverTime(scored, startTimeById, QUALITY_SCORE))}
         />
-      </Grid>
-    </Grid>
+        <StatTile
+          icon={<ShieldOutlinedIcon sx={{ fontSize: 15 }} />}
+          label="Passed safety checks"
+          value={safety.length ? `${Math.round((safety.filter(Boolean).length / safety.length) * 100)}%` : '—'}
+          sub={safety.length ? `${safety.filter(Boolean).length} of ${safety.length} runs` : 'no safety evals logged'}
+          tone={!safety.length ? 'default' : safety.every(Boolean) ? 'success' : 'error'}
+          trend={smooth(orderedSafety)}
+        />
+        <StatTile
+          icon={<SpeedRoundedIcon sx={{ fontSize: 15 }} />}
+          label="Latency p95"
+          value={p95 === null ? '—' : formatMs(p95)}
+          sub={latencies.length ? `median ${formatMs(percentile(latencies, 50) ?? 0)}` : 'no latency_ms logged'}
+          trend={smooth(seriesOverTime(scored, startTimeById, 'latency_ms'))}
+        />
+        <StatTile
+          icon={<PaymentsRoundedIcon sx={{ fontSize: 15 }} />}
+          label={totalCost > 0 ? 'Total cost' : 'Total tokens'}
+          value={totalCost > 0 ? `$${totalCost.toFixed(4)}` : totalTokens ? totalTokens.toLocaleString() : '—'}
+          sub={totalCost > 0 ? `${totalTokens.toLocaleString()} tokens` : 'no cost tracked'}
+          trend={smooth(seriesOverTime(scored, startTimeById, totalCost > 0 ? 'cost_usd' : 'total_tokens'))}
+        />
+        <StatTile
+          icon={<ScienceRoundedIcon sx={{ fontSize: 15 }} />}
+          label="Runs"
+          value={`${finished.length - failed} / ${finished.length}`}
+          sub={failed ? `${failed} failed` : 'none failed'}
+          tone={failed ? 'error' : 'success'}
+        />
+      </Stack>
+
+      <Stack direction="row" spacing={1.25} sx={{ flex: 1, minHeight: 0 }}>
+        <Box sx={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
+          <Grid container spacing={1.5} sx={{ pb: 1.5 }}>
+            <Grid size={{ xs: 12, lg: openItem ? 12 : 7 }}>
+              <VariantMapCard points={points} costMetric={costMetric ?? ''} param={param} />
+            </Grid>
+            <Grid size={{ xs: 12, lg: openItem ? 12 : 5 }}>
+              <AttentionCard
+                items={attention}
+                onShowTraces={hasTraces ? item => setOpenTitle(item.title) : undefined}
+                selectedTitle={openTitle}
+              />
+            </Grid>
+
+            {impacts.length > 0 && (
+              <Grid size={{ xs: 12, lg: openItem ? 12 : 6 }}>
+                <ParamImpactCard
+                  metric={QUALITY_SCORE}
+                  impacts={impacts}
+                  aliases={impactParams.aliases}
+                  selectedParam={impactParam || impacts[0].param}
+                  onSelectParam={setImpactParam}
+                />
+              </Grid>
+            )}
+            <Grid size={{ xs: 12, lg: impacts.length > 0 && !openItem ? 6 : 12 }}>
+              <ScoresOverTimeCard
+                points={timePoints}
+                metrics={timeMetrics}
+                metric={timeMetrics.includes(timeMetric) ? timeMetric : QUALITY_SCORE}
+                onMetricChange={setTimeMetric}
+                param={param}
+              />
+            </Grid>
+          </Grid>
+        </Box>
+
+        {openItem && (
+          <Box sx={{ width: { xs: '100%', lg: '46%' }, flexShrink: 0, minHeight: 0, pb: 1.5 }}>
+            <AttentionTracesPanel key={openItem.title} item={openItem} onClose={closePanel} onOpenTraces={openTraces} />
+          </Box>
+        )}
+      </Stack>
+    </Stack>
   );
 }
