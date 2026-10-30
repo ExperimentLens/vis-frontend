@@ -86,10 +86,12 @@ export default function QualityTab({ details, tracesLoading, runNameById }: Prop
   const hasTraces = details.length > 0;
 
   // The heatmap cell whose traces are open beside the cards.
-  const [openCell, setOpenCell] = useState<{ title: string; detail: string; filters: Partial<TraceFilters> } | null>(null);
+  const [openCell, setOpenCell] = useState<{ group: string; metric: string; title: string; detail: string; filters: Partial<TraceFilters> } | null>(null);
   const closePanel = useCallback(() => setOpenCell(null), []);
 
   const openCellTraces = useCallback((group: string, metric: string, mean: number) => setOpenCell({
+    group,
+    metric,
     title: `${group} · ${evalLabel(metric)}`,
     detail: `mean ${Math.round(mean * 100)}% · ${mean < 1 ? 'traces that failed this check' : 'every trace'}`
       + (param === groupParam() ? '' : ' · all variants'),
@@ -148,6 +150,7 @@ export default function QualityTab({ details, tracesLoading, runNameById }: Prop
                   metrics={metrics}
                   param={param}
                   onCellClick={hasTraces ? openCellTraces : undefined}
+                  selected={openCell}
                 />
               </Grid>
               <Grid size={{ xs: 12 }}>

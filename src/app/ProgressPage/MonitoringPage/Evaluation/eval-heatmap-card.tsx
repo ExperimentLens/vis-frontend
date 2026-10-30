@@ -11,13 +11,15 @@ interface Props {
   param: string;
   /** Called with the clicked cell, to open its traces. */
   onCellClick?: (group: string, metric: string, mean: number) => void;
+  /** The cell whose traces are open: outlined, with the other cells dimmed. */
+  selected?: { group: string; metric: string } | null;
 }
 
 const TONE_LABEL: Record<ScoreTone, string> = { good: 'At or above pass mark', warn: 'Just below', bad: 'Well below' };
 const ROW_HEIGHT = 34;
 
 /** Configuration × metric grid of mean scores, colored against each metric's pass mark. */
-export default function EvalHeatmapCard({ rows, metrics, param, onCellClick }: Props) {
+export default function EvalHeatmapCard({ rows, metrics, param, onCellClick, selected }: Props) {
   const theme = useTheme();
   const themeConfig = useVegaThemeConfig();
   const tooltip = useVegaTooltip();
@@ -25,6 +27,9 @@ export default function EvalHeatmapCard({ rows, metrics, param, onCellClick }: P
   const safetyCount = metrics.filter(isSafetyEval).length;
 
   const spec = useMemo(() => {
+    const isSelected = selected
+      ? `datum.group === ${JSON.stringify(selected.group)} && datum.metricKey === ${JSON.stringify(selected.metric)}`
+      : 'false';
     const columns = metrics.map(evalLabel);
     const values = rows.flatMap(row =>
       metrics
@@ -67,7 +72,9 @@ export default function EvalHeatmapCard({ rows, metrics, param, onCellClick }: P
               },
               legend: { orient: 'bottom', title: null },
             },
-            opacity: { field: 'mean', type: 'quantitative', scale: { domain: [0, 1], range: [0.55, 0.9] }, legend: null },
+            opacity: selected
+              ? { condition: { test: `!(${isSelected})`, value: 0.25 }, field: 'mean', type: 'quantitative', scale: { domain: [0, 1], range: [0.55, 0.9] }, legend: null }
+              : { field: 'mean', type: 'quantitative', scale: { domain: [0, 1], range: [0.55, 0.9] }, legend: null },
             tooltip: [
               { field: 'group', title: param || 'Group' },
               { field: 'metric', title: 'Metric' },
@@ -86,10 +93,14 @@ export default function EvalHeatmapCard({ rows, metrics, param, onCellClick }: P
             color: { value: theme.palette.common.white },
           },
         },
+        ...(selected ? [{
+          transform: [{ filter: isSelected }],
+          mark: { type: 'rect', cornerRadius: 3, fill: null, stroke: theme.palette.text.primary, strokeWidth: 2.5 },
+        }] : []),
       ],
       config: themeConfig,
     } as Record<string, unknown>;
-  }, [rows, metrics, param, theme, themeConfig, onCellClick]);
+  }, [rows, metrics, param, theme, themeConfig, onCellClick, selected]);
 
   const meanByCell = useMemo(
     () => new Map(rows.flatMap(r => metrics.filter(m => r.scores[m]).map(m => [`${r.group}\u0000${m}`, r.scores[m].mean] as const))),
