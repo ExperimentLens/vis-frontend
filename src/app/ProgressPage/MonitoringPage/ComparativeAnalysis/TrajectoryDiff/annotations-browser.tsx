@@ -1,18 +1,17 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Box, Chip, IconButton, Tooltip, Typography, alpha } from '@mui/material';
 import LaunchIcon from '@mui/icons-material/Launch';
 import FlagRoundedIcon from '@mui/icons-material/FlagRounded';
-import { useAppDispatch, useAppSelector } from '../../../../../store/store';
-import { fetchAnnotations, selectAnnotations } from '../../../../../store/slices/observabilitySlice';
+import type { Score } from '../../../../../shared/models/observability/score';
 import ResponsiveCardTable from '../../../../../shared/components/responsive-card-table';
 import InfoMessage from '../../../../../shared/components/InfoMessage';
 import Loader from '../../../../../shared/components/loader';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import { SCORE_SOURCE_COLOR, SCORE_SOURCE_LABEL, TONE_COLOR, TONE_LABEL, dimensionLabel, scoreSource, scoreTone } from '../../../../Tasks/Observability/score-dimensions';
 
-// Scoped to the traces belonging to the runs currently selected in the
-// comparison table above — the answer to "where do I see everything that's
+// The scores of the traces belonging to the runs currently selected in the
+// comparison table above, as already loaded with those traces — the answer to "where do I see everything that's
 // been annotated for what I'm looking at right now." The "Needs review"
 // filter is what turns that from a log into a queue: skip everything that's
 // fine, look only at what a reviewer flagged as bad (low score, "Missed
@@ -25,8 +24,10 @@ const formatTimestamp = (iso: string) => {
 };
 
 interface AnnotationsBrowserProps {
-  // traceId -> the name of the run/session it belongs to. Also doubles as
-  // the scoping set: only traces present as a key are shown.
+  // Every score on the selected runs' traces.
+  scores: Score[];
+  loading: boolean;
+  // traceId -> the name of the run/session it belongs to.
   traceSessionNames?: Record<string, string>;
   // traceId -> the trace's own name, shown in place of the raw id.
   traceNames?: Record<string, string>;
@@ -35,23 +36,12 @@ interface AnnotationsBrowserProps {
   experimentId?: string;
 }
 
-const AnnotationsBrowser = ({ traceSessionNames, traceNames, traceWorkflowIds, experimentId }: AnnotationsBrowserProps) => {
-  const dispatch = useAppDispatch();
-  const { data, loading, error } = useAppSelector(selectAnnotations);
+const AnnotationsBrowser = ({ scores, loading, traceSessionNames, traceNames, traceWorkflowIds, experimentId }: AnnotationsBrowserProps) => {
   const [needsReviewOnly, setNeedsReviewOnly] = useState(false);
 
-  useEffect(() => {
-    dispatch(fetchAnnotations({}));
-  }, [dispatch]);
-
-  const scoped = useMemo(
-    () => (traceSessionNames ? data.filter(s => s.traceId in traceSessionNames) : data),
-    [data, traceSessionNames],
-  );
-
   const sorted = useMemo(
-    () => [...scoped].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-    [scoped],
+    () => [...scores].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+    [scores],
   );
 
   const needsReviewCount = useMemo(
@@ -61,29 +51,14 @@ const AnnotationsBrowser = ({ traceSessionNames, traceNames, traceWorkflowIds, e
 
   const visible = needsReviewOnly ? sorted.filter(s => scoreTone(s) !== 'good') : sorted;
 
-  if (loading && data.length === 0) {
+  if (loading && scores.length === 0) {
     return <Loader />;
   }
 
-  if (error) {
+  if (scores.length === 0) {
     return (
       <InfoMessage
-        message={error}
-        type="error"
-        icon={<AssessmentIcon sx={{ fontSize: 40, color: 'error.main' }} />}
-        fullHeight
-      />
-    );
-  }
-
-  if (scoped.length === 0) {
-    return (
-      <InfoMessage
-        message={
-          traceSessionNames && data.length > 0
-            ? 'No annotations for the selected sessions.'
-            : 'No annotations yet — annotate a step or trace from the Graph tab to see it here.'
-        }
+        message="No annotations for the selected sessions yet — annotate a step or trace from the Graph tab to see it here."
         type="info"
         icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
         fullHeight
@@ -94,7 +69,7 @@ const AnnotationsBrowser = ({ traceSessionNames, traceNames, traceWorkflowIds, e
   return (
     <ResponsiveCardTable
       title="Annotations"
-      details={traceSessionNames ? `${scoped.length} across the selected sessions` : `${scoped.length} across this project`}
+      details={`${scores.length} across the selected sessions`}
       headerActions={
         <Chip
           size="small"

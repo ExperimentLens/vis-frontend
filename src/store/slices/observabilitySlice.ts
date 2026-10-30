@@ -5,7 +5,6 @@ import type { TraceDetail } from '../../shared/models/observability/trace-detail
 import type { Trace } from '../../shared/models/observability/trace';
 import type { Score } from '../../shared/models/observability/score';
 import type { ScoreCreateRequest } from '../../shared/models/observability/score-create-request';
-import type { ScoresResponse } from '../../shared/models/observability/scores-response';
 import type { IssueScanRequest, IssueScanResponse } from '../../shared/models/observability/issue-scan';
 import { LANGFUSE_PROJECT_TAG } from '../../shared/models/observability/agentic-conventions';
 
@@ -57,13 +56,8 @@ export interface ObservabilityState {
     // a session, fanned out from getTraces -> getTrace. Powers experiment-level
     // aggregates without clobbering the single-trace `trace` bucket above.
     sessions: Record<string, SessionTraces>;
-    // Project-wide annotation listing — powers an "all annotations" browse view,
-    // independent of any single trace/session being loaded.
-    annotations: {
-        data: Score[];
-        loading: boolean;
-        error: string | null;
-    };
+    // True while fetchExperimentTraceDetails is filling `sessions` for a whole experiment.
+    experimentTracesLoading: boolean;
     // Results of the most recent local-LLM "detect issues" scan — session-only,
     // not persisted server-side (unlike annotations, which are Langfuse scores).
     issueScan: {
@@ -85,11 +79,7 @@ const initialState: ObservabilityState = {
         error: null,
     },
     sessions: {},
-    annotations: {
-        data: [],
-        loading: false,
-        error: null,
-    },
+    experimentTracesLoading: false,
     issueScan: {
         data: null,
         loading: false,
@@ -124,9 +114,13 @@ export const getTrace = createAsyncThunk<TraceDetail, string>(
     }
 );
 
+// A session is loaded once a fetch for it succeeded; later reads come from the store.
+const isLoaded = (session: SessionTraces | undefined) => Boolean(session && !session.loading && !session.error);
+
 export const fetchSessionTraceDetails = createAsyncThunk<
     { workflowId: string; details: TraceDetail[] },
-    { experimentId: string; workflowId: string },
+    // force refetches a session that is already loaded.
+    { experimentId: string; workflowId: string; force?: boolean },
     { rejectValue: string }
 >(
     'observability/fetchSessionTraceDetails',
@@ -149,10 +143,41 @@ export const fetchSessionTraceDetails = createAsyncThunk<
         }
     },
     {
-        condition: ({ workflowId }, { getState }) => {
-            const state = getState() as { observability: ObservabilityState };
+        condition: ({ workflowId, force }, { getState }) => {
+            const session = (getState() as { observability: ObservabilityState }).observability.sessions[workflowId];
 
-            return !state.observability.sessions[workflowId]?.loading;
+            return !session?.loading && (force || !isLoaded(session));
+        },
+    }
+);
+
+// Every trace of an experiment in one request, filed into `sessions` by run
+// (sessionId = workflowId). Runs without traces get an empty bucket, so they
+// count as loaded too.
+export const fetchExperimentTraceDetails = createAsyncThunk<
+    TraceDetail[],
+    // force refetches even when every run is already loaded.
+    { experimentId: string; workflowIds: string[]; force?: boolean },
+    { rejectValue: string }
+>(
+    'observability/fetchExperimentTraceDetails',
+    async ({ experimentId }, { getState, rejectWithValue }) => {
+        try {
+            const projectId = projectIdOf(getState);
+            const response = await api.get('/observability/traces/details', {
+                params: { projectId, userId: experimentId },
+            });
+
+            return response.data as TraceDetail[];
+        } catch (error) {
+            return rejectWithValue(extractErrorMessage(error, 'Failed to load session traces'));
+        }
+    },
+    {
+        condition: ({ workflowIds, force }, { getState }) => {
+            const { experimentTracesLoading, sessions } = (getState() as { observability: ObservabilityState }).observability;
+
+            return !experimentTracesLoading && (force || workflowIds.some(id => !isLoaded(sessions[id])));
         },
     }
 );
@@ -189,54 +214,6 @@ export const createAnnotation = createAsyncThunk<
             } as Score;
         } catch (error) {
             return rejectWithValue(extractErrorMessage(error, 'Failed to save annotation'));
-        }
-    },
-);
-
-// Project-wide annotation listing (not scoped to a single trace) — the data
-// source for an "all annotations" browse view across the whole experiment.
-// The Langfuse scores endpoint caps each response at a page (100 by
-// default), so when no explicit page/limit is requested this pages through
-// every result and returns them all concatenated — otherwise the browser
-// silently only ever saw the newest ~50-100 scores project-wide, which was
-// disproportionately cutting off automated judge/checker scores (there are
-// far more of those than human annotations).
-export const fetchAnnotations = createAsyncThunk<
-    ScoresResponse,
-    { traceId?: string; name?: string; page?: number; limit?: number },
-    { rejectValue: string }
->(
-    'observability/fetchAnnotations',
-    async ({ traceId, name, page, limit }, { getState, rejectWithValue }) => {
-        try {
-            const projectId = projectIdOf(getState);
-            if (page !== undefined || limit !== undefined) {
-                const response = await api.get('/observability/scores', {
-                    params: { projectId, traceId, name, page, limit },
-                });
-
-                return response.data as ScoresResponse;
-            }
-
-            const pageSize = 100;
-            let currentPage = 1;
-            let all: Score[] = [];
-            let meta: ScoresResponse['meta'] | null = null;
-
-            do {
-                const response = await api.get('/observability/scores', {
-                    params: { projectId, traceId, name, page: currentPage, limit: pageSize },
-                });
-                const payload = response.data as ScoresResponse;
-
-                all = all.concat(payload.data ?? []);
-                meta = payload.meta;
-                currentPage += 1;
-            } while (meta && currentPage <= meta.totalPages);
-
-            return { data: all, meta: meta as ScoresResponse['meta'] };
-        } catch (error) {
-            return rejectWithValue(extractErrorMessage(error, 'Failed to load annotations'));
         }
     },
 );
@@ -322,6 +299,42 @@ const observabilitySlice = createSlice({
                     error: (action.payload as string) ?? 'Failed to load session traces',
                 };
             })
+            .addCase(fetchExperimentTraceDetails.pending, (state, action) => {
+                state.experimentTracesLoading = true;
+                action.meta.arg.workflowIds.forEach(id => {
+                    state.sessions[id] = {
+                        traceIds: state.sessions[id]?.traceIds ?? [],
+                        details: state.sessions[id]?.details ?? [],
+                        loading: true,
+                        error: null,
+                    };
+                });
+            })
+            .addCase(fetchExperimentTraceDetails.fulfilled, (state, action) => {
+                const bySession: Record<string, TraceDetail[]> = {};
+
+                action.payload.forEach(detail => {
+                    if (detail.sessionId) (bySession[detail.sessionId] ??= []).push(detail);
+                });
+
+                state.experimentTracesLoading = false;
+                new Set([...action.meta.arg.workflowIds, ...Object.keys(bySession)]).forEach(id => {
+                    const details = bySession[id] ?? [];
+
+                    state.sessions[id] = { traceIds: details.map(d => d.id), details, loading: false, error: null };
+                });
+            })
+            .addCase(fetchExperimentTraceDetails.rejected, (state, action) => {
+                state.experimentTracesLoading = false;
+                action.meta.arg.workflowIds.forEach(id => {
+                    state.sessions[id] = {
+                        traceIds: state.sessions[id]?.traceIds ?? [],
+                        details: state.sessions[id]?.details ?? [],
+                        loading: false,
+                        error: action.payload ?? 'Failed to load session traces',
+                    };
+                });
+            })
             .addCase(createAnnotation.fulfilled, (state, action) => {
                 const { workflowId } = action.meta.arg;
                 const score = action.payload;
@@ -347,23 +360,6 @@ const observabilitySlice = createSlice({
                 if (listTrace) {
                     listTrace.scores = [...(listTrace.scores ?? []), score] as unknown as string[];
                 }
-
-                // And into the project-wide annotations bucket — this is the one
-                // TracesAccordion's badges actually key off of (the trace list
-                // endpoint's own `scores` field is id-only, not full objects).
-                state.annotations.data = [...state.annotations.data, score];
-            })
-            .addCase(fetchAnnotations.pending, (state) => {
-                state.annotations.loading = true;
-                state.annotations.error = null;
-            })
-            .addCase(fetchAnnotations.fulfilled, (state, action) => {
-                state.annotations.loading = false;
-                state.annotations.data = action.payload.data ?? [];
-            })
-            .addCase(fetchAnnotations.rejected, (state, action) => {
-                state.annotations.loading = false;
-                state.annotations.error = (action.payload as string) ?? 'Failed to load annotations';
             })
             .addCase(detectIssues.pending, (state) => {
                 state.issueScan.loading = true;
@@ -386,8 +382,6 @@ export const selectSessionsMap = (state: SliceState) => state.observability.sess
 
 export const selectExperimentTracesLoading = (workflowIds: string[]) => (state: SliceState) =>
     workflowIds.some(id => state.observability.sessions[id]?.loading);
-
-export const selectAnnotations = (state: SliceState) => state.observability.annotations;
 
 export const selectIssueScan = (state: SliceState) => state.observability.issueScan;
 

@@ -18,6 +18,10 @@ import ProgressPageLoading from './progress-page-loading';
 import LeftMenu from './left-menu';
 import ExperimentControls from './experiment-controls';
 import { resetMonitoringPage } from '../../store/slices/monitorPageSlice';
+import type { RunStatus } from '../../shared/models/experiment/run.model';
+
+// Runs whose status or results can still change without the user doing anything.
+const LIVE_STATUSES: RunStatus[] = ['RUNNING', 'SCHEDULED', 'PENDING_INPUT'];
 
 interface ProgressPageProps {
   children?: ReactNode
@@ -26,6 +30,9 @@ interface ProgressPageProps {
 const ProgressPage = (props: ProgressPageProps) => {
   const { experiment, initialization, menuOptions } = useAppSelector(
     (state: RootState) => state.progressPage,
+  );
+  const hasLiveRuns = useAppSelector((state: RootState) =>
+    state.progressPage.workflows.data.some(w => LIVE_STATUSES.includes(w.status)),
   );
   const { experimentId } = useParams();
   const dispatch = useAppDispatch();
@@ -81,21 +88,34 @@ const ProgressPage = (props: ProgressPageProps) => {
   //   };
   // }, [experiment]);
 
+  // The runs endpoint is heavy (all runs with their params and metrics), so poll it every
+  // minute only while a run can still change; a finished experiment is checked every
+  // 5 minutes for runs started later. A hidden tab skips its turns and catches up when shown.
   useEffect(() => {
-    if (!experiment.data?.id) return;
+    const id = experiment.data?.id;
 
-    const fetchWorkflows = () =>
-      dispatch(fetchExperimentWorkflows(experiment?.data?.id ?? ''));
+    if (!id) return;
 
-    intervalId.current = setInterval(fetchWorkflows, 60 * 1000); // 1 minute
+    const every = hasLiveRuns ? 60 * 1000 : 5 * 60 * 1000;
+    let lastFetch = Date.now();
+    const fetchWorkflows = () => {
+      if (document.hidden || Date.now() - lastFetch < every - 1000) return;
+
+      lastFetch = Date.now();
+      dispatch(fetchExperimentWorkflows(id));
+    };
+
+    intervalId.current = setInterval(fetchWorkflows, every);
+    document.addEventListener('visibilitychange', fetchWorkflows);
 
     return () => {
       if (intervalId.current) {
         clearInterval(intervalId.current);
       }
+      document.removeEventListener('visibilitychange', fetchWorkflows);
     };
 
-  }, [experiment.data?.id]);
+  }, [experiment.data?.id, hasLiveRuns]);
 
   // useEffect(() => {
   //   if (workflows.data && workflows.data.length > 0) {

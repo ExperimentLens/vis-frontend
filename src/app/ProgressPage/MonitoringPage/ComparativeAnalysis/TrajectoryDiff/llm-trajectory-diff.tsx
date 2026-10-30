@@ -85,6 +85,11 @@ export default function LlmTrajectoryDiff() {
     [runIds, detailsByRun, runNameById],
   );
 
+  const selectedScores = useMemo(
+    () => runIds.flatMap(id => (detailsByRun[id] ?? []).flatMap(t => t.scores ?? [])),
+    [runIds, detailsByRun],
+  );
+
   const traceWorkflowIds = useMemo(
     () => Object.fromEntries(
       runIds.flatMap(id => (detailsByRun[id] ?? []).map(t => [t.id, id] as const)),
@@ -430,7 +435,7 @@ export default function LlmTrajectoryDiff() {
 
       {/* Annotations — scoped to the traces belonging to the currently
           selected runs; add one from the Graph tab. */}
-      {selectedExecutionsView === 'annotations' && <AnnotationsBrowser traceSessionNames={traceSessionNames} traceNames={traceNames} traceWorkflowIds={traceWorkflowIds} experimentId={experimentId} />}
+      {selectedExecutionsView === 'annotations' && <AnnotationsBrowser scores={selectedScores} loading={anyLoading} traceSessionNames={traceSessionNames} traceNames={traceNames} traceWorkflowIds={traceWorkflowIds} experimentId={experimentId} />}
     </Stack>
   );
 }

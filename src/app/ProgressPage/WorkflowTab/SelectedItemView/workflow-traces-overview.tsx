@@ -156,7 +156,7 @@ export default function WorkflowTracesOverview() {
 
   useEffect(() => {
     if (!experimentId || !workflowId || workflowId === 'none') return;
-    dispatch(fetchSessionTraceDetails({ experimentId, workflowId }));
+    dispatch(fetchSessionTraceDetails({ experimentId, workflowId, force: true }));
   }, [dispatch, experimentId, workflowId]);
 
   // Multi-turn runs get a transcript and conversation-level scores above the trace cards.

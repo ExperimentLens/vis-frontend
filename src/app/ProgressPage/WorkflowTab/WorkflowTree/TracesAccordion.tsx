@@ -11,16 +11,14 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import type { RootState } from '../../../../store/store';
 import { setSelectedId, setSelectedItem } from '../../../../store/slices/workflowPageSlice';
-import { fetchAnnotations, fetchSessionTraceDetails, getTrace, getTraces, selectAnnotations } from '../../../../store/slices/observabilitySlice';
+import { fetchSessionTraceDetails, getTrace, getTraces, selectSessionsMap } from '../../../../store/slices/observabilitySlice';
 import { MONO } from '../../../../shared/models/observability/agentic-conventions';
 import type { ReviewTone } from '../../../Tasks/Observability/score-dimensions';
 import { TONE_COLOR, TONE_LABEL, isHumanScoreName, scoreTone, worstTone } from '../../../Tasks/Observability/score-dimensions';
 
 // The trace LIST endpoint's `scores` field only carries score ids, not full
-// objects (unlike a single trace's own detail fetch), so it can't tell us
-// which traces have human annotations. Instead this reuses the same
-// `/api/observability/scores` listing that powers the Annotations browse tab,
-// and groups it by traceId locally.
+// objects, so it can't tell us which traces have human annotations. The
+// session's trace details carry the full scores, so the badges read those.
 
 const AnnotationBadge = ({ count, tone, title }: { count: number; tone: ReviewTone; title: string }) => {
   const color = TONE_COLOR[tone];
@@ -63,7 +61,7 @@ export default function TracesAccordion() {
   const experimentId = run?.experimentId ?? experimentIdParam;
 
   const { data, loading, error } = useAppSelector((s: RootState) => s.observability.traces);
-  const { data: annotations } = useAppSelector(selectAnnotations);
+  const session = useAppSelector(selectSessionsMap)[workflowId ?? ''];
   const selectedId = tab?.dataTaskTable?.selectedId ?? null;
 
   useEffect(() => {
@@ -73,9 +71,11 @@ export default function TracesAccordion() {
     );
   }, [dispatch, experimentId, workflowId]);
 
+  // Usually already in the store from the monitoring views; fetched otherwise.
   useEffect(() => {
-    dispatch(fetchAnnotations({}));
-  }, [dispatch]);
+    if (!experimentId || !workflowId || workflowId === 'none') return;
+    dispatch(fetchSessionTraceDetails({ experimentId, workflowId }));
+  }, [dispatch, experimentId, workflowId]);
 
   // Deep link from the "All traces" table: land directly on the selected trace
   // instead of requiring an extra click in this tree once it loads.
@@ -91,17 +91,10 @@ export default function TracesAccordion() {
   // Grouped by trace, not just counted — a badge needs to know the WORST
   // tone among a trace's annotations (a "Missed escalation" should read
   // very differently from a "Correctly escalated"), not just how many there are.
-  const humanScoresByTraceId = useMemo(() => {
-    const map: Record<string, typeof annotations> = {};
-
-    annotations.forEach(s => {
-      if (isHumanScoreName(s.name)) {
-        (map[s.traceId] ??= []).push(s);
-      }
-    });
-
-    return map;
-  }, [annotations]);
+  const humanScoresByTraceId = useMemo(
+    () => Object.fromEntries((session?.details ?? []).map(t => [t.id, (t.scores ?? []).filter(s => isHumanScoreName(s.name))])),
+    [session],
+  );
 
   const allHumanScores = useMemo(
     () => traces.flatMap(t => humanScoresByTraceId[t.id] ?? []),
@@ -124,7 +117,7 @@ export default function TracesAccordion() {
     dispatch(setSelectedId('traces-root'));
     dispatch(setSelectedItem({ type: 'traces-overview', data: { workflowId } }));
     if (experimentId) {
-      dispatch(fetchSessionTraceDetails({ experimentId, workflowId }));
+      dispatch(fetchSessionTraceDetails({ experimentId, workflowId, force: true }));
     }
   };
 

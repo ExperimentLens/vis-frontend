@@ -5,7 +5,7 @@ import { Handler } from 'vega-tooltip';
 import type { RootState } from '../../../../store/store';
 import { useAppDispatch, useAppSelector } from '../../../../store/store';
 import {
-  fetchSessionTraceDetails,
+  fetchExperimentTraceDetails,
   selectSessionsMap,
 } from '../../../../store/slices/observabilitySlice';
 import {
@@ -43,15 +43,12 @@ export function useLlmSessionTraces() {
     [idKey],
   );
 
+  // One request for the whole experiment; a no-op when every run is already in the store,
+  // so the views sharing this hook (overview, traces tab, attention panel) don't refetch.
   useEffect(() => {
-    if (!experimentId) return;
+    if (!experimentId || !workflowIds.length) return;
 
-    workflowIds.forEach(id =>
-      dispatch(fetchSessionTraceDetails({
-        experimentId,
-        workflowId: id,
-      })),
-    );
+    dispatch(fetchExperimentTraceDetails({ experimentId, workflowIds }));
   }, [dispatch, experimentId, workflowIds]);
 
   const allDetails = useMemo(
@@ -145,12 +142,7 @@ export function useLlmSessionTraces() {
   const refresh = () => {
     if (!experimentId) return;
 
-    workflowIds.forEach(id =>
-      dispatch(fetchSessionTraceDetails({
-        experimentId,
-        workflowId: id,
-      })),
-    );
+    dispatch(fetchExperimentTraceDetails({ experimentId, workflowIds, force: true }));
   };
 
   return {
