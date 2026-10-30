@@ -115,6 +115,8 @@ export default function EvalHeatmapCard({ rows, metrics, param, onCellClick }: P
       isStatic={false}
       tooltip={tooltip}
       signalListeners={signalListeners}
+      // A click opens the cell's traces; a tooltip pinned by the same click would sit on top of them.
+      disableTooltipPin={Boolean(onCellClick)}
       showSettings={false}
       minHeight={height}
       maxHeight={height}

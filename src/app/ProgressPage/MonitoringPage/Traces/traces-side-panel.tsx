@@ -8,15 +8,17 @@ import { PassFailChip } from '../../../Tasks/Observability/trace-ui';
 import { formatMs, isErrorLevel, MONO } from '../../../../shared/models/observability/agentic-conventions';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
-import type { AttentionItem } from '../../../../shared/utils/experiment-overview';
 import { EMPTY_FILTERS, filterTraceRows, toTraceRows } from '../../../../shared/utils/trace-explorer';
 import type { TraceFilters, TraceRow } from '../../../../shared/utils/trace-explorer';
 import { useLlmSessionTraces } from '../LLMOverview/use-llm-session-traces';
 
 interface Props {
-  item: AttentionItem;
+  title: string;
+  detail?: string;
+  /** Which traces to show, as Traces-tab filters. */
+  filters: Partial<TraceFilters>;
   onClose: () => void;
-  /** Opens the Traces tab with the item's filters applied. */
+  /** Opens the Traces tab with the same filters applied. */
   onOpenTraces: (filters: Partial<TraceFilters>) => void;
 }
 
@@ -93,15 +95,18 @@ function TraceSummary({ row, href }: { row: TraceRow; href: string }) {
   );
 }
 
-/** The traces behind an attention item, read beside the overview like the Traces tab's panel; the tab is one click away. */
-export default function AttentionTracesPanel({ item, onClose, onOpenTraces }: Props) {
+/**
+ * A filtered set of traces, read beside another view like the Traces tab's panel
+ * (an attention item on the Overview, a heatmap cell on Quality); the tab is one click away.
+ */
+export default function TracesSidePanel({ title, detail, filters, onClose, onOpenTraces }: Props) {
   const { experimentId } = useParams();
   const { allDetails, anyLoading, hasData } = useLlmSessionTraces();
   const runs = useAppSelector((s: RootState) => s.progressPage.workflows.data);
 
   const rows = useMemo(
-    () => filterTraceRows(toTraceRows(allDetails, runs), { ...EMPTY_FILTERS, ...item.traces }),
-    [allDetails, runs, item.traces],
+    () => filterTraceRows(toTraceRows(allDetails, runs), { ...EMPTY_FILTERS, ...filters }),
+    [allDetails, runs, filters],
   );
 
   // Esc closes the panel, unless typing in a field.
@@ -122,8 +127,8 @@ export default function AttentionTracesPanel({ item, onClose, onOpenTraces }: Pr
     <Paper variant="outlined" sx={{ height: '100%', display: 'flex', flexDirection: 'column', borderRadius: 1.5, overflow: 'hidden' }}>
       <Stack direction="row" alignItems="flex-start" spacing={1} sx={{ px: 1.5, py: 1.25, borderBottom: 1, borderColor: 'divider' }}>
         <Box sx={{ minWidth: 0, flex: 1 }}>
-          <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>{item.title}</Typography>
-          <Typography variant="caption" color="text.secondary">{item.detail}</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 700, overflowWrap: 'anywhere' }}>{title}</Typography>
+          {detail && <Typography variant="caption" color="text.secondary">{detail}</Typography>}
         </Box>
         {anyLoading && <CircularProgress size={14} sx={{ mt: 0.5 }} />}
         <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: 'nowrap', mt: 0.25 }}>
@@ -140,7 +145,7 @@ export default function AttentionTracesPanel({ item, onClose, onOpenTraces }: Pr
           </Stack>
         )}
         {(hasData || !anyLoading) && rows.length === 0 && (
-          <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>No traces match this item.</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ py: 4, textAlign: 'center' }}>No traces match.</Typography>
         )}
         {rows.slice(0, MAX_TRACES).map(row => (
           <TraceSummary
@@ -158,7 +163,7 @@ export default function AttentionTracesPanel({ item, onClose, onOpenTraces }: Pr
 
       <Divider />
       <Stack direction="row" sx={{ p: 1, justifyContent: 'flex-end' }}>
-        <Button size="small" variant="outlined" startIcon={<FilterListRoundedIcon />} onClick={() => onOpenTraces(item.traces ?? {})}>
+        <Button size="small" variant="outlined" startIcon={<FilterListRoundedIcon />} onClick={() => onOpenTraces(filters)}>
           Open in Traces tab
         </Button>
       </Stack>

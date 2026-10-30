@@ -29,7 +29,7 @@ import { useInsightRecords } from '../Insights/use-insight-records';
 import ParamImpactCard from '../Insights/param-impact-card';
 import ScoresOverTimeCard from '../Evaluation/scores-over-time-card';
 import AttentionCard from './attention-card';
-import AttentionTracesPanel from './attention-traces-panel';
+import TracesSidePanel from '../Traces/traces-side-panel';
 import { useOpenTraces } from '../Traces/use-open-traces';
 import { useExperimentCapabilities } from '../../../../shared/utils/experimentCapabilities';
 import VariantMapCard from './variant-map-card';
@@ -215,7 +215,14 @@ export default function ExperimentOverview() {
 
         {openItem && (
           <Box sx={{ width: { xs: '100%', lg: '46%' }, flexShrink: 0, minHeight: 0, pb: 1.5 }}>
-            <AttentionTracesPanel key={openItem.title} item={openItem} onClose={closePanel} onOpenTraces={openTraces} />
+            <TracesSidePanel
+              key={openItem.title}
+              title={openItem.title}
+              detail={openItem.detail}
+              filters={openItem.traces ?? {}}
+              onClose={closePanel}
+              onOpenTraces={openTraces}
+            />
           </Box>
         )}
       </Stack>
