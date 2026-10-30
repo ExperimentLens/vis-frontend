@@ -55,8 +55,8 @@ export function costMetrics(available: (metric: string) => boolean): string[] {
 
 const baselineKey = () => `experimentlens.baseline.${experimentId}`;
 
-/** The baseline the user picked in this browser, else the SDK's, else "baseline", else the first group. */
-export function preferredBaseline(groups: string[]): string {
+/** The baseline the user picked in this browser, else the SDK's, else a group named "baseline"; undefined if none. */
+export function declaredBaseline(groups: string[]): string | undefined {
   let saved: string | null = null;
 
   try {
@@ -65,7 +65,12 @@ export function preferredBaseline(groups: string[]): string {
     // Storage blocked: fall through to the experiment's own default.
   }
 
-  return [saved, tags['experimentlens.baseline'], 'baseline'].find(b => b && groups.includes(b)) ?? groups[0] ?? '';
+  return [saved, tags['experimentlens.baseline'], 'baseline'].find((b): b is string => Boolean(b) && groups.includes(b as string));
+}
+
+/** The declared baseline, else the first group. */
+export function preferredBaseline(groups: string[]): string {
+  return declaredBaseline(groups) ?? groups[0] ?? '';
 }
 
 export function saveBaseline(group: string) {

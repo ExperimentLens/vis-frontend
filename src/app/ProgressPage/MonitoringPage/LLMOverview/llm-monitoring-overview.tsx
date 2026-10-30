@@ -17,12 +17,14 @@ import InfoMessage from '../../../../shared/components/InfoMessage';
 import LlmMonitoringPerformanceTab from './llm-monitoring-performance-tab';
 import QualityTab from '../Evaluation/quality-tab';
 import ExperimentOverview from '../Overview/experiment-overview';
+// import ConfigAdvisor from '../Advisor/config-advisor';
 import { useLlmSessionTraces } from './use-llm-session-traces';
 
 /**
  * Overview: headline numbers and what needs attention (run metrics).
  * Quality: eval scores, baseline comparison, judges and issues (run metrics + traces).
  * Performance: volume, latency, tokens, cost, errors and agents (traces).
+ * Optimize: which configuration to pick for quality vs cost, and what to try next (run metrics).
  */
 type LlmOverviewTab = 'overview' | 'quality' | 'performance';
 
@@ -30,6 +32,7 @@ const LLM_TABS: Array<{ value: LlmOverviewTab; label: string }> = [
   { value: 'overview', label: 'Overview' },
   { value: 'quality', label: 'Quality' },
   { value: 'performance', label: 'Performance' },
+  // { value: 'optimize', label: 'Optimize' },
 ];
 
 const downloadCsv = (
@@ -195,6 +198,8 @@ export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMon
           runNameById={runNameById}
         />
       )}
+
+      {/* {selectedTab === 'optimize' && <ConfigAdvisor />} */}
 
       {selectedTab === 'performance' && !hasData && anyLoading && (
         <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, py: 6, gap: 1.5 }}>
