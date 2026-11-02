@@ -17,7 +17,7 @@ export default function CallFrequencyChart({
   const tooltip = useVegaTooltip();
   const [by, setBy] = useState<'name' | 'type'>('name');
 
-  const rows = callFrequency(details, by);
+  const rows = callFrequency(details, by).slice(0, 10);
   const hasData = rows.length > 0;
 
   const toggle = (
@@ -52,6 +52,7 @@ export default function CallFrequencyChart({
             field: 'count',
             type: 'quantitative',
             title: 'calls',
+            axis: { format: 'd', tickMinStep: 1 },
           },
           tooltip: [
             {
@@ -75,7 +76,7 @@ export default function CallFrequencyChart({
   return (
     <ResponsiveCardVegaLite
       title="Call frequency"
-      details="calls across traces"
+      details="calls across traces, top 10"
       spec={spec}
       tooltip={tooltip}
       controlPanel={toggle}

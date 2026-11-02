@@ -13,6 +13,7 @@ import {
   scoresByGroup,
   scoresOverTime,
 } from '../../../../shared/utils/eval-quality';
+import { QUALITY_SCORE, withQualityScore } from '../../../../shared/utils/experiment-overview';
 import { useInsightRecords } from '../Insights/use-insight-records';
 import DetectIssuesPanel from '../LLMOverview/detect-issues-panel';
 import VerdictPassRateChart from '../LLMOverview/verdict-passrate-chart';
@@ -52,6 +53,13 @@ export default function QualityTab({ details, tracesLoading, runNameById }: Prop
   const params = useMemo(() => groupingParams(records), [records]);
   const startTimeById = useMemo(() => Object.fromEntries(workflows.map(w => [w.id, w.startTime])), [workflows]);
 
+  // The trend chart also offers the composite score, when there is a source to build it from.
+  const scored = useMemo(() => withQualityScore(records), [records]);
+  const timeMetrics = useMemo(
+    () => (scored.some(r => r.metrics[QUALITY_SCORE] !== undefined) ? [QUALITY_SCORE, ...metrics] : metrics),
+    [scored, metrics],
+  );
+
   // Only explicit choices are stored, so the defaults keep following the data while
   // runs are still arriving.
   const [chosenParam, setChosenParam] = useState('');
@@ -59,7 +67,7 @@ export default function QualityTab({ details, tracesLoading, runNameById }: Prop
   const [chosenMetric, setChosenMetric] = useState('');
 
   const param = pick(chosenParam, params);
-  const timeMetric = pick(chosenMetric, metrics);
+  const timeMetric = pick(chosenMetric, timeMetrics);
 
   const scoreRows = useMemo(() => scoresByGroup(records, param, metrics), [records, param, metrics]);
   const groups = useMemo(() => scoreRows.map(r => r.group).sort(), [scoreRows]);
@@ -78,8 +86,8 @@ export default function QualityTab({ details, tracesLoading, runNameById }: Prop
   );
 
   const points = useMemo(
-    () => (timeMetric ? scoresOverTime(records, startTimeById, param, timeMetric) : []),
-    [records, startTimeById, param, timeMetric],
+    () => (timeMetric ? scoresOverTime(scored, startTimeById, param, timeMetric) : []),
+    [scored, startTimeById, param, timeMetric],
   );
 
   const hasEvals = metrics.length > 0;
@@ -168,7 +176,7 @@ export default function QualityTab({ details, tracesLoading, runNameById }: Prop
 
           {hasEvals && (
             <Grid size={{ xs: 12, lg: hasTraces && !openCell ? 6 : 12 }}>
-              <ScoresOverTimeCard points={points} metrics={metrics} metric={timeMetric} onMetricChange={setChosenMetric} param={param} />
+              <ScoresOverTimeCard points={points} metrics={timeMetrics} metric={timeMetric} onMetricChange={setChosenMetric} param={param} />
             </Grid>
           )}
           {hasTraces && (

@@ -13,7 +13,7 @@ export default function PerAgentProfileChart({
 }) {
   const config = useVegaThemeConfig();
   const tooltip = useVegaTooltip();
-  const rows = perAgentProfile(details);
+  const rows = perAgentProfile(details).slice(0, 10);
   const hasData = rows.length > 0;
 
   const types = Array.from(new Set(rows.map(r => r.type)));
@@ -78,7 +78,7 @@ export default function PerAgentProfileChart({
   return (
     <ResponsiveCardVegaLite
       title="Per-agent latency"
-      details="mean ms per agent"
+      details="mean ms per agent, 10 slowest"
       spec={spec}
       tooltip={tooltip}
       showInfoMessage={!hasData}

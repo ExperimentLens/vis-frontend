@@ -12,7 +12,7 @@ import type { Tone } from '../../../../shared/components/stat-tile';
 import type { RootState } from '../../../../store/store';
 import { useAppSelector } from '../../../../store/store';
 import { formatMs } from '../../../../shared/models/observability/agentic-conventions';
-import { evalMetrics, groupingParams, scoresByGroup, scoresOverTime } from '../../../../shared/utils/eval-quality';
+import { evalMetrics, groupingParams, scoresByGroup } from '../../../../shared/utils/eval-quality';
 import {
   attentionItems,
   passedSafety,
@@ -27,7 +27,6 @@ import {
 import { collapseAliasedParams, NOT_SET, rankParamImpact, varyingParams } from '../../../../shared/utils/run-statistics';
 import { useInsightRecords } from '../Insights/use-insight-records';
 import ParamImpactCard from '../Insights/param-impact-card';
-import ScoresOverTimeCard from '../Evaluation/scores-over-time-card';
 import AttentionCard from './attention-card';
 import TracesSidePanel from '../Traces/traces-side-panel';
 import { useOpenTraces } from '../Traces/use-open-traces';
@@ -99,13 +98,6 @@ export default function ExperimentOverview() {
   }, [scored]);
   const impacts = useMemo(() => rankParamImpact(scored, impactParams.params, QUALITY_SCORE), [scored, impactParams]);
   const [impactParam, setImpactParam] = useState('');
-
-  const [timeMetric, setTimeMetric] = useState(QUALITY_SCORE);
-  const timeMetrics = useMemo(() => [QUALITY_SCORE, ...evals], [evals]);
-  const timePoints = useMemo(
-    () => scoresOverTime(scored, startTimeById, param, timeMetrics.includes(timeMetric) ? timeMetric : QUALITY_SCORE),
-    [scored, startTimeById, param, timeMetric, timeMetrics],
-  );
 
   if (!records.length) {
     return (
@@ -191,7 +183,7 @@ export default function ExperimentOverview() {
             </Grid>
 
             {impacts.length > 0 && (
-              <Grid size={{ xs: 12, lg: openItem ? 12 : 6 }}>
+              <Grid size={{ xs: 12 }}>
                 <ParamImpactCard
                   metric={QUALITY_SCORE}
                   impacts={impacts}
@@ -201,15 +193,6 @@ export default function ExperimentOverview() {
                 />
               </Grid>
             )}
-            <Grid size={{ xs: 12, lg: impacts.length > 0 && !openItem ? 6 : 12 }}>
-              <ScoresOverTimeCard
-                points={timePoints}
-                metrics={timeMetrics}
-                metric={timeMetrics.includes(timeMetric) ? timeMetric : QUALITY_SCORE}
-                onMetricChange={setTimeMetric}
-                param={param}
-              />
-            </Grid>
           </Grid>
         </Box>
 

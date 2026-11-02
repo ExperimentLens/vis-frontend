@@ -26,10 +26,10 @@ import { useLlmSessionTraces } from './use-llm-session-traces';
  * Performance: volume, latency, tokens, cost, errors and agents (traces).
  * Optimize: which configuration to pick for quality vs cost, and what to try next (run metrics).
  */
-type LlmOverviewTab = 'overview' | 'quality' | 'performance';
+type LlmOverviewTab = 'summary' | 'quality' | 'performance';
 
 const LLM_TABS: Array<{ value: LlmOverviewTab; label: string }> = [
-  { value: 'overview', label: 'Overview' },
+  { value: 'summary', label: 'Summary' },
   { value: 'quality', label: 'Quality' },
   { value: 'performance', label: 'Performance' },
   // { value: 'optimize', label: 'Optimize' },
@@ -83,7 +83,7 @@ type LlmMonitoringOverviewProps = {
 export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMonitoringOverviewProps) {
   const theme = useTheme();
 
-  const [selectedTab, setSelectedTab] = useState<LlmOverviewTab>('overview');
+  const [selectedTab, setSelectedTab] = useState<LlmOverviewTab>('summary');
 
   const {
     workflowIds,
@@ -186,7 +186,7 @@ export default function LlmMonitoringOverview({ showTracesTable = true }: LlmMon
         </Button>
       </Stack>
 
-      {selectedTab === 'overview' && <ExperimentOverview />}
+      {selectedTab === 'summary' && <ExperimentOverview />}
 
       {selectedTab === 'quality' && (
         <QualityTab
