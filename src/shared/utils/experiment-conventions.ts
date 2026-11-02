@@ -5,6 +5,7 @@
  *   experimentlens.group_param    param that names a configuration (SDK: "variant")
  *   experimentlens.case_param     param that names a dataset case (SDK: "case_id")
  *   experimentlens.baseline       configuration to compare others against
+ *   experimentlens.run_unit       "case" (a run is one case) or "dataset" (a run holds a dataset, one trace per case)
  *
  * Every getter falls back to the old naming conventions, so experiments logged without
  * these tags (older SDK, plain MLflow) behave as before. Set once per loaded experiment.
@@ -45,6 +46,12 @@ export const metricDefinition = (metric: string): MetricDefinition | undefined =
 export const groupParam = () => tags['experimentlens.group_param'] || 'variant';
 
 export const caseParam = () => tags['experimentlens.case_param'] || 'case_id';
+
+/**
+ * "dataset" when each run evaluates a whole dataset: every case is a trace of the run, with
+ * the case id in the trace metadata and the case's metrics as NUMERIC scores. Otherwise "case".
+ */
+export const runUnit = (): 'case' | 'dataset' => (tags['experimentlens.run_unit'] === 'dataset' ? 'dataset' : 'case');
 
 /** Cost metrics present in the runs: declared ones when the SDK wrote any, else the defaults. */
 export function costMetrics(available: (metric: string) => boolean): string[] {

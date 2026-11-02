@@ -50,6 +50,7 @@ import { comparableMetrics, formatPValue, formatStat, inferDirection } from '../
 import { caseParam, costMetrics, declaredBaseline, groupParam } from '../../../../shared/utils/experiment-conventions';
 import { useInsightRecords } from '../Insights/use-insight-records';
 import { advisorSpec } from './advisor-specs';
+import Loader from '../../../../shared/components/loader';
 
 const TOLERANCE_OPTIONS = [
   { value: '0.01', label: '1%' },
@@ -92,9 +93,11 @@ interface RecommendationCardProps {
   cost: string;
   toleranceAbs: number;
   experimentId?: string;
+  /** What the configurations' records are: runs, or case traces of dataset runs. */
+  unit: 'run' | 'trace';
 }
 
-function RecommendationCard({ title, help, rec, empty, quality, cost, toleranceAbs, experimentId }: RecommendationCardProps) {
+function RecommendationCard({ title, help, rec, empty, quality, cost, toleranceAbs, experimentId, unit }: RecommendationCardProps) {
   const drop = rec ? isRealDrop(rec, toleranceAbs) : false;
 
   return (
@@ -142,7 +145,7 @@ function RecommendationCard({ title, help, rec, empty, quality, cost, toleranceA
             </>
           )}
           <Typography variant="caption" color="text.secondary">
-            {rec.config.runIds.length} runs on {rec.config.cases} case{rec.config.cases === 1 ? '' : 's'}
+            {rec.config.runIds.length} {unit}s on {rec.config.cases} case{rec.config.cases === 1 ? '' : 's'}
             {rec.config.failed > 0 && ` · ${rec.config.failed} failed`}
           </Typography>
         </Stack>
@@ -167,7 +170,7 @@ const variantsSnippet = (suggestions: Suggestion[]) => {
 export default function ConfigAdvisor() {
   const theme = useTheme();
   const { experimentId } = useParams();
-  const { records: rawRecords, completedTotal, filtered } = useInsightRecords();
+  const { records: rawRecords, completedTotal, filtered, unit, loading } = useInsightRecords();
   const workflows = useAppSelector((s: RootState) => s.progressPage.workflows.data);
   const records = useMemo(() => withEvalAverage(rawRecords), [rawRecords]);
   const metrics = useMemo(() => comparableMetrics(records), [records]);
@@ -250,6 +253,8 @@ export default function ConfigAdvisor() {
     return [...configs].sort((a, b) => Number(b.optimal) - Number(a.optimal) || sign * (a.quality.mean - b.quality.mean));
   }, [configs, objectives]);
 
+  if (loading && !records.length) return <Loader />;
+
   if (records.length < 2 || qualityOptions.length === 0 || costOptions.length === 0) {
     return (
       <Box sx={{ height: 360 }}>
@@ -324,8 +329,8 @@ export default function ConfigAdvisor() {
           variant="outlined"
           label={
             filtered
-              ? `${records.length} of ${completedTotal} completed runs (runs table filters applied)`
-              : `${records.length} completed runs`
+              ? `${records.length} of ${completedTotal} completed ${unit}s (runs table filters applied)`
+              : `${records.length} completed ${unit}s`
           }
         />
       </Stack>
@@ -370,6 +375,7 @@ export default function ConfigAdvisor() {
       <Grid container spacing={1.5}>
         <Grid size={{ xs: 12, md: 4 }}>
           <RecommendationCard
+            unit={unit}
             title="SAME QUALITY, LOWER COST"
             help={`The cheapest configuration whose ${quality} is within ${percent(Number(tolerance))} of the best.`}
             rec={advice?.cheaper ?? null}
@@ -382,6 +388,7 @@ export default function ConfigAdvisor() {
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <RecommendationCard
+            unit={unit}
             title="HIGHEST QUALITY"
             help={`The configuration with the best ${quality}; ties go to the cheaper one. Compared with the baseline when there is one.`}
             rec={advice?.best ?? null}
@@ -394,6 +401,7 @@ export default function ConfigAdvisor() {
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
           <RecommendationCard
+            unit={unit}
             title="BEST MOVE FROM YOUR BASELINE"
             help="The biggest saving that keeps the baseline's quality (within tolerance), or a clear quality gain at no extra cost."
             rec={advice?.fromBaseline ?? null}
@@ -499,7 +507,7 @@ export default function ConfigAdvisor() {
               {knobs.map(k => <TableCell key={k}>{k}</TableCell>)}
               <TableCell align="right">{quality} (95% CI)</TableCell>
               <TableCell align="right">{cost}</TableCell>
-              <TableCell align="right">Runs</TableCell>
+              <TableCell align="right">{unit === 'trace' ? 'Traces' : 'Runs'}</TableCell>
               <TableCell>Status</TableCell>
             </TableRow>
           </TableHead>

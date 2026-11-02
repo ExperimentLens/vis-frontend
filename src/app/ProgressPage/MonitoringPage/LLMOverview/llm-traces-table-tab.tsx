@@ -206,9 +206,10 @@ export default function LlmTracesTableTab() {
           <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
             {view === 'grid' && rows.length > 0 && missingCase ? (
               <Alert severity="info" sx={{ m: 1.5, alignSelf: 'flex-start' }}>
-                The case grid is off: no run has a <code>{caseParam()}</code> param, so traces can&apos;t be lined up by
-                dataset case. The SDK&apos;s <code>run_experiment</code> logs it for you. Runs logged another way can name
-                their case param with the experiment tag <code>experimentlens.case_param</code>.
+                The case grid is off: no run has a <code>{caseParam()}</code> param and no trace carries one in its
+                metadata, so traces can&apos;t be lined up by dataset case. The SDK&apos;s <code>run_experiment</code> logs
+                it for you. Runs logged another way can name their case param with the experiment tag{' '}
+                <code>experimentlens.case_param</code>.
               </Alert>
             ) : view === 'grid' && rows.length > 0 ? (
               <CaseGridView grid={grid} selected={cell} onSelect={selectCell} />

@@ -1,8 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Box, CircularProgress, Grid, Stack, Typography } from '@mui/material';
 import SearchableSelect from '../../../../shared/components/searchable-select';
-import type { RootState } from '../../../../store/store';
-import { useAppSelector } from '../../../../store/store';
 import type { TraceDetail } from '../../../../shared/models/observability/trace-detail';
 import {
   compareToBaseline,
@@ -45,13 +43,11 @@ interface Props {
  * then the trace-level judges, issue scan and raw scores once traces have loaded.
  */
 export default function QualityTab({ details, tracesLoading, runNameById }: Props) {
-  const { records } = useInsightRecords();
+  const { records, startTimeById, loading } = useInsightRecords();
   const openTraces = useOpenTraces();
-  const workflows = useAppSelector((s: RootState) => s.progressPage.workflows.data);
 
   const metrics = useMemo(() => evalMetrics(records), [records]);
   const params = useMemo(() => groupingParams(records), [records]);
-  const startTimeById = useMemo(() => Object.fromEntries(workflows.map(w => [w.id, w.startTime])), [workflows]);
 
   // The trend chart also offers the composite score, when there is a source to build it from.
   const scored = useMemo(() => withQualityScore(records), [records]);
@@ -140,7 +136,7 @@ export default function QualityTab({ details, tracesLoading, runNameById }: Prop
       <Stack direction="row" spacing={1.25} sx={{ flex: 1, minHeight: 0 }}>
         <Box sx={{ flex: 1, minWidth: 0, overflow: 'auto' }}>
           <Grid container spacing={1.5} sx={{ pb: 1.5 }}>
-          {!hasEvals && (
+          {!hasEvals && !loading && (
             <Grid size={{ xs: 12 }}>
               <Alert severity="info">
                 No evaluation scores on these runs. Score each run with <code>ctx.evaluate([...])</code> in the ExperimentLens

@@ -13,6 +13,8 @@ import { metricDefinition } from './experiment-conventions';
 
 export interface RunRecord {
   id: string;
+  /** The run a case record (see caseRecords) belongs to; a run record is its own run. */
+  runId?: string;
   name: string;
   params: Record<string, string>;
   metrics: Record<string, number>;

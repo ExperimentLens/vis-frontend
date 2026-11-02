@@ -83,6 +83,7 @@ export interface ConfigStats {
   /** Variant name(s) when the runs carry one, else the knob values. */
   name: string;
   values: Record<string, string>;
+  /** The run of each record; a dataset run repeats once per case record. */
   runIds: string[];
   cases: number;
   /** Runs of this configuration that failed (not in `runIds`). */
@@ -171,7 +172,7 @@ export function measureConfigs(
       key,
       name: groupNames.length ? groupNames.join(' / ') : describeValues(values),
       values,
-      runIds: runs.map(r => r.id),
+      runIds: runs.map(r => r.runId ?? r.id),
       cases: new Set(runs.map(r => r.params[caseParam] ?? r.id)).size,
       failed: failedByKey.get(key) ?? 0,
       qualityValues,

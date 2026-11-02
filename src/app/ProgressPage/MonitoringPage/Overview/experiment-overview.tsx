@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Box, Grid, Stack } from '@mui/material';
+import { Box, CircularProgress, Grid, Stack, Typography } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
 import PaymentsRoundedIcon from '@mui/icons-material/PaymentsRounded';
@@ -54,7 +54,7 @@ const qualityTone = (value: number | null): Tone =>
 
 /** Landing view of an experiment: headline numbers, which configuration wins, and what needs a look. */
 export default function ExperimentOverview() {
-  const { records } = useInsightRecords();
+  const { records, startTimeById, unit, loading } = useInsightRecords();
   const workflows = useAppSelector((s: RootState) => s.progressPage.workflows.data);
 
   const openTraces = useOpenTraces();
@@ -65,7 +65,6 @@ export default function ExperimentOverview() {
   const params = useMemo(() => groupingParams(scored), [scored]);
   const param = params[0] ?? '';
   const costMetric = useMemo(() => pickCostMetric(scored), [scored]);
-  const startTimeById = useMemo(() => Object.fromEntries(workflows.map(w => [w.id, w.startTime])), [workflows]);
 
   const groups = useMemo(() => [...new Set(scored.map(r => r.params[param] ?? NOT_SET))].sort(), [scored, param]);
   const baseline = preferredBaseline(groups);
@@ -98,6 +97,15 @@ export default function ExperimentOverview() {
   }, [scored]);
   const impacts = useMemo(() => rankParamImpact(scored, impactParams.params, QUALITY_SCORE), [scored, impactParams]);
   const [impactParam, setImpactParam] = useState('');
+
+  if (loading && !records.length) {
+    return (
+      <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, py: 6, gap: 1.5 }}>
+        <CircularProgress size={22} />
+        <Typography variant="body2" color="text.secondary">Loading the runs&apos; cases…</Typography>
+      </Stack>
+    );
+  }
 
   if (!records.length) {
     return (
@@ -141,7 +149,7 @@ export default function ExperimentOverview() {
           icon={<ShieldOutlinedIcon sx={{ fontSize: 15 }} />}
           label="Passed safety checks"
           value={safety.length ? `${Math.round((safety.filter(Boolean).length / safety.length) * 100)}%` : '—'}
-          sub={safety.length ? `${safety.filter(Boolean).length} of ${safety.length} runs` : 'no safety evals logged'}
+          sub={safety.length ? `${safety.filter(Boolean).length} of ${safety.length} ${unit}s` : 'no safety evals logged'}
           tone={!safety.length ? 'default' : safety.every(Boolean) ? 'success' : 'error'}
           trend={smooth(orderedSafety)}
         />

@@ -4,6 +4,7 @@ import { isErrorLevel, isJudge, prettyName } from '../models/observability/agent
 import { isHumanScoreName } from '../../app/Tasks/Observability/score-dimensions';
 import { sumTraceTokens, traceAnswer, traceDurationMs, traceQuestion } from './observability-aggregates';
 import { caseParam, groupParam, preferredBaseline } from './experiment-conventions';
+import type { RunRecord } from './run-statistics';
 
 /**
  * Rows for the Traces tab: each trace joined to the run it belongs to (session id = MLflow
@@ -42,7 +43,45 @@ export interface TraceRow {
 interface RunInfo {
   id: string;
   name?: string;
+  status?: string;
   params?: Array<{ name: string; value: unknown }>;
+}
+
+const paramsOf = (run: RunInfo | undefined) => Object.fromEntries((run?.params ?? []).map(p => [p.name, String(p.value)]));
+
+/** The case a trace answers, when its run holds a whole dataset (run_unit "dataset"). */
+export const traceCaseId = (t: TraceDetail): string | undefined => {
+  const value = t.metadata?.[caseParam()];
+
+  return typeof value === 'string' && value ? value : undefined;
+};
+
+/**
+ * One record per case trace of a dataset run (run_unit "dataset"): the run's params plus the
+ * case id, and the case's own metrics, which the SDK attaches to the trace as NUMERIC scores.
+ * Statistics over these see the cases, as with experiments that log one run per case.
+ * Completed runs only, as toRunRecords; traces without metric scores (failed cases) are left out.
+ */
+export function caseRecords(details: TraceDetail[], runs: RunInfo[]): RunRecord[] {
+  const completed = new Map(runs.filter(r => r.status === 'COMPLETED').map(r => [r.id, r]));
+
+  return details.flatMap(t => {
+    const run = completed.get(t.sessionId);
+    const metrics = Object.fromEntries((t.scores ?? [])
+      .filter(sc => sc.dataType === 'NUMERIC' && sc.name && !isHumanScoreName(sc.name) && Number.isFinite(sc.value))
+      .map(sc => [sc.name as string, sc.value as number]));
+
+    if (!run || !Object.keys(metrics).length) return [];
+    const caseId = traceCaseId(t);
+
+    return [{
+      id: t.id,
+      runId: run.id,
+      name: `${run.name ?? run.id} · ${caseId ?? t.id}`,
+      params: { ...paramsOf(run), ...(caseId ? { [caseParam()]: caseId } : {}) },
+      metrics,
+    }];
+  });
 }
 
 /**
@@ -79,7 +118,7 @@ export function toTraceRows(details: TraceDetail[], runs: RunInfo[]): TraceRow[]
 
   return details.map(t => {
     const run = runsById.get(t.sessionId);
-    const params = Object.fromEntries((run?.params ?? []).map(p => [p.name, String(p.value)]));
+    const params = paramsOf(run);
     const runName = run?.name ?? t.sessionId;
     const judges = judgesOf(t);
 
@@ -88,7 +127,7 @@ export function toTraceRows(details: TraceDetail[], runs: RunInfo[]): TraceRow[]
       sessionId: t.sessionId,
       runName,
       variant: params[groupParam()] ?? runName,
-      caseId: params[caseParam()] ?? '—',
+      caseId: traceCaseId(t) ?? params[caseParam()] ?? '—',
       question: traceQuestion(t),
       answer: traceAnswer(t),
       expected: typeof t.metadata?.expected === 'string' ? t.metadata.expected : null,
