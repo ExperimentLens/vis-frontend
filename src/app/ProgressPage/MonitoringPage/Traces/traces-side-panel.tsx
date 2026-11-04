@@ -45,7 +45,7 @@ function TraceSummary({ row, href }: { row: TraceRow; href: string }) {
         {row.judges.length > 0 && (
           <PassFailChip
             passed={row.failedChecks.length === 0}
-            label={`${row.failedChecks.length ? 'FAIL' : 'PASS'} ${row.judges.length - row.failedChecks.length}/${row.judges.length}`}
+            label={`${row.judges.length - row.failedChecks.length}/${row.judges.length} passed`}
           />
         )}
         <Box sx={{ flex: 1 }} />

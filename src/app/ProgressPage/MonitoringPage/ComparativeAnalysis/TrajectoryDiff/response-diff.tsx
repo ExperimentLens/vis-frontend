@@ -130,7 +130,7 @@ export default function ResponseDiff({ byRun, runIds, runNameById, colorById, ba
                 {verdict && (
                   <Tooltip title={verdict.failed.length ? `Failed: ${verdict.failed.map(f => f.name).join(', ')}` : 'Every judge passed'}>
                     <Chip
-                      label={verdict.failed.length ? `FAIL ${verdict.passed}/${verdict.total}` : `PASS ${verdict.passed}/${verdict.total}`}
+                      label={`${verdict.passed}/${verdict.total} passed`}
                       size="small"
                       color={verdict.failed.length ? 'error' : 'success'}
                       sx={{ height: 18, fontSize: '0.55rem', fontWeight: 700 }}
