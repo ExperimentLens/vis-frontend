@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useTheme } from '@mui/material';
 import ResponsiveCardVegaLite from '../../../../shared/components/responsive-card-vegalite';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import { evalLabel, evalPassMark, isSafetyEval, scoreTone } from '../../../../shared/utils/eval-quality';
 import type { GroupScores, ScoreTone } from '../../../../shared/utils/eval-quality';
 import { useVegaThemeConfig, useVegaTooltip } from '../LLMOverview/chart-kit';
@@ -17,12 +18,21 @@ interface Props {
 
 const TONE_LABEL: Record<ScoreTone, string> = { good: 'At or above pass mark', warn: 'Just below', bad: 'Well below' };
 const ROW_HEIGHT = 34;
+/** With more groups than this, only the best and the worst are drawn until the user asks for all. */
+const ROW_CAP = 14;
 
 /** Configuration × metric grid of mean scores, colored against each metric's pass mark. */
-export default function EvalHeatmapCard({ rows, metrics, param, onCellClick, selected }: Props) {
+export default function EvalHeatmapCard({ rows: allRows, metrics, param, onCellClick, selected }: Props) {
   const theme = useTheme();
   const themeConfig = useVegaThemeConfig();
   const tooltip = useVegaTooltip();
+  const [showAll, setShowAll] = useState(false);
+  const capped = allRows.length > ROW_CAP && !showAll;
+  // Rows arrive best first, so the two ends are the groups worth a look.
+  const rows = useMemo(
+    () => (capped ? [...allRows.slice(0, ROW_CAP / 2), ...allRows.slice(-ROW_CAP / 2)] : allRows),
+    [allRows, capped],
+  );
   const height = rows.length * ROW_HEIGHT + 90;
   const safetyCount = metrics.filter(isSafetyEval).length;
 
@@ -117,10 +127,26 @@ export default function EvalHeatmapCard({ rows, metrics, param, onCellClick, sel
     },
   } : undefined), [onCellClick, meanByCell]);
 
+  const many = allRows.length > ROW_CAP;
+
   return (
     <ResponsiveCardVegaLite
       title="Evaluation scores"
-      details={`Mean per ${param || 'group'}, best on top · 0–1, higher is better${safetyCount ? ` · last ${safetyCount} columns are safety checks` : ''}${onCellClick ? ' · click a cell for its traces' : ''}`}
+      details={`Mean per ${param || 'group'}, best on top · 0–1, higher is better`
+        + (capped ? ` · the ${ROW_CAP / 2} best and ${ROW_CAP / 2} worst of ${allRows.length}, all in settings` : '')
+        + (safetyCount ? ` · last ${safetyCount} columns are safety checks` : '')
+        + (onCellClick ? ' · click a cell for its traces' : '')}
+      controlPanel={many && (
+        <SegmentedToggle
+          size="small"
+          value={showAll ? 'all' : 'ends'}
+          onChange={v => setShowAll(v === 'all')}
+          options={[
+            { value: 'ends', label: 'Best and worst' },
+            { value: 'all', label: `All ${allRows.length}` },
+          ]}
+        />
+      )}
       spec={spec}
       actions={false}
       isStatic={false}
@@ -128,7 +154,7 @@ export default function EvalHeatmapCard({ rows, metrics, param, onCellClick, sel
       signalListeners={signalListeners}
       // A click opens the cell's traces; a tooltip pinned by the same click would sit on top of them.
       disableTooltipPin={Boolean(onCellClick)}
-      showSettings={false}
+      showSettings={many}
       minHeight={height}
       maxHeight={height}
       aspectRatio={3}

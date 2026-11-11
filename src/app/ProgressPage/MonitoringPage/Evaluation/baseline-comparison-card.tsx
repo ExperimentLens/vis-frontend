@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Box, Stack, Tooltip, useTheme } from '@mui/material';
 import type { GridColDef } from '@mui/x-data-grid';
 import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
 import SearchableSelect from '../../../../shared/components/searchable-select';
+import SegmentedToggle from '../../../../shared/components/segmented-toggle';
 import { EmptyNote } from '../LLMOverview/chart-kit';
 import { StyledDataGrid, TruncMono } from '../LLMOverview/llm-monitoring-shared';
 import { MONO } from '../../../../shared/models/observability/agentic-conventions';
@@ -35,6 +36,12 @@ const VERDICT_TEXT: Record<ChangeVerdict, string> = {
 };
 
 const signed = (value: number) => `${value > 0 ? '+' : value < 0 ? '−' : '±'}${formatStat(Math.abs(value))}`;
+
+const ROW_HEIGHT = 44;
+/** Taller than this, the table scrolls inside the card instead of pushing the rest of the tab down. */
+const MAX_TABLE_HEIGHT = 440;
+
+type Show = 'all' | 'regressed' | 'improved';
 
 /** Every other configuration against a chosen baseline: what got better, worse, or only moved within noise. */
 export default function BaselineComparisonCard({ param, groups, baseline, onBaselineChange, candidates, metrics }: Props) {
@@ -108,10 +115,23 @@ export default function BaselineComparisonCard({ param, groups, baseline, onBase
       id: group,
       group,
       regressions: changes.filter(c => c.verdict === 'regressed').length,
+      improvements: changes.filter(c => c.verdict === 'improved').length,
       ...Object.fromEntries(changes.map(c => [c.metric, c])),
     })),
     [candidates],
   );
+
+  const [show, setShow] = useState<Show>('all');
+  const regressedCount = rows.filter(r => r.regressions > 0).length;
+  const improvedCount = rows.filter(r => Number(r.improvements) > 0).length;
+  const shownRows = useMemo(
+    () => rows.filter(r =>
+      show === 'all'
+      || (show === 'regressed' && r.regressions > 0)
+      || (show === 'improved' && Number(r.improvements) > 0)),
+    [rows, show],
+  );
+  const tableHeight = Math.min((shownRows.length + 1) * ROW_HEIGHT + 4, MAX_TABLE_HEIGHT);
 
   return (
     <ResponsiveCardTable
@@ -141,18 +161,33 @@ export default function BaselineComparisonCard({ param, groups, baseline, onBase
           {param ? `Only one ${param} value, so there is nothing to compare against.` : 'All runs share one configuration, so there is nothing to compare against.'}
         </EmptyNote>
       ) : (
-        <StyledDataGrid
-          autoHeight
-          hideFooter
-          disableRowSelectionOnClick
-          disableColumnMenu
-          rows={rows}
-          columns={columns}
-          rowHeight={44}
-          columnHeaderHeight={44}
-          initialState={{ sorting: { sortModel: [{ field: 'regressions', sort: 'desc' }] } }}
-          sx={{ width: '100%' }}
-        />
+        <Stack spacing={1}>
+          <Box sx={{ px: 2, pt: 1 }}>
+            <SegmentedToggle
+              size="small"
+              value={show}
+              onChange={v => setShow(v as Show)}
+              options={[
+                { value: 'all', label: `All ${rows.length}` },
+                { value: 'regressed', label: `Regressed ${regressedCount}`, disabled: !regressedCount },
+                { value: 'improved', label: `Improved ${improvedCount}`, disabled: !improvedCount },
+              ]}
+            />
+          </Box>
+          <Box sx={{ height: tableHeight, width: '100%' }}>
+            <StyledDataGrid
+              hideFooter
+              disableRowSelectionOnClick
+              disableColumnMenu
+              rows={shownRows}
+              columns={columns}
+              rowHeight={ROW_HEIGHT}
+              columnHeaderHeight={ROW_HEIGHT}
+              initialState={{ sorting: { sortModel: [{ field: 'regressions', sort: 'desc' }] } }}
+              sx={{ width: '100%', height: '100%' }}
+            />
+          </Box>
+        </Stack>
       )}
     </ResponsiveCardTable>
   );

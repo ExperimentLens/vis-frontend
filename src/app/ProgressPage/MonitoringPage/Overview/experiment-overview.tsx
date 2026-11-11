@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Box, CircularProgress, Grid, Stack, Typography } from '@mui/material';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import EmojiEventsRoundedIcon from '@mui/icons-material/EmojiEventsRounded';
@@ -32,8 +33,12 @@ import TracesSidePanel from '../Traces/traces-side-panel';
 import { useOpenTraces } from '../Traces/use-open-traces';
 import { useExperimentCapabilities } from '../../../../shared/utils/experimentCapabilities';
 import VariantMapCard from './variant-map-card';
+import SettingEffectsCard from './setting-effects-card';
 import { passBand } from '../../../../shared/utils/app-settings';
-import { costMetrics, groupParam, preferredBaseline } from '../../../../shared/utils/experiment-conventions';
+import { caseParam, costMetrics, groupParam, preferredBaseline } from '../../../../shared/utils/experiment-conventions';
+
+/** Fewer runs than this can't support a surrogate model worth plotting. */
+const MIN_RUNS_FOR_EFFECTS = 8;
 
 
 /** Rolling mean so a sparkline over dozens of runs shows the trend, not every wobble. */
@@ -98,6 +103,32 @@ export default function ExperimentOverview() {
   const impacts = useMemo(() => rankParamImpact(scored, impactParams.params, QUALITY_SCORE), [scored, impactParams]);
   const [impactParam, setImpactParam] = useState('');
 
+  const { experimentId = '' } = useParams();
+  // The explainability service fits its surrogate on runs that share one set of param keys, so use the largest such set.
+  const effectRuns = useMemo(() => {
+    const bySignature = new Map<string, typeof workflows>();
+
+    workflows
+      .filter(w => w.status === 'COMPLETED')
+      .forEach(w => {
+        const signature = (w.params ?? []).map(p => p.name).sort().join('|');
+
+        bySignature.set(signature, [...(bySignature.get(signature) ?? []), w]);
+      });
+
+    return [...bySignature.values()].sort((a, b) => b.length - a.length)[0] ?? [];
+  }, [workflows]);
+  const effectMetrics = useMemo(() => {
+    const names = [...new Set(effectRuns.flatMap(w => (w.metrics ?? []).map(m => m.name)))];
+
+    // Eval scores first: they are what a setting is usually tuned for.
+    return names.sort((a, b) => Number(!a.startsWith('eval_')) - Number(!b.startsWith('eval_')) || a.localeCompare(b));
+  }, [effectRuns]);
+  const effectSettings = useMemo(
+    () => impactParams.params.filter(p => p !== groupParam() && p !== caseParam()),
+    [impactParams],
+  );
+
   if (loading && !records.length) {
     return (
       <Stack alignItems="center" justifyContent="center" sx={{ flex: 1, py: 6, gap: 1.5 }}>
@@ -118,8 +149,14 @@ export default function ExperimentOverview() {
     );
   }
 
+  // The effect curve follows the param picked in "What drives …?", when it is a real setting.
+  const pickedParam = impactParam || impacts[0]?.param || '';
+  const effectSetting = effectSettings.includes(pickedParam) ? pickedParam : effectSettings[0] ?? '';
+  const showEffects =
+    Boolean(experimentId) && effectRuns.length >= MIN_RUNS_FOR_EFFECTS && effectSettings.length > 0 && effectMetrics.length > 0;
+
   // Headline numbers.
-  const quality = mean(scored.map(r => r.metrics[QUALITY_SCORE]).filter((v): v is number => v !== undefined));
+  const quality =mean(scored.map(r => r.metrics[QUALITY_SCORE]).filter((v): v is number => v !== undefined));
   const best = scoresByGroup(scored, param, [QUALITY_SCORE]).find(g => g.scores[QUALITY_SCORE]);
   const safety = scored.map(passedSafety).filter((v): v is boolean => v !== null);
   const latencies = scored.map(r => r.metrics.latency_ms).filter((v): v is number => v !== undefined);
@@ -191,13 +228,27 @@ export default function ExperimentOverview() {
             </Grid>
 
             {impacts.length > 0 && (
-              <Grid size={{ xs: 12 }}>
+              <Grid size={{ xs: 12, lg: openItem || !showEffects ? 12 : 7 }}>
                 <ParamImpactCard
                   metric={QUALITY_SCORE}
                   impacts={impacts}
                   aliases={impactParams.aliases}
                   selectedParam={impactParam || impacts[0].param}
                   onSelectParam={setImpactParam}
+                />
+              </Grid>
+            )}
+
+            {showEffects && (
+              <Grid size={{ xs: 12, lg: openItem || !impacts.length ? 12 : 5 }}>
+                <SettingEffectsCard
+                  experimentId={experimentId}
+                  runId={effectRuns[0].id}
+                  runCount={effectRuns.length}
+                  settings={effectSettings}
+                  metrics={effectMetrics}
+                  setting={effectSetting}
+                  onSettingChange={setImpactParam}
                 />
               </Grid>
             )}

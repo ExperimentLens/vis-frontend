@@ -26,6 +26,8 @@ export default function VerdictPassRateChart({
     band: band(r.passRate),
   }));
   const hasData = rows.length > 0;
+  // One readable bar per judge or check, within bounds.
+  const chartHeight = Math.min(Math.max(rows.length * 30 + 70, 180), 420);
 
   const toggle = (
     <SegmentedToggle
@@ -50,6 +52,7 @@ export default function VerdictPassRateChart({
         type: 'nominal',
         sort: '-x',
         title: null,
+        axis: { labelLimit: 220 },
       },
       x: {
         field: 'passRate',
@@ -106,7 +109,8 @@ export default function VerdictPassRateChart({
         />
       }
       tooltip={tooltip}
-      maxHeight={260}
+      minHeight={chartHeight}
+      maxHeight={chartHeight}
       aspectRatio={1.7}
       isStatic={false}
     />

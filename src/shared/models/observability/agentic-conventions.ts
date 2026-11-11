@@ -43,8 +43,14 @@ export const tokensOf = (o: Observation) => (o.output as GenOutput)?.tokens?.tot
 
 export const isGeneration = (o: Observation) => (o.type ?? '').toUpperCase() === 'GENERATION';
 
+/**
+ * "judge" as its own word in the step name (judge_correctness, llm judge), not inside another
+ * name: a variant or root span called "baseline__judge-llama3.2" is not a judge.
+ */
+const JUDGE_NAME = /(^|[_\s])judge([_\s]|$)/i;
+
 export const isJudge = (o: Observation) =>
-  /judge/i.test(o.name) || typeof (o.output as GenOutput)?.passed === 'boolean';
+  JUDGE_NAME.test(o.name ?? '') || typeof (o.output as GenOutput)?.passed === 'boolean';
 
 /** A judge's pass/fail verdict (`output.passed`), or null when the step isn't a verdict. */
 export const judgeVerdict = (o: Observation): boolean | null => {
