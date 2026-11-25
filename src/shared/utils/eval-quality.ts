@@ -198,6 +198,65 @@ export interface ScorePoint {
   value: number;
 }
 
+export type ScorePeriod = 'day' | 'hour';
+
+export interface PeriodScore {
+  /** Start of the day or hour, local time (ms). */
+  start: number;
+  label: string;
+  group: string;
+  mean: number;
+  min: number;
+  max: number;
+  /** How many scores were averaged. */
+  count: number;
+}
+
+const periodStart = (time: number, period: ScorePeriod) => {
+  const d = new Date(time);
+
+  if (period === 'day') d.setHours(0, 0, 0, 0);
+  else d.setMinutes(0, 0, 0);
+
+  return d.getTime();
+};
+
+const periodLabel = (start: number, period: ScorePeriod) => {
+  const d = new Date(start);
+  const day = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+
+  return period === 'day' ? day : `${day} ${String(d.getHours()).padStart(2, '0')}:00`;
+};
+
+/** Mean score per configuration and calendar day (or hour), oldest first, for the bars over time. */
+export function scoresByPeriod(points: ScorePoint[], period: ScorePeriod): PeriodScore[] {
+  const buckets = new Map<string, { start: number; group: string; values: number[] }>();
+
+  points.forEach(p => {
+    const start = periodStart(p.time, period);
+    const key = `${start}\u0000${p.group}`;
+    const bucket = buckets.get(key) ?? { start, group: p.group, values: [] };
+
+    bucket.values.push(p.value);
+    buckets.set(key, bucket);
+  });
+
+  return [...buckets.values()]
+    .map(({ start, group, values }) => ({
+      start,
+      label: periodLabel(start, period),
+      group,
+      mean: values.reduce((a, b) => a + b, 0) / values.length,
+      min: Math.min(...values),
+      max: Math.max(...values),
+      count: values.length,
+    }))
+    .sort((a, b) => a.start - b.start || a.group.localeCompare(b.group));
+}
+
+/** Number of distinct calendar days the points fall on. */
+export const daysSpanned = (points: ScorePoint[]) => new Set(points.map(p => periodStart(p.time, 'day'))).size;
+
 /** One point per run that logged `metric`, oldest first, for the scores-over-time chart. */
 export function scoresOverTime(
   records: RunRecord[],
