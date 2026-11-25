@@ -828,7 +828,18 @@ export default function WorkflowTable() {
       });
 
       metricKeys.filter(metric => metric !== 'rating').forEach(metric => {
-        const validValues = group.map(row => row[metric]).filter((v): v is number => typeof v === 'number');
+        // Metric cells are stored as formatted strings, so
+        // parse them back to numbers before averaging.
+        const validValues = group
+          .map(row => {
+            const raw = row[metric];
+
+            if (typeof raw === 'number') return raw;
+            if (typeof raw === 'string' && raw.trim() !== '') return Number(raw.replace(/,/g, ''));
+
+            return NaN;
+          })
+          .filter((v): v is number => Number.isFinite(v));
 
         if (validValues.length > 0) {
           const avg = validValues.reduce((sum, val) => sum + val, 0) / validValues.length;
