@@ -234,9 +234,30 @@ const ComparisonMetricsCharts: React.FC = () => {
     });
   };
 
+  const pickLatestMetricValue = (series: IMetric[] | undefined): number | null => {
+    if (!series || series.length === 0) return null;
+
+    const latest = series.reduce((best, current) => {
+      if (current.step !== null && current.step !== undefined && best.step !== null && best.step !== undefined) {
+        return current.step > best.step ? current : best;
+      }
+
+      return current.timestamp > best.timestamp ? current : best;
+    }, series[0]);
+
+    return Number.isFinite(latest.value) ? latest.value : null;
+  };
+
   const groupedMetrics: Record<string, BaseMetric[]> = {};
 
   if (workflowsTable.groupBy.length > 0) {
+    // A selection can mix group-summary rows with individual member rows
+    // (picked by expanding a group) — render both as bars on the same chart:
+    // groups contribute their averaged value, members their latest value.
+    const groupRowIds = new Set(workflowsTable.aggregatedRows.map(row => row.id));
+    const selectedGroupIds = workflowsTable.selectedWorkflows.filter(id => groupRowIds.has(id));
+    const selectedMemberIds = workflowsTable.selectedWorkflows.filter(id => !groupRowIds.has(id));
+
     workflowsTable.uniqueMetrics
       .filter(metric => metric !== 'rating')
       .filter(metric => comparativeVisibleMetrics.includes(metric))
@@ -244,7 +265,7 @@ const ComparisonMetricsCharts: React.FC = () => {
         groupedMetrics[metricName] = [];
 
         workflowsTable.aggregatedRows
-          .filter(row => workflowsTable.selectedWorkflows.includes(row.id))
+          .filter(row => selectedGroupIds.includes(row.id))
           .forEach(row => {
             const value = row[metricName];
 
@@ -253,6 +274,7 @@ const ComparisonMetricsCharts: React.FC = () => {
                 id: row.id,
                 name: metricName,
                 value,
+                label: row.workflowId, // e.g. "3 workflows"
               };
 
               workflowsTable.groupBy.forEach(groupKey => {
@@ -262,6 +284,27 @@ const ComparisonMetricsCharts: React.FC = () => {
               groupedMetrics[metricName].push(enriched);
             }
           });
+
+        selectedMemberIds.forEach(workflowId => {
+          const row = workflowsTable.filteredRows.find(r => r.id === workflowId);
+          const metricEntry = selectedWorkflowsMetrics.data?.[workflowId]?.find(m => m.name === metricName);
+          const value = pickLatestMetricValue(metricEntry?.seriesMetric);
+
+          if (value !== null) {
+            const enriched: BaseMetric = {
+              id: workflowId,
+              name: metricName,
+              value,
+              label: workflows.data.find(wf => wf.id === workflowId)?.name || workflowId,
+            };
+
+            workflowsTable.groupBy.forEach(groupKey => {
+              enriched[groupKey] = row?.[groupKey];
+            });
+
+            groupedMetrics[metricName].push(enriched);
+          }
+        });
       });
 
   } else {
@@ -310,20 +353,6 @@ const ComparisonMetricsCharts: React.FC = () => {
   // it sits out when rows are grouped into aggregates.
   const isGroupedView = workflowsTable.groupBy.length > 0;
   const selectedWorkflowIds = workflowsTable.selectedWorkflows;
-
-  const pickLatestMetricValue = (series: IMetric[] | undefined): number | null => {
-    if (!series || series.length === 0) return null;
-
-    const latest = series.reduce((best, current) => {
-      if (current.step !== null && current.step !== undefined && best.step !== null && best.step !== undefined) {
-        return current.step > best.step ? current : best;
-      }
-
-      return current.timestamp > best.timestamp ? current : best;
-    }, series[0]);
-
-    return Number.isFinite(latest.value) ? latest.value : null;
-  };
 
   const pivotParamNames = !isGroupedView
     ? Array.from(
@@ -538,7 +567,9 @@ const ComparisonMetricsCharts: React.FC = () => {
           },
         }),
         tooltip: [
-          ...(isGrouped ? [] : [{ field: 'id', type: 'nominal', title: 'Workflow' }]),
+          isGrouped
+            ? { field: 'label', type: 'nominal', title: 'Workflow / Group' }
+            : { field: 'id', type: 'nominal', title: 'Workflow' },
           ...workflowsTable.groupBy.map(field => ({
             field,
             type: 'nominal',

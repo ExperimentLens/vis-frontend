@@ -460,6 +460,12 @@ const TRACE_GRID_SX = {
 
 const TRACE_COLUMN_LABELS = ['Trace', 'Model', 'Latency', 'Tokens', 'Cost', 'Judges', 'Checks', 'Errors', 'Status'];
 
+// Fixed width for the expand chevron's slot so it lands at the same x for
+// every group row regardless of label length ("8 sessions" vs "32 sessions"),
+// and so member rows can indent by exactly this much to read as nested under
+// their group instead of sitting flush with it.
+const GROUP_INDENT_PX = 28;
+
 const WorkflowIdCell = ({
   row,
   experimentId,
@@ -470,7 +476,7 @@ const WorkflowIdCell = ({
   isLlmExperiment?: boolean;
 }) => {
   const dispatch = useAppDispatch();
-  const { selectedWorkflows, workflowColors, expandedGroups, expandedTraceWorkflows } = useAppSelector(
+  const { selectedWorkflows, workflowColors, expandedGroups, expandedTraceWorkflows, groupBy } = useAppSelector(
     (s: RootState) => s.monitorPage.workflowsTable
   );
   const { selectedTab } = useAppSelector((s: RootState) => s.monitorPage);
@@ -478,6 +484,8 @@ const WorkflowIdCell = ({
 
   if (row.isGroupSummary) {
     const isExpanded = expandedGroups.includes(row.id);
+    const isGroupSelected = selectedWorkflows.includes(row.id);
+    const groupColor = workflowColors[row.id] || '#000000';
 
     return (
       <Box
@@ -485,9 +493,12 @@ const WorkflowIdCell = ({
           e.stopPropagation();
           dispatch(setExpandedGroup(row.id));
         }}
-        sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5, width: '100%', height: '100%', cursor: 'pointer' }}
+        sx={{ display: 'flex', alignItems: 'center', gap: 0.5, width: '100%', height: '100%', cursor: 'pointer' }}
       >
-        {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+        <Box sx={{ width: GROUP_INDENT_PX, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {isExpanded ? <ExpandMoreIcon fontSize="small" /> : <ChevronRightIcon fontSize="small" />}
+        </Box>
+        {selectedTab === MONITOR_TAB.COMPARE && <WorkflowColorDot color={groupColor} selected={isGroupSelected} />}
         <span>{row.workflowId}</span>
       </Box>
     );
@@ -600,6 +611,9 @@ const WorkflowIdCell = ({
   const color = workflowColors[workflowId];
   const canExpandTraces = Boolean(isLlmExperiment && experimentId);
   const isTraceExpanded = expandedTraceWorkflows.includes(workflowId);
+  // Only reached for a plain workflow row, which only ever renders here as a
+  // member nested under an expanded group — so shift it right to show that.
+  const isGroupMember = groupBy.length > 0;
 
   const handleToggleTraces = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -611,7 +625,7 @@ const WorkflowIdCell = ({
   };
 
   return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, pl: isGroupMember ? `${GROUP_INDENT_PX}px` : 0 }}>
       {canExpandTraces && (
         <Tooltip title={isTraceExpanded ? 'Hide traces' : 'Show traces'}>
           <IconButton size="small" onClick={handleToggleTraces} sx={{ p: 0.25 }}>
@@ -1054,7 +1068,14 @@ export default function WorkflowTable() {
             return col;
           });
 
-        const newVisibleIds = new Set(aggregatedRows.map(r => r.id));
+        // Valid selection targets are every group row plus every member
+        // workflow (not just the ones currently expanded/visible), so
+        // selecting a member and then collapsing or re-expanding a sibling
+        // group doesn't silently drop it from the selection.
+        const newVisibleIds = new Set([
+          ...aggregatedRows.map(r => r.id),
+          ...workflowsTable.filteredRows.map(r => r.id),
+        ]);
         const preservedSelections = workflowsTable.selectedWorkflows.filter(id => newVisibleIds.has(id));
 
         const visibleRows: WorkflowTableRow[] = [];
@@ -1446,12 +1467,6 @@ export default function WorkflowTable() {
     workflowsTable.columnsVisibilityModel[col.field] !== false
   );
 
-  const isGroupedWorkflow = (id: string): boolean => {
-    return Object.values(workflowsTable.grouppedWorkflows).some(workflowIds =>
-      workflowIds.includes(id)
-    );
-  };
-
   // Nests trace rows (or a loading/empty/error placeholder) directly beneath
   // each expanded workflow row, computed on top of the already filtered/
   // sorted/paginated grid rows rather than folded into that redux pipeline —
@@ -1639,10 +1654,11 @@ export default function WorkflowTable() {
               dispatch(setWorkflowsTable({ columnsVisibilityModel: nextModel }));
             }}
             isRowSelectable={(params) => {
-              if (params.row.isTraceRow || params.row.isTraceStatus) return false;
-              if (workflowsTable.groupBy.length === 0) return true;
-
-              return !isGroupedWorkflow(params.row.id);
+              // Group-summary rows are always selectable, and so are a group's
+              // member rows once expanded — rowsWithTraces only ever contains a
+              // member row when its group is expanded, so no extra check is
+              // needed to tell "expanded member" apart from "collapsed member".
+              return !params.row.isTraceRow && !params.row.isTraceStatus;
             }}
             slots={{ noRowsOverlay: CustomNoRowsOverlay }}
             slotProps={
