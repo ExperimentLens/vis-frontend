@@ -275,6 +275,7 @@ const ComparisonMetricsCharts: React.FC = () => {
                 name: metricName,
                 value,
                 label: row.workflowId, // e.g. "3 workflows"
+                isGroup: true,
               };
 
               workflowsTable.groupBy.forEach(groupKey => {
@@ -296,6 +297,7 @@ const ComparisonMetricsCharts: React.FC = () => {
               name: metricName,
               value,
               label: workflows.data.find(wf => wf.id === workflowId)?.name || workflowId,
+              isGroup: false,
             };
 
             workflowsTable.groupBy.forEach(groupKey => {
@@ -505,6 +507,20 @@ const ComparisonMetricsCharts: React.FC = () => {
       }
       : { type: 'bar', tooltip: true };
 
+    // Grouped view mixes group-summary bars (averaged) with individual member
+    // bars (latest value). Tooltip titles are static in an encoding, so build
+    // the tooltip object per datum: "AVG Value" for groups, "Value" for members.
+    const groupedTooltipExpr = (() => {
+      if (!isGrouped) return null;
+      const entries = (valueTitle: string) => [
+        `'Workflow / Group': datum.label`,
+        ...workflowsTable.groupBy.map(field => `${JSON.stringify(field)}: datum[${JSON.stringify(field)}]`),
+        `${JSON.stringify(valueTitle)}: datum.value`,
+      ].join(', ');
+
+      return `datum.isGroup ? {${entries('AVG Value')}} : {${entries('Value')}}`;
+    })();
+
     // Cap the bar width so a single (or few) selected workflow doesn't render a
     // giant bar. Band-scale padding is width-independent, so padding a lone bar
     // makes it match the width it would have when ~2 bars are present.
@@ -522,7 +538,9 @@ const ComparisonMetricsCharts: React.FC = () => {
         // so hovering never changes the spec content and never re-embeds Vega.
         { name: 'hoveredId', value: '' },
       ],
-      mark,
+      mark: groupedTooltipExpr
+        ? { ...mark, tooltip: { expr: groupedTooltipExpr } }
+        : mark,
       encoding: {
         x: {
           field: xField,
@@ -566,10 +584,8 @@ const ComparisonMetricsCharts: React.FC = () => {
             value: 'transparent',
           },
         }),
-        tooltip: [
-          isGrouped
-            ? { field: 'label', type: 'nominal', title: 'Workflow / Group' }
-            : { field: 'id', type: 'nominal', title: 'Workflow' },
+        ...(isGrouped ? {} : { tooltip: [
+          { field: 'id', type: 'nominal', title: 'Workflow' },
           ...workflowsTable.groupBy.map(field => ({
             field,
             type: 'nominal',
@@ -581,9 +597,9 @@ const ComparisonMetricsCharts: React.FC = () => {
           {
             field: 'value',
             type: 'quantitative',
-            title: isGrouped ? 'AVG Value' : 'Value',
+            title: 'Value',
           },
-        ]
+        ] }),
       },
       data: { values: metricSeries },
     };
