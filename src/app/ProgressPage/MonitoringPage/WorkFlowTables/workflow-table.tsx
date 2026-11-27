@@ -719,7 +719,9 @@ export default function WorkflowTable() {
   const isApplyingCachedFilters = useRef(false);
 
   const dispatch = useAppDispatch();
-  const prevGroupByRef = useRef<string[]>([]);
+  // Seed with the current groupBy so a remount (e.g. switching tabs) is not
+  // mistaken for a groupBy change, which would collapse every expanded group.
+  const prevGroupByRef = useRef<string[]>(workflowsTable.groupBy);
 
   const [alert, setAlert] = useState<{
     open: boolean;
@@ -1102,7 +1104,12 @@ export default function WorkflowTable() {
           grouppedWorkflows,
         }));
       } else {
+        // The grid keeps non-existent rows selected (for collapsed group
+        // members), so drop selections that filters have removed here.
+        const filteredIds = new Set(workflowsTable.filteredRows.map(r => r.id));
+
         dispatch(setWorkflowsTable({
+          selectedWorkflows: workflowsTable.selectedWorkflows.filter(id => filteredIds.has(id)),
           visibleRows: workflowsTable.filteredRows,
           aggregatedRows: [],
           visibleColumns: workflowsTable.columns,
@@ -1682,6 +1689,9 @@ export default function WorkflowTable() {
 
             }
             checkboxSelection
+            // Keep selected group members selected while their group is
+            // collapsed (their rows leave the grid but stay valid selections).
+            keepNonExistentRowsSelected
             onRowSelectionModelChange={handleSelectionChange}
             rowSelectionModel={{ type: 'include', ids: new Set(workflowsTable.selectedWorkflows) }}
             getRowClassName={(params) => {
