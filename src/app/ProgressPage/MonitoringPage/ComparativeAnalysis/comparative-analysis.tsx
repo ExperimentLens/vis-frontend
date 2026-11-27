@@ -34,7 +34,7 @@ const ComparativeAnalysis = () => {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    // Grouping only supports the Metrics view; also bail out of a subtab whose
+    // Bail out of a subtab grouping doesn't support, or one whose
     // capability is unavailable (Models without explainability, Executions without traces).
     const executionsHidden = isMlExperiment;
     const modelsHidden = isLlmExperiment;
@@ -47,7 +47,13 @@ const ComparativeAnalysis = () => {
       (selectedComparisonTab === COMPARE_TAB.DATA &&
         !capabilities.datasets);
 
-    if ((groupBy.length > 0 || subtabUnavailable) && selectedComparisonTab !== COMPARE_TAB.METRICS) {
+    // Grouping supports Metrics and Sessions (groups show averaged values there).
+    const groupUnsupported =
+      groupBy.length > 0 &&
+      selectedComparisonTab !== COMPARE_TAB.METRICS &&
+      selectedComparisonTab !== COMPARE_TAB.EXECUTIONS;
+
+    if ((groupUnsupported || subtabUnavailable) && selectedComparisonTab !== COMPARE_TAB.METRICS) {
       dispatch(setSelectedComparisonTab(COMPARE_TAB.METRICS));
     }
   }, [groupBy, selectedComparisonTab, capabilities.explainability, capabilities.traces]);
@@ -114,7 +120,7 @@ const ComparativeAnalysis = () => {
                     icon={<WaterfallChartRoundedIcon fontSize="small" />}
                     iconPosition="start"
                     label="SESSIONS"
-                    disabled={groupBy.length > 0 || !capabilities.traces}
+                    disabled={!capabilities.traces}
                   />
                 )}
                 {!isLlmExperiment && (

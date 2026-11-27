@@ -10,6 +10,7 @@ import {
 } from '../workflow-info-tooltip';
 import type { IRun } from '../../../../../shared/models/experiment/run.model';
 import { useTheme } from '@mui/material';
+import { Handler } from 'vega-tooltip';
 
 type VegaTooltip = Parameters<typeof ResponsiveCardVegaLite>[0]['tooltip'];
 type VegaSignals = Parameters<typeof ResponsiveCardVegaLite>[0]['signalListeners'];
@@ -24,8 +25,52 @@ type SummaryChartProps = {
   workflowsData: IRun[];
   experimentId: string | undefined;
   workflowColors: Record<string, string>;
-
+  /** Grouped view: group row id → member workflow ids. Groups render the average over members. */
+  groupMembers?: Record<string, string[]>;
+  /** Grouped view: traces of every group member, keyed by member workflow id. */
+  memberDetailsByRun?: Record<string, TraceDetail[]>;
+  /** Grouped view: header fields (group label, group-by values) for a group's tooltip. */
+  groupTooltipInfo?: Record<string, Record<string, unknown>>;
+  /** Grouped view: group-by keys, highlighted in individual sessions' tooltips. */
+  highlightParams?: string[];
 };
+
+type TooltipFn = ReturnType<typeof createWorkflowDatumTooltipHandler>;
+
+// Plain vega-tooltip table, used for group-summary marks in grouped view.
+const defaultTooltipHandler = new Handler().call;
+
+/**
+ * Grouped view: group marks get a plain table (group info + averaged value),
+ * individual session marks keep their rich workflow tooltip.
+ */
+export const withGroupTooltip = (
+  inner: TooltipFn | undefined,
+  groupTooltipInfo: Record<string, Record<string, unknown>> | undefined,
+  format: (datum: Record<string, unknown>) => Record<string, unknown>,
+): TooltipFn | undefined => {
+  if (!groupTooltipInfo || Object.keys(groupTooltipInfo).length === 0) return inner;
+
+  return (handler, event, item, value) => {
+    const datum = ((item as { datum?: Record<string, unknown> } | null)?.datum ?? value) as Record<string, unknown> | null;
+    const info = datum ? groupTooltipInfo[String(datum.id ?? '')] : undefined;
+
+    if (info && datum) {
+      return defaultTooltipHandler(handler, event, item, { ...info, ...format(datum) });
+    }
+
+    return inner?.(handler, event, item, value);
+  };
+};
+
+const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
+
+/** Members of a group that actually recorded traces (empty sessions would drag the average to 0). */
+const membersWithTraces = (
+  groupId: string,
+  groupMembers: Record<string, string[]> | undefined,
+  memberDetailsByRun: Record<string, TraceDetail[]> | undefined,
+) => (groupMembers?.[groupId] ?? []).filter(m => (memberDetailsByRun?.[m]?.length ?? 0) > 0);
 
 const SCHEMA = 'https://vega.github.io/schema/vega-lite/v5.json';
 const hoverParam = { name: 'hover', select: { type: 'point', fields: ['id'], on: 'mouseover', clear: 'mouseout' } };
@@ -65,22 +110,37 @@ const card = (
 );
 
 /** #2 — pass rate per judge, grouped by run. */
-export const JudgePassRateChart = ({ detailsByRun, runIds, runNameById, summaryColor, signalListeners, hoveredWorkflowId, workflowsData, experimentId, workflowColors }: SummaryChartProps) => {
+export const JudgePassRateChart = ({ detailsByRun, runIds, runNameById, summaryColor, signalListeners, hoveredWorkflowId, workflowsData, experimentId, workflowColors, groupMembers, memberDetailsByRun, groupTooltipInfo, highlightParams }: SummaryChartProps) => {
   const theme = useTheme();
   const data = useMemo(
     () =>
-      runIds.flatMap(id =>
-        verdictPassRates(detailsByRun[id] ?? [], 'judges').map(v => ({
-          judge: v.name,
+      runIds.flatMap(id => {
+        const point = (judge: string, passRate: number) => ({
+          judge,
           id,
           runName: runNameById[id] ?? id,
-          passRate: Number(v.passRate.toFixed(4)),
-        })),
-      ),
-    [detailsByRun, runIds, runNameById],
+          passRate: Number(passRate.toFixed(4)),
+        });
+
+        if (!groupMembers?.[id]) {
+          return verdictPassRates(detailsByRun[id] ?? [], 'judges').map(v => point(v.name, v.passRate));
+        }
+
+        // Group: average each judge's pass rate over the members that ran it.
+        const ratesByJudge = new Map<string, number[]>();
+
+        membersWithTraces(id, groupMembers, memberDetailsByRun).forEach(m => {
+          verdictPassRates(memberDetailsByRun?.[m] ?? [], 'judges').forEach(v => {
+            ratesByJudge.set(v.name, [...(ratesByJudge.get(v.name) ?? []), v.passRate]);
+          });
+        });
+
+        return Array.from(ratesByJudge.entries()).map(([judge, rates]) => point(judge, mean(rates)));
+      }),
+    [detailsByRun, runIds, runNameById, groupMembers, memberDetailsByRun],
   );
 
-  const tooltipHandler = experimentId
+  const workflowTooltipHandler = experimentId
     ? createWorkflowDatumTooltipHandler({
         title: 'Metric: Judge pass rate',
         data,
@@ -88,6 +148,7 @@ export const JudgePassRateChart = ({ detailsByRun, runIds, runNameById, summaryC
         experimentId,
         palette: paletteFromTheme(theme),
         colorMapping: workflowColors,
+        highlightParams,
         valueLabel: 'Pass rate',
         getValue: row => row.passRate,
         formatValue: value =>
@@ -98,6 +159,11 @@ export const JudgePassRateChart = ({ detailsByRun, runIds, runNameById, summaryC
           String(row.judge) === String(raw.judge ?? ''),
       })
     : undefined;
+
+  const tooltipHandler = withGroupTooltip(workflowTooltipHandler, groupTooltipInfo, d => ({
+    Judge: d.judge,
+    'AVG pass rate': typeof d.passRate === 'number' ? `${(d.passRate * 100).toFixed(0)}%` : '—',
+  }));
 
   const spec = {
     $schema: SCHEMA,
@@ -117,23 +183,39 @@ export const JudgePassRateChart = ({ detailsByRun, runIds, runNameById, summaryC
 };
 
 /** #4 — prompt vs. completion tokens, stacked per run (light = prompt, solid = completion). */
-export const TokenSplitChart = ({ detailsByRun, runIds, runNameById, summaryColor, signalListeners, hoveredWorkflowId, workflowsData, experimentId, workflowColors }: SummaryChartProps) => {
+export const TokenSplitChart = ({ detailsByRun, runIds, runNameById, summaryColor, signalListeners, hoveredWorkflowId, workflowsData, experimentId, workflowColors, groupMembers, memberDetailsByRun, groupTooltipInfo, highlightParams }: SummaryChartProps) => {
   const theme = useTheme();
   const data = useMemo(
     () =>
       runIds.flatMap(id => {
-        const s = tokenSplit(detailsByRun[id] ?? []);
+        let s = { prompt: 0, completion: 0 };
+
+        if (groupMembers?.[id]) {
+          // Group: average prompt / completion tokens per member session.
+          const splits = membersWithTraces(id, groupMembers, memberDetailsByRun)
+            .map(m => tokenSplit(memberDetailsByRun?.[m] ?? []));
+
+          if (splits.length) {
+            s = {
+              prompt: Number(mean(splits.map(x => x.prompt)).toFixed(2)),
+              completion: Number(mean(splits.map(x => x.completion)).toFixed(2)),
+            };
+          }
+        } else {
+          s = tokenSplit(detailsByRun[id] ?? []);
+        }
+
         return [
           { id, runName: runNameById[id] ?? id, kind: 'prompt', value: s.prompt },
           { id, runName: runNameById[id] ?? id, kind: 'completion', value: s.completion },
         ];
       }),
-    [detailsByRun, runIds, runNameById],
+    [detailsByRun, runIds, runNameById, groupMembers, memberDetailsByRun],
   );
 
   const empty = data.every(d => d.value === 0);
 
-  const tooltipHandler = experimentId
+  const workflowTooltipHandler = experimentId
     ? createWorkflowDatumTooltipHandler({
         title: 'Metric: Tokens',
         data,
@@ -141,6 +223,7 @@ export const TokenSplitChart = ({ detailsByRun, runIds, runNameById, summaryColo
         experimentId,
         palette: paletteFromTheme(theme),
         colorMapping: workflowColors,
+        highlightParams,
         valueLabel: 'Count',
         getValue: row => row.value,
         getTopLine: row => `Tokens: ${String(row.kind)}`,
@@ -149,6 +232,11 @@ export const TokenSplitChart = ({ detailsByRun, runIds, runNameById, summaryColo
           String(row.kind) === String(raw.kind ?? ''),
       })
     : undefined;
+
+  const tooltipHandler = withGroupTooltip(workflowTooltipHandler, groupTooltipInfo, d => ({
+    Tokens: d.kind,
+    'AVG count': d.value,
+  }));
 
   const spec = {
     $schema: SCHEMA,
@@ -180,6 +268,8 @@ export const LatencyCostChart = ({
   workflowsData,
   experimentId,
   workflowColors,
+  groupTooltipInfo,
+  highlightParams,
 }: SummaryChartProps) => {
   const theme = useTheme();
 
@@ -211,7 +301,7 @@ export const LatencyCostChart = ({
     [points, anyCost],
   );
 
-  const tooltipHandler = experimentId
+  const workflowTooltipHandler = experimentId
     ? createWorkflowDatumTooltipHandler({
         title: `Metric: Latency vs ${anyCost ? 'cost' : 'tokens'}`,
         data: chartPoints,
@@ -219,6 +309,7 @@ export const LatencyCostChart = ({
         experimentId,
         palette: paletteFromTheme(theme),
         colorMapping: workflowColors,
+        highlightParams,
         valueLabel: anyCost ? 'Cost' : 'Tokens',
         getValue: row => row.value,
         getExtraParams: row => [
@@ -233,6 +324,13 @@ export const LatencyCostChart = ({
           String(row.traceKey) === String(raw.traceKey ?? ''),
       })
     : undefined;
+
+  // Groups pool every member trace (one point per trace), so no averaging here.
+  const tooltipHandler = withGroupTooltip(workflowTooltipHandler, groupTooltipInfo, d => ({
+    ...(d.question ? { Question: d.question } : {}),
+    Latency: `${Number(d.latencyMs).toLocaleString()} ms`,
+    [anyCost ? 'Cost' : 'Tokens']: d.value,
+  }));
 
   const spec = {
     $schema: SCHEMA,

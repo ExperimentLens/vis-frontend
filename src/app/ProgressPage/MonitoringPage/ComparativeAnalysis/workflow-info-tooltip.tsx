@@ -233,6 +233,8 @@ export function createLLMSummaryMetricTooltipHandler(opts: {
   experimentId: string;
   palette: WorkflowTooltipPalette;
   colorMapping?: Record<string, string>;
+  /** Grouped view: param names to highlight (the group-by keys). */
+  highlightParams?: string[];
 }) {
   const {
     metricName,
@@ -241,6 +243,7 @@ export function createLLMSummaryMetricTooltipHandler(opts: {
     experimentId,
     palette,
     colorMapping = {},
+    highlightParams,
   } = opts;
 
   const getHoveredId = (v: Record<string, unknown>) =>
@@ -273,6 +276,7 @@ export function createLLMSummaryMetricTooltipHandler(opts: {
         palette,
         showValue: true,
         title: `Metric: ${metricName}`,
+        highlightParams,
       });
     },
   }).call;
@@ -297,6 +301,8 @@ export function createWorkflowDatumTooltipHandler<T extends WorkflowDatumTooltip
   match?: (row: T, raw: Record<string, unknown>) => boolean;
   formatValue?: (value: number | null | undefined, row: T) => string;
   getExtraParams?: (row: T) => { name: string; value: string }[];
+  /** Grouped view: param names to highlight (the group-by keys). */
+  highlightParams?: string[];
 }) {
   const {
     title,
@@ -311,6 +317,7 @@ export function createWorkflowDatumTooltipHandler<T extends WorkflowDatumTooltip
     match = (row, raw) => String(row.id) === String(raw.id ?? ''),
     formatValue,
     getExtraParams = () => [],
+    highlightParams,
   } = opts;
 
   return new Handler({
@@ -342,6 +349,7 @@ export function createWorkflowDatumTooltipHandler<T extends WorkflowDatumTooltip
         valueLabel,
         title,
         topLine: first ? getTopLine?.(first) : undefined,
+        highlightParams,
       });
     },
   }).call;

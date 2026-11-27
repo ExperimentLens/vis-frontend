@@ -28,7 +28,7 @@ import IndependentTraceSelect from './independent-trace-select';
 // import PerTaskAnalysis from './per-task-analysis';
 import CumulativeRaceChart from './cumulative-race-chart';
 // import SummaryKpiStrip from './summary-kpi-strip';
-import { JudgePassRateChart, TokenSplitChart, LatencyCostChart } from './summary-comparisons';
+import { JudgePassRateChart, TokenSplitChart, LatencyCostChart, withGroupTooltip } from './summary-comparisons';
 import { exportElementToPng } from '../../../../../shared/utils/export-png';
 import { createLLMSummaryMetricTooltipHandler } from '../workflow-info-tooltip';
 import { paletteFromTheme } from '../workflow-info-tooltip';
@@ -61,47 +61,125 @@ export default function LlmTrajectoryDiff() {
 
   const idKey = selectedWorkflows.join(',');
   const runIds = useMemo(() => (idKey ? idKey.split(',') : []), [idKey]);
+
+  // --- Grouped view ---------------------------------------------------------
+  // A selection can mix group-summary rows with individual member sessions
+  // (picked by expanding a group), like the Metrics tab: summary charts show a
+  // group as the average over its member sessions, individual sessions as-is.
+  // Per-session views (timeline, verdicts, responses, graph) only make sense
+  // for individual sessions, so groups sit those out.
+  const { groupBy, aggregatedRows, grouppedWorkflows } = workflowsTable;
+  const isGrouped = groupBy.length > 0;
+
+  const groupRowsById = useMemo(
+    () => (isGrouped ? Object.fromEntries(aggregatedRows.map(row => [row.id, row])) : {}),
+    [isGrouped, aggregatedRows],
+  );
+
+  const groupMembers = useMemo(
+    () => Object.fromEntries(
+      runIds.filter(id => groupRowsById[id]).map(id => [id, grouppedWorkflows[id] ?? []]),
+    ) as Record<string, string[]>,
+    [runIds, groupRowsById, grouppedWorkflows],
+  );
+
+  const individualRunIds = useMemo(
+    () => runIds.filter(id => !groupRowsById[id]),
+    [runIds, groupRowsById],
+  );
+
+  // Every workflow whose traces we need: individual sessions + all group members.
+  const fetchIds = useMemo(
+    () => Array.from(new Set([...individualRunIds, ...Object.values(groupMembers).flat()])),
+    [individualRunIds, groupMembers],
+  );
+  const fetchKey = fetchIds.join(',');
+
+  const groupLabelById = useMemo(
+    () => Object.fromEntries(
+      Object.keys(groupMembers).map(id => {
+        const row = groupRowsById[id];
+        const keys = groupBy.map(k => `${k}: ${String(row?.[k] ?? '—')}`).join(', ');
+
+        return [id, `${keys} (${String(row?.workflowId ?? '')})`];
+      }),
+    ) as Record<string, string>,
+    [groupMembers, groupRowsById, groupBy],
+  );
+
+  const groupTooltipInfo = useMemo(
+    () => Object.fromEntries(
+      Object.keys(groupMembers).map(id => {
+        const row = groupRowsById[id];
+
+        return [id, {
+          'Group': row?.workflowId,
+          ...Object.fromEntries(groupBy.map(k => [k, row?.[k]])),
+        }];
+      }),
+    ) as Record<string, Record<string, unknown>>,
+    [groupMembers, groupRowsById, groupBy],
+  );
+
   const runNameById = useMemo(
-    () => Object.fromEntries(workflows.data.map(w => [w.id, w.name ?? w.id])),
-    [workflows.data],
+    () => ({
+      ...Object.fromEntries(workflows.data.map(w => [w.id, w.name ?? w.id])),
+      ...groupLabelById,
+    }) as Record<string, string>,
+    [workflows.data, groupLabelById],
   );
 
   useEffect(() => {
     if (!experimentId) return;
-    runIds.forEach(id =>
+    fetchIds.forEach(id =>
       dispatch(fetchSessionTraceDetails({ experimentId, workflowId: id })),
     );
-  }, [experimentId, idKey, runIds, dispatch]);
+  }, [experimentId, fetchKey, dispatch]);
 
-  const detailsByRun = useMemo(
-    () => Object.fromEntries(runIds.map(id => [id, sessions[id]?.details ?? []])),
-    [runIds, sessions],
+  // Traces per fetched workflow (individual sessions + group members).
+  const memberDetailsByRun = useMemo(
+    () => Object.fromEntries(fetchIds.map(id => [id, sessions[id]?.details ?? []])) as Record<string, TraceDetail[]>,
+    [fetchIds, sessions],
   );
 
+  // Traces per selected run; a group pools all of its members' traces.
+  const detailsByRun = useMemo(
+    () => Object.fromEntries(
+      runIds.map(id => [
+        id,
+        groupMembers[id]
+          ? groupMembers[id].flatMap(m => memberDetailsByRun[m] ?? [])
+          : memberDetailsByRun[id] ?? [],
+      ]),
+    ) as Record<string, TraceDetail[]>,
+    [runIds, groupMembers, memberDetailsByRun],
+  );
+
+  // Annotations: every trace behind the selection (group members included).
   const traceSessionNames = useMemo(
     () => Object.fromEntries(
-      runIds.flatMap(id => (detailsByRun[id] ?? []).map(t => [t.id, runNameById[id] ?? id] as const)),
+      fetchIds.flatMap(id => (memberDetailsByRun[id] ?? []).map(t => [t.id, runNameById[id] ?? id] as const)),
     ),
-    [runIds, detailsByRun, runNameById],
+    [fetchIds, memberDetailsByRun, runNameById],
   );
 
   const selectedScores = useMemo(
-    () => runIds.flatMap(id => (detailsByRun[id] ?? []).flatMap(t => t.scores ?? [])),
-    [runIds, detailsByRun],
+    () => fetchIds.flatMap(id => (memberDetailsByRun[id] ?? []).flatMap(t => t.scores ?? [])),
+    [fetchIds, memberDetailsByRun],
   );
 
   const traceWorkflowIds = useMemo(
     () => Object.fromEntries(
-      runIds.flatMap(id => (detailsByRun[id] ?? []).map(t => [t.id, id] as const)),
+      fetchIds.flatMap(id => (memberDetailsByRun[id] ?? []).map(t => [t.id, id] as const)),
     ),
-    [runIds, detailsByRun],
+    [fetchIds, memberDetailsByRun],
   );
 
   const traceNames = useMemo(
     () => Object.fromEntries(
-      runIds.flatMap(id => (detailsByRun[id] ?? []).map(t => [t.id, t.name ?? t.id] as const)),
+      fetchIds.flatMap(id => (memberDetailsByRun[id] ?? []).map(t => [t.id, t.name ?? t.id] as const)),
     ),
-    [runIds, detailsByRun],
+    [fetchIds, memberDetailsByRun],
   );
 
   // Timeline/Verdicts/Responses pick each run's session independently — the
@@ -110,9 +188,9 @@ export default function LlmTrajectoryDiff() {
 
   const colorOf = (runId: string, i: number) => workflowColors[runId] ?? FALLBACK_COLORS[i % FALLBACK_COLORS.length];
   const colorById = Object.fromEntries(runIds.map((id, i) => [id, colorOf(id, i)]));
-  const baseline = runIds[0];
-  const anyLoading = runIds.some(id => sessions[id]?.loading);
-  const hasAny = runIds.some(id => (sessions[id]?.details?.length ?? 0) > 0);
+  const baseline = individualRunIds[0];
+  const anyLoading = fetchIds.some(id => sessions[id]?.loading);
+  const hasAny = fetchIds.some(id => (sessions[id]?.details?.length ?? 0) > 0);
 
   const hoveredWorkflowId = workflowsTable.hoveredWorkflowId;
 
@@ -140,19 +218,32 @@ export default function LlmTrajectoryDiff() {
   }), [dispatch]);
 
   const rollups = useMemo(
-    () => Object.fromEntries(runIds.map(id => [id, rollup(detailsByRun[id] ?? [])])) as Record<string, ExperimentRollup>,
-    [runIds, detailsByRun],
+    () => Object.fromEntries(fetchIds.map(id => [id, rollup(memberDetailsByRun[id] ?? [])])) as Record<string, ExperimentRollup>,
+    [fetchIds, memberDetailsByRun],
   );
 
   const summaryDatasets = useMemo(() => {
     const rolls = rollups;
     const out: Record<string, Array<{ id: string; runName: string; value: number }>> = {};
 
+    // Group value = average of its member sessions' values (members without
+    // traces are skipped so they don't drag the average to 0).
+    const valueOf = (id: string, key: keyof ExperimentRollup): number | null | undefined => {
+      if (!groupMembers[id]) return rolls[id]?.[key] as number | null | undefined;
+
+      const values = groupMembers[id]
+        .filter(m => (memberDetailsByRun[m]?.length ?? 0) > 0)
+        .map(m => rolls[m]?.[key] as number | null | undefined)
+        .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+
+      return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    };
+
     SUMMARY_METRICS.forEach(m => {
 
       out[m.key] = runIds
         .map(id => {
-          const raw = rolls[id]?.[m.key] as number | null | undefined;
+          const raw = valueOf(id, m.key);
 
           if (raw === null || raw === undefined) return null;
           const v = raw * m.scale;
@@ -163,7 +254,7 @@ export default function LlmTrajectoryDiff() {
     });
 
     return out;
-  }, [runIds, rollups, runNameById]);
+  }, [runIds, rollups, runNameById, groupMembers, memberDetailsByRun]);
 
   const trajectoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -196,7 +287,7 @@ export default function LlmTrajectoryDiff() {
   }
 
   const manualByRun: Record<string, TraceDetail> = Object.fromEntries(
-    runIds
+    individualRunIds
       .map(id => {
         const traces = detailsByRun[id] ?? [];
         const chosenId = manualTraceByRun[id] ?? traces[0]?.id;
@@ -214,7 +305,28 @@ export default function LlmTrajectoryDiff() {
   const effectiveByRun = manualByRun;
   const hasEffectiveByRun = Object.keys(effectiveByRun).length > 0;
 
-  const summaryChartProps = { detailsByRun, runIds, runNameById, summaryColor, signalListeners, hoveredWorkflowId, workflowsData: workflows.data, experimentId, workflowColors };
+  const summaryChartProps = {
+    detailsByRun, runIds, runNameById, summaryColor, signalListeners, hoveredWorkflowId,
+    workflowsData: workflows.data, experimentId, workflowColors,
+    groupMembers: isGrouped ? groupMembers : undefined,
+    memberDetailsByRun,
+    groupTooltipInfo: isGrouped ? groupTooltipInfo : undefined,
+    highlightParams: isGrouped ? groupBy : undefined,
+  };
+
+  // Per-session views need individual sessions; groups only have averages.
+  const isPerSessionView = selectedExecutionsView !== 'summary' && selectedExecutionsView !== 'annotations';
+
+  if (isGrouped && isPerSessionView && individualRunIds.length === 0) {
+    return (
+      <InfoMessage
+        message="Groups show averaged values in the Summary view. Expand a group and select individual sessions to compare them here."
+        type="info"
+        icon={<AssessmentIcon sx={{ fontSize: 40, color: 'info.main' }} />}
+        fullHeight
+      />
+    );
+  }
 
   return (
     <Stack spacing={1.5} sx={{ p: 1.5, height: '100%' }}>
@@ -237,7 +349,7 @@ export default function LlmTrajectoryDiff() {
                 value: d.value,
               }));
             
-            const tooltipHandler = experimentId
+            const workflowTooltipHandler = experimentId
               ? createLLMSummaryMetricTooltipHandler({
                   metricName: metricLabel,
                   summaryData: summaryMetricData,
@@ -245,8 +357,15 @@ export default function LlmTrajectoryDiff() {
                   experimentId,
                   palette: paletteFromTheme(theme),
                   colorMapping: workflowsTable.workflowColors,
+                  highlightParams: isGrouped ? groupBy : undefined,
                 })
               : undefined;
+            // Grouped view: group bars → plain "AVG" table, session bars → workflow tooltip.
+            const tooltipHandler = withGroupTooltip(
+              workflowTooltipHandler,
+              isGrouped ? groupTooltipInfo : undefined,
+              d => ({ [`AVG ${metricLabel}`]: d.value }),
+            );
             // Cap the bar width so a single (or few) selected workflow doesn't render a
             // giant bar. Band-scale padding is width-independent, so padding a lone bar
             // makes it match the width it would have when ~2 bars are present.
@@ -338,7 +457,7 @@ export default function LlmTrajectoryDiff() {
       {(selectedExecutionsView === 'timeline' || selectedExecutionsView === 'verdicts' || selectedExecutionsView === 'responses') && (
         <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
           <IndependentTraceSelect
-            runIds={runIds}
+            runIds={individualRunIds}
             runNameById={runNameById}
             colorById={colorById}
             detailsByRun={detailsByRun}
@@ -353,9 +472,9 @@ export default function LlmTrajectoryDiff() {
           {/* Side-by-side trajectory waterfalls — temporarily hidden; flip SHOW_TIMELINE_WATERFALLS to restore. */}
           {SHOW_TIMELINE_WATERFALLS && (
           <Grid container spacing={1.5}>
-            {runIds.map((id, i) => {
+            {individualRunIds.map((id, i) => {
               const trace = effectiveByRun[id];
-              const mosaicSize = runIds.length >= 3 ? 4 : 6;
+              const mosaicSize = individualRunIds.length >= 3 ? 4 : 6;
               const size = isMosaic ? mosaicSize : 12;
 
               return (
@@ -382,17 +501,17 @@ export default function LlmTrajectoryDiff() {
           </Grid>
           )}
 
-          {/* <PerTaskAnalysis byRun={effectiveByRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} /> */}
+          {/* <PerTaskAnalysis byRun={effectiveByRun} runIds={individualRunIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} /> */}
 
           {/* Cumulative race — running total time as tasks complete, in order */}
-          <CumulativeRaceChart byRun={effectiveByRun} runIds={runIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} />
+          <CumulativeRaceChart byRun={effectiveByRun} runIds={individualRunIds} runNameById={runNameById} colorById={colorById} baselineId={baseline} />
         </>
       )}
 
       {hasEffectiveByRun && selectedExecutionsView === 'verdicts' && (
         <VerdictMatrix
           byRun={effectiveByRun}
-          runIds={runIds}
+          runIds={individualRunIds}
           runNameById={runNameById}
           colorById={colorById}
           baselineId={baseline}
@@ -402,7 +521,7 @@ export default function LlmTrajectoryDiff() {
       {hasEffectiveByRun && selectedExecutionsView === 'responses' && (
         <ResponseDiff
           byRun={effectiveByRun}
-          runIds={runIds}
+          runIds={individualRunIds}
           runNameById={runNameById}
           colorById={colorById}
           baselineId={baseline}
@@ -414,7 +533,7 @@ export default function LlmTrajectoryDiff() {
       {selectedExecutionsView === 'graph' && (
         <GraphComparison
           detailsByRun={detailsByRun}
-          runIds={runIds}
+          runIds={individualRunIds}
           runNameById={runNameById}
           colorById={colorById}
           isMosaic={isMosaic}
@@ -426,7 +545,7 @@ export default function LlmTrajectoryDiff() {
       {/* {selectedExecutionsView === 'stepprofile' && (
         <StepProfile
           detailsByRun={detailsByRun}
-          runIds={runIds}
+          runIds={individualRunIds}
           runNameById={runNameById}
           colorById={colorById}
           baselineId={baseline}
