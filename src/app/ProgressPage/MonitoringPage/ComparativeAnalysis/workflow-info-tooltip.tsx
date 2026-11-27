@@ -59,20 +59,23 @@ export function buildWorkflowInfoHTML(opts: {
   title?: string;
   /** Optional muted line above the table, e.g. "Step: 5". */
   topLine?: string;
+  /** Param names to emphasize (bold), e.g. the active group-by fields. */
+  highlightParams?: string[];
 }): string {
-  const { rows, experimentId, palette, showValue = false, valueLabel = 'Value', title, topLine } = opts;
+  const { rows, experimentId, palette, showValue = false, valueLabel = 'Value', title, topLine, highlightParams = [] } = opts;
+  const highlighted = new Set(highlightParams);
 
   const paramNames = Array.from(
     new Set(rows.flatMap(r => r.params.map(p => p.name))),
   ).sort();
 
-  const th = (label: string, align: 'left' | 'right' = 'left') =>
-    `<th style="text-align:${align};padding:3px 8px;font-weight:700;color:${palette.secondaryText};white-space:nowrap;">${esc(label)}</th>`;
+  const th = (label: string, align: 'left' | 'right' = 'left', emphasize = false) =>
+    `<th style="text-align:${align};padding:3px 8px;font-weight:${emphasize ? 800 : 700};color:${emphasize ? palette.text : palette.secondaryText};white-space:nowrap;">${esc(label)}</th>`;
 
   const headerCells = [
     th('Workflow'),
     ...(showValue ? [th(valueLabel, 'right')] : []),
-    ...paramNames.map(n => th(n)),
+    ...paramNames.map(n => th(n, 'left', highlighted.has(n))),
   ].join('');
 
   const body = rows
@@ -81,7 +84,7 @@ export function buildWorkflowInfoHTML(opts: {
       const paramTds = paramNames
         .map(
           n =>
-            `<td style="padding:3px 8px;vertical-align:top;color:${palette.text};">${esc(pmap.get(n) ?? '')}</td>`,
+            `<td style="padding:3px 8px;vertical-align:top;color:${palette.text};${highlighted.has(n) ? 'font-weight:700;' : ''}">${esc(pmap.get(n) ?? '')}</td>`,
         )
         .join('');
       const valueTd = showValue
@@ -162,6 +165,8 @@ export function createWorkflowTooltipHandler(opts: {
   experimentId: string;
   palette: WorkflowTooltipPalette;
   colorMapping?: Record<string, string>;
+  /** Param names to render bold (e.g. active group-by fields). */
+  highlightParams?: string[];
 }) {
   const {
     metricName,
@@ -172,6 +177,7 @@ export function createWorkflowTooltipHandler(opts: {
     experimentId,
     palette,
     colorMapping = {},
+    highlightParams,
   } = opts;
 
   const toSeriesPointLike = (v: Record<string, unknown>): SeriesPoint => ({
@@ -204,6 +210,7 @@ export function createWorkflowTooltipHandler(opts: {
         palette,
         showValue: true,
         title: `Metric: ${metricName}`,
+        highlightParams,
         topLine: isLineChart
           ? `${xField === 'step' ? 'Step' : 'Timestamp'}: ${String(raw[xField] ?? '')}`
           : undefined,

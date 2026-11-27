@@ -24,7 +24,11 @@ import { fetchWorkflowMetrics, setComparativeVisibleMetrics, setHoveredWorkflow 
 import Loader from '../../../../shared/components/loader';
 import ResponsiveCardTable from '../../../../shared/components/responsive-card-table';
 import { createWorkflowTooltipHandler, paletteFromTheme } from './workflow-info-tooltip';
+import { Handler } from 'vega-tooltip';
 import type { IMetric } from '../../../../shared/models/experiment/metric.model';
+
+// Plain vega-tooltip table, used for group-summary bars in grouped view.
+const defaultTooltipHandler = new Handler().call;
 
 interface BaseMetric {
   id: string
@@ -508,17 +512,18 @@ const ComparisonMetricsCharts: React.FC = () => {
       : { type: 'bar', tooltip: true };
 
     // Grouped view mixes group-summary bars (averaged) with individual member
-    // bars (latest value). Tooltip titles are static in an encoding, so build
-    // the tooltip object per datum: "AVG Value" for groups, "Value" for members.
+    // bars (latest value). Build the tooltip object per datum: groups get the
+    // plain "AVG Value" table; members pass their id/value through so the
+    // tooltip handler below can render the rich workflow tooltip for them.
     const groupedTooltipExpr = (() => {
       if (!isGrouped) return null;
-      const entries = (valueTitle: string) => [
+      const groupEntries = [
         `'Workflow / Group': datum.label`,
         ...workflowsTable.groupBy.map(field => `${JSON.stringify(field)}: datum[${JSON.stringify(field)}]`),
-        `${JSON.stringify(valueTitle)}: datum.value`,
+        `'AVG Value': datum.value`,
       ].join(', ');
 
-      return `datum.isGroup ? {${entries('AVG Value')}} : {${entries('Value')}}`;
+      return `datum.isGroup ? {${groupEntries}} : {id: datum.id, value: datum.value}`;
     })();
 
     // Cap the bar width so a single (or few) selected workflow doesn't render a
@@ -603,17 +608,27 @@ const ComparisonMetricsCharts: React.FC = () => {
       },
       data: { values: metricSeries },
     };
-    const tooltipHandler = !isGrouped ? createWorkflowTooltipHandler({
+    const workflowTooltipHandler = createWorkflowTooltipHandler({
       metricName,
-      metricSeries,
+      // In grouped view only individual member bars use this handler.
+      metricSeries: isGrouped ? metricSeries.filter(d => !d.isGroup) : metricSeries,
       isLineChart,
       xField: xField,
       workflowsData: workflows.data,
       experimentId,
       palette: paletteFromTheme(theme),
-      colorMapping: workflowsTable.workflowColors
-    })
-      : undefined;
+      colorMapping: workflowsTable.workflowColors,
+      highlightParams: isGrouped ? workflowsTable.groupBy : undefined,
+    });
+
+    // Grouped view: member bars → workflow tooltip, group bars → default table.
+    const tooltipHandler: typeof workflowTooltipHandler = isGrouped
+      ? (handler, event, item, value) => {
+        const isMember = value && typeof value === 'object' && 'id' in value && !('AVG Value' in value);
+
+        return (isMember ? workflowTooltipHandler : defaultTooltipHandler)(handler, event, item, value);
+      }
+      : workflowTooltipHandler;
 
     return (
       <Grid
